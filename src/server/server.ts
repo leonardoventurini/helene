@@ -13,7 +13,7 @@ import { DEFAULT_NAMESPACE } from '../constants'
 import { RequestListener } from 'http'
 
 declare global {
-  let Helene: Server
+  var Helene: Server
 
   namespace NodeJS {
     interface Global {
