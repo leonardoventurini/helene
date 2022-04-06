@@ -43,16 +43,14 @@ export const DefaultMethods: {
           if (!event) {
             return {
               ...acc,
-              [eventName]: Errors.EVENT_NOT_FOUND,
+              [eventName]: false,
             }
           }
 
           if (event.isProtected && !this.authenticated) {
-            if (!event) {
-              return {
-                ...acc,
-                [eventName]: Errors.EVENT_FORBIDDEN,
-              }
+            return {
+              ...acc,
+              [eventName]: false,
             }
           }
 

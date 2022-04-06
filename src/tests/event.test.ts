@@ -52,4 +52,20 @@ describe('Events', function () {
 
     expect(result).to.have.members([1, 2, 3])
   })
+
+  it('should try to subscribe to a protected event while unauthenticated and fail', async () => {
+    const client = await test.createClient()
+
+    test.server.events.add('protected:event', { protected: true })
+
+    const result = await client.subscribe('protected:event')
+
+    expect(result).to.have.property('protected:event').that.is.false
+
+    test.server.defer('protected:event', true)
+
+    const eventTimeout = await test.client.timeout('protected:event')
+
+    expect(eventTimeout).to.be.true
+  })
 })
