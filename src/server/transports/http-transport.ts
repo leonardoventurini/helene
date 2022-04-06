@@ -89,10 +89,10 @@ export class HttpTransport {
   }
 
   endpoint() {
-    this.express.post('/helene/*', async (req: Request, res: Response) => {
+    this.express.post('/__h/*', async (req: Request, res: Response) => {
       const { pathname } = url.parse(req.originalUrl, true)
 
-      const namespace = this.server.getNamespace(pathname.replace('/helene', ''))
+      const namespace = this.server.getNamespace(pathname.replace('/__h', ''))
 
       const transport: RequestTransport = req.body ?? {}
 
@@ -170,7 +170,7 @@ export class HttpTransport {
   }
 
   /**
-   * Needs to close WebSocket server first.
+   * Need to close WebSocket server first.
    */
   close() {
     return new Promise<void>((resolve, reject) => {

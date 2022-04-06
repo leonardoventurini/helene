@@ -15,7 +15,7 @@ export class ClientHttp {
     this.client = client
     this.protocol = this.client.secure ? `https://` : `http://`
     this.host = `${this.protocol}${this.client.host}:${this.client.port}`
-    this.uri = `${this.host}/helene${this.client.namespace}`
+    this.uri = `${this.host}/__h${this.client.namespace}`
   }
 
   async request(

@@ -10,6 +10,9 @@ export type RedisMessage = {
   message: string
 }
 
+/**
+ * This is mainly used to propagate events to other instances when running node in a cluster.
+ */
 export class RedisTransport {
   pub: RedisClientType
   sub: RedisClientType
