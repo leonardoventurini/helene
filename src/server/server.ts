@@ -1,6 +1,6 @@
 import WebSocket from 'ws'
 import { v4 as uuid } from 'uuid'
-import { ClientOpts } from 'redis'
+import { RedisClientOptions } from 'redis'
 import { Namespace } from './namespace'
 import { HttpTransport } from './transports/http-transport'
 import { WebSocketTransport } from './transports/websocket-transport'
@@ -31,10 +31,12 @@ export type ServerOptions = {
   origins?: string[]
   debug?: boolean
   ws?: WebSocket.ServerOptions
-  redis?: ClientOpts
+  redis?: RedisClientOptions
   requestListener?: RequestListener
   globalInstance?: boolean
   allowedContextKeys?: string[]
+
+  useRedis?: boolean
 }
 
 export class Server extends Namespace {
@@ -66,6 +68,7 @@ export class Server extends Namespace {
     requestListener,
     globalInstance = true,
     allowedContextKeys = [],
+    useRedis = false,
   }: ServerOptions = {}) {
     super(DEFAULT_NAMESPACE)
 
@@ -79,8 +82,8 @@ export class Server extends Namespace {
       global.Helene = this
     }
 
-    assert.isString(host, 'Invalid Host')
-    assert.isNumber(port, 'Invalid Port')
+    assert.ok(host, 'Invalid Host')
+    assert.ok(port, 'Invalid Port')
 
     this.host = host
     this.port = port
@@ -99,10 +102,12 @@ export class Server extends Namespace {
       ...ws,
     })
 
-    this.redisTransport = new RedisTransport(this, {
-      host: this.host,
-      ...redis,
-    })
+    this.redisTransport = useRedis
+      ? new RedisTransport(this, {
+          url: `redis://${this.host}:6379`,
+          ...redis,
+        })
+      : null
 
     this.namespaces.set(DEFAULT_NAMESPACE, this)
   }

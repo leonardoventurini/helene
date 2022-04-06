@@ -76,7 +76,7 @@ export namespace Presentation {
     let decoded: string
 
     if (isString(payload)) {
-      decoded = payload
+      decoded = payload as string
     } else if (isBuffer || isArrayBuffer) {
       decoded = Buffer.from(payload as ArrayBuffer | Buffer).toString()
     }

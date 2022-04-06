@@ -3,7 +3,6 @@ import { TestUtility } from '../utils/test-utility'
 import { Server } from '../server/server'
 import { HttpTransport } from '../server/transports/http-transport'
 import { WebSocketTransport } from '../server/transports/websocket-transport'
-import { RedisTransport } from '../server/transports/redis-transport'
 
 describe('Server', function () {
   const test = new TestUtility()
@@ -30,9 +29,7 @@ describe('Server', function () {
       .to.have.property('webSocketTransport')
       .that.is.instanceof(WebSocketTransport)
 
-    expect(server)
-      .to.have.property('redisTransport')
-      .that.is.instanceof(RedisTransport)
+    expect(server).to.have.property('redisTransport').that.is.null
 
     expect(server).to.have.property('namespaces').that.is.instanceof(Map)
   })

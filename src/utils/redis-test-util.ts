@@ -1,10 +1,14 @@
-import { ClientOpts, createClient, RedisClient } from 'redis'
+import { createClient, RedisClientOptions, RedisClientType } from 'redis'
 
 export class RedisTestUtil {
-  pubsub: RedisClient
-  subpub: RedisClient
+  pub: RedisClientType
+  sub: RedisClientType
 
-  constructor(opts?: ClientOpts) {
+  constructor(opts?: RedisClientOptions) {
+    this.connect(opts).catch(console.error)
+  }
+
+  async connect(opts: RedisClientOptions) {
     const defaultOptions = {
       pkg: 'ioredis',
       host: '127.0.0.1',
@@ -14,32 +18,36 @@ export class RedisTestUtil {
       namespace: 'helene',
     }
 
-    this.pubsub = createClient({ ...defaultOptions, ...opts })
-    this.subpub = createClient({ ...defaultOptions, ...opts })
+    this.pub = createClient({ ...defaultOptions, ...opts })
+    this.sub = createClient({ ...defaultOptions, ...opts })
 
-    // Needs to quit otherwise it hangs the server.
+    await this.pub.connect()
+    await this.sub.connect()
+
+    // Need to quit otherwise it hangs the server.
     after(async () => {
-      this.pubsub.quit()
-      this.subpub.quit()
+      await this.pub.quit()
+      await this.sub.quit()
     })
   }
 
   publishNextTick(channel: string, value: string) {
     process.nextTick(() => {
-      this.subpub.subscribe(channel)
-      this.pubsub.publish(channel, value)
+      this.pub.publish(channel, value).catch(console.error)
     })
   }
 
-  wait(event: string, callback?) {
-    return new Promise(resolve => {
-      this.subpub.once(event, function (channel: string, message: string) {
-        if (callback) {
-          resolve(callback(channel, message))
-        } else {
-          resolve({ channel, message })
-        }
-      })
+  wait(channel: string, callback?) {
+    return new Promise((resolve, reject) => {
+      this.sub
+        .pSubscribe(channel, function (message: string) {
+          if (callback) {
+            resolve(callback(channel, message))
+          } else {
+            resolve({ channel, message })
+          }
+        })
+        .catch(reject)
     })
   }
 }

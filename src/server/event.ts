@@ -56,12 +56,11 @@ export class Event {
     })
 
     if (this.server?.redisTransport?.pub) {
-      return this.server.redisTransport.publish(
-        this.name,
-        this.namespace.nsName,
-        channel,
-        payload,
-      )
+      this.server.redisTransport
+        .publish(this.name, this.namespace.nsName, channel, payload)
+        .catch(console.error)
+
+      return
     }
 
     this.propagate(payload)

@@ -1,4 +1,4 @@
-import { ClientOpts, createClient, RedisClient } from 'redis'
+import { createClient, RedisClientOptions, RedisClientType } from 'redis'
 import { NO_CHANNEL, RedisListeners, ServerEvents } from '../../constants'
 import { Server } from '../server'
 import { Presentation } from '../presentation'
@@ -11,8 +11,8 @@ export type RedisMessage = {
 }
 
 export class RedisTransport {
-  pub: RedisClient
-  sub: RedisClient
+  pub: RedisClientType
+  sub: RedisClientType
   server: Server
 
   static defaultRedisOpts = {
@@ -23,34 +23,36 @@ export class RedisTransport {
     namespace: 'helene',
   }
 
-  constructor(server: Server, opts: ClientOpts) {
+  constructor(server: Server, opts: RedisClientOptions) {
     this.server = server
-    this.pub = createClient({ ...RedisTransport.defaultRedisOpts, ...opts })
-    this.sub = createClient({ ...RedisTransport.defaultRedisOpts, ...opts })
 
-    this.sub.on(RedisListeners.CONNECT, () => {
-      this.sub.subscribe(RedisListeners.EVENTS)
-
-      this.sub.on(RedisListeners.MESSAGE, (channel, message) => {
-        if (channel === RedisListeners.EVENTS) {
-          const {
-            namespace,
-            event,
-            channel,
-            message: payload,
-          } = Presentation.decode<RedisMessage>(message)
-
-          this.server.debugger(`Redis Transport Received:`, event, payload)
-
-          this.server.of(namespace).channel(channel).propagate(event, payload)
-        }
-      })
-
-      this.server.emit(ServerEvents.REDIS_CONNECT)
-    })
+    this.connect(opts).catch(console.error)
   }
 
-  publish(
+  async connect(opts: RedisClientOptions) {
+    this.pub = createClient({ ...RedisTransport.defaultRedisOpts, ...opts })
+    this.sub = this.pub.duplicate()
+
+    await this.pub.connect()
+    await this.sub.connect()
+
+    await this.sub.pSubscribe(RedisListeners.EVENTS, message => {
+      const {
+        namespace,
+        event,
+        channel,
+        message: payload,
+      } = Presentation.decode<RedisMessage>(message)
+
+      this.server.debugger(`Redis Transport Received:`, event, payload)
+
+      this.server.of(namespace).channel(channel).propagate(event, payload)
+    })
+
+    this.server.emit(ServerEvents.REDIS_CONNECT)
+  }
+
+  async publish(
     event: string,
     namespace: string,
     channel: string = NO_CHANNEL,
@@ -60,7 +62,7 @@ export class RedisTransport {
 
     this.server.debugger(`Redis Transport Published:`, event, message)
 
-    this.pub.publish(
+    return this.pub.publish(
       RedisListeners.EVENTS,
 
       Presentation.encode<RedisMessage>({
@@ -72,13 +74,9 @@ export class RedisTransport {
     )
   }
 
-  close() {
-    this.pub?.end(true)
-    this.pub?.unref()
-    this.pub?.quit()
-    this.sub?.end(true)
-    this.sub?.unref()
-    this.sub?.quit()
+  async close() {
+    if (this.pub?.isOpen) await this.pub.quit()
+    if (this.sub?.isOpen) await this.sub.quit()
     this.pub = undefined
     this.sub = undefined
   }
