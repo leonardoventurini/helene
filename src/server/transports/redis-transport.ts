@@ -36,17 +36,13 @@ export class RedisTransport {
     await this.pub.connect()
     await this.sub.connect()
 
-    await this.sub.pSubscribe(RedisListeners.EVENTS, message => {
-      const {
-        namespace,
-        event,
-        channel,
-        message: payload,
-      } = Presentation.decode<RedisMessage>(message)
+    await this.sub.pSubscribe(RedisListeners.EVENTS, redisMessage => {
+      const { namespace, event, channel, message } =
+        Presentation.decode<RedisMessage>(redisMessage)
 
-      this.server.debugger(`Redis Transport Received:`, event, payload)
+      this.server.debugger(`Redis Transport Received:`, event, message)
 
-      this.server.of(namespace).channel(channel).propagate(event, payload)
+      this.server.of(namespace).channel(channel).propagate(event, message)
     })
 
     this.server.emit(ServerEvents.REDIS_CONNECT)
