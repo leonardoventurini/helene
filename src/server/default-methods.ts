@@ -1,9 +1,12 @@
 import { Method } from './method'
 import { Namespace } from './namespace'
 import { Server } from './server'
-import { Errors } from '../errors'
-import { NO_CHANNEL } from '../constants'
-import { isEmpty, pick } from 'lodash'
+import { keepAlive } from './methods/keep-alive'
+import { listMethods } from './methods/list-methods'
+import { rpcOn } from './methods/rpc-on'
+import { rpcOff } from './methods/rpc-off'
+import { rpcInit } from './methods/rpc-init'
+import { rpcLogout } from './methods/rpc-logout'
 
 export enum Methods {
   RPC_LOGIN = 'rpc:login',
@@ -15,119 +18,15 @@ export enum Methods {
   KEEP_ALIVE = 'keep:alive',
 }
 
+type MethodBuilder = (server: Server, namespace: Namespace) => Method
+
 export const DefaultMethods: {
-  [key: string]: (server: Server, namespace: Namespace) => Method
+  [key: string]: MethodBuilder
 } = {
-  [Methods.KEEP_ALIVE]: () =>
-    new Method(
-      function () {
-        return 'pong'
-      },
-      { protected: false },
-    ),
-  [Methods.LIST_METHODS]: (server, namespace) =>
-    new Method(
-      function () {
-        return Object.keys(namespace.methods.keys())
-      },
-      { protected: false },
-    ),
-  [Methods.RPC_ON]: (server, namespace) =>
-    new Method(
-      function ({ events, channel = NO_CHANNEL }) {
-        if (isEmpty(events)) return {}
-
-        return events.reduce((acc, eventName) => {
-          const event = namespace.channel(channel).events.get(eventName)
-
-          if (!event) {
-            return {
-              ...acc,
-              [eventName]: false,
-            }
-          }
-
-          if (event.isProtected && !this.authenticated) {
-            return {
-              ...acc,
-              [eventName]: false,
-            }
-          }
-
-          event.clients.set(this._id, this)
-
-          return {
-            ...acc,
-            [eventName]: true,
-          }
-        }, {})
-      },
-      { protected: false },
-    ),
-
-  [Methods.RPC_OFF]: (server, namespace) =>
-    new Method(
-      function ({ events, channel = NO_CHANNEL }) {
-        return events.reduce((acc, eventName) => {
-          const event = namespace.channel(channel).events.get(eventName)
-
-          if (!event) {
-            return {
-              ...acc,
-              [eventName]: Errors.EVENT_NOT_FOUND,
-            }
-          }
-
-          const isSubscribed = event.isSubscribed(this)
-
-          if (!isSubscribed) {
-            return {
-              ...acc,
-              [eventName]: Errors.EVENT_NOT_SUBSCRIBED,
-            }
-          }
-
-          event.clients.delete(this._id)
-
-          return {
-            ...acc,
-            [eventName]: true,
-          }
-        }, {})
-      },
-      { protected: false },
-    ),
-  [Methods.RPC_INIT]: server =>
-    new Method(
-      async function (context) {
-        this.context = context
-
-        if (server.auth instanceof Function) {
-          const caller = server.auth.call(this, context)
-          const result = caller instanceof Promise ? await caller : caller
-
-          this.authenticated = Boolean(result)
-
-          if (!this.authenticated) return false
-
-          this.context = this.authenticated
-            ? Object.assign({}, result, this.context)
-            : {}
-
-          return pick(result, server.allowedContextKeys)
-        }
-
-        return this.authenticated
-      },
-      { protected: false },
-    ),
-  [Methods.RPC_LOGOUT]: () =>
-    new Method(
-      async function () {
-        this.context = null
-        this.authenticated = false
-        return true
-      },
-      { protected: true },
-    ),
+  [Methods.KEEP_ALIVE]: keepAlive,
+  [Methods.LIST_METHODS]: listMethods,
+  [Methods.RPC_ON]: rpcOn,
+  [Methods.RPC_OFF]: rpcOff,
+  [Methods.RPC_INIT]: rpcInit,
+  [Methods.RPC_LOGOUT]: rpcLogout,
 }
