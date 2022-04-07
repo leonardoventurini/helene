@@ -5,12 +5,6 @@ export const ClientContext = React.createContext(null)
 
 ClientContext.displayName = 'HeleneClientContext'
 
-declare global {
-  interface Window {
-    Helene: Client
-  }
-}
-
 export const ClientProvider = ({
   clientInstance = null,
   clientOptions,
