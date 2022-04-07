@@ -3,6 +3,7 @@ import { TestUtility } from '../utils/test-utility'
 import { Errors, PublicError } from '../errors'
 import { Presentation } from '../server/presentation'
 import { ClientNode } from '../server/client-node'
+import { Observable } from 'rxjs'
 
 describe('Methods', function () {
   const test = new TestUtility()
@@ -93,5 +94,18 @@ describe('Methods', function () {
     await expect(
       test.client.call('test:method:middleware:reject'),
     ).to.be.rejectedWith('Authentication Failed')
+  })
+
+  it('should return an observable', done => {
+    test.server.register('rxjs:method', () => 42)
+
+    const call$ = test.client.rCall('rxjs:method')
+
+    expect(call$).to.be.instanceOf(Observable)
+
+    call$.subscribe(value => {
+      expect(value).to.equal(42)
+      done()
+    })
   })
 })
