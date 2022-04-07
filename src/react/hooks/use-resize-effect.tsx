@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useState } from 'react'
-import { Helpers } from '../../utils/helpers'
+import { Environment } from '../../utils/environment'
 
-export const useResizeEffect = Helpers.isBrowser
+export const useResizeEffect = Environment.isBrowser
   ? effect => {
       const [timestamp, setTimestamp] = useState(Date.now())
 

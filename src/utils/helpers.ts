@@ -10,8 +10,6 @@ export namespace Helpers {
     data?: string
   }
 
-  export const isBrowser = typeof window === 'object'
-
   export function isSecure() {
     return (
       typeof window === 'object' && document?.location?.protocol === 'https:'
