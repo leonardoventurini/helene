@@ -1,7 +1,8 @@
 # Helene <sup>Beta</sup>
-This package enables simple real-time client-server communication through WebSockets.
 
-The goal of this package is to simplify the development of powerful applications through the use of RPC-like features. 
+This package enables simple bidirectional real-time communication through WebSockets.
+
+The goal of this package is to simplify the development of powerful applications through the use of an event driven architecture.
 
 It is loosely based on Meteor methods and other RPC-like libraries.
 
@@ -23,10 +24,6 @@ The server will be globally available in Node as `Helene` so you can do somethin
 ```js
 Helene.register('hello', () => 'world')
 ```
-
-### Methods
-
-The main entity in this framework is the method with it you can have client-to-server interaction.
 
 ## Client
 
@@ -227,3 +224,10 @@ useEvent(
   [],
 )
 ```
+
+# Roadmap
+
+- RxJS integration
+- Method schema validation
+- Better method mixin system
+- Improved safety and DDoS protection
