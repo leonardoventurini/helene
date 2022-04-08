@@ -1,8 +1,8 @@
 {
   "name": "helene",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "A real-time reactive framework for Node and React",
-  "browser": "./lib/index.browser.js",
+  "browser": "lib/index.browser.js",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "scripts": {
@@ -60,6 +60,5 @@
     "wtfnode": "^0.9.1"
   },
   "author": "Leonardo Venturini",
-  "license": "UNLICENSED",
-  "private": true
+  "license": "MIT"
 }
