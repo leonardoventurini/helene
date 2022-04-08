@@ -15,6 +15,13 @@ export function useAuth() {
     setContext(cloneDeep(client?.context ?? {}))
   }, [client])
 
+  const updateContextCallback = useCallback(
+    data => {
+      client?.updateContext(data).catch(console.error)
+    },
+    [client],
+  )
+
   const unready = useCallback(() => setReady(false), [])
 
   useEffect(() => {
@@ -39,5 +46,6 @@ export function useAuth() {
     context,
     loading: !ready,
     ready,
+    setContext,
   }
 }

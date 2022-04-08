@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useState } from 'react'
-import { Environment } from '../../utils/environment'
+import { Environment } from '../../../utils/environment'
 
 export const useResizeEffect = Environment.isBrowser
   ? effect => {

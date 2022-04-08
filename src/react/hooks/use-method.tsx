@@ -4,7 +4,7 @@ import memoizee from 'memoizee'
 import { ClientEvents, NO_CHANNEL } from '../../constants'
 import { isFunction, noop } from 'lodash'
 import { useDebouncedCallback } from 'use-debounce'
-import { useIsMounted } from './use-is-mounted'
+import { useIsMounted } from './utils/use-is-mounted'
 import { useMethodRefresh } from './use-method-refresh'
 import { useEvent } from './use-event'
 

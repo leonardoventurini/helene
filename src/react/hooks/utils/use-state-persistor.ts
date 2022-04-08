@@ -1,7 +1,7 @@
 import { debounce, isString } from 'lodash'
 import { useCallback, useEffect, useRef } from 'react'
-import { SecurePersistentStorage } from '../../persistence/secure-persistent-storage'
-import { getPersistorSingleton } from '../../persistence/get-persistor-singleton'
+import { SecurePersistentStorage } from '../../../persistence/secure-persistent-storage'
+import { getPersistorSingleton } from '../../../persistence/get-persistor-singleton'
 
 export function useStatePersistor(
   encryptionNamespace: string,
