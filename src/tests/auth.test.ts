@@ -5,14 +5,23 @@ import { Errors } from '../errors'
 describe('Auth', async () => {
   const test = new TestUtility()
 
-  it('should fully authenticate into a protected server', async () => {
-    test.server.setLogIn(async function ({ email, password }) {
-      if (email === 'test@techster.tech' && password === '123456') {
-        return {
-          token: 1,
+  beforeEach(async () => {
+    test.server.setAuth({
+      auth(context: any) {
+        return context?.token ? context : false
+      },
+      async logIn({ email, password }) {
+        if (email === 'test@helene.test' && password === '123456') {
+          return {
+            token: 1,
+          }
         }
-      }
+      },
     })
+  })
+
+  it('should fully authenticate into a protected server', async () => {
+    expect(test.server.isAuthEnabled).to.be.true
 
     test.server.register(
       'protected:method',
@@ -22,7 +31,7 @@ describe('Auth', async () => {
       { protected: true },
     )
 
-    await test.client.login({ email: 'test@techster.tech', password: '123456' })
+    await test.client.login({ email: 'test@helene.test', password: '123456' })
 
     const result = await test.client.call('protected:method')
 

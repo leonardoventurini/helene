@@ -5,6 +5,21 @@ import { TestUtility } from '../utils/test-utility'
 describe('HTTP', async () => {
   const test = new TestUtility()
 
+  beforeEach(async () => {
+    test.server.setAuth({
+      auth(context: any) {
+        return context?.token ? context : false
+      },
+      async logIn({ email, password }) {
+        if (email === 'test@helene.test' && password === '123456') {
+          return {
+            token: 1,
+          }
+        }
+      },
+    })
+  })
+
   it('should call an rpc method through http and get the right result', async () => {
     let capture = null
 

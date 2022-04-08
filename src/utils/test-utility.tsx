@@ -18,9 +18,6 @@ export class TestUtility {
       this.server = await this.createSrv({
         debug,
         globalInstance,
-        auth(context: any) {
-          return context?.token ? context : false
-        },
         origins: ['http://localhost'],
         useRedis,
       })

@@ -4,7 +4,7 @@ import { RedisClientOptions } from 'redis'
 import { Namespace } from './namespace'
 import { HttpTransport } from './transports/http-transport'
 import { WebSocketTransport } from './transports/websocket-transport'
-import { MethodFunction, MethodOptions } from './method'
+import { MethodFunction } from './method'
 import { ClientNode } from './client-node'
 import { RedisTransport } from './transports/redis-transport'
 import { assert } from 'chai'
@@ -41,7 +41,6 @@ export type ServerOptions = {
 
 export class Server extends Namespace {
   uuid: string
-  auth: AuthFunction
   httpTransport: HttpTransport
   webSocketTransport: WebSocketTransport
   redisTransport: RedisTransport
@@ -50,6 +49,9 @@ export class Server extends Namespace {
   port: number
   requestListener: RequestListener
   allowedContextKeys: string[]
+
+  isAuthEnabled: boolean = false
+  auth: AuthFunction
 
   debug = false
 
@@ -61,7 +63,6 @@ export class Server extends Namespace {
     host = 'localhost',
     port = 80,
     debug = false,
-    auth,
     origins,
     ws,
     redis,
@@ -91,7 +92,6 @@ export class Server extends Namespace {
     this.debug = debug
 
     this.uuid = uuid()
-    this.auth = auth
 
     this.allowedContextKeys = allowedContextKeys
 
@@ -140,8 +140,10 @@ export class Server extends Namespace {
     this.namespaces.get(ns).close()
   }
 
-  setLogIn(fn: MethodFunction, opts?: MethodOptions) {
-    this.register(Methods.RPC_LOGIN, fn, opts)
+  setAuth({ auth, logIn }: { auth: AuthFunction; logIn: MethodFunction }) {
+    this.isAuthEnabled = true
+    this.auth = auth
+    this.register(Methods.RPC_LOGIN, logIn)
   }
 
   of(namespace: string = DEFAULT_NAMESPACE) {

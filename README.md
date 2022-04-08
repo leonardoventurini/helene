@@ -45,42 +45,36 @@ _It is not added to the global scope._
 
 ## Authentication
 
-First you need to set up an authentication function when you first instance the server:
+You need a way to validate your token or whichever strategy you choose, and a way to generate it through the login method.
+
 
 ```js
-new Server({
-  host: 'localhost',
-  port: 80,
+
+server.setAuth({
   async auth({ token }) {
     // We fail the authentication by returning false.
     if (!isValid(token)) return false
 
     const user = await getUser(token)
-    
+
     // Otherwise we return a context object.
     return { user }
-  }  
-})
-```
-
-Then you need to generate a token upon login that will be used to authenticate the user
-
-```js
-Helene.setLogIn(async ({ username, password }) => {
-  const token = await Auth.login({ username, password})
+  },
+  async logIn({ username, password }) {
+    const token = await Auth.login({ username, password})
   
-  return { token }
+    return { token }
+  }
 })
 ```
 
 Then somewhere in the UI
 
-
 ```js
 await client.login({ username, password })
 ```
 
-As you see this is completely agnostic, and you can set up your own authentication and log in logic.
+As you see this is completely agnostic, and you can set up your own authentication and login logic.
 
 ## Namespaces
 
@@ -88,7 +82,7 @@ Namespaces allow you group different types of audiences and methods, it can cont
 
 ## Methods
 
-First you need to register a method
+First, you need to register a method
 
 ```js
 server.register('helene:rocks', async () => 42)
@@ -107,6 +101,8 @@ const call$ = client.rCall('helene:rocks')
 
 call$.subscribe(console.log)
 ```
+
+## Events
 
 ## Channels
 
