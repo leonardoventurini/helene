@@ -39,14 +39,11 @@ describe('Namespace', function () {
     const ns = test.server.of('/chat1')
 
     ns.events.add('alert1')
-
     expect(ns.events.list).to.have.lengthOf(1)
-
-    test.server.events.add('alert2', { ns: 'chat2' })
-
+    test.server.of('/chat2').events.add('alert2')
     expect(ns.events.list).to.have.lengthOf(1)
-
-    expect(test.server.events.list).to.have.lengthOf(1)
+    expect(test.server.events.list).to.have.lengthOf(0)
+    expect(test.server.of('/chat2').events.list).to.have.lengthOf(1)
   })
 
   it('should close a namespace', async function () {
@@ -56,7 +53,7 @@ describe('Namespace', function () {
 
     expect(ns.events.list).to.have.lengthOf(1)
 
-    test.server.events.add('alert2', { ns: '/chat2' })
+    test.server.of('/chat2').events.add('alert2')
 
     expect(ns.events.list).to.have.lengthOf(1)
 

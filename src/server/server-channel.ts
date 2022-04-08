@@ -23,7 +23,7 @@ export class ServerChannel extends EventEmitter2 {
   setNamespace(namespace: Namespace) {
     this.namespace = namespace
 
-    namespace.boilerplateEvents.forEach((opts, name) => {
+    namespace.eventBlueprints.forEach((opts, name) => {
       this.events.add(name, opts, false)
     })
   }

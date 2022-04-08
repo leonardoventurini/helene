@@ -19,7 +19,7 @@ export class EventManager {
     return this.events.size
   }
 
-  add(name: string, opts?: EventOptions, updateBoilerplate = true) {
+  add(name: string, opts?: EventOptions, addToNamespace = true) {
     if (this.events.has(name)) return
 
     const event = new Event(
@@ -32,8 +32,8 @@ export class EventManager {
 
     this.events.set(name, event)
 
-    if (updateBoilerplate)
-      this.serverChannel.namespace.boilerplateEvents.set(name, opts)
+    if (addToNamespace)
+      this.serverChannel.namespace.eventBlueprints.set(name, opts)
 
     this.serverChannel.on(name, event.handler.bind(event))
 

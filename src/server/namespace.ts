@@ -12,8 +12,7 @@ export class Namespace extends ServerChannel {
   methods: Map<string, Method> = new Map()
   clients: Map<string, ClientNode> = new Map()
   channels: Map<string, ServerChannel> = new Map()
-
-  boilerplateEvents: Map<string, EventOptions> = new Map()
+  eventBlueprints: Map<string, EventOptions> = new Map()
 
   constructor(name: string) {
     super(NO_CHANNEL)

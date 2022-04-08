@@ -11,9 +11,7 @@ describe('Channel', () => {
 
     test.server.events.add(event)
 
-    expect(test.server)
-      .to.have.property('boilerplateEvents')
-      .that.has.lengthOf(1)
+    expect(test.server).to.have.property('eventBlueprints').that.has.lengthOf(1)
 
     const channelName = Presentation.uuid()
     const channel = test.server.channel(channelName)

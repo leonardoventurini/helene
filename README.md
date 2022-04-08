@@ -76,9 +76,7 @@ await client.login({ username, password })
 
 As you see this is completely agnostic, and you can set up your own authentication and login logic.
 
-## Namespaces
 
-Namespaces allow you group different types of audiences and methods, it can contain multiple channels and needs to have a different client connection (no in-flight hotswap).
 
 ## Methods
 
@@ -104,6 +102,53 @@ call$.subscribe(console.log)
 
 ## Events
 
+Events allow you to invert the control of the application by casting a piece of data to a set of clients.
+
+You can group these clients in different ways by using namespaces and channels.
+
+Events need to be declared first
+
+```js
+server.events.add('event', { protected: false })
+```
+
+Then you can subscribe to it from the client
+
+```js
+client.subscribe('event')
+```
+
+You can now listen to that even in the client app
+
+```js
+client.on('event', console.log)
+```
+
+We can emit something from the server
+
+```js
+server.emit('event', 42)
+```
+
+## Namespaces
+
+Namespaces allow you to group users of different sections of your application.
+
+Methods and events are scoped to each namespace.
+
+Every server instance has a default namespace and channel.
+
+```js
+const namespace = server.of('chat')
+
+ns.events.add('message')
+
+// This is the same as before
+ns.channel('chat:1').events.add('message')
+
+ns.channel('chat:1').emit('message', 'Hello World')
+```
+
 ## Channels
 
 It is possible to use multiple channels to better target an audience with events. 
@@ -111,15 +156,15 @@ It is possible to use multiple channels to better target an audience with events
 In the server just use
 
 ```js
-server.channel('chat:cf1c3390-b755-11ec-b909-0242ac120002')
+server.channel('chat:1')
 ```
 
 or chain it like so
 
 ```js
-server.channel('chat:cf1c3390-b755-11ec-b909-0242ac120002').events.add('message')
+server.channel('chat:1').events.add('message')
 
-server.channel('chat:cf1c3390-b755-11ec-b909-0242ac120002').emit('message', { 
+server.channel('chat:1').emit('message', { 
   author: 'John Doe', 
   content: 'Hello World'
 })
@@ -129,7 +174,7 @@ It differs from namespace in that it can be switched mid-flight and share the na
 
 
 ```js
-await client.channel('chat:cf1c3390-b755-11ec-b909-0242ac120002').subscribe('message')
+await client.channel('chat:1').subscribe('message')
 ```
 
 ## React
@@ -154,7 +199,6 @@ First you need to set up the client provider
   ...
 </ClientProvider>
 ```
-
 
 ### useClient Hook
 
