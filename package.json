@@ -66,5 +66,17 @@
     "react-dom": "^17.0.2"
   },
   "author": "Leonardo Venturini",
-  "license": "MIT"
+  "license": "MIT",
+  "repository": "https://github.com/leonardoventurini/helene",
+  "keywords": [
+    "websockets",
+    "rpc",
+    "rxjs",
+    "reactjs",
+    "methods",
+    "events"
+  ],
+  "bugs": {
+    "url": "https://github.com/leonardoventurini/helene/issues"
+  }
 }
