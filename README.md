@@ -8,6 +8,38 @@ It is loosely based on Meteor methods and other RPC-like libraries.
 
 Simple, easy.
 
+- [Installation](#installation)
+- [Server](#server)
+- [Client](#client)
+- [Authentication](#authentication)
+- [Methods](#methods)
+- [Events](#events)
+- [Namespaces](#namespaces)
+- [Channels](#channels)
+- [React](#issues)
+  - [Provider](#provider)
+  - [useClient Hook](#useclient-hook)
+  - [useAuth Hook](#useauth-hook)
+  - [useEvent Hook](#useevent-hook)
+- [Roadmap](#roadmap)
+- [License](#license)
+
+## Installation
+
+This module is distributed via [npm](https://www.npmjs.com/), commands:
+
+```
+npm install helene
+```
+
+or
+
+```
+yarn add helene
+```
+
+This library has `peerDependencies` listings for `react` and `react-dom` version `17.0.2`.
+
 ## Server
 
 You can create a new server instance like so:
@@ -225,9 +257,13 @@ useEvent(
 )
 ```
 
-# Roadmap
+## Roadmap
 
 - RxJS integration
 - Method schema validation
 - Better method mixin system
 - Improved safety and DDoS protection
+
+## LICENSE
+
+[MIT](LICENSE)
