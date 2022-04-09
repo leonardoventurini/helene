@@ -3,7 +3,7 @@ import { expect } from 'chai'
 import { render, screen, waitFor } from '@testing-library/react'
 import { renderHook } from '@testing-library/react-hooks'
 import { TestUtility } from '../utils/test-utility'
-import { useEvent } from '../react/hooks'
+import { useEvent, useMethod } from '../react/hooks'
 import sinon from 'sinon'
 
 describe('React Hooks', () => {
@@ -13,6 +13,24 @@ describe('React Hooks', () => {
     render(<span role='message'>Hello World</span>)
 
     expect(screen.queryByRole('message').textContent).to.equal('Hello World')
+  })
+
+  it('useMethod', async () => {
+    test.server.register('echo', value => value)
+
+    const { wrapper } = test
+
+    const { result } = renderHook(
+      () => useMethod({ method: 'echo', params: 'test' }),
+      { wrapper },
+    )
+
+    await waitFor(() => {
+      expect(result.current).to.containSubset({
+        result: 'test',
+        loading: false,
+      })
+    })
   })
 
   it('useEvent', async () => {
