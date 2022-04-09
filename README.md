@@ -1,4 +1,11 @@
-# Helene <sup>Beta</sup>
+![npm](https://img.shields.io/npm/v/helene?style=flat-square)
+![GitHub](https://img.shields.io/github/license/leonardoventurini/helene?style=flat-square)
+![GitHub watchers](https://img.shields.io/github/watchers/leonardoventurini/helene?style=social)
+![GitHub Repo stars](https://img.shields.io/github/stars/leonardoventurini/helene?style=social)
+
+<div style="text-align: center">
+<h1>Helene <sup>Beta</sup></h1>
+</div>
 
 This package enables simple bidirectional real-time communication through WebSockets.
 
@@ -7,6 +14,10 @@ The goal of this package is to simplify the development of powerful applications
 It is loosely based on Meteor methods and other RPC-like libraries.
 
 Simple, easy.
+
+<hr/>
+
+## Table of Contents
 
 - [Installation](#installation)
 - [Server](#server)
@@ -32,7 +43,7 @@ This module is distributed via [npm](https://www.npmjs.com/), commands:
 npm install helene
 ```
 
-or
+or:
 
 ```
 yarn add helene
@@ -70,11 +81,11 @@ const client = new Client({
 })
 ```
 
-_It is not added to the global scope._
+It is not added to the global scope as you can have multiple clients.
 
 ## Authentication
 
-You need a way to validate your token or whichever strategy you choose, and a way to generate it through the login method.
+You need a way to validate your token or whichever strategy you choose, and a way to generate it through the login method:
 
 
 ```js
@@ -97,7 +108,7 @@ server.setAuth({
 })
 ```
 
-Then somewhere in the UI
+Then somewhere in the UI:
 
 ```js
 await client.login({ username, password })
@@ -109,19 +120,19 @@ As you see this is completely agnostic, and you can set up your own authenticati
 
 ## Methods
 
-First, you need to register a method
+First, you need to register a method:
 
 ```js
 server.register('helene:rocks', async () => 42)
 ```
 
-Then you can call it from the client
+Then you can call it from the client:
 
 ```js
 const result = await client.call('helene:rocks') // 42
 ```
 
-You can also get the RxJS Observable version too
+You can also get the RxJS Observable version too:
 
 ```js
 const call$ = client.rCall('helene:rocks')
@@ -135,25 +146,25 @@ Events allow you to invert the control of the application by casting a piece of 
 
 You can group these clients in different ways by using namespaces and channels.
 
-Events need to be declared first
+Events need to be declared first:
 
 ```js
 server.events.add('event', { protected: false })
 ```
 
-Then you can subscribe to it from the client
+Then you can subscribe to it from the client:
 
 ```js
 client.subscribe('event')
 ```
 
-You can now listen to that even in the client app
+You can now listen to that even in the client app:
 
 ```js
 client.on('event', console.log)
 ```
 
-We can emit something from the server
+We can emit something from the server:
 
 ```js
 server.emit('event', 42)
@@ -182,13 +193,13 @@ ns.channel('chat:1').emit('message', 'Hello World')
 
 It is possible to use multiple channels to better target an audience with events. 
 
-In the server just use
+In the server just use:
 
 ```js
 server.channel('chat:1')
 ```
 
-or chain it like so
+or chain it like so:
 
 ```js
 server.channel('chat:1').events.add('message')
@@ -212,7 +223,7 @@ Helene includes some helpful utilities and hooks for working with React.
 
 ### Provider
 
-First you need to set up the client provider
+First you need to set up the client provider:
 
 ```jsx
 <ClientProvider
@@ -228,6 +239,8 @@ First you need to set up the client provider
   ...
 </ClientProvider>
 ```
+
+Then you can use any of the hooks down the component tree.
 
 ### useClient Hook
 
@@ -264,6 +277,6 @@ useEvent(
 - Better method mixin system
 - Improved safety and DDoS protection
 
-## LICENSE
+## License
 
 [MIT](LICENSE)
