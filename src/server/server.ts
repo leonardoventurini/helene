@@ -7,10 +7,12 @@ import { WebSocketTransport } from './transports/websocket-transport'
 import { MethodFunction } from './method'
 import { ClientNode } from './client-node'
 import { RedisTransport } from './transports/redis-transport'
-import { assert } from 'chai'
 import { Methods } from './default-methods'
 import { DEFAULT_NAMESPACE } from '../constants'
 import { RequestListener } from 'http'
+import * as assert from 'assert'
+import { isString } from 'lodash'
+import { check } from '../utils/check'
 
 declare global {
   var Helene: Server
@@ -125,7 +127,7 @@ export class Server extends Namespace {
   }
 
   getNamespace(ns: string = DEFAULT_NAMESPACE, create?: true) {
-    assert.isString(ns)
+    assert.ok(isString(ns))
 
     let namespace = this.namespaces.get(ns)
 
@@ -134,10 +136,10 @@ export class Server extends Namespace {
     return namespace
   }
 
-  removeNamespace(ns: string) {
-    assert.isString(ns)
+  removeNamespace(namespace: string) {
+    check('namespace', namespace, String)
 
-    this.namespaces.get(ns).close()
+    this.namespaces.get(namespace).close()
   }
 
   setAuth({ auth, logIn }: { auth: AuthFunction; logIn: MethodFunction }) {
