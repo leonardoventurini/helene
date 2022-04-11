@@ -16,5 +16,10 @@
     "sourceMap": true,
     "target": "ES2019"
   },
-  "include": ["src/**/*"]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "src/tests/**/*"
+  ]
 }
