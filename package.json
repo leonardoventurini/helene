@@ -7,7 +7,7 @@
   "typings": "lib/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "build:docs": "typedoc src --out docs",
+    "build:docs": "typedoc src --out docs/typedoc",
     "watch": "tsc --watch",
     "clean": "rm -rf lib",
     "test": "nodemon --watch 'src/**/*' -e ts,tsx --exec 'yarn test:mocha'",
