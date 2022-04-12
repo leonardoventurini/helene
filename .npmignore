@@ -7,4 +7,3 @@ yarn-error.log
 .prettierrc.js
 .eslintrc.js
 .mocharc.yaml
-tsconfig.json
