@@ -1,6 +1,8 @@
 import memoize from 'memoizee'
 import { ClientNode } from './client-node'
 import { Presentation } from './presentation'
+import Ajv, { AnySchemaObject, ValidateFunction } from 'ajv'
+import { Errors, SchemaValidationError } from '../errors'
 
 export type MethodParams = any
 export type MethodFunction = (this: ClientNode, params?: MethodParams) => any
@@ -11,6 +13,7 @@ export interface MethodOptions {
   maxAge?: number
   protected?: boolean
   middleware?: Function[]
+  schema?: AnySchemaObject
 }
 
 export class Method {
@@ -18,9 +21,10 @@ export class Method {
   fn: MethodFunction
   isProtected: boolean
   middleware: Function[]
+  validate: ValidateFunction = null
 
   constructor(fn: MethodFunction, opts: MethodOptions) {
-    const { cache, maxAge = 60000 } = opts ?? {}
+    const { cache, maxAge = 60000, schema } = opts ?? {}
 
     this.uuid = Presentation.uuid()
     this.isProtected = opts?.protected
@@ -33,6 +37,14 @@ export class Method {
           },
         })
       : fn
+
+    this.setSchema(schema)
+  }
+
+  private setSchema(schema) {
+    if (schema) {
+      this.validate = new Ajv().compile(schema)
+    }
   }
 
   async runMiddleware(params: MethodParams, node?: ClientNode) {
@@ -48,6 +60,10 @@ export class Method {
   async exec(params: MethodParams, node?: ClientNode) {
     await this.runMiddleware(params, node)
 
-    return this.fn.call(node, params)
+    if (!this.validate || this.validate(params)) {
+      return this.fn.call(node, params)
+    } else {
+      throw new SchemaValidationError(Errors.INVALID_PARAMS, this.validate.errors)
+    }
   }
 }

@@ -73,8 +73,6 @@ export const useMethodRefresh = ({
 
       let successful = false
 
-      const call$ = caller
-
       caller
         ?.call(client, method, memoParams, { timeout })
         .then(_result => {

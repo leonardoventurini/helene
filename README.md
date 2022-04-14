@@ -140,6 +140,25 @@ const call$ = client.rCall('helene:rocks')
 call$.subscribe(console.log)
 ```
 
+### Method Schema Validation
+
+You can use an [Ajv](https://www.npmjs.com/package/ajv) schema to validate your method parameters:
+
+```js
+server.register('validated:method', {
+  schema: {
+    type: 'object',
+    properties: {
+      knownProperty: { type: 'boolean' },
+    },
+    required: ['knownProperty'],
+    additionalProperties: false,
+  },
+})
+```
+
+The client method call will be rejected if the params fail to meet the schema requirements.
+
 ## Events
 
 Events allow you to invert the control of the application by casting a piece of data to a set of clients.

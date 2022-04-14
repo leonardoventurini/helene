@@ -2,6 +2,7 @@ import { identity, isFunction, isString } from 'lodash'
 import { Helpers } from '../utils/helpers'
 import { v4 } from 'uuid'
 import { Errors } from '../errors'
+import { ErrorObject } from 'ajv'
 
 export namespace Presentation {
   export type Params = Record<string, any> | any[] | any
@@ -54,6 +55,7 @@ export namespace Presentation {
     message: string
     stack?: string
     method?: string
+    errors?: ErrorObject[]
   }
 
   export type ErrorPayloadPartial = Helpers.PartialBy<

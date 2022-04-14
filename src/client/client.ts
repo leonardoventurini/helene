@@ -6,12 +6,7 @@ import { MethodParams } from '../server/method'
 import { Methods } from '../server/default-methods'
 import { Helpers } from '../utils/helpers'
 import { isEmpty, isPlainObject, last, merge } from 'lodash'
-import {
-  ClientEvents,
-  DEFAULT_NAMESPACE,
-  NO_CHANNEL,
-  TOKEN_HEADER_KEY,
-} from '../constants'
+import { ClientEvents, DEFAULT_NAMESPACE, NO_CHANNEL, TOKEN_HEADER_KEY } from '../constants'
 import { ClientHttp } from './client-http'
 import { ClientChannel } from './client-channel'
 import axios from 'axios'
@@ -328,8 +323,6 @@ export class Client extends ClientChannel {
 
         return
       }
-
-      console.error(payload)
 
       promise.reject(payload)
       clearTimeout(promise.timeoutId)

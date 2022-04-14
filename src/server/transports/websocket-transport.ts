@@ -3,7 +3,7 @@ import { Server } from '../server'
 import { ServerEvents, WebSocketEvents } from '../../constants'
 import http from 'http'
 import url from 'url'
-import { Errors, PublicError } from '../../errors'
+import { Errors, PublicError, SchemaValidationError } from '../../errors'
 import { ClientNode } from '../client-node'
 import IsomorphicWebSocket from 'isomorphic-ws'
 import { Presentation } from '../presentation'
@@ -109,25 +109,25 @@ export class WebSocketTransport {
     if (payload.method !== Methods.KEEP_ALIVE)
       this.server.debugger(`Executing`, payload)
 
+    const { namespace } = node
+
+    const method = namespace.methods.get(payload.method)
+
+    if (!method)
+      return node.error({
+        uuid: payload.uuid,
+        message: Errors.METHOD_NOT_FOUND,
+        method: payload.method,
+      })
+
+    if (method.isProtected && !node.authenticated)
+      return node.error({
+        uuid: payload.uuid,
+        message: Errors.METHOD_FORBIDDEN,
+        method: payload.method,
+      })
+
     try {
-      const { namespace } = node
-
-      const method = namespace.methods.get(payload.method)
-
-      if (!method)
-        return node.error({
-          uuid: payload.uuid,
-          message: Errors.METHOD_NOT_FOUND,
-          method: payload.method,
-        })
-
-      if (method.isProtected && !node.authenticated)
-        return node.error({
-          uuid: payload.uuid,
-          message: Errors.METHOD_FORBIDDEN,
-          method: payload.method,
-        })
-
       const response = await method.exec(payload.params, node)
 
       if (payload.void) return
@@ -138,14 +138,20 @@ export class WebSocketTransport {
         result: response,
       })
     } catch (error) {
-      console.error(error)
-
       if (payload.void) return
 
       if (error instanceof PublicError) {
         return node.error({
           message: error.message,
           stack: error.stack,
+          ...uuid,
+        })
+      }
+
+      if (error instanceof SchemaValidationError) {
+        return node.error({
+          message: error.message,
+          errors: error.errors,
           ...uuid,
         })
       }

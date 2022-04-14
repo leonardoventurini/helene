@@ -5,11 +5,11 @@ import { Presentation } from '../server/presentation'
 import { ClientNode } from '../server/client-node'
 import { Observable } from 'rxjs'
 
-describe('Methods', function () {
+describe('Methods', function() {
   const test = new TestUtility()
 
   it('should register a method, call it and get a response', async () => {
-    test.server.register('test:method', function ({ a, b }) {
+    test.server.register('test:method', function({ a, b }) {
       return a + b
     })
 
@@ -66,9 +66,10 @@ describe('Methods', function () {
   it('should run middleware', async () => {
     let calledMiddleware = false
 
-    test.server.register('test:method:middleware', function () {}, {
+    test.server.register('test:method:middleware', function() {
+    }, {
       middleware: [
-        function () {
+        function() {
           calledMiddleware = true
           expect(this).to.be.instanceof(ClientNode)
         },
@@ -83,9 +84,10 @@ describe('Methods', function () {
   })
 
   it('should run middleware and throw error', async () => {
-    test.server.register('test:method:middleware:reject', () => {}, {
+    test.server.register('test:method:middleware:reject', () => {
+    }, {
       middleware: [
-        function () {
+        function() {
           throw new PublicError('Authentication Failed')
         },
       ],
@@ -107,5 +109,24 @@ describe('Methods', function () {
       expect(value).to.equal(42)
       done()
     })
+  })
+
+  it('should register and call a method with schema validation', async () => {
+    test.server.register('validated:method', ({ knownProperty }) => Boolean(knownProperty), {
+      schema: {
+        type: 'object',
+        properties: {
+          knownProperty: { type: 'boolean' },
+        },
+        required: ['knownProperty'],
+        additionalProperties: false,
+      },
+    })
+
+    await expect(test.client.call('validated:method')).to.be.rejectedWith(Errors.INVALID_PARAMS)
+
+    const result = await test.client.call('validated:method', { knownProperty: true })
+
+    expect(result).to.be.true
   })
 })
