@@ -7,13 +7,14 @@ import { v4 as uuid } from 'uuid'
 import { isString } from 'lodash'
 import { Presentation } from './presentation'
 import { Request, Response } from 'express'
+import { HeleneAsyncLocalStorage } from './helene-async-local-storage'
 
 export type ClientNodeContext = Record<string, any>
 
 export class ClientNode {
   _id: string
   namespace: Namespace
-  isAuthenticated: boolean = false
+  isAuthenticated = false
   context: ClientNodeContext
   socket?: WebSocket = {} as WebSocket
   req?: Request = {} as Request
@@ -23,6 +24,10 @@ export class ClientNode {
     this.socket = socket
     this.req = req
     this.res = res
+  }
+
+  get storage() {
+    return HeleneAsyncLocalStorage.getStore()
   }
 
   get authenticated() {

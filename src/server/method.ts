@@ -2,7 +2,9 @@ import memoize from 'memoizee'
 import { ClientNode } from './client-node'
 import { Presentation } from './presentation'
 import Ajv, { AnySchemaObject, ValidateFunction } from 'ajv'
+import { v4 as uuid } from 'uuid'
 import { Errors, SchemaValidationError } from '../errors'
+import { HeleneAsyncLocalStorage } from './helene-async-local-storage'
 
 export type MethodParams = any
 export type MethodFunction = (this: ClientNode, params?: MethodParams) => any
@@ -61,9 +63,15 @@ export class Method {
     await this.runMiddleware(params, node)
 
     if (!this.validate || this.validate(params)) {
-      return this.fn.call(node, params)
+      return HeleneAsyncLocalStorage.run(
+        { executionId: uuid(), context: node.context },
+        async () => this.fn.call(node, params),
+      )
     } else {
-      throw new SchemaValidationError(Errors.INVALID_PARAMS, this.validate.errors)
+      throw new SchemaValidationError(
+        Errors.INVALID_PARAMS,
+        this.validate.errors,
+      )
     }
   }
 }

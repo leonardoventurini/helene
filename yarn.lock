@@ -272,9 +272,9 @@
   resolved "https://registry.npmjs.org/@tsconfig/node16/-/node16-1.0.2.tgz"
   integrity sha512-eZxlbI8GZscaGS7kkc/trHTT5xgrjH3/1n2JDwusC9iahPKWMRvRjJSAN5mCXviuTGQ/lHnhvv8Q1YTpnfz9gA==
 
-"@tstt/eslint-config@latest":
+"@tstt/eslint-config@^0.0.3":
   version "0.0.3"
-  resolved "https://registry.npmjs.org/@tstt/eslint-config/-/eslint-config-0.0.3.tgz"
+  resolved "https://registry.yarnpkg.com/@tstt/eslint-config/-/eslint-config-0.0.3.tgz#345f3b19c49d0e607e0b98d7bdebdc103b848b3e"
   integrity sha512-5QljavqxKpFufAILzfGkPfYNgKFoJlY7gWxWDRnkJwM23h7I2mlIXENGdexxqc6VaU8qvAUEHwiUPgH1INvqkg==
   dependencies:
     "@typescript-eslint/eslint-plugin" "5.19.0"

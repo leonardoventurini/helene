@@ -4,12 +4,13 @@ import { Errors, PublicError } from '../errors'
 import { Presentation } from '../server/presentation'
 import { ClientNode } from '../server/client-node'
 import { Observable } from 'rxjs'
+import { HeleneAsyncLocalStorage } from '../server/helene-async-local-storage'
 
-describe('Methods', function() {
+describe('Methods', function () {
   const test = new TestUtility()
 
   it('should register a method, call it and get a response', async () => {
-    test.server.register('test:method', function({ a, b }) {
+    test.server.register('test:method', function ({ a, b }) {
       return a + b
     })
 
@@ -66,10 +67,9 @@ describe('Methods', function() {
   it('should run middleware', async () => {
     let calledMiddleware = false
 
-    test.server.register('test:method:middleware', function() {
-    }, {
+    test.server.register('test:method:middleware', function () {}, {
       middleware: [
-        function() {
+        function () {
           calledMiddleware = true
           expect(this).to.be.instanceof(ClientNode)
         },
@@ -84,10 +84,9 @@ describe('Methods', function() {
   })
 
   it('should run middleware and throw error', async () => {
-    test.server.register('test:method:middleware:reject', () => {
-    }, {
+    test.server.register('test:method:middleware:reject', () => {}, {
       middleware: [
-        function() {
+        function () {
           throw new PublicError('Authentication Failed')
         },
       ],
@@ -112,21 +111,47 @@ describe('Methods', function() {
   })
 
   it('should register and call a method with schema validation', async () => {
-    test.server.register('validated:method', ({ knownProperty }) => Boolean(knownProperty), {
-      schema: {
-        type: 'object',
-        properties: {
-          knownProperty: { type: 'boolean' },
+    test.server.register(
+      'validated:method',
+      ({ knownProperty }) => Boolean(knownProperty),
+      {
+        schema: {
+          type: 'object',
+          properties: {
+            knownProperty: { type: 'boolean' },
+          },
+          required: ['knownProperty'],
+          additionalProperties: false,
         },
-        required: ['knownProperty'],
-        additionalProperties: false,
       },
+    )
+
+    await expect(test.client.call('validated:method')).to.be.rejectedWith(
+      Errors.INVALID_PARAMS,
+    )
+
+    const result = await test.client.call('validated:method', {
+      knownProperty: true,
     })
 
-    await expect(test.client.call('validated:method')).to.be.rejectedWith(Errors.INVALID_PARAMS)
-
-    const result = await test.client.call('validated:method', { knownProperty: true })
-
     expect(result).to.be.true
+  })
+
+  it('should have async local storage', async () => {
+    test.server.register('get:async:ls', function () {
+      return HeleneAsyncLocalStorage.getStore()
+    })
+
+    test.server.register('get:async:ls:this', function () {
+      return this.storage
+    })
+
+    const result1 = await test.client.call('get:async:ls')
+    const result2 = await test.client.call('get:async:ls:this')
+
+    expect(result1).to.have.property('executionId').that.is.a('string')
+    expect(result2).to.have.property('executionId').that.is.a('string')
+    expect(result1).to.have.property('context').that.is.an('object')
+    expect(result2).to.have.property('context').that.is.an('object')
   })
 })
