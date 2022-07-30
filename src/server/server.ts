@@ -15,6 +15,7 @@ import { isString } from 'lodash'
 import { check } from '../utils/check'
 
 declare global {
+  // eslint-disable-next-line no-var
   var Helene: Server
 
   namespace NodeJS {
@@ -52,7 +53,7 @@ export class Server extends Namespace {
   requestListener: RequestListener
   allowedContextKeys: string[]
 
-  isAuthEnabled: boolean = false
+  isAuthEnabled = false
   auth: AuthFunction
 
   debug = false
@@ -162,6 +163,10 @@ export class Server extends Namespace {
     this.debugger('Helene: Server Stopped')
 
     return true
+  }
+
+  static(path: string, catchAll: boolean) {
+    return this.httpTransport.static(path, catchAll)
   }
 
   debugger(...args) {

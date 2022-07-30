@@ -1,6 +1,8 @@
 import { expect } from 'chai'
 import { Errors } from '../errors'
 import { TestUtility } from '../utils/test-utility'
+import path from 'path'
+import request from 'supertest'
 
 describe('HTTP', async () => {
   const test = new TestUtility()
@@ -87,6 +89,36 @@ describe('HTTP', async () => {
       expect(href).to.equal(
         `http://${test.client.host}:${test.client.port}/test`,
       )
+    })
+  })
+
+  describe('express static', () => {
+    beforeEach(() => {
+      test.server.static(path.join(__dirname, '../../test/static'), true)
+    })
+
+    it('sends index.html', async () => {
+      const response = await request(test.server.express).get('/')
+
+      expect(response.header['content-type']).to.match(/html/)
+      expect(response.status).to.equal(200)
+      expect(response.text).to.match(/Hello World/)
+    })
+
+    it('sends fallback index.html', async () => {
+      const response = await request(test.server.express).get('/user/')
+
+      expect(response.header['content-type']).to.match(/html/)
+      expect(response.status).to.equal(200)
+      expect(response.text).to.match(/Hello World/)
+    })
+
+    it('sends alternate page', async () => {
+      const response = await request(test.server.express).get('/foo.html')
+
+      expect(response.header['content-type']).to.match(/html/)
+      expect(response.status).to.equal(200)
+      expect(response.text).to.match(/Foo Fighting/)
     })
   })
 })

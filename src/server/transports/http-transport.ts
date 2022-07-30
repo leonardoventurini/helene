@@ -169,6 +169,16 @@ export class HttpTransport {
     next()
   }
 
+  static(path: string, catchAll: boolean) {
+    const middleware = express.static(path)
+
+    this.express.use('/', middleware)
+
+    if (catchAll) {
+      this.express.use('*', middleware)
+    }
+  }
+
   /**
    * Need to close WebSocket server first.
    */
