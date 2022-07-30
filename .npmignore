@@ -2,8 +2,8 @@
 docs
 node_modules
 src
-docs
 yarn-error.log
 .prettierrc.js
 .eslintrc.js
 .mocharc.yaml
+test
