@@ -5,7 +5,7 @@
   "browser": "lib/index.browser.js",
   "main": "lib/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "rm -rf lib && tsc",
     "build:docs": "typedoc src --out docs/typedoc",
     "watch": "tsc --watch",
     "clean": "rm -rf lib",
