@@ -1,8 +1,9 @@
-import { identity, isFunction, isString } from 'lodash'
+import { identity, isString } from 'lodash'
 import { Helpers } from '../utils/helpers'
 import { v4 } from 'uuid'
 import { Errors } from '../errors'
 import { ErrorObject } from 'ajv'
+import { Environment } from '../utils/environment'
 
 export namespace Presentation {
   export type Params = Record<string, any> | any[] | any
@@ -72,8 +73,13 @@ export namespace Presentation {
   export function decode<T = Payload>(
     payload: string | ArrayBuffer | Buffer | Buffer[],
   ): T {
-    const isBuffer = isFunction(ArrayBuffer) && payload instanceof ArrayBuffer
-    const isArrayBuffer = isFunction(Buffer) && payload instanceof Buffer
+    if (Environment.isBrowser) {
+      return JSON.parse(payload as string)
+    }
+
+    const isArrayBuffer =
+      typeof ArrayBuffer === 'object' && payload instanceof ArrayBuffer
+    const isBuffer = typeof Buffer === 'object' && payload instanceof Buffer
 
     let decoded: string
 

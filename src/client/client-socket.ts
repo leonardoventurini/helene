@@ -16,10 +16,10 @@ export class ClientSocket {
   maxReconnects: number
   reconnect: boolean
   reconnectInterval: number
-  currentReconnects: number = 0
+  currentReconnects = 0
 
-  closedGracefully: boolean = false
-  ready: boolean = false
+  closedGracefully = false
+  ready = false
 
   open$: Observable<any>
   message$: Observable<any>
