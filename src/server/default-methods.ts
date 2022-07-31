@@ -7,16 +7,7 @@ import { rpcOn } from './methods/rpc-on'
 import { rpcOff } from './methods/rpc-off'
 import { rpcInit } from './methods/rpc-init'
 import { rpcLogout } from './methods/rpc-logout'
-
-export enum Methods {
-  RPC_LOGIN = 'rpc:login',
-  RPC_LOGOUT = 'rpc:logout',
-  RPC_INIT = 'rpc:init',
-  RPC_ON = 'rpc:on',
-  RPC_OFF = 'rpc:off',
-  LIST_METHODS = 'list:methods',
-  KEEP_ALIVE = 'keep:alive',
-}
+import { Methods } from './methods'
 
 type MethodBuilder = (server: Server, namespace: Namespace) => Method
 

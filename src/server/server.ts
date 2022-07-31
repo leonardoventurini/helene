@@ -7,12 +7,12 @@ import { WebSocketTransport } from './transports/websocket-transport'
 import { MethodFunction } from './method'
 import { ClientNode } from './client-node'
 import { RedisTransport } from './transports/redis-transport'
-import { Methods } from './default-methods'
 import { DEFAULT_NAMESPACE } from '../constants'
 import { RequestListener } from 'http'
 import * as assert from 'assert'
 import { isString } from 'lodash'
 import { check } from '../utils/check'
+import { Methods } from './methods'
 
 declare global {
   // eslint-disable-next-line no-var

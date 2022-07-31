@@ -3,16 +3,21 @@ import { PromiseQueue } from './promise-queue'
 import { ClientSocket } from './client-socket'
 import { Presentation } from '../server/presentation'
 import { MethodParams } from '../server/method'
-import { Methods } from '../server/default-methods'
 import { Helpers } from '../utils/helpers'
 import { isEmpty, isPlainObject, last, merge } from 'lodash'
-import { ClientEvents, DEFAULT_NAMESPACE, NO_CHANNEL, TOKEN_HEADER_KEY } from '../constants'
+import {
+  ClientEvents,
+  DEFAULT_NAMESPACE,
+  NO_CHANNEL,
+  TOKEN_HEADER_KEY,
+} from '../constants'
 import { ClientHttp } from './client-http'
 import { ClientChannel } from './client-channel'
 import axios from 'axios'
 import { Errors } from '../errors'
 import qs from 'query-string'
 import { from } from 'rxjs'
+import { Methods } from '../server/methods'
 import Timeout = NodeJS.Timeout
 
 export type ErrorHandler = (error: Presentation.ErrorPayload) => any
