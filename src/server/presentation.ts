@@ -78,8 +78,8 @@ export namespace Presentation {
     }
 
     const isArrayBuffer =
-      typeof ArrayBuffer === 'object' && payload instanceof ArrayBuffer
-    const isBuffer = typeof Buffer === 'object' && payload instanceof Buffer
+      typeof ArrayBuffer === 'function' && payload instanceof ArrayBuffer
+    const isBuffer = typeof Buffer === 'function' && payload instanceof Buffer
 
     let decoded: string
 
