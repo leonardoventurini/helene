@@ -18,6 +18,7 @@ import { Errors } from '../errors'
 import qs from 'query-string'
 import { from } from 'rxjs'
 import { Methods } from '../server/methods'
+import { Environment } from '../utils/environment'
 import Timeout = NodeJS.Timeout
 
 export type ErrorHandler = (error: Presentation.ErrorPayload) => any
@@ -116,6 +117,8 @@ export class Client extends ClientChannel {
     this.on(ClientEvents.ERROR, console.error)
 
     this.debugger('Client Created', this.uuid)
+
+    if (debug && Environment.isBrowser) window.Helene = this
   }
 
   debugger(...args) {

@@ -13,10 +13,11 @@ import * as assert from 'assert'
 import { isString } from 'lodash'
 import { check } from '../utils/check'
 import { Methods } from './methods'
+import { Client } from '../client/client'
 
 declare global {
   // eslint-disable-next-line no-var
-  var Helene: Server
+  var Helene: Server | Client
 
   namespace NodeJS {
     interface Global {
