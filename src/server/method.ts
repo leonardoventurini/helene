@@ -1,10 +1,13 @@
 import memoize from 'memoizee'
 import { ClientNode } from './client-node'
 import { Presentation } from './presentation'
-import Ajv, { AnySchemaObject, ValidateFunction } from 'ajv'
 import { v4 as uuid } from 'uuid'
-import { Errors, SchemaValidationError } from '../errors'
 import { HeleneAsyncLocalStorage } from './helene-async-local-storage'
+import { isEmpty } from 'lodash'
+import { intercept } from '../utils/intercept'
+import { AnyFunction } from '../types'
+import { AnyObjectSchema } from 'yup'
+import { Errors, SchemaValidationError } from '../errors'
 
 export type MethodParams = any
 export type MethodFunction = (this: ClientNode, params?: MethodParams) => any
@@ -14,16 +17,16 @@ export interface MethodOptions {
   cache?: boolean
   maxAge?: number
   protected?: boolean
-  middleware?: Function[]
-  schema?: AnySchemaObject
+  middleware?: AnyFunction[]
+  schema?: AnyObjectSchema
 }
 
 export class Method {
   uuid: string
   fn: MethodFunction
   isProtected: boolean
-  middleware: Function[]
-  validate: ValidateFunction = null
+  middleware: AnyFunction[]
+  schema: AnyObjectSchema = null
 
   constructor(fn: MethodFunction, opts: MethodOptions) {
     const { cache, maxAge = 60000, schema } = opts ?? {}
@@ -40,38 +43,38 @@ export class Method {
         })
       : fn
 
-    this.setSchema(schema)
-  }
-
-  private setSchema(schema) {
-    if (schema) {
-      this.validate = new Ajv().compile(schema)
-    }
+    this.schema = schema
   }
 
   async runMiddleware(params: MethodParams, node?: ClientNode) {
-    if (!this.middleware) return
+    if (isEmpty(this.middleware)) return params
 
-    for (const middleware of this.middleware) {
-      const caller = middleware.call(node, params)
+    const wrapped = this.middleware.map(m => intercept(m))
 
-      caller instanceof Promise ? await caller : caller
+    let buffer = params
+
+    for (const step of wrapped) {
+      buffer = await step.call(node, buffer)
     }
+
+    return buffer
   }
 
   async exec(params: MethodParams, node?: ClientNode) {
-    await this.runMiddleware(params, node)
-
-    if (!this.validate || this.validate(params)) {
-      return HeleneAsyncLocalStorage.run(
-        { executionId: uuid(), context: node.context },
-        async () => this.fn.call(node, params),
-      )
-    } else {
-      throw new SchemaValidationError(
-        Errors.INVALID_PARAMS,
-        this.validate.errors,
-      )
+    if (this.schema) {
+      try {
+        await this.schema.validate(params)
+      } catch (error) {
+        console.error(error)
+        throw new SchemaValidationError(Errors.INVALID_PARAMS, error.errors)
+      }
     }
+
+    const result = await this.runMiddleware(params, node)
+
+    return HeleneAsyncLocalStorage.run(
+      { executionId: uuid(), context: node.context },
+      async () => this.fn.call(node, result),
+    )
   }
 }

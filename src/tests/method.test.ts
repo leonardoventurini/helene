@@ -5,6 +5,7 @@ import { Presentation } from '../server/presentation'
 import { ClientNode } from '../server/client-node'
 import { Observable } from 'rxjs'
 import { HeleneAsyncLocalStorage } from '../server/helene-async-local-storage'
+import { boolean, object } from 'yup'
 
 describe('Methods', function () {
   const test = new TestUtility()
@@ -47,9 +48,6 @@ describe('Methods', function () {
     expect(error).to.have.property('stack').that.is.a('string')
   })
 
-  /**
-   * @unstable
-   */
   it('should make a void method call', async () => {
     let called = false
 
@@ -66,24 +64,40 @@ describe('Methods', function () {
 
   it('should run middleware', async () => {
     let calledMiddleware = false
+    let params
 
-    test.server.register('test:method:middleware', function () {}, {
-      middleware: [
-        function () {
-          calledMiddleware = true
-          expect(this).to.be.instanceof(ClientNode)
-        },
-      ],
-    })
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    test.server.register(
+      'test:method:middleware',
+      function (_params) {
+        console.log(params)
+        params = _params
+      },
+      {
+        middleware: [
+          function () {
+            calledMiddleware = true
+            expect(this).to.be.instanceof(ClientNode)
 
-    await test.client.void('test:method:middleware')
+            return { hello: true }
+          },
+        ],
+      },
+    )
+
+    await test.client.void('test:method:middleware', { world: true })
 
     await test.sleep(0)
 
     expect(calledMiddleware).to.be.true
+    expect(params).to.containSubset({
+      hello: true,
+      world: true,
+    })
   })
 
   it('should run middleware and throw error', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     test.server.register('test:method:middleware:reject', () => {}, {
       middleware: [
         function () {
@@ -115,14 +129,9 @@ describe('Methods', function () {
       'validated:method',
       ({ knownProperty }) => Boolean(knownProperty),
       {
-        schema: {
-          type: 'object',
-          properties: {
-            knownProperty: { type: 'boolean' },
-          },
-          required: ['knownProperty'],
-          additionalProperties: false,
-        },
+        schema: object({
+          knownProperty: boolean().required(),
+        }),
       },
     )
 

@@ -1,5 +1,3 @@
-import { ErrorObject } from 'ajv'
-
 export class PublicError extends Error {
   constructor(message: string) {
     super(message)
@@ -8,9 +6,9 @@ export class PublicError extends Error {
 }
 
 export class SchemaValidationError extends Error {
-  errors: ErrorObject[]
+  errors: string[]
 
-  constructor(message: string, errors: ErrorObject[]) {
+  constructor(message: string, errors: string[]) {
     super(message)
     this.name = 'Schema Validation Error'
     this.errors = errors
