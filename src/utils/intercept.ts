@@ -1,4 +1,5 @@
 import { AnyFunction } from '../types'
+import { isNil, isPlainObject } from 'lodash'
 
 /**
  * Get the params and the result and combine in a single output.
@@ -11,6 +12,10 @@ export function intercept(func: AnyFunction) {
 
     if (func.constructor.name === 'AsyncFunction' || result instanceof Promise)
       result = await result
+
+    if (!isNil(result) && !isPlainObject(result)) {
+      return result
+    }
 
     return Object.assign({}, params, result ?? {})
   }

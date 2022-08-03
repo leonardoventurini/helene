@@ -96,6 +96,30 @@ describe('Methods', function () {
     })
   })
 
+  it('should run middleware which return the latest in the chain primitives', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    test.server.register(
+      'test:method:middleware',
+      function (params) {
+        return params
+      },
+      {
+        middleware: [
+          function () {
+            return 'tea'
+          },
+          function () {
+            return 'world'
+          },
+        ],
+      },
+    )
+
+    const result = await test.client.call('test:method:middleware', 'hello')
+
+    expect(result).to.equal('world')
+  })
+
   it('should run middleware and throw error', async () => {
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     test.server.register('test:method:middleware:reject', () => {}, {

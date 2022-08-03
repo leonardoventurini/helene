@@ -140,20 +140,33 @@ const call$ = client.rCall('helene:rocks')
 call$.subscribe(console.log)
 ```
 
+### Middleware
+
+You can also use middleware functions which can be reused:
+
+```js
+server.register('helene:rocks',
+  async () => ({ hello: true }), 
+  { 
+    middleware: [
+      // You can also throw something in here to block execution.
+      function(params) { return { world: true }}
+    ]
+  }
+)
+
+// { hello: true, world: true }
+```
+
+> If the middleware return primitives then the resulting primitive of each function will be passed down the next one until the main function receives the latest one as argument.
+
 ### Method Schema Validation
 
-You can use an [Ajv](https://www.npmjs.com/package/ajv) schema to validate your method parameters:
+You can use a [Yup](https://www.npmjs.com/package/yup) schema to validate your method parameters:
 
 ```js
 server.register('validated:method', {
-  schema: {
-    type: 'object',
-    properties: {
-      knownProperty: { type: 'boolean' },
-    },
-    required: ['knownProperty'],
-    additionalProperties: false,
-  },
+  schema: object({ foo: string().required() }),
 })
 ```
 
