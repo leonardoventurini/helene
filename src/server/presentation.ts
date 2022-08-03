@@ -2,7 +2,6 @@ import { identity, isString } from 'lodash'
 import { Helpers } from '../utils/helpers'
 import { v4 } from 'uuid'
 import { Errors } from '../errors'
-import { ErrorObject } from 'ajv'
 import { Environment } from '../utils/environment'
 
 export namespace Presentation {
@@ -56,7 +55,7 @@ export namespace Presentation {
     message: string
     stack?: string
     method?: string
-    errors?: ErrorObject[]
+    errors?: string[]
   }
 
   export type ErrorPayloadPartial = Helpers.PartialBy<
