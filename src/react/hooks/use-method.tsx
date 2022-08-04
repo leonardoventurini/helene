@@ -4,7 +4,6 @@ import memoizee from 'memoizee'
 import { ClientEvents, NO_CHANNEL } from '../../constants'
 import { isFunction, noop } from 'lodash'
 import { useDebouncedCallback } from 'use-debounce'
-import { useIsMounted } from './utils/use-is-mounted'
 import { useEvent } from './use-event'
 import { useFromEvent } from './utils/use-from-event'
 
@@ -45,7 +44,6 @@ export const useMethodRefresh = ({
   authenticated,
   caller,
   client,
-  isMounted,
   memoParams,
   method,
   setError,
@@ -61,7 +59,6 @@ export const useMethodRefresh = ({
 
       if (!client.ready) return
       if (!method) return
-      if (!isMounted()) return
       if (!shouldCall) return
 
       if (authenticated && !client.authenticated) {
@@ -76,15 +73,11 @@ export const useMethodRefresh = ({
       caller
         ?.call(client, method, memoParams, { timeout })
         .then(_result => {
-          if (!isMounted()) return
-
           setResult(_result)
           setError(undefined)
           successful = true
         })
         .catch(e => {
-          if (!isMounted()) return
-
           setError(e)
           setResult(undefined)
         })
@@ -95,23 +88,12 @@ export const useMethodRefresh = ({
             })`,
           )
 
-          if (!isMounted()) return
-
           startLoading.cancel()
           setLoading(false)
           isFunction(callback) && callback()
         })
     },
-    [
-      client,
-      method,
-      memoParams,
-      timeout,
-      setResult,
-      setLoading,
-      setError,
-      isMounted,
-    ],
+    [client, method, memoParams, timeout, setResult, setLoading, setError],
   )
 }
 
@@ -162,8 +144,6 @@ export const useMethod = ({
     [result, setResult],
   )
 
-  const isMounted = useIsMounted()
-
   /**
    * Starts loading only after a few milliseconds as humans do not perceive
    * small timeframes, and the loading indicator can be annoying.
@@ -178,7 +158,6 @@ export const useMethod = ({
     authenticated,
     caller,
     client,
-    isMounted,
     memoParams,
     method,
     setError,
@@ -203,10 +182,9 @@ export const useMethod = ({
   useEffect(() => {
     if (!method) return
     if (!client) return
-    if (!isMounted) return
 
     if (!lazy) refreshCallback()
-  }, [client, method, memoParams, debounced, isMounted])
+  }, [client, method, memoParams, debounced])
 
   useEvent(event, refreshCallback, [refreshCallback], { channel })
 

@@ -14,7 +14,7 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "sourceMap": true,
-    "target": "ES2019"
+    "target": "ES2021"
   },
   "include": [
     "src/**/*"
