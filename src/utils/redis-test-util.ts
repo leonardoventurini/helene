@@ -1,8 +1,24 @@
-import { createClient, RedisClientOptions, RedisClientType } from 'redis'
+import {
+  createClient,
+  RedisClientOptions,
+  RedisClientType,
+  RedisDefaultModules,
+  RedisFunctions,
+  RedisModules,
+  RedisScripts,
+} from 'redis'
 
 export class RedisTestUtil {
-  pub: RedisClientType
-  sub: RedisClientType
+  pub: RedisClientType<
+    RedisDefaultModules & RedisModules,
+    RedisFunctions,
+    RedisScripts
+  >
+  sub: RedisClientType<
+    RedisDefaultModules & RedisModules,
+    RedisFunctions,
+    RedisScripts
+  >
 
   constructor(opts?: RedisClientOptions) {
     this.connect(opts).catch(console.error)

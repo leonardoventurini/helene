@@ -1,4 +1,12 @@
-import { createClient, RedisClientOptions, RedisClientType } from 'redis'
+import {
+  createClient,
+  RedisClientOptions,
+  RedisClientType,
+  RedisDefaultModules,
+  RedisFunctions,
+  RedisModules,
+  RedisScripts,
+} from 'redis'
 import { NO_CHANNEL, RedisListeners, ServerEvents } from '../../constants'
 import { Server } from '../server'
 import { Presentation } from '../presentation'
@@ -14,8 +22,16 @@ export type RedisMessage = {
  * This is mainly used to propagate events to other instances when running node in a cluster.
  */
 export class RedisTransport {
-  pub: RedisClientType
-  sub: RedisClientType
+  pub: RedisClientType<
+    RedisDefaultModules & RedisModules,
+    RedisFunctions,
+    RedisScripts
+  >
+  sub: RedisClientType<
+    RedisDefaultModules & RedisModules,
+    RedisFunctions,
+    RedisScripts
+  >
   server: Server
 
   static defaultRedisOpts = {
