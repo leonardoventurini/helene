@@ -7,6 +7,7 @@ import url from 'url'
 import { ServerEvents, TOKEN_HEADER_KEY } from '../../constants'
 import { Presentation } from '../presentation'
 import { ClientNode } from '../client-node'
+import { createHttpTerminator, HttpTerminator } from 'http-terminator'
 import MethodCallPayload = Presentation.MethodCallPayload
 
 declare module 'express' {
@@ -29,11 +30,17 @@ export type RequestTransport = {
 export class HttpTransport {
   server: Server
   http: http.Server
+  httpTerminator: HttpTerminator
   express: express.Express
 
   constructor(server: Server, origins?: string[]) {
     this.server = server
     this.http = http.createServer()
+
+    this.httpTerminator = createHttpTerminator({
+      server: this.http,
+    })
+
     this.express = express()
     this.express.use(express.json())
 
@@ -184,15 +191,18 @@ export class HttpTransport {
    */
   close() {
     return new Promise<void>((resolve, reject) => {
-      if (!this.http) resolve()
+      console.log('Closing HTTP Transport...')
 
-      this.http.unref()
-      this.http.close(err => {
-        if (err) return reject(err)
-        this.http = undefined
-        this.server.emit(HttpTransportEvents.HTTP_SERVER_CLOSED)
-        resolve()
-      })
+      if (!this.httpTerminator) resolve()
+
+      this.httpTerminator
+        .terminate()
+        .then(() => {
+          this.http = undefined
+          this.server.emit(HttpTransportEvents.HTTP_SERVER_CLOSED)
+          resolve()
+        })
+        .catch(reject)
     })
   }
 }

@@ -8,6 +8,7 @@ import { intercept } from '../utils/intercept'
 import { AnyFunction } from '../types'
 import { AnyObjectSchema } from 'yup'
 import { Errors, SchemaValidationError } from '../errors'
+import { EJSON } from 'ejson2'
 
 export type MethodParams = any
 export type MethodFunction = (this: ClientNode, params?: MethodParams) => any
@@ -38,7 +39,7 @@ export class Method {
       ? memoize(fn, {
           maxAge,
           normalizer: function ([params]) {
-            return JSON.stringify(params)
+            return EJSON.stringify(params)
           },
         })
       : fn

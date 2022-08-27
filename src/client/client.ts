@@ -3,7 +3,6 @@ import { PromiseQueue } from './promise-queue'
 import { ClientSocket } from './client-socket'
 import { Presentation } from '../server/presentation'
 import { MethodParams } from '../server/method'
-import { Helpers } from '../utils/helpers'
 import { isEmpty, isPlainObject, last, merge } from 'lodash'
 import {
   ClientEvents,
@@ -19,6 +18,7 @@ import qs from 'query-string'
 import { from } from 'rxjs'
 import { Methods } from '../server/methods'
 import { Environment } from '../utils/environment'
+import { EJSON } from 'ejson2'
 import Timeout = NodeJS.Timeout
 
 export type ErrorHandler = (error: Presentation.ErrorPayload) => any
@@ -128,17 +128,14 @@ export class Client extends ClientChannel {
   async loadContext() {
     if (typeof localStorage === 'undefined') return
     const context = localStorage.getItem('context')
-    await this.updateContext(JSON.parse(context), false)
+    await this.updateContext(EJSON.parse(context), false)
   }
 
   async setContext(context: Record<string, any>, reinitialize = true) {
     this.context = context
 
     if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(
-        'context',
-        JSON.stringify(context, Helpers.getCircularReplacer()),
-      )
+      localStorage.setItem('context', EJSON.stringify(context))
     }
 
     this.emit(ClientEvents.CONTEXT_CHANGED)

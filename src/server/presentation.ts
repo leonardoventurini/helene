@@ -3,6 +3,7 @@ import { Helpers } from '../utils/helpers'
 import { v4 } from 'uuid'
 import { Errors } from '../errors'
 import { Environment } from '../utils/environment'
+import { EJSON } from 'ejson2'
 
 export namespace Presentation {
   export type Params = Record<string, any> | any[] | any
@@ -72,8 +73,8 @@ export namespace Presentation {
   export function decode<T = Payload>(
     payload: string | ArrayBuffer | Buffer | Buffer[],
   ): T {
-    if (Environment.isBrowser) {
-      return JSON.parse(payload as string)
+    if (Environment.isBrowser && !Environment.isTest) {
+      return EJSON.parse(payload as string)
     }
 
     const isArrayBuffer =
@@ -92,11 +93,11 @@ export namespace Presentation {
       throw new Error('No Payload')
     }
 
-    return JSON.parse(decoded)
+    return EJSON.parse(decoded)
   }
 
   export function encode<T = Payload>(payload: T): string {
-    return JSON.stringify(payload, Helpers.getCircularReplacer())
+    return EJSON.stringify(payload, Helpers.getCircularReplacer())
   }
 
   export namespace Inbound {

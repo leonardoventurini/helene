@@ -6,6 +6,7 @@ import { isFunction, noop } from 'lodash'
 import { useDebouncedCallback } from 'use-debounce'
 import { useEvent } from './use-event'
 import { useFromEvent } from './utils/use-from-event'
+import { EJSON } from 'ejson2'
 
 export type UseMethodParams = {
   method?: string
@@ -33,7 +34,7 @@ export const useCaller = ({ client, cache, maxAge }) => {
       ? memoizee(client?.call, {
           maxAge,
           promise: true,
-          normalizer: p => JSON.stringify(p),
+          normalizer: p => EJSON.stringify(p),
         })
       : client?.call,
     [cache, client],

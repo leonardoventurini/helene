@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { PageManager } from '../../utils/page-manager'
 import { useClient } from './use-client'
 import { debounce } from 'lodash'
+import { EJSON } from 'ejson2'
 
 export function usePageManager({
   method,
@@ -28,7 +29,7 @@ export function usePageManager({
             terms,
           })
         : null,
-    [step, client, JSON.stringify(terms)],
+    [step, client, EJSON.stringify(terms)],
   )
 
   const loadMore = useMemo(
@@ -73,7 +74,7 @@ export function usePageManager({
   useEffect(() => {
     if (!pageManager) return
 
-    if (JSON.stringify(pageManager.sort) !== JSON.stringify(sort)) {
+    if (EJSON.stringify(pageManager.sort) !== EJSON.stringify(sort)) {
       setSorting(true)
       pageManager.setSort(sort)
     }

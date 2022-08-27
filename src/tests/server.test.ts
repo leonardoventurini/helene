@@ -3,6 +3,7 @@ import { TestUtility } from '../utils/test-utility'
 import { Server } from '../server/server'
 import { HttpTransport } from '../server/transports/http-transport'
 import { WebSocketTransport } from '../server/transports/websocket-transport'
+import { EJSON } from 'ejson2'
 
 describe('Server', function () {
   const test = new TestUtility()
@@ -67,7 +68,7 @@ describe('Server', function () {
     const server = await test.createRandomSrv({
       requestListener(req, res) {
         req.on('data', buffer => {
-          requestBody = JSON.parse(buffer.toString())
+          requestBody = EJSON.parse(buffer.toString())
         })
       },
     })

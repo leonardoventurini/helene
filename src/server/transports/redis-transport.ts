@@ -90,6 +90,7 @@ export class RedisTransport {
   }
 
   async close() {
+    console.log('Closing Redis Transport...')
     if (this.pub?.isOpen) await this.pub.quit()
     if (this.sub?.isOpen) await this.sub.quit()
     this.pub = undefined
