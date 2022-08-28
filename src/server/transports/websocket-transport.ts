@@ -138,6 +138,8 @@ export class WebSocketTransport {
         result: response,
       })
     } catch (error) {
+      console.error(error)
+
       if (payload.void) return
 
       if (error instanceof PublicError) {

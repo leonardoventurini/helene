@@ -3,7 +3,15 @@ import { PromiseQueue } from './promise-queue'
 import { ClientSocket } from './client-socket'
 import { Presentation } from '../server/presentation'
 import { MethodParams } from '../server/method'
-import { isEmpty, isPlainObject, last, merge } from 'lodash'
+import {
+  isEmpty,
+  isFunction,
+  isObject,
+  isPlainObject,
+  isString,
+  last,
+  merge,
+} from 'lodash'
 import {
   ClientEvents,
   DEFAULT_NAMESPACE,
@@ -128,6 +136,7 @@ export class Client extends ClientChannel {
   async loadContext() {
     if (typeof localStorage === 'undefined') return
     const context = localStorage.getItem('context')
+    if (!context) return
     await this.updateContext(EJSON.parse(context), false)
   }
 
@@ -382,8 +391,17 @@ export class Client extends ClientChannel {
       .replace(/^\/|\/{2,}/, '')}${queryString}`
   }
 
-  channel(name: string = NO_CHANNEL) {
-    if (!name) return this
+  channel(name: string | object = NO_CHANNEL) {
+    if (
+      isObject(name) &&
+      name.constructor.name === 'ObjectId' &&
+      isFunction(name.toString)
+    ) {
+      name = name.toString()
+    }
+
+    if (!name || !isString(name)) return this
+
     if (name === NO_CHANNEL) return this
 
     if (this.channels.has(name)) return this.channels.get(name)
