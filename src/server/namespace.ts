@@ -5,6 +5,7 @@ import { v4 as uuid } from 'uuid'
 import { NO_CHANNEL } from '../constants'
 import { ServerChannel } from './server-channel'
 import { EventOptions } from './event'
+import { isFunction, isObject, isString } from 'lodash'
 
 export class Namespace extends ServerChannel {
   uuid: string
@@ -55,8 +56,16 @@ export class Namespace extends ServerChannel {
     this.server.namespaces.delete(this.nsName)
   }
 
-  channel(name: string = NO_CHANNEL) {
-    if (!name) return this
+  channel(name: string | object = NO_CHANNEL) {
+    if (
+      isObject(name) &&
+      name.constructor.name === 'ObjectId' &&
+      isFunction(name.toString)
+    ) {
+      name = name.toString()
+    }
+
+    if (!name || !isString(name)) return this
     if (name === NO_CHANNEL) return this
 
     if (this.channels.has(name)) return this.channels.get(name)
