@@ -8,12 +8,12 @@ describe('Auth', async () => {
   beforeEach(async () => {
     test.server.setAuth({
       auth(context: any) {
-        return context?.token ? context : false
+        return context?.token ? { ...context, user: { _id: 'id' } } : false
       },
       async logIn({ email, password }) {
         if (email === 'test@helene.test' && password === '123456') {
           return {
-            token: 1,
+            token: 'test',
           }
         }
       },
@@ -65,7 +65,7 @@ describe('Auth', async () => {
       { protected: true },
     )
 
-    await test.client.setContext({ token: 1 })
+    await test.client.setContext({ token: 'test' })
 
     const result = await test.client.call('protected:method')
 

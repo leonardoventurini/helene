@@ -10,12 +10,12 @@ describe('HTTP', async () => {
   beforeEach(async () => {
     test.server.setAuth({
       auth(context: any) {
-        return context?.token ? context : false
+        return context?.token ? { ...context, user: { _id: 'id' } } : false
       },
       async logIn({ email, password }) {
         if (email === 'test@helene.test' && password === '123456') {
           return {
-            token: 1,
+            token: 'test',
           }
         }
       },
@@ -65,15 +65,16 @@ describe('HTTP', async () => {
       'protected:method',
       async function () {
         expect(this).to.have.property('isAuthenticated').that.is.true
-
-        expect(this).to.have.property('context').that.eql({ token: 1 })
+        expect(this)
+          .to.have.property('context')
+          .that.eql({ token: 'test', user: { _id: 'id' } })
 
         return true
       },
       { protected: true },
     )
 
-    await test.client.setContext({ token: 1 })
+    await test.client.setContext({ token: 'test' })
 
     const result = await test.client.call('protected:method', null, {
       http: true,

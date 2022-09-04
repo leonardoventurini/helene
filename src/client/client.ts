@@ -191,7 +191,7 @@ export class Client extends ClientChannel {
 
     const { token } = this.context ?? {}
 
-    if (!isString(token)) throw new Error(Errors.INVALID_TOKEN)
+    if (token && !isString(token)) throw new Error(Errors.INVALID_TOKEN)
 
     const result = await this.call(Methods.RPC_INIT, { token })
 

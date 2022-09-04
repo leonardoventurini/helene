@@ -2,7 +2,7 @@ import http from 'http'
 import express, { Request, Response } from 'express'
 import cors from 'cors'
 import { Server } from '../server'
-import { Errors } from '../../errors'
+import { Errors, PublicError, SchemaValidationError } from '../../errors'
 import url from 'url'
 import { ServerEvents, TOKEN_HEADER_KEY } from '../../constants'
 import { Presentation } from '../presentation'
@@ -87,9 +87,11 @@ export class HttpTransport {
     }
 
     if (this.server.auth instanceof Function) {
-      const result = this.server.auth.call(req, context)
+      let result = this.server.auth.call(req, context)
 
-      return result instanceof Promise ? await result : result
+      result = result instanceof Promise ? await result : result
+
+      return result
     }
 
     return false
@@ -152,11 +154,49 @@ export class HttpTransport {
 
         clientNode.authenticated = Boolean(serverContext)
         clientNode.setContext(serverContext)
+
+        if (!serverContext?.user || !serverContext?.user?._id) {
+          throw new Error(
+            'The auth function must return a user object with a valid "_id" property',
+          )
+        }
+
+        clientNode.userId = serverContext.user._id
       }
 
-      const result = await method.exec(payload.params, clientNode)
+      const uuid = payload?.uuid ? { uuid: payload.uuid } : null
 
-      res.json(result)
+      try {
+        const result = await method.exec(payload.params, clientNode)
+
+        res.json(result)
+      } catch (error) {
+        console.error(error)
+
+        if (payload.void) return
+
+        if (error instanceof PublicError) {
+          return Presentation.Outbound.error({
+            message: error.message,
+            stack: error.stack,
+            ...uuid,
+          })
+        }
+
+        if (error instanceof SchemaValidationError) {
+          return Presentation.Outbound.error({
+            message: error.message,
+            errors: error.errors,
+            ...uuid,
+          })
+        }
+
+        return Presentation.Outbound.error({
+          message: Errors.INTERNAL_ERROR,
+          stack: error.stack,
+          ...uuid,
+        })
+      }
     })
   }
 
