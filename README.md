@@ -15,6 +15,8 @@ It is loosely based on Meteor methods and other RPC-like libraries.
 
 Simple, easy.
 
+> Please note that this is a `beta` version. The API is not stable and may change in the future.
+
 <hr/>
 
 ## Table of Contents
@@ -49,7 +51,7 @@ or:
 yarn add helene
 ```
 
-This library has `peerDependencies` listings for `react` and `react-dom` version `17.0.2`.
+This library has `peerDependencies` listings for `react` and `react-dom` version `18`.
 
 ## Server
 
@@ -87,6 +89,7 @@ It is not added to the global scope as you can have multiple clients.
 
 You need a way to validate your token or whichever strategy you choose, and a way to generate it through the login method:
 
+Please note that the user must be an object with an `_id` property that is either a `string` or an `ObjectId` from `mongoose`.
 
 ```js
 

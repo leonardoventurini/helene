@@ -8,6 +8,7 @@ import { isString } from 'lodash'
 import { Presentation } from './presentation'
 import { Request, Response } from 'express'
 import { HeleneAsyncLocalStorage } from './helene-async-local-storage'
+import { ObjectId } from '../mongoose'
 
 export type ClientNodeContext = Record<string, any>
 
@@ -16,6 +17,7 @@ export class ClientNode {
   namespace: Namespace
   isAuthenticated = false
   context: ClientNodeContext
+  userId: ObjectId | string | null = null
   socket?: WebSocket = {} as WebSocket
   req?: Request = {} as Request
   res?: Response = {} as Response

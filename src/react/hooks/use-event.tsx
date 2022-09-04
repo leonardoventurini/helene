@@ -18,6 +18,7 @@ export function useEvent(
   useEffect(() => {
     if (!event) return
     if (!client) return
+    if (!channel) return
 
     const ch = client.channel(channel)
 
