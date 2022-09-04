@@ -189,7 +189,11 @@ export class Client extends ClientChannel {
 
     this.emit(ClientEvents.INITIALIZING)
 
-    const result = await this.call(Methods.RPC_INIT, this.context)
+    const { token } = this.context ?? {}
+
+    if (!isString(token)) throw new Error(Errors.INVALID_TOKEN)
+
+    const result = await this.call(Methods.RPC_INIT, { token })
 
     this.authenticated = Boolean(result)
 
@@ -201,12 +205,9 @@ export class Client extends ClientChannel {
 
     this.debugger('Authentication Changed', result)
 
-    /**
-     * @todo Make this more generic or properly opinionated.
-     */
-    if (this.context?.token) {
+    if (token) {
       axios.defaults.headers.common = {
-        [TOKEN_HEADER_KEY]: this.context.token,
+        [TOKEN_HEADER_KEY]: token,
       }
     }
 

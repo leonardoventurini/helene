@@ -25,6 +25,7 @@ export enum Errors {
   INVALID_METHOD_NAME = 'Invalid Method Name',
   INVALID_PARAMS = 'Invalid Params',
   INVALID_REQUEST = 'Invalid Request',
+  INVALID_TOKEN = 'Invalid Token',
   METHOD_FORBIDDEN = 'Method Forbidden',
   METHOD_NOT_FOUND = 'Method Not Found',
   METHOD_NOT_SPECIFIED = 'Method Not Specified',
