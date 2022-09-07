@@ -94,7 +94,7 @@ export class Client extends ClientChannel {
 
   constructor({
     host = 'localhost',
-    port = 80,
+    port,
     namespace = DEFAULT_NAMESPACE,
     secure = false,
     errorHandler = null,
@@ -126,7 +126,10 @@ export class Client extends ClientChannel {
 
     this.debugger('Client Created', this.uuid)
 
-    if (debug && Environment.isBrowser) window.Helene = this
+    if (Environment.isDevelopment && Environment.isBrowser) {
+      window.Helene = this
+      this.attachDevTools()
+    }
   }
 
   debugger(...args) {
@@ -420,6 +423,31 @@ export class Client extends ClientChannel {
       if (this.ready) return resolve(true)
 
       this.once(ClientEvents.INITIALIZED, () => resolve(true))
+    })
+  }
+
+  attachDevTools() {
+    const generateId = () => (Date.now() + Math.random()).toString(36)
+
+    // @ts-ignore
+    const sendLogMessage = window.__helene_devtools_log_message
+
+    this.on('outbound:message', content => {
+      sendLogMessage({
+        id: generateId(),
+        content,
+        isOutbound: true,
+        timestamp: Date.now(),
+      })
+    })
+
+    this.on('inbound:message', content => {
+      sendLogMessage({
+        id: generateId(),
+        content,
+        isInbound: true,
+        timestamp: Date.now(),
+      })
     })
   }
 }

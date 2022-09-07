@@ -30,6 +30,8 @@ export enum ClientEvents {
   OPEN = 'open',
   MESSAGE = 'message',
   CONTEXT_CHANGED = 'context:changed',
+  OUTBOUND_MESSAGE = 'outbound:message',
+  INBOUND_MESSAGE = 'inbound:message',
 }
 
 export enum RedisListeners {

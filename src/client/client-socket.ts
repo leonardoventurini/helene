@@ -42,7 +42,12 @@ export class ClientSocket {
     this.reconnectInterval = reconnectInterval
 
     this.protocol = this.client.secure ? `wss://` : `ws://`
-    this.uri = `${this.protocol}${this.client.host}:${this.client.port}${this.client.namespace}`
+
+    if (this.client.port)
+      this.uri = `${this.protocol}${this.client.host}:${this.client.port}${this.client.namespace}`
+    else {
+      this.uri = `${this.protocol}${this.client.host}${this.client.namespace}`
+    }
 
     if (this.autoConnect) this.connect()
   }
@@ -75,6 +80,8 @@ export class ClientSocket {
   send(payload: string, opts?: WebSocketMessageOptions) {
     if (!this.ready) return console.warn('Not Ready')
 
+    this.client.emit(ClientEvents.OUTBOUND_MESSAGE, payload)
+
     this.socket.send(payload, opts)
   }
 
@@ -88,7 +95,7 @@ export class ClientSocket {
   handleMessage = ({ data, type, target }) => {
     const payload = Presentation.decode(data)
 
-    this.client.emit(ClientEvents.MESSAGE, { data, type, target })
+    this.client.emit(ClientEvents.INBOUND_MESSAGE, data)
 
     if (!payload) return
 

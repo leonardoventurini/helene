@@ -56,8 +56,6 @@ export const useMethodRefresh = ({
 }) => {
   return useCallback(
     (callback?) => {
-      const start = Date.now()
-
       if (!client.ready) return
       if (!method) return
       if (!shouldCall) return
@@ -83,12 +81,6 @@ export const useMethodRefresh = ({
           setResult(undefined)
         })
         .finally(() => {
-          console.log(
-            `Method Call: "${method}" ${Date.now() - start}ms (${
-              successful ? 'successful' : 'failed'
-            })`,
-          )
-
           startLoading.cancel()
           setLoading(false)
           isFunction(callback) && callback()
