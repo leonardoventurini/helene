@@ -7,6 +7,7 @@ import { useDebouncedCallback } from 'use-debounce'
 import { useEvent } from './use-event'
 import { useFromEvent } from './utils/use-from-event'
 import { EJSON } from 'ejson2'
+import { useCircuitBreaker } from './use-circuit-breaker'
 
 export type UseMethodParams = {
   method?: string
@@ -26,6 +27,11 @@ export type UseMethodParams = {
    * Conditionally run the method or return a placeholder value.
    */
   parse?(params: any): any
+
+  /**
+   * Params required to call the method.
+   */
+  required?: string[]
 }
 
 export const useCaller = ({ client, cache, maxAge }) => {
@@ -104,6 +110,7 @@ export const useMethod = ({
   debounced = null,
   parse = null,
   lazy = false,
+  required = [],
 }: UseMethodParams) => {
   const client = useClient()
 
@@ -113,18 +120,12 @@ export const useMethod = ({
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(!!method)
 
-  const { shouldCall, placeholderValue } = useMemo(() => {
-    const result = isFunction(parse) ? parse(params) : void 0
-
-    if (result !== void 0) {
-      return {
-        shouldCall: false,
-        placeholderValue: result,
-      }
-    }
-
-    return { shouldCall: true }
-  }, [deps])
+  const { shouldCall, placeholderValue } = useCircuitBreaker({
+    parse,
+    params: memoParams,
+    required,
+    deps,
+  })
 
   const optimistic = useCallback(
     cb => {
@@ -190,7 +191,7 @@ export const useMethod = ({
 
   if (!shouldCall) {
     return {
-      result: placeholderValue,
+      result: placeholderValue ?? defaultValue,
       error,
       loading: false,
       refresh: noop,
