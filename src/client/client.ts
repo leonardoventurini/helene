@@ -124,11 +124,12 @@ export class Client extends ClientChannel {
     this.on(ClientEvents.OPEN, this.init)
     this.on(ClientEvents.ERROR, console.error)
 
-    this.debugger('Client Created', this.uuid)
-
     if (Environment.isDevelopment && Environment.isBrowser) {
       window.Helene = this
-      this.attachDevTools()
+      this.attachDevTools().then(() => {
+        console.debug('Helene DevTools attached.')
+        this.debugger('Client Created', this.uuid)
+      })
     }
   }
 
@@ -426,13 +427,15 @@ export class Client extends ClientChannel {
     })
   }
 
-  attachDevTools() {
+  async attachDevTools() {
     const generateId = () => (Date.now() + Math.random()).toString(36)
+
+    await this.subscribe(ClientEvents.DEBUGGER)
 
     // @ts-ignore
     const sendLogMessage = window.__helene_devtools_log_message
 
-    this.on('outbound:message', content => {
+    this.on(ClientEvents.OUTBOUND_MESSAGE, content => {
       sendLogMessage({
         id: generateId(),
         content,
@@ -441,12 +444,22 @@ export class Client extends ClientChannel {
       })
     })
 
-    this.on('inbound:message', content => {
+    this.on(ClientEvents.INBOUND_MESSAGE, content => {
       sendLogMessage({
         id: generateId(),
         content,
         isInbound: true,
         timestamp: Date.now(),
+      })
+    })
+
+    this.on(ClientEvents.DEBUGGER, content => {
+      sendLogMessage({
+        id: generateId(),
+        content,
+        isInbound: true,
+        timestamp: Date.now(),
+        filterType: 'debugger',
       })
     })
   }

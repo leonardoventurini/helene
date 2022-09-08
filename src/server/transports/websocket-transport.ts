@@ -170,8 +170,6 @@ export class WebSocketTransport {
     return new Promise<void>((resolve, reject) => {
       if (!this.wss) return resolve()
 
-      console.log('Closing WebSocket Transport...')
-
       this.wss.clients.forEach(socket => {
         socket.terminate()
       })

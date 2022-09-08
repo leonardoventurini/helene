@@ -21,6 +21,7 @@ export class ClientNode {
   socket?: WebSocket = {} as WebSocket
   req?: Request = {} as Request
   res?: Response = {} as Response
+  isServer = false
 
   constructor(socket?: WebSocket, req?: Request, res?: Response) {
     this.socket = socket

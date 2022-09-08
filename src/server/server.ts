@@ -4,10 +4,10 @@ import { RedisClientOptions } from 'redis'
 import { Namespace } from './namespace'
 import { HttpTransport } from './transports/http-transport'
 import { WebSocketTransport } from './transports/websocket-transport'
-import { MethodFunction } from './method'
+import { MethodFunction, MethodParams } from './method'
 import { ClientNode } from './client-node'
 import { RedisTransport } from './transports/redis-transport'
-import { DEFAULT_NAMESPACE } from '../constants'
+import { ClientEvents, DEFAULT_NAMESPACE } from '../constants'
 import { RequestListener } from 'http'
 import * as assert from 'assert'
 import { isString } from 'lodash'
@@ -58,8 +58,6 @@ export class Server extends Namespace {
   auth: AuthFunction
 
   debug = false
-
-  static defaultNamespace = '/'
 
   static ERROR_EVENT = 'error'
 
@@ -171,6 +169,22 @@ export class Server extends Namespace {
   }
 
   debugger(...args) {
-    if (this.debug) console.warn(...args)
+    if (this.debug) this.emit(ClientEvents.DEBUGGER, args)
+  }
+
+  async call(method: string, params?: MethodParams): Promise<any> {
+    this.debugger(`Calling ${method}`, params)
+
+    const methodInstance = this.methods.get(method)
+
+    const node = new ClientNode()
+
+    node.isServer = true
+
+    return await methodInstance.exec(params, node)
+  }
+
+  instrumentDebugger() {
+    this.events.add(ClientEvents.DEBUGGER)
   }
 }

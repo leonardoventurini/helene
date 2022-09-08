@@ -3,8 +3,11 @@ import express, { Request, Response } from 'express'
 import cors from 'cors'
 import { Server } from '../server'
 import { Errors, PublicError, SchemaValidationError } from '../../errors'
-import url from 'url'
-import { ServerEvents, TOKEN_HEADER_KEY } from '../../constants'
+import {
+  DEFAULT_NAMESPACE,
+  ServerEvents,
+  TOKEN_HEADER_KEY,
+} from '../../constants'
 import { Presentation } from '../presentation'
 import { ClientNode } from '../client-node'
 import { createHttpTerminator, HttpTerminator } from 'http-terminator'
@@ -52,7 +55,7 @@ export class HttpTransport {
 
     this.http.on(ServerEvents.REQUEST, this.express)
 
-    this.endpoint()
+    this.endpoints()
 
     this.http.listen(server.port, () => {
       this.server.debugger(`Helene HTTP Transport: Listening on ${server.port}`)
@@ -97,36 +100,48 @@ export class HttpTransport {
     return false
   }
 
-  endpoint() {
-    this.express.post('/__h/*', async (req: Request, res: Response) => {
-      const { pathname } = url.parse(req.originalUrl, true)
+  requestHandler = (ns: string) => async (req: Request, res: Response) => {
+    const namespace = this.server.getNamespace(ns)
 
-      const namespace = this.server.getNamespace(pathname.replace('/__h', ''))
+    const transport: RequestTransport = req.body ?? {}
 
-      const transport: RequestTransport = req.body ?? {}
+    if (!transport.payload) {
+      return res.json(
+        Presentation.Outbound.error(
+          {
+            message: Errors.INVALID_REQUEST,
+          },
+          true,
+        ),
+      )
+    }
 
-      if (!transport.payload) {
+    const payload = transport.payload
+
+    const method = namespace.getMethod(payload.method)
+
+    const clientNode = new ClientNode(null, req, res)
+
+    if (!method) {
+      return res.json(
+        Presentation.Outbound.error(
+          {
+            message: Errors.METHOD_NOT_FOUND,
+            method: payload.method,
+          },
+          true,
+        ),
+      )
+    }
+
+    if (method.isProtected) {
+      const serverContext = await this.getServerContext(req, transport.context)
+
+      if (serverContext === false) {
         return res.json(
           Presentation.Outbound.error(
             {
-              message: Errors.INVALID_REQUEST,
-            },
-            true,
-          ),
-        )
-      }
-
-      const payload = transport.payload
-
-      const method = namespace.getMethod(payload.method)
-
-      const clientNode = new ClientNode(null, req, res)
-
-      if (!method) {
-        return res.json(
-          Presentation.Outbound.error(
-            {
-              message: Errors.METHOD_NOT_FOUND,
+              message: Errors.METHOD_FORBIDDEN,
               method: payload.method,
             },
             true,
@@ -134,69 +149,63 @@ export class HttpTransport {
         )
       }
 
-      if (method.isProtected) {
-        const serverContext = await this.getServerContext(
-          req,
-          transport.context,
+      clientNode.authenticated = Boolean(serverContext)
+      clientNode.setContext(serverContext)
+
+      if (!serverContext?.user || !serverContext?.user?._id) {
+        throw new Error(
+          'The auth function must return a user object with a valid "_id" property',
         )
-
-        if (serverContext === false) {
-          return res.json(
-            Presentation.Outbound.error(
-              {
-                message: Errors.METHOD_FORBIDDEN,
-                method: payload.method,
-              },
-              true,
-            ),
-          )
-        }
-
-        clientNode.authenticated = Boolean(serverContext)
-        clientNode.setContext(serverContext)
-
-        if (!serverContext?.user || !serverContext?.user?._id) {
-          throw new Error(
-            'The auth function must return a user object with a valid "_id" property',
-          )
-        }
-
-        clientNode.userId = serverContext.user._id
       }
 
-      const uuid = payload?.uuid ? { uuid: payload.uuid } : null
+      clientNode.userId = serverContext.user._id
+    }
 
-      try {
-        const result = await method.exec(payload.params, clientNode)
+    const uuid = payload?.uuid ? { uuid: payload.uuid } : null
 
-        res.json(result)
-      } catch (error) {
-        console.error(error)
+    try {
+      const result = await method.exec(payload.params, clientNode)
 
-        if (payload.void) return
+      res.json(result)
+    } catch (error) {
+      console.error(error)
 
-        if (error instanceof PublicError) {
-          return Presentation.Outbound.error({
-            message: error.message,
-            stack: error.stack,
-            ...uuid,
-          })
-        }
+      if (payload.void) return
 
-        if (error instanceof SchemaValidationError) {
-          return Presentation.Outbound.error({
-            message: error.message,
-            errors: error.errors,
-            ...uuid,
-          })
-        }
-
+      if (error instanceof PublicError) {
         return Presentation.Outbound.error({
-          message: Errors.INTERNAL_ERROR,
+          message: error.message,
           stack: error.stack,
           ...uuid,
         })
       }
+
+      if (error instanceof SchemaValidationError) {
+        return Presentation.Outbound.error({
+          message: error.message,
+          errors: error.errors,
+          ...uuid,
+        })
+      }
+
+      return Presentation.Outbound.error({
+        message: Errors.INTERNAL_ERROR,
+        stack: error.stack,
+        ...uuid,
+      })
+    }
+  }
+
+  endpoints() {
+    this.express.post('/__h', this.requestHandler(DEFAULT_NAMESPACE).bind(this))
+
+    this.server.namespaces.forEach(namespace => {
+      const endpoint = `/${namespace.nsName}/__h`
+
+      this.express.post(
+        endpoint,
+        this.requestHandler(namespace.nsName).bind(this),
+      )
     })
   }
 
@@ -231,8 +240,6 @@ export class HttpTransport {
    */
   close() {
     return new Promise<void>((resolve, reject) => {
-      console.log('Closing HTTP Transport...')
-
       if (!this.httpTerminator) resolve()
 
       this.httpTerminator

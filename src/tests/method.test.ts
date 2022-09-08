@@ -187,4 +187,14 @@ describe('Methods', function () {
     expect(result1).to.have.property('context').that.is.an('object')
     expect(result2).to.have.property('context').that.is.an('object')
   })
+
+  it('should call a method in the server', async () => {
+    test.server.register('test:method', function ({ a, b }) {
+      return a + b
+    })
+
+    const result = await test.server.call('test:method', { a: 1, b: 2 })
+
+    expect(result).to.equal(3)
+  })
 })

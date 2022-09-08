@@ -33,7 +33,7 @@ describe('HTTP', async () => {
 
     const result = await test.client.call('sum', [7, 7, 7], { http: true })
 
-    expect(capture).to.equal('/__h/')
+    expect(capture).to.equal('/__h')
 
     expect(result).to.be.equals(21)
   })
