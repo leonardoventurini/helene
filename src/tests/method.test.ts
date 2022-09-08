@@ -189,12 +189,17 @@ describe('Methods', function () {
   })
 
   it('should call a method in the server', async () => {
+    let isServer = false
+
     test.server.register('test:method', function ({ a, b }) {
+      isServer = this.isServer
+
       return a + b
     })
 
     const result = await test.server.call('test:method', { a: 1, b: 2 })
 
     expect(result).to.equal(3)
+    expect(isServer).to.be.true
   })
 })

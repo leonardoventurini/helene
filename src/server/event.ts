@@ -48,13 +48,6 @@ export class Event {
       params,
     })
 
-    this.server.debugger('Event Handler', {
-      channel,
-      name: this.name,
-      payload,
-      namespace: this.namespace.nsName,
-    })
-
     if (this.server?.redisTransport?.pub) {
       this.server.redisTransport
         .publish(this.name, this.namespace.nsName, channel, payload)

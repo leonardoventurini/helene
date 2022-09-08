@@ -14,6 +14,7 @@ import { isString } from 'lodash'
 import { check } from '../utils/check'
 import { Methods } from './methods'
 import { Client } from '../client/client'
+import { Environment } from '../utils/environment'
 
 declare global {
   // eslint-disable-next-line no-var
@@ -112,6 +113,10 @@ export class Server extends Namespace {
       : null
 
     this.namespaces.set(DEFAULT_NAMESPACE, this)
+
+    if (Environment.isDevelopment) {
+      this.instrumentDebugger()
+    }
   }
 
   get express() {
@@ -169,11 +174,11 @@ export class Server extends Namespace {
   }
 
   debugger(...args) {
-    if (this.debug) this.emit(ClientEvents.DEBUGGER, args)
+    if (Environment.isDevelopment) this.emit(ClientEvents.DEBUGGER, args)
   }
 
   async call(method: string, params?: MethodParams): Promise<any> {
-    this.debugger(`Calling ${method}`, params)
+    this.debugger(`[server] Calling ${method}`, params)
 
     const methodInstance = this.methods.get(method)
 

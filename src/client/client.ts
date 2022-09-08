@@ -134,7 +134,7 @@ export class Client extends ClientChannel {
   }
 
   debugger(...args) {
-    if (this.debug) console.log(...args)
+    if (this.debug) console.debug(...args)
   }
 
   async loadContext() {
@@ -450,16 +450,6 @@ export class Client extends ClientChannel {
         content,
         isInbound: true,
         timestamp: Date.now(),
-      })
-    })
-
-    this.on(ClientEvents.DEBUGGER, content => {
-      sendLogMessage({
-        id: generateId(),
-        content,
-        isInbound: true,
-        timestamp: Date.now(),
-        filterType: 'debugger',
       })
     })
   }
