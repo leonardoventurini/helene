@@ -124,11 +124,12 @@ export class Client extends ClientChannel {
     this.on(ClientEvents.OPEN, this.init)
     this.on(ClientEvents.ERROR, console.error)
 
+    this.debugger('Client Created', this.uuid)
+
     if (Environment.isDevelopment && Environment.isBrowser) {
       window.Helene = this
       this.attachDevTools().then(() => {
-        console.debug('Helene DevTools attached.')
-        this.debugger('Client Created', this.uuid)
+        this.debugger('DevTools attached')
       })
     }
   }
@@ -432,11 +433,9 @@ export class Client extends ClientChannel {
 
     await this.subscribe(ClientEvents.DEBUGGER)
 
-    // @ts-ignore
-    const sendLogMessage = window.__helene_devtools_log_message
-
     this.on(ClientEvents.OUTBOUND_MESSAGE, content => {
-      sendLogMessage({
+      // @ts-ignore
+      window.__helene_devtools_log_message({
         id: generateId(),
         content,
         isOutbound: true,
@@ -445,7 +444,8 @@ export class Client extends ClientChannel {
     })
 
     this.on(ClientEvents.INBOUND_MESSAGE, content => {
-      sendLogMessage({
+      // @ts-ignore
+      window.__helene_devtools_log_message({
         id: generateId(),
         content,
         isInbound: true,
