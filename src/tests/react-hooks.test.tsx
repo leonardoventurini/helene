@@ -49,7 +49,7 @@ describe('React Hooks', () => {
     const { result, rerender } = renderHook(
       ({ event }: any) =>
         useEvent(
-          event,
+          { event, subscribe: true },
           val => {
             value = val
           },

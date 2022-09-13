@@ -180,7 +180,9 @@ export const useMethod = ({
     if (!lazy) refreshCallback()
   }, [client, method, memoParams, debounced])
 
-  useEvent(event, refreshCallback, [refreshCallback], { channel })
+  useEvent({ event, channel, subscribe: true }, refreshCallback, [
+    refreshCallback,
+  ])
 
   useEffect(
     () => () => {

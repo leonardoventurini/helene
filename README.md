@@ -299,11 +299,13 @@ const { authenticated, context, client, loading, ready } = useAuth()
 
 ```jsx
 useEvent(
-  event,
+  { event, channel, subscribe: true },
   value => console.log(value),
   [],
 )
 ```
+
+> This hook can be used both locally and subscribed to a server event.
 
 ## Roadmap
 

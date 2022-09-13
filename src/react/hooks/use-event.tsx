@@ -3,11 +3,16 @@ import { useClient } from './use-client'
 import { NO_CHANNEL } from '../../constants'
 import { isString } from 'lodash'
 
+export type UseEventParams = {
+  event: string
+  channel?: string
+  subscribe?: boolean
+}
+
 export function useEvent(
-  event: string,
+  { event, channel = NO_CHANNEL, subscribe = false }: UseEventParams,
   fn: (...args: any[]) => void,
   deps: any[] = [],
-  { channel = NO_CHANNEL } = {},
 ) {
   const [ready, setReady] = useState(false)
   const client = useClient()
@@ -22,18 +27,26 @@ export function useEvent(
 
     const ch = client.channel(channel)
 
-    ch.subscribe(event)
-      .then(result => {
-        if (isString(result[event]))
-          throw new Error(`[${event}] ${result[event]}`)
-        ch.on(event, refreshCallback)
-        setReady(true)
-      })
-      .catch(console.error)
+    if (subscribe) {
+      ch.subscribe(event)
+        .then(result => {
+          if (isString(result[event]))
+            throw new Error(`[${event}] ${result[event]}`)
+          ch.on(event, refreshCallback)
+          setReady(true)
+        })
+        .catch(console.error)
+    } else {
+      ch.on(event, refreshCallback)
+      setReady(true)
+    }
 
     return () => {
       ch.off(event, refreshCallback)
-      ch.unsubscribe(event).catch(console.error)
+
+      if (subscribe) {
+        ch.unsubscribe(event).catch(console.error)
+      }
     }
   }, [client, channel, event, refreshCallback])
 
