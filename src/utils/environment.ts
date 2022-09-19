@@ -3,7 +3,7 @@ export namespace Environment {
     typeof process !== 'undefined' && !!process.versions?.node
   export const isBrowser = typeof window === 'object'
   export const isTest =
-    typeof process !== 'undefined' && process?.env?.NODE_ENV === 'test'
+    typeof process !== 'undefined' && process.env.NODE_ENV === 'test'
   export const isDevelopment =
-    typeof process !== 'undefined' && process?.env?.NODE_ENV === 'development'
+    typeof process !== 'undefined' && process.env.NODE_ENV === 'development'
 }
