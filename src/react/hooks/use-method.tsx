@@ -207,5 +207,6 @@ export const useMethod = ({
     loading,
     refresh: refreshCallback,
     optimistic,
+    client,
   }
 }
