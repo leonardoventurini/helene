@@ -18,12 +18,6 @@ import { Environment } from '../utils/environment'
 declare global {
   // eslint-disable-next-line no-var
   var Helene: Server
-
-  namespace NodeJS {
-    interface Global {
-      Helene: Server
-    }
-  }
 }
 
 export type AuthFunction = (this: ClientNode, context: any) => any

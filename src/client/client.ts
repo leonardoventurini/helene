@@ -127,6 +127,7 @@ export class Client extends ClientChannel {
     this.debugger('Client Created', this.uuid)
 
     if (Environment.isDevelopment && Environment.isBrowser) {
+      // @ts-ignore
       window.Helene = this
       this.attachDevTools().then(() => {
         this.debugger('DevTools attached')
