@@ -8,7 +8,11 @@ import { Namespace } from './namespace'
 export type EventOptions = {
   protected?: boolean
   ns?: string
-  shouldSubscribe?: (client: ClientNode) => boolean
+  shouldSubscribe?: (
+    client: ClientNode,
+    eventName: string,
+    channel: string,
+  ) => boolean
 }
 
 export class Event {
@@ -20,7 +24,11 @@ export class Event {
   channel: ServerChannel
   server: Server
 
-  shouldSubscribe: (client: ClientNode) => boolean = () => true
+  shouldSubscribe: (
+    client: ClientNode,
+    eventName: string,
+    channel: string,
+  ) => boolean = () => true
 
   constructor(
     name: string,

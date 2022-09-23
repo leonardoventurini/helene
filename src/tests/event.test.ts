@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { TestUtility } from '../utils/test-utility'
-import { ClientEvents } from '../constants'
+import { ClientEvents, NO_CHANNEL } from '../constants'
 
 describe('Events', function () {
   const test = new TestUtility()
@@ -88,8 +88,16 @@ describe('Events', function () {
   })
 
   it('should allow subscription based on condition', async () => {
+    let params = {
+      client: null,
+      event: null,
+      channel: null,
+    }
+
     test.server.events.add('open:event', {
-      shouldSubscribe() {
+      shouldSubscribe(client, event, channel) {
+        params = { client, event, channel }
+
         return true
       },
     })
@@ -103,5 +111,9 @@ describe('Events', function () {
     const eventTimeout = await test.client.timeout('open:event')
 
     expect(eventTimeout).to.be.false
+
+    expect(params?.client?.constructor.name).to.equal('ClientNode')
+    expect(params.event).to.equal('open:event')
+    expect(params.channel).to.equal(NO_CHANNEL)
   })
 })

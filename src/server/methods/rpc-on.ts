@@ -19,7 +19,7 @@ export const rpcOn = (server, namespace) =>
 
         if (
           (event.isProtected && !this.authenticated) ||
-          !event.shouldSubscribe(this)
+          !event.shouldSubscribe(this, eventName, channel)
         ) {
           return {
             ...acc,
