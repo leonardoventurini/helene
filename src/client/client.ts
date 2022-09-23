@@ -439,7 +439,7 @@ export class Client extends ClientChannel {
 
     this.on(ClientEvents.OUTBOUND_MESSAGE, content => {
       // @ts-ignore
-      window.__helene_devtools_log_message({
+      window.__helene_devtools_log_message?.({
         id: generateId(),
         content,
         isOutbound: true,
@@ -449,7 +449,7 @@ export class Client extends ClientChannel {
 
     this.on(ClientEvents.INBOUND_MESSAGE, content => {
       // @ts-ignore
-      window.__helene_devtools_log_message({
+      window.__helene_devtools_log_message?.({
         id: generateId(),
         content,
         isInbound: true,
