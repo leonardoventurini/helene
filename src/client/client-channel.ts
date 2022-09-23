@@ -89,11 +89,11 @@ export class ClientChannel extends EventEmitter2 {
     return new Promise(resolve => {
       const timeout = setTimeout(() => resolve(true), timeoutMs)
 
-      this.wait(event).then(() => {
+      this.wait(event).then(res => {
         if (timeout) {
           clearTimeout(timeout)
-          resolve(false)
         }
+        resolve(false)
       })
     })
   }

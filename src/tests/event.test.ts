@@ -68,4 +68,40 @@ describe('Events', function () {
 
     expect(eventTimeout).to.be.true
   })
+
+  it('should prevent subscription based on condition', async () => {
+    const client = await test.createClient()
+
+    test.server.events.add('protected:event', {
+      shouldSubscribe: () => false,
+    })
+
+    const result = await client.subscribe('protected:event')
+
+    expect(result).to.have.property('protected:event').that.is.false
+
+    test.server.defer('protected:event', true)
+
+    const eventTimeout = await test.client.timeout('protected:event')
+
+    expect(eventTimeout).to.be.true
+  })
+
+  it('should allow subscription based on condition', async () => {
+    test.server.events.add('open:event', {
+      shouldSubscribe() {
+        return true
+      },
+    })
+
+    const result = await test.client.subscribe('open:event')
+
+    expect(result).to.have.property('open:event').that.is.true
+
+    test.server.defer('open:event', true)
+
+    const eventTimeout = await test.client.timeout('open:event')
+
+    expect(eventTimeout).to.be.false
+  })
 })

@@ -17,7 +17,10 @@ export const rpcOn = (server, namespace) =>
           }
         }
 
-        if (event.isProtected && !this.authenticated) {
+        if (
+          (event.isProtected && !this.authenticated) ||
+          !event.shouldSubscribe(this)
+        ) {
           return {
             ...acc,
             [eventName]: false,
