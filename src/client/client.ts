@@ -319,7 +319,10 @@ export class Client extends ClientChannel {
         method,
         resolve,
         reject: this.errorHandler
-          ? error => reject(this.errorHandler(error))
+          ? error => {
+              this.errorHandler(error)
+              reject(error)
+            }
           : reject,
         timeoutId,
       })
