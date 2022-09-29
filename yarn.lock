@@ -1203,10 +1203,10 @@ ee-first@1.1.1:
   resolved "https://registry.npmjs.org/ee-first/-/ee-first-1.1.1.tgz"
   integrity sha1-WQxhFWsK4vTwJVcyoViyZrxWsh0=
 
-ejson2@^1.0.10:
-  version "1.0.10"
-  resolved "https://registry.yarnpkg.com/ejson2/-/ejson2-1.0.10.tgz#1a7d3fedbf11c487ed562f7e122a2da83ee0f317"
-  integrity sha512-hfeMk0hZoCEy39caWAq9gKebyu+/ZgVEsRxMjvDpBQchDZh1l5gTy6HFr41APzcvS0BvnYw1pQW/oSkVIVp/Qw==
+ejson2@^1.0.11:
+  version "1.0.11"
+  resolved "https://registry.yarnpkg.com/ejson2/-/ejson2-1.0.11.tgz#5efaf2b325a269b9ce9470e4a0a58bd88dad7403"
+  integrity sha512-wt4+aZGWMY7+heennV/DvSdPqXhpE5I4ykdtnzr1eslcHGO3Nen8IP4mn3tcXiBUJol+Wu3nFX+F8vtkH3DTNg==
   dependencies:
     base64-js "^1.5.1"
 
