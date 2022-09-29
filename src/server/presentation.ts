@@ -97,7 +97,7 @@ export namespace Presentation {
   }
 
   export function encode<T = Payload>(payload: T): string {
-    return EJSON.stringify(payload, Helpers.getCircularReplacer())
+    return EJSON.stringify(payload)
   }
 
   export namespace Inbound {
