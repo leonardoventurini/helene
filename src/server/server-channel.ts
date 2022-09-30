@@ -14,6 +14,12 @@ export class ServerChannel extends EventEmitter2 {
     super()
     this.chName = name
     this.events = new EventManager(this)
+
+    this.onAny(event => {
+      if (!this.events.has(event as string)) {
+        console.warn('Event Not Registered:', event)
+      }
+    })
   }
 
   setServer(server: Server) {
