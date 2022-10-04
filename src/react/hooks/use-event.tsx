@@ -7,10 +7,16 @@ export type UseEventParams = {
   event: string
   channel?: string
   subscribe?: boolean
+  active?: boolean
 }
 
 export function useEvent(
-  { event, channel = NO_CHANNEL, subscribe = false }: UseEventParams,
+  {
+    event,
+    channel = NO_CHANNEL,
+    subscribe = false,
+    active = true,
+  }: UseEventParams,
   fn: (...args: any[]) => void,
   deps: any[] = [],
 ) {
@@ -21,6 +27,7 @@ export function useEvent(
   useEffect(() => setReady(false), [client, channel, event, refreshCallback])
 
   useEffect(() => {
+    if (!active) return
     if (!event) return
     if (!client) return
     if (!channel) return
