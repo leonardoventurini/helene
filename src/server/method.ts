@@ -62,16 +62,20 @@ export class Method {
   }
 
   async exec(params: MethodParams, node?: ClientNode) {
+    let cleanParams = params
+
     if (this.schema) {
       try {
         await this.schema.validate(params)
+
+        cleanParams = this.schema.cast(params, { stripUnknown: true })
       } catch (error) {
         console.error(error)
         throw new SchemaValidationError(Errors.INVALID_PARAMS, error.errors)
       }
     }
 
-    const result = await this.runMiddleware(params, node)
+    const result = await this.runMiddleware(cleanParams, node)
 
     return HeleneAsyncLocalStorage.run(
       { executionId: uuid(), context: node.context },
