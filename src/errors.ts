@@ -32,4 +32,5 @@ export enum Errors {
   PARAMS_NOT_FOUND = 'Params Not Found',
   PARSE_ERROR = 'Parse Error',
   SUBSCRIPTION_ERROR = 'Subscription Error',
+  RATE_LIMIT_EXCEEDED = 'Rate Limit Exceeded',
 }

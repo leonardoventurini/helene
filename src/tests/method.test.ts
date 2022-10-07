@@ -6,6 +6,7 @@ import { ClientNode } from '../server/client-node'
 import { Observable } from 'rxjs'
 import { HeleneAsyncLocalStorage } from '../server/helene-async-local-storage'
 import { boolean, object } from 'yup'
+import { range } from 'lodash'
 
 describe('Methods', function () {
   const test = new TestUtility()
@@ -201,5 +202,21 @@ describe('Methods', function () {
 
     expect(result).to.equal(3)
     expect(isServer).to.be.true
+  })
+
+  it('should throw when exceeding rate limit', async () => {
+    const server = await test.createRandomSrv({ globalInstance: false })
+
+    const client = await test.createClient({ port: server.port })
+
+    server.register('test:method', v => v)
+
+    const call = async () => {
+      for (const v of range(1, 200)) {
+        await client.call('test:method', v)
+      }
+    }
+
+    await expect(call()).to.be.rejectedWith(Errors.RATE_LIMIT_EXCEEDED)
   })
 })

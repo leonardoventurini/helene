@@ -104,6 +104,14 @@ export class WebSocketTransport {
     payload: Presentation.MethodCallPayload,
     node: ClientNode,
   ): Promise<void> {
+    if (!node.limiter.tryRemoveTokens(1)) {
+      return node.error({
+        uuid: payload.uuid,
+        message: Errors.RATE_LIMIT_EXCEEDED,
+        method: payload.method,
+      })
+    }
+
     const uuid = payload?.uuid ? { uuid: payload.uuid } : null
 
     if (payload.method !== Methods.KEEP_ALIVE)

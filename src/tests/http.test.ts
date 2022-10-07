@@ -3,6 +3,7 @@ import { Errors } from '../errors'
 import { TestUtility } from '../utils/test-utility'
 import path from 'path'
 import request from 'supertest'
+import { range } from 'lodash'
 
 describe('HTTP', async () => {
   const test = new TestUtility()
@@ -81,6 +82,22 @@ describe('HTTP', async () => {
     })
 
     expect(result).to.be.true
+  })
+
+  it('should fail when exceeding rate limit', async () => {
+    const server = await test.createRandomSrv({ globalInstance: false })
+
+    const client = await test.createClient({ port: server.port })
+
+    server.register('test:method', v => v)
+
+    const call = async () => {
+      for (const v of range(1, 200)) {
+        await client.call('test:method', v, { http: true })
+      }
+    }
+
+    await expect(call()).to.be.rejectedWith(/429/)
   })
 
   describe('client.href()', () => {

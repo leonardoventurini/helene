@@ -3,6 +3,15 @@ import { Server } from './server'
 import { Namespace } from './namespace'
 import { EventManager } from './event-manager'
 import { Presentation } from './presentation'
+import { HttpTransportEvents } from './transports/http-transport'
+import { ServerEvents } from '../constants'
+import { WebSocketTransportEvents } from './transports/websocket-transport'
+
+const AllEvents: string[] = [
+  ...Object.values(HttpTransportEvents),
+  ...Object.values(ServerEvents),
+  ...Object.values(WebSocketTransportEvents),
+]
 
 export class ServerChannel extends EventEmitter2 {
   chName: string
@@ -16,7 +25,10 @@ export class ServerChannel extends EventEmitter2 {
     this.events = new EventManager(this)
 
     this.onAny(event => {
-      if (!this.events.has(event as string)) {
+      if (
+        !this.events.has(event as string) &&
+        !AllEvents.includes(event as string)
+      ) {
         console.warn('Event Not Registered:', event)
       }
     })

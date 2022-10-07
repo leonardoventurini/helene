@@ -9,6 +9,7 @@ import { Presentation } from './presentation'
 import { Request, Response } from 'express'
 import { HeleneAsyncLocalStorage } from './helene-async-local-storage'
 import { ObjectId } from '../mongoose'
+import { RateLimiter } from 'limiter'
 
 export type ClientNodeContext = Record<string, any>
 
@@ -22,11 +23,17 @@ export class ClientNode {
   req?: Request = {} as Request
   res?: Response = {} as Response
   isServer = false
+  limiter: RateLimiter
 
   constructor(socket?: WebSocket, req?: Request, res?: Response) {
     this.socket = socket
     this.req = req
     this.res = res
+
+    this.limiter = new RateLimiter({
+      tokensPerInterval: 60,
+      interval: 60 * 1000,
+    })
   }
 
   get storage() {

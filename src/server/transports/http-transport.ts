@@ -11,6 +11,8 @@ import {
 import { Presentation } from '../presentation'
 import { ClientNode } from '../client-node'
 import { createHttpTerminator, HttpTerminator } from 'http-terminator'
+
+import rateLimit from 'express-rate-limit'
 import MethodCallPayload = Presentation.MethodCallPayload
 
 declare module 'express' {
@@ -44,8 +46,16 @@ export class HttpTransport {
       server: this.http,
     })
 
+    const limiter = rateLimit({
+      windowMs: 60 * 1000,
+      max: 60,
+      standardHeaders: true,
+      legacyHeaders: false,
+    })
+
     this.express = express()
     this.express.use(express.json())
+    this.express.use(limiter)
 
     if (origins) this.setCORS(origins)
 
