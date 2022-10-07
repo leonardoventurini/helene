@@ -22,6 +22,13 @@ declare global {
 
 export type AuthFunction = (this: ClientNode, context: any) => any
 
+export type RateLimit =
+  | boolean
+  | {
+      max: number
+      interval: number
+    }
+
 export type ServerOptions = {
   host?: string
   port?: number
@@ -33,8 +40,8 @@ export type ServerOptions = {
   requestListener?: RequestListener
   globalInstance?: boolean
   allowedContextKeys?: string[]
-
   useRedis?: boolean
+  rateLimit?: RateLimit
 }
 
 export class Server extends Namespace {
@@ -47,11 +54,10 @@ export class Server extends Namespace {
   port: number
   requestListener: RequestListener
   allowedContextKeys: string[]
-
   isAuthEnabled = false
   auth: AuthFunction
-
   debug = false
+  rateLimit: RateLimit
 
   static ERROR_EVENT = 'error'
 
@@ -66,6 +72,7 @@ export class Server extends Namespace {
     globalInstance = true,
     allowedContextKeys = [],
     useRedis = false,
+    rateLimit = false,
   }: ServerOptions = {}) {
     super(DEFAULT_NAMESPACE)
 
@@ -89,9 +96,11 @@ export class Server extends Namespace {
 
     this.uuid = uuid()
 
+    this.rateLimit = rateLimit
+
     this.allowedContextKeys = allowedContextKeys
 
-    this.httpTransport = new HttpTransport(this, origins)
+    this.httpTransport = new HttpTransport(this, origins, this.rateLimit)
 
     this.webSocketTransport = new WebSocketTransport(this, {
       host: this.host,

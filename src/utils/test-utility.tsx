@@ -44,6 +44,7 @@ export class TestUtility {
       const server = new Server({
         host: this.host,
         port: opts?.port ?? this.port,
+        rateLimit: true,
         ...opts,
       })
 

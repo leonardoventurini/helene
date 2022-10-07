@@ -50,7 +50,12 @@ export class WebSocketTransport {
 
     const namespace = this.server.getNamespace(pathname, true)
 
-    const node = new ClientNode(socket)
+    const node = new ClientNode(
+      socket,
+      undefined,
+      undefined,
+      this.server.rateLimit,
+    )
 
     node.setId(request)
 
@@ -104,7 +109,7 @@ export class WebSocketTransport {
     payload: Presentation.MethodCallPayload,
     node: ClientNode,
   ): Promise<void> {
-    if (!node.limiter.tryRemoveTokens(1)) {
+    if (node.limiter && !node.limiter.tryRemoveTokens(1)) {
       return node.error({
         uuid: payload.uuid,
         message: Errors.RATE_LIMIT_EXCEEDED,

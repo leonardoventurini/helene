@@ -1,7 +1,7 @@
 import http from 'http'
 import express, { Request, Response } from 'express'
 import cors from 'cors'
-import { Server } from '../server'
+import { RateLimit, Server } from '../server'
 import { Errors, PublicError, SchemaValidationError } from '../../errors'
 import {
   DEFAULT_NAMESPACE,
@@ -38,7 +38,7 @@ export class HttpTransport {
   httpTerminator: HttpTerminator
   express: express.Express
 
-  constructor(server: Server, origins?: string[]) {
+  constructor(server: Server, origins: string[], limit: RateLimit) {
     this.server = server
     this.http = http.createServer()
 
@@ -46,16 +46,20 @@ export class HttpTransport {
       server: this.http,
     })
 
-    const limiter = rateLimit({
-      windowMs: 60 * 1000,
-      max: 60,
-      standardHeaders: true,
-      legacyHeaders: false,
-    })
-
     this.express = express()
     this.express.use(express.json())
-    this.express.use(limiter)
+
+    if (limit) {
+      const limiter = rateLimit({
+        ...(limit === true
+          ? { windowMs: 60 * 1000, max: 120 }
+          : { windowMs: limit.interval, max: limit.max }),
+        standardHeaders: true,
+        legacyHeaders: false,
+      })
+
+      this.express.use(limiter)
+    }
 
     if (origins) this.setCORS(origins)
 
