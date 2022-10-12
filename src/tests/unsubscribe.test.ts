@@ -5,7 +5,7 @@ describe('Unsubscribe', () => {
   const test = new TestUtility()
 
   it('should unsubscribe from an event', async () => {
-    await test.server.events.add('test:event')
+    await test.server.addEvent('test:event')
 
     await test.client.subscribe('test:event')
 
@@ -15,8 +15,8 @@ describe('Unsubscribe', () => {
   })
 
   it('should unsubscribe from multiple events', async () => {
-    await test.server.events.add('test:event:1')
-    await test.server.events.add('test:event:2')
+    await test.server.addEvent('test:event:1')
+    await test.server.addEvent('test:event:2')
 
     await test.client.subscribe(['test:event:1', 'test:event:2'])
 

@@ -9,7 +9,7 @@ describe('Channel', () => {
   it('should set boilerplate events to the namespace and add them to new channels', async () => {
     const event = 'boilerplate:event'
 
-    test.server.events.add(event)
+    test.server.addEvent(event)
 
     expect(test.server).to.have.property('eventBlueprints').that.has.lengthOf(2)
 
@@ -26,7 +26,7 @@ describe('Channel', () => {
     const channelName = Presentation.uuid()
     const channel = test.server.channel(channelName)
 
-    channel.events.add(event)
+    channel.addEvent(event)
 
     expect(test.server.events.has(event)).to.be.true
 
@@ -41,8 +41,8 @@ describe('Channel', () => {
     const otherClient = await test.createClient()
 
     const event = 'channel:event'
-    test.server.events.add(event)
-    test.server.channel(channel).events.add(event)
+    test.server.addEvent(event)
+    test.server.channel(channel).addEvent(event)
 
     await otherClient.subscribe(event)
     await test.client.channel(channel).subscribe(event)

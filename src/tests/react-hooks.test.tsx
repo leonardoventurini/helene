@@ -64,7 +64,7 @@ describe('React Hooks', () => {
   })
 
   it('useEvent', async () => {
-    test.server.events.add('set:value')
+    test.server.addEvent('set:value')
 
     let value = 0
 
@@ -100,7 +100,7 @@ describe('React Hooks', () => {
 
     expect(unsub.called).to.be.false
 
-    test.server.events.add('another:event')
+    test.server.addEvent('another:event')
 
     rerender({ event: 'another:event' })
 

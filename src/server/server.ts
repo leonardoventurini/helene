@@ -123,7 +123,7 @@ export class Server extends ServerChannel {
       this.instrumentDebugger()
     }
 
-    this.events.add(HeleneEvents.METHOD_REFRESH)
+    this.addEvent(HeleneEvents.METHOD_REFRESH)
 
     this.channels.set(NO_CHANNEL, this)
   }
@@ -176,7 +176,7 @@ export class Server extends ServerChannel {
   }
 
   instrumentDebugger() {
-    this.events.add(ClientEvents.DEBUGGER)
+    this.addEvent(ClientEvents.DEBUGGER)
   }
 
   createDefaultMethods() {
@@ -195,7 +195,7 @@ export class Server extends ServerChannel {
 
   deleteClient(node: ClientNode) {
     this.clients.delete(node._id)
-    this.channels.forEach(channel => channel.events.deleteClientNode(node))
+    this.channels.forEach(channel => channel.deleteClientNode(node))
   }
 
   register(method: string, fn: MethodFunction, opts?: MethodOptions) {
@@ -222,6 +222,6 @@ export class Server extends ServerChannel {
   }
 
   addEventToAllChannels(name: string, opts?: EventOptions) {
-    this.channels.forEach(channel => channel.events.add(name, opts, false))
+    this.channels.forEach(channel => channel.addEvent(name, opts, false))
   }
 }

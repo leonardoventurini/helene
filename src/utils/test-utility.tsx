@@ -85,7 +85,7 @@ export class TestUtility {
   }
 
   async createEvent(event: string, channel: string = NO_CHANNEL) {
-    this.server.events.add(event)
+    this.server.addEvent(event)
     await this.client.channel(channel).subscribe(event)
   }
 

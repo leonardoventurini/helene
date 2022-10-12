@@ -183,7 +183,7 @@ You can group these clients in different ways by using channels.
 Events need to be declared first:
 
 ```js
-server.events.add('event', { protected: false })
+server.addEvent('event', { protected: false })
 ```
 
 Then you can subscribe to it from the client:
@@ -217,7 +217,7 @@ server.channel('chat:1')
 or chain it like so:
 
 ```js
-server.channel('chat:1').events.add('message')
+server.channel('chat:1').addEvent('message')
 
 server.channel('chat:1').emit('message', { 
   author: 'John Doe', 

@@ -56,7 +56,7 @@ describe('Events', function () {
   it('should try to subscribe to a protected event while unauthenticated and fail', async () => {
     const client = await test.createClient()
 
-    test.server.events.add('protected:event', { protected: true })
+    test.server.addEvent('protected:event', { protected: true })
 
     const result = await client.subscribe('protected:event')
 
@@ -72,7 +72,7 @@ describe('Events', function () {
   it('should prevent subscription based on condition', async () => {
     const client = await test.createClient()
 
-    test.server.events.add('protected:event', {
+    test.server.addEvent('protected:event', {
       shouldSubscribe: () => false,
     })
 
@@ -94,7 +94,7 @@ describe('Events', function () {
       channel: null,
     }
 
-    test.server.events.add('open:event', {
+    test.server.addEvent('open:event', {
       shouldSubscribe(client, event, channel) {
         params = { client, event, channel }
 

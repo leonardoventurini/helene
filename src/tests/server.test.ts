@@ -87,4 +87,30 @@ describe('Server', function () {
 
     await server.close()
   })
+
+  it('should delete client nodes on disconnect by close', async () => {
+    const server = await test.createRandomSrv({ globalInstance: false })
+
+    server.addEvent('test')
+
+    const client = await test.createClient({ port: server.port })
+
+    server.channel('test:channel')
+
+    await client.channel('test:channel').subscribe('test')
+
+    expect(server.clients.size).to.equal(1)
+
+    expect(
+      server.channels.get('test:channel').events.get('test').clients.size,
+    ).to.equal(1)
+
+    await client.close()
+
+    expect(server.clients.size).to.equal(0)
+
+    expect(
+      server.channels.get('test:channel').events.get('test').clients.size,
+    ).to.equal(0)
+  })
 })

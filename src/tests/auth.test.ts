@@ -73,7 +73,7 @@ describe('Auth', async () => {
   })
 
   it('should allow subscription only to the channel of the user', async () => {
-    test.server.events.add('protected:event', {
+    test.server.addEvent('protected:event', {
       user: true,
     })
 
