@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useClient } from './use-client'
 import memoizee from 'memoizee'
-import { ClientEvents, NO_CHANNEL } from '../../constants'
+import { ClientEvents, HeleneEvents, NO_CHANNEL } from '../../constants'
 import { isFunction, noop } from 'lodash'
 import { useDebouncedCallback } from 'use-debounce'
 import { useEvent } from './use-event'
@@ -129,7 +129,7 @@ export const useMethod = ({
 
   const optimistic = useCallback(
     cb => {
-      if (!isFunction(cb)) throw new Error('expected a function')
+      if (!isFunction(cb)) throw new Error('Function Expected')
 
       const simulatedResult = cb(result)
 
@@ -184,6 +184,20 @@ export const useMethod = ({
     refreshCallback,
   ])
 
+  useEvent(
+    {
+      event: HeleneEvents.METHOD_REFRESH,
+      channel,
+      subscribe: true,
+    },
+    (refreshMethod: string) => {
+      if (refreshMethod === method) {
+        refreshCallback()
+      }
+    },
+    [refreshCallback],
+  )
+
   useEffect(
     () => () => {
       debouncedRefresh.cancel()
@@ -198,6 +212,7 @@ export const useMethod = ({
       loading: false,
       refresh: noop,
       optimistic: noop,
+      client,
     }
   }
 

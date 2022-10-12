@@ -26,8 +26,8 @@ export class TestUtility {
     })
 
     afterEach(async () => {
-      await this.server?.close()
       await this.client?.close()
+      await this.server?.close()
     })
   }
 

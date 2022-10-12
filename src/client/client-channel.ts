@@ -45,6 +45,7 @@ export class ClientChannel extends EventEmitter2 {
     this.client.debugger('Unsubscribing from', this.name, event)
 
     if (!event) return
+    if (!this.client.clientSocket.ready) return
 
     const channel = this.name
     const events = Helpers.ensureArray(event)

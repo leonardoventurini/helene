@@ -15,20 +15,50 @@ describe('React Hooks', () => {
     expect(screen.queryByRole('message').textContent).to.equal('Hello World')
   })
 
-  it('useMethod', async () => {
-    test.server.register('echo', value => value)
+  describe('useMethod', () => {
+    it('should call the method', async () => {
+      test.server.register('echo', value => value)
 
-    const { wrapper } = test
+      const { wrapper } = test
 
-    const { result } = renderHook(
-      () => useMethod({ method: 'echo', params: 'test' }),
-      { wrapper },
-    )
+      const { result } = renderHook(
+        () => useMethod({ method: 'echo', params: 'test' }),
+        { wrapper },
+      )
 
-    await waitFor(() => {
-      expect(result.current).to.containSubset({
-        result: 'test',
-        loading: false,
+      await waitFor(() => {
+        expect(result.current).to.containSubset({
+          result: 'test',
+          loading: false,
+        })
+      })
+    })
+
+    it('should refresh method', async () => {
+      let count = 0
+
+      test.server.register('count', () => ++count)
+
+      const { wrapper } = test
+
+      const { result } = renderHook(() => useMethod({ method: 'count' }), {
+        wrapper,
+      })
+
+      await waitFor(() => {
+        expect(result.current).to.containSubset({
+          result: 1,
+          loading: false,
+        })
+      })
+
+      test.server.refresh('count')
+
+      await waitFor(() => {
+        expect(result.current).to.containSubset({
+          result: 2,
+          loading: false,
+        })
       })
     })
   })
