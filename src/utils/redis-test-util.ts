@@ -1,49 +1,33 @@
-import {
-  createClient,
-  RedisClientOptions,
-  RedisClientType,
-  RedisDefaultModules,
-  RedisFunctions,
-  RedisModules,
-  RedisScripts,
-} from 'redis'
+import { createClient, RedisClientOptions } from 'redis'
 
 export class RedisTestUtil {
-  pub: RedisClientType<
-    RedisDefaultModules & RedisModules,
-    RedisFunctions,
-    RedisScripts
-  >
-  sub: RedisClientType<
-    RedisDefaultModules & RedisModules,
-    RedisFunctions,
-    RedisScripts
-  >
+  pub: any
+  sub: any
 
   constructor(opts?: RedisClientOptions) {
     this.connect(opts).catch(console.error)
   }
 
   async connect(opts: RedisClientOptions) {
-    const defaultOptions = {
-      pkg: 'ioredis',
-      host: '127.0.0.1',
-      auth_pass: null,
-      port: 6379,
-      database: 0,
-      namespace: 'helene',
+    const defaultOptions: RedisClientOptions = {
+      url: 'redis://localhost:6379',
     }
 
-    this.pub = createClient({ ...defaultOptions, ...opts })
-    this.sub = createClient({ ...defaultOptions, ...opts })
+    before(async () => {
+      this.pub = createClient({ ...defaultOptions, ...opts })
+      this.sub = createClient({ ...defaultOptions, ...opts })
 
-    await this.pub.connect()
-    await this.sub.connect()
+      await this.pub.connect()
+      await this.sub.connect()
+    })
 
     // Need to quit otherwise it hangs the server.
     after(async () => {
       await this.pub.quit()
       await this.sub.quit()
+
+      this.pub = undefined
+      this.sub = undefined
     })
   }
 

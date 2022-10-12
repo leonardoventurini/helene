@@ -1,12 +1,4 @@
-import {
-  createClient,
-  RedisClientOptions,
-  RedisClientType,
-  RedisDefaultModules,
-  RedisFunctions,
-  RedisModules,
-  RedisScripts,
-} from 'redis'
+import { createClient, RedisClientOptions } from 'redis'
 import { NO_CHANNEL, RedisListeners, ServerEvents } from '../../constants'
 import { Server } from '../server'
 import { Presentation } from '../presentation'
@@ -21,24 +13,13 @@ export type RedisMessage = {
  * This is mainly used to propagate events to other instances when running node in a cluster.
  */
 export class RedisTransport {
-  pub: RedisClientType<
-    RedisDefaultModules & RedisModules,
-    RedisFunctions,
-    RedisScripts
-  >
-  sub: RedisClientType<
-    RedisDefaultModules & RedisModules,
-    RedisFunctions,
-    RedisScripts
-  >
+  pub: any
+  sub: any
+
   server: Server
 
-  static defaultRedisOpts = {
-    pkg: 'ioredis',
-    auth_pass: null,
-    port: 6379,
-    database: 0,
-    namespace: 'helene',
+  static defaultRedisOpts: RedisClientOptions = {
+    url: 'redis://localhost:6379',
   }
 
   constructor(server: Server, opts: RedisClientOptions) {
