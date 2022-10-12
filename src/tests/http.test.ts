@@ -26,7 +26,7 @@ describe('HTTP', async () => {
   it('should call an rpc method through http and get the right result', async () => {
     let capture = null
 
-    test.server.register('sum', async function ([a, b, c]) {
+    test.server.addMethod('sum', async function ([a, b, c]) {
       capture = this.req?.path
 
       return a + b + c
@@ -42,7 +42,7 @@ describe('HTTP', async () => {
   it('should call a protected rpc method and fail authentication using http', async () => {
     await test.client.setContext({})
 
-    test.server.register(
+    test.server.addMethod(
       'protected:method',
       async () => {
         return true
@@ -62,7 +62,7 @@ describe('HTTP', async () => {
   })
 
   it('should call a protected method and pass authentication using http', async () => {
-    test.server.register(
+    test.server.addMethod(
       'protected:method',
       async function () {
         expect(this).to.have.property('isAuthenticated').that.is.true
@@ -89,7 +89,7 @@ describe('HTTP', async () => {
 
     const client = await test.createClient({ port: server.port })
 
-    server.register('test:method', v => v)
+    server.addMethod('test:method', v => v)
 
     const call = async () => {
       for (const v of range(1, 200)) {

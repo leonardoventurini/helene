@@ -1,13 +1,13 @@
 import { expect } from 'chai'
 import { TestUtility } from '../utils/test-utility'
 
-describe('Caching', function() {
+describe('Caching', function () {
   const test = new TestUtility()
 
   it('should cache result in the server', async () => {
     let ephemeral = 0
 
-    test.server.register(
+    test.server.addMethod(
       'cached:method',
       () => {
         return ephemeral

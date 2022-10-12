@@ -52,13 +52,14 @@ export class ServerChannel extends EventEmitter2 {
 
   /**
    * Refreshes a method by its identifier.
-   *
-   * @param method
    */
   refresh(method: string) {
     this.emit(HeleneEvents.METHOD_REFRESH, method)
   }
 
+  /**
+   * Declares a new event.
+   */
   addEvent(name: string, opts?: EventOptions, global = true) {
     if (this.events.has(name)) return
 

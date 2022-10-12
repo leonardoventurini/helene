@@ -17,7 +17,7 @@ describe('React Hooks', () => {
 
   describe('useMethod', () => {
     it('should call the method', async () => {
-      test.server.register('echo', value => value)
+      test.server.addMethod('echo', value => value)
 
       const { wrapper } = test
 
@@ -37,7 +37,7 @@ describe('React Hooks', () => {
     it('should refresh method', async () => {
       let count = 0
 
-      test.server.register('count', () => ++count)
+      test.server.addMethod('count', () => ++count)
 
       const { wrapper } = test
 

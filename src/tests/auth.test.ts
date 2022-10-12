@@ -23,7 +23,7 @@ describe('Auth', async () => {
   it('should fully authenticate into a protected server', async () => {
     expect(test.server.isAuthEnabled).to.be.true
 
-    test.server.register(
+    test.server.addMethod(
       'protected:method',
       async () => {
         return true
@@ -39,7 +39,7 @@ describe('Auth', async () => {
   })
 
   it('should call a protected rpc method and fail authentication', async () => {
-    test.server.register(
+    test.server.addMethod(
       'protected:method',
       async () => {
         return true
@@ -57,7 +57,7 @@ describe('Auth', async () => {
   })
 
   it('should call a protected method and pass authentication', async () => {
-    test.server.register(
+    test.server.addMethod(
       'protected:method',
       async () => {
         return true

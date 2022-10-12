@@ -135,7 +135,7 @@ export class Server extends ServerChannel {
   setAuth({ auth, logIn }: { auth: AuthFunction; logIn: MethodFunction }) {
     this.isAuthEnabled = true
     this.auth = auth
-    this.register(Methods.RPC_LOGIN, logIn)
+    this.addMethod(Methods.RPC_LOGIN, logIn)
   }
 
   async close() {
@@ -198,7 +198,7 @@ export class Server extends ServerChannel {
     this.channels.forEach(channel => channel.deleteClientNode(node))
   }
 
-  register(method: string, fn: MethodFunction, opts?: MethodOptions) {
+  addMethod(method: string, fn: MethodFunction, opts?: MethodOptions) {
     this.methods.set(method, new Method(fn, opts))
   }
 

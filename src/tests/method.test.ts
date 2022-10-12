@@ -12,7 +12,7 @@ describe('Methods', function () {
   const test = new TestUtility()
 
   it('should register a method, call it and get a response', async () => {
-    test.server.register('test:method', function ({ a, b }) {
+    test.server.addMethod('test:method', function ({ a, b }) {
       return a + b
     })
 
@@ -24,7 +24,7 @@ describe('Methods', function () {
   })
 
   it('should register a method as a promise and still get a response', async () => {
-    test.server.register('test:promise', async ([a, b, c]) => {
+    test.server.addMethod('test:promise', async ([a, b, c]) => {
       return a + b + c
     })
 
@@ -34,7 +34,7 @@ describe('Methods', function () {
   })
 
   it('should throw an error', async () => {
-    test.server.register('test:error', () => {
+    test.server.addMethod('test:error', () => {
       throw new Error('Lorem Ipsum')
     })
 
@@ -52,7 +52,7 @@ describe('Methods', function () {
   it('should make a void method call', async () => {
     let called = false
 
-    test.server.register('test:method', () => {
+    test.server.addMethod('test:method', () => {
       called = true
     })
 
@@ -68,7 +68,7 @@ describe('Methods', function () {
     let params
 
     // eslint-disable-next-line @typescript-eslint/no-empty-function
-    test.server.register(
+    test.server.addMethod(
       'test:method:middleware',
       function (_params) {
         console.log(params)
@@ -99,7 +99,7 @@ describe('Methods', function () {
 
   it('should run middleware which return the latest in the chain primitives', async () => {
     // eslint-disable-next-line @typescript-eslint/no-empty-function
-    test.server.register(
+    test.server.addMethod(
       'test:method:middleware',
       function (params) {
         return params
@@ -123,7 +123,7 @@ describe('Methods', function () {
 
   it('should run middleware and throw error', async () => {
     // eslint-disable-next-line @typescript-eslint/no-empty-function
-    test.server.register('test:method:middleware:reject', () => {}, {
+    test.server.addMethod('test:method:middleware:reject', () => {}, {
       middleware: [
         function () {
           throw new PublicError('Authentication Failed')
@@ -137,7 +137,7 @@ describe('Methods', function () {
   })
 
   it('should return an observable', done => {
-    test.server.register('rxjs:method', () => 42)
+    test.server.addMethod('rxjs:method', () => 42)
 
     const call$ = test.client.rCall('rxjs:method')
 
@@ -150,7 +150,7 @@ describe('Methods', function () {
   })
 
   it('should register and call a method with schema validation', async () => {
-    test.server.register(
+    test.server.addMethod(
       'validated:method',
       ({ knownProperty }) => Boolean(knownProperty),
       {
@@ -172,11 +172,11 @@ describe('Methods', function () {
   })
 
   it('should have async local storage', async () => {
-    test.server.register('get:async:ls', function () {
+    test.server.addMethod('get:async:ls', function () {
       return HeleneAsyncLocalStorage.getStore()
     })
 
-    test.server.register('get:async:ls:this', function () {
+    test.server.addMethod('get:async:ls:this', function () {
       return this.storage
     })
 
@@ -192,7 +192,7 @@ describe('Methods', function () {
   it('should call a method in the server', async () => {
     let isServer = false
 
-    test.server.register('test:method', function ({ a, b }) {
+    test.server.addMethod('test:method', function ({ a, b }) {
       isServer = this.isServer
 
       return a + b
@@ -209,7 +209,7 @@ describe('Methods', function () {
 
     const client = await test.createClient({ port: server.port })
 
-    server.register('test:method', v => v)
+    server.addMethod('test:method', v => v)
 
     const call = async () => {
       for (const v of range(1, 200)) {

@@ -66,7 +66,9 @@ new Server({
 The server will be globally available in Node as `Helene` so you can do something like this easily:
 
 ```js
-Helene.register('hello', () => 'world')
+Helene.addMethod(
+  'hello',
+  () => 'world')
 ```
 
 ## Client

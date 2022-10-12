@@ -71,7 +71,7 @@ describe('Server', function () {
       },
     })
 
-    server.register('test', () => true)
+    server.addMethod('test', () => true)
 
     const client = await test.createClient({ port: server.port })
 
