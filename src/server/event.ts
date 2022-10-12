@@ -8,6 +8,15 @@ import { Namespace } from './namespace'
 export type EventOptions = {
   protected?: boolean
   ns?: string
+
+  /**
+   * Only allow user to subscribe to this event on his own channel. Automatically makes the event protected.
+   */
+  user?: boolean
+
+  /**
+   * This overrides the `user` flag.
+   */
   shouldSubscribe?: (
     client: ClientNode,
     eventName: string,
@@ -44,6 +53,14 @@ export class Event {
     this.channel = channel
 
     this.isProtected = opts?.protected ?? false
+
+    if (opts?.user) {
+      this.isProtected = true
+
+      this.shouldSubscribe = function (client, event, channel) {
+        return channel === client.userId.toString()
+      }
+    }
 
     if (opts?.shouldSubscribe) {
       this.shouldSubscribe = opts.shouldSubscribe

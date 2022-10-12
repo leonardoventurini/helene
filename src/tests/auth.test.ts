@@ -71,4 +71,29 @@ describe('Auth', async () => {
 
     expect(result).to.be.true
   })
+
+  it('should allow subscription only to the channel of the user', async () => {
+    test.server.events.add('protected:event', {
+      user: true,
+    })
+
+    const result = await test.client.subscribe('protected:event')
+
+    expect(result).to.have.property('protected:event').that.is.false
+
+    await test.client.login({
+      email: 'test@helene.test',
+      password: '123456',
+    })
+
+    const result2 = await test.client.channel('id').subscribe('protected:event')
+
+    expect(result2).to.have.property('protected:event').that.is.true
+
+    test.server.defer('protected:event', true)
+
+    const eventTimeout = await test.client.timeout('protected:event')
+
+    expect(eventTimeout).to.be.true
+  })
 })

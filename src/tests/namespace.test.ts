@@ -42,7 +42,7 @@ describe('Namespace', function () {
     expect(ns.events.list).to.have.lengthOf(1)
     test.server.of('/chat2').events.add('alert2')
     expect(ns.events.list).to.have.lengthOf(1)
-    expect(test.server.events.list).to.have.lengthOf(0)
+    expect(test.server.events.list).to.have.lengthOf(1)
     expect(test.server.of('/chat2').events.list).to.have.lengthOf(1)
   })
 

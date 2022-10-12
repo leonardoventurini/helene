@@ -7,7 +7,7 @@ import { WebSocketTransport } from './transports/websocket-transport'
 import { MethodFunction, MethodParams } from './method'
 import { ClientNode } from './client-node'
 import { RedisTransport } from './transports/redis-transport'
-import { ClientEvents, DEFAULT_NAMESPACE } from '../constants'
+import { ClientEvents, DEFAULT_NAMESPACE, HeleneEvents } from '../constants'
 import { RequestListener } from 'http'
 import * as assert from 'assert'
 import { isString } from 'lodash'
@@ -119,6 +119,8 @@ export class Server extends Namespace {
     if (Environment.isDevelopment) {
       this.instrumentDebugger()
     }
+
+    this.events.add(HeleneEvents.METHOD_REFRESH)
   }
 
   get express() {

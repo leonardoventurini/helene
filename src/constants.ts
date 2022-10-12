@@ -1,5 +1,5 @@
-export enum GlobalEvents {
-  INSTANTIATED = 'helene:instantiated',
+export enum HeleneEvents {
+  METHOD_REFRESH = 'helene:method:refresh',
 }
 
 export enum WebSocketEvents {
