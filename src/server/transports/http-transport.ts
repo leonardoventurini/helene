@@ -65,7 +65,7 @@ export class HttpTransport {
 
     this.http.on(ServerEvents.REQUEST, this.express)
 
-    this.endpoints()
+    this.express.post('/__h', this.requestHandler)
 
     this.http.listen(server.port, () => {
       this.server.debugger(`Helene HTTP Transport: Listening on ${server.port}`)
@@ -202,10 +202,6 @@ export class HttpTransport {
         ...uuid,
       })
     }
-  }
-
-  endpoints() {
-    this.express.post('/__h', this.requestHandler)
   }
 
   async authMiddleware(req, res, next) {
