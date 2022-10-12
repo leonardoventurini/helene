@@ -18,7 +18,6 @@ import { ClientChannel } from './client-channel'
 import axios from 'axios'
 import { Errors } from '../errors'
 import qs from 'query-string'
-import { from } from 'rxjs'
 import { Methods } from '../server/methods'
 import { Environment } from '../utils/environment'
 import { EJSON } from 'ejson2'
@@ -318,13 +317,6 @@ export class Client extends ClientChannel {
         timeoutId,
       })
     })
-  }
-
-  /**
-   * Just like "call" except it returns an RxJS Observable.
-   */
-  rCall(method: string, params?: MethodParams, opts?: CallOptions) {
-    return from(this.call(method, params, opts))
   }
 
   handleError(payload: Presentation.ErrorPayload) {

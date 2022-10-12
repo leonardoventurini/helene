@@ -3,7 +3,6 @@ import { Client, WebSocketOptions } from './client'
 import { ClientEvents, WebSocketEvents } from '../constants'
 import { Presentation } from '../server/presentation'
 import { WebSocketMessageOptions } from '../server/transports/websocket-transport'
-import { fromEvent, Observable } from 'rxjs'
 
 export class ClientSocket {
   client: Client
@@ -20,11 +19,6 @@ export class ClientSocket {
 
   closedGracefully = false
   ready = false
-
-  open$: Observable<any>
-  message$: Observable<any>
-  error$: Observable<any>
-  close$: Observable<any>
 
   constructor(
     client: Client,
@@ -56,15 +50,10 @@ export class ClientSocket {
     this.closedGracefully = false
     this.socket = new IsomorphicWebSocket(this.uri)
 
-    this.open$ = fromEvent(this.socket, WebSocketEvents.OPEN)
-    this.message$ = fromEvent(this.socket, WebSocketEvents.MESSAGE)
-    this.error$ = fromEvent(this.socket, WebSocketEvents.ERROR)
-    this.close$ = fromEvent(this.socket, WebSocketEvents.CLOSE)
-
-    this.open$.subscribe(this.handleOpen)
-    this.message$.subscribe(this.handleMessage)
-    this.error$.subscribe(this.handleError)
-    this.close$.subscribe(this.handleClose)
+    this.socket.addEventListener(WebSocketEvents.OPEN, this.handleOpen)
+    this.socket.addEventListener(WebSocketEvents.MESSAGE, this.handleMessage)
+    this.socket.addEventListener(WebSocketEvents.ERROR, this.handleError)
+    this.socket.addEventListener(WebSocketEvents.CLOSE, this.handleClose)
   }
 
   close(code?: number, data?: string) {

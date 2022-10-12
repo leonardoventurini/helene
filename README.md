@@ -136,14 +136,6 @@ Then you can call it from the client:
 const result = await client.call('helene:rocks') // 42
 ```
 
-You can also get the RxJS Observable version too:
-
-```js
-const call$ = client.rCall('helene:rocks')
-
-call$.subscribe(console.log)
-```
-
 ### Middleware
 
 You can also use middleware functions which can be reused:
@@ -288,9 +280,6 @@ useEvent(
 
 ## Roadmap
 
-- RxJS integration
-- Method schema validation
-- Better method mixin system
 - Improved safety and DDoS protection
 
 ## License

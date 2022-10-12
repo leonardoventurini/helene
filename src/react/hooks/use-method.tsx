@@ -5,7 +5,6 @@ import { ClientEvents, HeleneEvents, NO_CHANNEL } from '../../constants'
 import { isFunction, noop } from 'lodash'
 import { useDebouncedCallback } from 'use-debounce'
 import { useEvent } from './use-event'
-import { useFromEvent } from './utils/use-from-event'
 import { EJSON } from 'ejson2'
 import { useCircuitBreaker } from './use-circuit-breaker'
 
@@ -170,8 +169,20 @@ export const useMethod = ({
     [debounced, debouncedRefresh, refresh],
   )
 
-  useFromEvent(client, ClientEvents.INITIALIZING, initializing)
-  useFromEvent(client, ClientEvents.INITIALIZED, refreshCallback)
+  useEvent(
+    {
+      event: ClientEvents.INITIALIZING,
+    },
+    initializing,
+  )
+
+  useEvent(
+    {
+      event: ClientEvents.INITIALIZED,
+    },
+    refreshCallback,
+    [refreshCallback],
+  )
 
   useEffect(() => {
     if (!method) return

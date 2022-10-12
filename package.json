@@ -30,7 +30,6 @@
     "react-singleton-hook": "^3.4.0",
     "redis": "^4.2.0",
     "resize-observer-polyfill": "^1.5.1",
-    "rxjs": "^7.5.6",
     "secure-ls": "^1.2.6",
     "use-debounce": "^7.0.1",
     "uuid": "^8.3.2",
@@ -77,7 +76,6 @@
   "keywords": [
     "websockets",
     "rpc",
-    "rxjs",
     "reactjs",
     "methods",
     "events"
