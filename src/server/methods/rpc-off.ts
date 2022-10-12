@@ -2,11 +2,11 @@ import { Method } from '../method'
 import { NO_CHANNEL } from '../../constants'
 import { Errors } from '../../errors'
 
-export const rpcOff = (server, namespace) =>
+export const rpcOff = server =>
   new Method(
     function ({ events, channel = NO_CHANNEL }) {
       return events.reduce((acc, eventName) => {
-        const event = namespace.channel(channel).events.get(eventName)
+        const event = server.channel(channel).events.get(eventName)
 
         if (!event) {
           return {

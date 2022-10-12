@@ -3,11 +3,7 @@ import express, { Request, Response } from 'express'
 import cors from 'cors'
 import { RateLimit, Server } from '../server'
 import { Errors, PublicError, SchemaValidationError } from '../../errors'
-import {
-  DEFAULT_NAMESPACE,
-  ServerEvents,
-  TOKEN_HEADER_KEY,
-} from '../../constants'
+import { ServerEvents, TOKEN_HEADER_KEY } from '../../constants'
 import { Presentation } from '../presentation'
 import { ClientNode } from '../client-node'
 import { createHttpTerminator, HttpTerminator } from 'http-terminator'
@@ -114,9 +110,7 @@ export class HttpTransport {
     return false
   }
 
-  requestHandler = (ns: string) => async (req: Request, res: Response) => {
-    const namespace = this.server.getNamespace(ns)
-
+  requestHandler = async (req: Request, res: Response) => {
     const transport: RequestTransport = req.body ?? {}
 
     if (!transport.payload) {
@@ -132,7 +126,7 @@ export class HttpTransport {
 
     const payload = transport.payload
 
-    const method = namespace.getMethod(payload.method)
+    const method = this.server.getMethod(payload.method)
 
     const clientNode = new ClientNode(null, req, res)
 
@@ -211,16 +205,7 @@ export class HttpTransport {
   }
 
   endpoints() {
-    this.express.post('/__h', this.requestHandler(DEFAULT_NAMESPACE).bind(this))
-
-    this.server.namespaces.forEach(namespace => {
-      const endpoint = `/${namespace.nsName}/__h`
-
-      this.express.post(
-        endpoint,
-        this.requestHandler(namespace.nsName).bind(this),
-      )
-    })
+    this.express.post('/__h', this.requestHandler)
   }
 
   async authMiddleware(req, res, next) {

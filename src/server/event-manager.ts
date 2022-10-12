@@ -19,25 +19,23 @@ export class EventManager {
     return this.events.size
   }
 
-  add(name: string, opts?: EventOptions, addToNamespace = true) {
+  add(name: string, opts?: EventOptions, global = true) {
     if (this.events.has(name)) return
 
     const event = new Event(
       name,
       this.serverChannel.server,
-      this.serverChannel.namespace,
       this.serverChannel,
       opts,
     )
 
     this.events.set(name, event)
-
-    if (addToNamespace)
-      this.serverChannel.namespace.eventBlueprints.set(name, opts)
-
     this.serverChannel.on(name, event.handler.bind(event))
 
-    this.serverChannel.namespace.addEventToAllChannels(name, opts)
+    if (global) {
+      this.serverChannel.server.eventBlueprints.set(name, opts)
+      this.serverChannel.server.addEventToAllChannels(name, opts)
+    }
   }
 
   get(event: string) {

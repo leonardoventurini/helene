@@ -1,9 +1,9 @@
 import { Method } from '../method'
 
-export const listMethods = (server, namespace) =>
+export const listMethods = server =>
   new Method(
     function () {
-      return Object.keys(namespace.methods.keys())
+      return Object.keys(server.methods.keys())
     },
     { protected: false },
   )

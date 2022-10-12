@@ -44,9 +44,9 @@ export class ClientSocket {
     this.protocol = this.client.secure ? `wss://` : `ws://`
 
     if (this.client.port) {
-      this.uri = `${this.protocol}${this.client.host}:${this.client.port}${this.client.namespace}`
+      this.uri = `${this.protocol}${this.client.host}:${this.client.port}/`
     } else {
-      this.uri = `${this.protocol}${this.client.host}${this.client.namespace}`
+      this.uri = `${this.protocol}${this.client.host}/`
     }
 
     if (this.autoConnect) this.connect()

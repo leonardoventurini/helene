@@ -1,6 +1,5 @@
 import { EventEmitter2 } from 'eventemitter2'
 import { Server } from './server'
-import { Namespace } from './namespace'
 import { EventManager } from './event-manager'
 import { Presentation } from './presentation'
 import { HttpTransportEvents } from './transports/http-transport'
@@ -16,7 +15,6 @@ const AllEvents: string[] = [
 export class ServerChannel extends EventEmitter2 {
   chName: string
   server: Server
-  namespace: Namespace
   events: EventManager
 
   constructor(name: string) {
@@ -36,12 +34,8 @@ export class ServerChannel extends EventEmitter2 {
 
   setServer(server: Server) {
     this.server = server
-  }
 
-  setNamespace(namespace: Namespace) {
-    this.namespace = namespace
-
-    namespace.eventBlueprints.forEach((opts, name) => {
+    this.server.eventBlueprints.forEach((opts, name) => {
       this.events.add(name, opts, false)
     })
   }

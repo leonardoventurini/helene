@@ -21,11 +21,7 @@ export class ClientHttp {
       this.host = `${this.protocol}${this.client.host}`
     }
 
-    if (this.client.namespace !== '/') {
-      this.uri = `${this.host}${this.client.namespace}/__h`
-    } else {
-      this.uri = `${this.host}/__h`
-    }
+    this.uri = `${this.host}/__h`
   }
 
   async request(

@@ -48,8 +48,6 @@ export class WebSocketTransport {
   handleConnection = (socket: WebSocket, request: http.IncomingMessage) => {
     const { pathname } = url.parse(request.url, true)
 
-    const namespace = this.server.getNamespace(pathname, true)
-
     const node = new ClientNode(
       socket,
       undefined,
@@ -58,10 +56,7 @@ export class WebSocketTransport {
     )
 
     node.setId(request)
-
-    namespace.addClient(node)
-
-    node.setNamespace(namespace)
+    this.server.addClient(node)
 
     socket.on(WebSocketEvents.CLOSE, this.handleClose(node))
 
@@ -73,7 +68,7 @@ export class WebSocketTransport {
   }
 
   handleClose = (node: ClientNode) => () => {
-    node.namespace.deleteClient(node)
+    this.server.deleteClient(node)
     this.server.emit(ServerEvents.DISCONNECTION, node)
   }
 
@@ -122,9 +117,7 @@ export class WebSocketTransport {
     if (payload.method !== Methods.KEEP_ALIVE)
       this.server.debugger(`Executing`, payload)
 
-    const { namespace } = node
-
-    const method = namespace.methods.get(payload.method)
+    const method = this.server.methods.get(payload.method)
 
     if (!method)
       return node.error({

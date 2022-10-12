@@ -1,6 +1,5 @@
 import WebSocket from 'ws'
 import { WebSocketMessageOptions } from './transports/websocket-transport'
-import { Namespace } from './namespace'
 import http from 'http'
 import url from 'url'
 import { v4 as uuid } from 'uuid'
@@ -16,7 +15,6 @@ export type ClientNodeContext = Record<string, any>
 
 export class ClientNode {
   _id: string
-  namespace: Namespace
   isAuthenticated = false
   context: ClientNodeContext
   userId: ObjectId | string | null = null
@@ -75,10 +73,6 @@ export class ClientNode {
 
   setContext(context: ClientNodeContext) {
     this.context = this.authenticated ? context : {}
-  }
-
-  setNamespace(namespace: Namespace) {
-    this.namespace = namespace
   }
 
   send(payload: Presentation.Payload | string, opts?: WebSocketMessageOptions) {

@@ -41,8 +41,6 @@ export enum RedisListeners {
   MESSAGE = 'message',
 }
 
-export const DEFAULT_NAMESPACE = '/'
-
 export const NO_CHANNEL = 'NO_CHANNEL'
 
 export const TOKEN_HEADER_KEY = 'x-api-key'

@@ -12,7 +12,6 @@ import { Server } from '../server'
 import { Presentation } from '../presentation'
 
 export type RedisMessage = {
-  namespace: string
   event: string
   channel: string
   message: string
@@ -56,23 +55,18 @@ export class RedisTransport {
     await this.sub.connect()
 
     await this.sub.pSubscribe(RedisListeners.EVENTS, redisMessage => {
-      const { namespace, event, channel, message } =
+      const { event, channel, message } =
         Presentation.decode<RedisMessage>(redisMessage)
 
       this.server.debugger(`Redis Transport Received:`, event, message)
 
-      this.server.of(namespace).channel(channel).propagate(event, message)
+      this.server.channel(channel).propagate(event, message)
     })
 
     this.server.emit(ServerEvents.REDIS_CONNECT)
   }
 
-  async publish(
-    event: string,
-    namespace: string,
-    channel: string = NO_CHANNEL,
-    message: string,
-  ) {
+  async publish(event: string, channel: string = NO_CHANNEL, message: string) {
     if (!this.pub) return
 
     this.server.debugger(`Redis Transport Published:`, event, message)
@@ -81,7 +75,6 @@ export class RedisTransport {
       RedisListeners.EVENTS,
 
       Presentation.encode<RedisMessage>({
-        namespace,
         event,
         channel,
         message,

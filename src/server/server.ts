@@ -1,19 +1,20 @@
 import WebSocket from 'ws'
 import { v4 as uuid } from 'uuid'
 import { RedisClientOptions } from 'redis'
-import { Namespace } from './namespace'
 import { HttpTransport } from './transports/http-transport'
 import { WebSocketTransport } from './transports/websocket-transport'
-import { MethodFunction, MethodParams } from './method'
+import { Method, MethodFunction, MethodOptions, MethodParams } from './method'
 import { ClientNode } from './client-node'
 import { RedisTransport } from './transports/redis-transport'
-import { ClientEvents, DEFAULT_NAMESPACE, HeleneEvents } from '../constants'
+import { ClientEvents, HeleneEvents, NO_CHANNEL } from '../constants'
 import { RequestListener } from 'http'
 import * as assert from 'assert'
-import { isString } from 'lodash'
-import { check } from '../utils/check'
+import { isFunction, isObject, isString } from 'lodash'
 import { Methods } from './methods'
 import { Environment } from '../utils/environment'
+import { ServerChannel } from './server-channel'
+import { DefaultMethods } from './default-methods'
+import { EventOptions } from './event'
 
 declare global {
   // eslint-disable-next-line no-var
@@ -44,12 +45,11 @@ export type ServerOptions = {
   rateLimit?: RateLimit
 }
 
-export class Server extends Namespace {
+export class Server extends ServerChannel {
   uuid: string
   httpTransport: HttpTransport
   webSocketTransport: WebSocketTransport
   redisTransport: RedisTransport
-  namespaces: Map<string, Namespace> = new Map()
   host = 'localhost'
   port: number
   requestListener: RequestListener
@@ -58,6 +58,11 @@ export class Server extends Namespace {
   auth: AuthFunction
   debug = false
   rateLimit: RateLimit
+
+  methods: Map<string, Method> = new Map()
+  clients: Map<string, ClientNode> = new Map()
+  channels: Map<string, ServerChannel> = new Map()
+  eventBlueprints: Map<string, EventOptions> = new Map()
 
   static ERROR_EVENT = 'error'
 
@@ -74,7 +79,7 @@ export class Server extends Namespace {
     useRedis = false,
     rateLimit = false,
   }: ServerOptions = {}) {
-    super(DEFAULT_NAMESPACE)
+    super(NO_CHANNEL)
 
     this.setServer(this)
     this.createDefaultMethods()
@@ -114,41 +119,17 @@ export class Server extends Namespace {
         })
       : null
 
-    this.namespaces.set(DEFAULT_NAMESPACE, this)
-
     if (Environment.isDevelopment) {
       this.instrumentDebugger()
     }
 
     this.events.add(HeleneEvents.METHOD_REFRESH)
+
+    this.channels.set(NO_CHANNEL, this)
   }
 
   get express() {
     return this.httpTransport.express
-  }
-
-  addNamespace(ns: string) {
-    const namespace = new Namespace(ns)
-    namespace.setServer(this)
-    namespace.createDefaultMethods()
-    this.namespaces.set(ns, namespace)
-    return namespace
-  }
-
-  getNamespace(ns: string = DEFAULT_NAMESPACE, create?: true) {
-    assert.ok(isString(ns))
-
-    let namespace = this.namespaces.get(ns)
-
-    if (!namespace && create) namespace = this.addNamespace(ns)
-
-    return namespace
-  }
-
-  removeNamespace(namespace: string) {
-    check('namespace', namespace, String)
-
-    this.namespaces.get(namespace).close()
   }
 
   setAuth({ auth, logIn }: { auth: AuthFunction; logIn: MethodFunction }) {
@@ -157,11 +138,12 @@ export class Server extends Namespace {
     this.register(Methods.RPC_LOGIN, logIn)
   }
 
-  of(namespace: string = DEFAULT_NAMESPACE) {
-    return this.getNamespace(namespace, true)
-  }
-
   async close() {
+    this.clients.forEach(node => node.close())
+    this.clients.clear()
+    this.methods.clear()
+    this.channels.clear()
+
     await this.redisTransport?.close()
     await this.webSocketTransport?.close()
     await this.httpTransport?.close()
@@ -195,5 +177,51 @@ export class Server extends Namespace {
 
   instrumentDebugger() {
     this.events.add(ClientEvents.DEBUGGER)
+  }
+
+  createDefaultMethods() {
+    Object.entries(DefaultMethods).forEach(([key, value]) =>
+      this.methods.set(key, value(this)),
+    )
+  }
+
+  getMethod(method: string) {
+    return this.methods.get(method)
+  }
+
+  addClient(node: ClientNode) {
+    this.clients.set(node._id, node)
+  }
+
+  deleteClient(node: ClientNode) {
+    this.clients.delete(node._id)
+    this.channels.forEach(channel => channel.events.deleteClientNode(node))
+  }
+
+  register(method: string, fn: MethodFunction, opts?: MethodOptions) {
+    this.methods.set(method, new Method(fn, opts))
+  }
+
+  channel(name: string | object = NO_CHANNEL) {
+    if (
+      isObject(name) &&
+      name.constructor.name === 'ObjectId' &&
+      isFunction(name.toString)
+    ) {
+      name = name.toString()
+    }
+
+    if (!name || !isString(name)) return this
+    if (name === NO_CHANNEL) return this
+
+    if (this.channels.has(name)) return this.channels.get(name)
+    const channel = new ServerChannel(name)
+    channel.setServer(this.server)
+    this.channels.set(name, channel)
+    return channel
+  }
+
+  addEventToAllChannels(name: string, opts?: EventOptions) {
+    this.channels.forEach(channel => channel.events.add(name, opts, false))
   }
 }

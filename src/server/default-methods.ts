@@ -1,5 +1,4 @@
 import { Method } from './method'
-import { Namespace } from './namespace'
 import { Server } from './server'
 import { keepAlive } from './methods/keep-alive'
 import { listMethods } from './methods/list-methods'
@@ -9,7 +8,7 @@ import { rpcInit } from './methods/rpc-init'
 import { rpcLogout } from './methods/rpc-logout'
 import { Methods } from './methods'
 
-type MethodBuilder = (server: Server, namespace: Namespace) => Method
+type MethodBuilder = (server: Server) => Method
 
 export const DefaultMethods: {
   [key: string]: MethodBuilder

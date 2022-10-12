@@ -2,13 +2,13 @@ import { Method } from '../method'
 import { NO_CHANNEL } from '../../constants'
 import { isEmpty } from 'lodash'
 
-export const rpcOn = (server, namespace) =>
+export const rpcOn = server =>
   new Method(
     function ({ events, channel = NO_CHANNEL }) {
       if (isEmpty(events)) return {}
 
       return events.reduce((acc, eventName) => {
-        const event = namespace.channel(channel).events.get(eventName)
+        const event = server.channel(channel).events.get(eventName)
 
         if (!event) {
           return {

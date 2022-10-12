@@ -12,12 +12,7 @@ import {
   last,
   merge,
 } from 'lodash'
-import {
-  ClientEvents,
-  DEFAULT_NAMESPACE,
-  NO_CHANNEL,
-  TOKEN_HEADER_KEY,
-} from '../constants'
+import { ClientEvents, NO_CHANNEL, TOKEN_HEADER_KEY } from '../constants'
 import { ClientHttp } from './client-http'
 import { ClientChannel } from './client-channel'
 import axios from 'axios'
@@ -54,7 +49,6 @@ export type ClientOptions = {
   ws?: WebSocketOptions
   errorHandler?: ErrorHandler
   debug?: boolean
-  namespace?: string
 }
 
 export type CallOptions = {
@@ -79,7 +73,6 @@ export class Client extends ClientChannel {
   debug: boolean
   host: string
   port: number
-  namespace: string
   secure: boolean
 
   ready = false
@@ -95,7 +88,6 @@ export class Client extends ClientChannel {
   constructor({
     host = 'localhost',
     port,
-    namespace = DEFAULT_NAMESPACE,
     secure = false,
     errorHandler = null,
     ws,
@@ -110,7 +102,6 @@ export class Client extends ClientChannel {
     this.debug = debug
     this.host = host
     this.port = port
-    this.namespace = namespace
     this.secure = secure
     this.errorHandler = errorHandler
     this.clientSocket = new ClientSocket(this, ws)
@@ -410,8 +401,7 @@ export class Client extends ClientChannel {
       name = name.toString()
     }
 
-    if (!name || !isString(name)) return this
-
+    if (!name || !isString(name)) return null
     if (name === NO_CHANNEL) return this
 
     if (this.channels.has(name)) return this.channels.get(name)

@@ -27,7 +27,6 @@ Simple, easy.
 - [Authentication](#authentication)
 - [Methods](#methods)
 - [Events](#events)
-- [Namespaces](#namespaces)
 - [Channels](#channels)
 - [React](#issues)
   - [Provider](#provider)
@@ -179,7 +178,7 @@ The client method call will be rejected if the params fail to meet the schema re
 
 Events allow you to invert the control of the application by casting a piece of data to a set of clients.
 
-You can group these clients in different ways by using namespaces and channels.
+You can group these clients in different ways by using channels.
 
 Events need to be declared first:
 
@@ -205,25 +204,6 @@ We can emit something from the server:
 server.emit('event', 42)
 ```
 
-## Namespaces
-
-Namespaces allow you to group users of different sections of your application.
-
-Methods and events are scoped to each namespace.
-
-Every server instance has a default namespace and channel.
-
-```js
-const namespace = server.of('chat')
-
-ns.events.add('message')
-
-// This is the same as before
-ns.channel('chat:1').events.add('message')
-
-ns.channel('chat:1').emit('message', 'Hello World')
-```
-
 ## Channels
 
 It is possible to use multiple channels to better target an audience with events. 
@@ -244,9 +224,6 @@ server.channel('chat:1').emit('message', {
   content: 'Hello World'
 })
 ```
-
-It differs from namespace in that it can be switched mid-flight and share the namespace methods.
-
 
 ```js
 await client.channel('chat:1').subscribe('message')

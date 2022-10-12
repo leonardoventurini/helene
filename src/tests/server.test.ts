@@ -31,8 +31,6 @@ describe('Server', function () {
       .that.is.instanceof(WebSocketTransport)
 
     expect(server).to.have.property('redisTransport').that.is.null
-
-    expect(server).to.have.property('namespaces').that.is.instanceof(Map)
   })
 
   it('should return a new instance', async () => {
