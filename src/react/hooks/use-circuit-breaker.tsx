@@ -1,15 +1,8 @@
 import React, { useMemo } from 'react'
 import { isEmpty, isFunction, isNil } from 'lodash'
-import { useClient } from './use-client'
 
-export function useCircuitBreaker({ parse, params, required, authOnly, deps }) {
-  const client = useClient()
-
+export function useCircuitBreaker({ parse, params, required, deps }) {
   return useMemo(() => {
-    if (authOnly && !client.authenticated) {
-      return { shouldCall: false }
-    }
-
     const result = isFunction(parse) ? parse(params) : void 0
 
     const hasAllRequiredParams =
@@ -23,5 +16,5 @@ export function useCircuitBreaker({ parse, params, required, authOnly, deps }) {
     }
 
     return { shouldCall: true }
-  }, [params, authOnly, parse, required, ...deps])
+  }, [params, parse, required, ...deps])
 }

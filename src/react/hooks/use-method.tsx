@@ -21,7 +21,6 @@ export type UseMethodParams = {
   authenticated?: boolean
   debounced?: number
   lazy?: boolean
-  authOnly?: boolean
 
   /**
    * Conditionally run the method or return a placeholder value.
@@ -122,7 +121,6 @@ export const useMethod = ({
   parse = null,
   lazy = false,
   required = [],
-  authOnly,
 }: UseMethodParams) => {
   const client = useClient()
 
@@ -137,7 +135,6 @@ export const useMethod = ({
     params: memoParams,
     required,
     deps,
-    authOnly,
   })
 
   const optimistic = useCallback(
