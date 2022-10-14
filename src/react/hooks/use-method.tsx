@@ -101,6 +101,7 @@ export const useMethodRefresh = ({
       setResult,
       setLoading,
       setError,
+      client.authenticated,
       ...deps,
     ],
   )
