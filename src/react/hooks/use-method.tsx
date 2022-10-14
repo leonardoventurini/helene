@@ -58,6 +58,7 @@ export const useMethodRefresh = ({
   shouldCall,
   startLoading,
   timeout,
+  deps,
 }) => {
   return useCallback(
     (callback?) => {
@@ -91,7 +92,16 @@ export const useMethodRefresh = ({
           isFunction(callback) && callback()
         })
     },
-    [client, method, memoParams, timeout, setResult, setLoading, setError],
+    [
+      client,
+      method,
+      memoParams,
+      timeout,
+      setResult,
+      setLoading,
+      setError,
+      ...deps,
+    ],
   )
 }
 
@@ -159,7 +169,9 @@ export const useMethod = ({
     shouldCall,
     startLoading,
     timeout,
+    deps,
   })
+
   const initializing = useCallback(() => setLoading(true), [])
 
   const debouncedRefresh = useDebouncedCallback(refresh, debounced ?? 100)

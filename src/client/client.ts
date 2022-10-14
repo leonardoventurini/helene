@@ -11,6 +11,7 @@ import {
   isString,
   last,
   merge,
+  pick,
 } from 'lodash'
 import { ClientEvents, NO_CHANNEL, TOKEN_HEADER_KEY } from '../constants'
 import { ClientHttp } from './client-http'
@@ -48,6 +49,7 @@ export type ClientOptions = {
   ws?: WebSocketOptions
   errorHandler?: ErrorHandler
   debug?: boolean
+  allowedContextKeys?: string[]
 }
 
 export type CallOptions = {
@@ -75,12 +77,13 @@ export class Client extends ClientChannel {
   secure: boolean
 
   ready = false
-  authenticated = false
 
   channels: Map<string, ClientChannel> = new Map()
 
   timeouts: Set<Timeout> = new Set()
   keepAliveInterval: Timeout = null
+
+  allowedContextKeys: string[] = []
 
   axios = axios
 
@@ -91,6 +94,7 @@ export class Client extends ClientChannel {
     errorHandler = null,
     ws,
     debug = false,
+    allowedContextKeys = [],
   }: ClientOptions = {}) {
     super(NO_CHANNEL)
 
@@ -106,6 +110,7 @@ export class Client extends ClientChannel {
     this.clientSocket = new ClientSocket(this, ws)
     this.clientHttp = new ClientHttp(this)
     this.queue = new PromiseQueue()
+    this.allowedContextKeys = allowedContextKeys
 
     this.channels.set(NO_CHANNEL, this)
 
@@ -123,6 +128,10 @@ export class Client extends ClientChannel {
         this.debugger('DevTools attached')
       })
     }
+  }
+
+  get authenticated() {
+    return !!this.context?.token
   }
 
   debugger(...args) {
@@ -189,11 +198,16 @@ export class Client extends ClientChannel {
 
     if (token && !isString(token)) throw new Error(Errors.INVALID_TOKEN)
 
-    const result = await this.call(Methods.RPC_INIT, { token })
+    const context = this.allowedContextKeys.length
+      ? pick(this.context ?? {}, this.allowedContextKeys)
+      : { token }
 
-    this.authenticated = Boolean(result)
+    const result = await this.call(Methods.RPC_INIT, {
+      token,
+      ...context,
+    })
 
-    await this.updateContext(this.authenticated ? result : {}, false)
+    await this.updateContext(result || {}, false)
 
     await this.resubscribeAllChannels()
 
@@ -230,7 +244,6 @@ export class Client extends ClientChannel {
   }
 
   async logout() {
-    this.authenticated = false
     await this.call(Methods.RPC_LOGOUT)
     this.clearContext()
     this.emit(ClientEvents.AUTH_CHANGED, false)
