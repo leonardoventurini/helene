@@ -127,7 +127,7 @@ As you see this is completely agnostic, and you can set up your own authenticati
 First, you need to register a method:
 
 ```js
-server.register('helene:rocks', async () => 42)
+server.addMethod('helene:rocks', async () => 42)
 ```
 
 Then you can call it from the client:
@@ -141,7 +141,7 @@ const result = await client.call('helene:rocks') // 42
 You can also use middleware functions which can be reused:
 
 ```js
-server.register('helene:rocks',
+server.addMethod('helene:rocks',
   async () => ({ hello: true }), 
   { 
     middleware: [
@@ -161,7 +161,7 @@ server.register('helene:rocks',
 You can use a [Yup](https://www.npmjs.com/package/yup) schema to validate your method parameters:
 
 ```js
-server.register('validated:method', {
+server.addMethod('validated:method', {
   schema: object({ foo: string().required() }),
 })
 ```
