@@ -278,9 +278,11 @@ useEvent(
 
 > This hook can be used both locally and subscribed to a server event.
 
-## Roadmap
+### useConnectionState Hook
 
-- Improved safety and DDoS protection
+```jsx
+const { isOnline, isOffline } = useConnectionState()
+```
 
 ## License
 
