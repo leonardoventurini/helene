@@ -7,9 +7,9 @@ import { isString } from 'lodash'
 import { Presentation } from './presentation'
 import { Request, Response } from 'express'
 import { HeleneAsyncLocalStorage } from './helene-async-local-storage'
-import { ObjectId } from '../mongoose'
 import { RateLimiter } from 'limiter'
 import { RateLimit } from './server'
+import { ObjectId } from 'bson'
 
 export type ClientNodeContext = Record<string, any>
 
