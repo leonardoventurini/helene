@@ -33,6 +33,7 @@ export enum ClientEvents {
   OUTBOUND_MESSAGE = 'outbound:message',
   INBOUND_MESSAGE = 'inbound:message',
   DEBUGGER = 'debugger',
+  DISCONNECT = 'disconnect',
 }
 
 export enum RedisListeners {

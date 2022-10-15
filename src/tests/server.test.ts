@@ -4,6 +4,7 @@ import { Server } from '../server/server'
 import { HttpTransport } from '../server/transports/http-transport'
 import { WebSocketTransport } from '../server/transports/websocket-transport'
 import { EJSON } from 'ejson2'
+import { ServerEvents } from '../constants'
 
 describe('Server', function () {
   const test = new TestUtility()
@@ -106,6 +107,8 @@ describe('Server', function () {
     ).to.equal(1)
 
     await client.close()
+
+    await server.waitFor(ServerEvents.DISCONNECTION)
 
     expect(server.clients.size).to.equal(0)
 

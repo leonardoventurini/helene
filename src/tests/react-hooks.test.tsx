@@ -3,7 +3,7 @@ import { expect } from 'chai'
 import { render, screen, waitFor } from '@testing-library/react'
 import { renderHook } from '@testing-library/react-hooks'
 import { TestUtility } from '../utils/test-utility'
-import { useEvent, useMethod } from '../react/hooks'
+import { useConnectionState, useEvent, useMethod } from '../react/hooks'
 import sinon from 'sinon'
 
 describe('React Hooks', () => {
@@ -13,6 +13,39 @@ describe('React Hooks', () => {
     render(<span role='message'>Hello World</span>)
 
     expect(screen.queryByRole('message').textContent).to.equal('Hello World')
+  })
+
+  describe('useConnectionState', () => {
+    it('should return the connection state', async () => {
+      const { wrapper } = test
+
+      const { result } = renderHook(() => useConnectionState(), { wrapper })
+
+      await waitFor(() => {
+        expect(result.current).to.be.deep.equal({
+          isOnline: true,
+          isOffline: false,
+        })
+      })
+
+      await test.client.close()
+
+      await waitFor(() => {
+        expect(result.current).to.be.deep.equal({
+          isOnline: false,
+          isOffline: true,
+        })
+      })
+
+      await test.client.connect()
+
+      await waitFor(() => {
+        expect(result.current).to.be.deep.equal({
+          isOnline: true,
+          isOffline: false,
+        })
+      })
+    })
   })
 
   describe('useMethod', () => {

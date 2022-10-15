@@ -130,6 +130,14 @@ export class Client extends ClientChannel {
     }
   }
 
+  get isOffline() {
+    return !this.clientSocket?.ready
+  }
+
+  get isOnline() {
+    return !!this.clientSocket?.ready
+  }
+
   get authenticated() {
     return !!this.context?.token
   }
@@ -173,8 +181,10 @@ export class Client extends ClientChannel {
     this.emit(ClientEvents.CONTEXT_CHANGED)
   }
 
-  connect() {
-    return this.clientSocket.connect()
+  async connect() {
+    this.clientSocket.connect()
+
+    return await this.isReady()
   }
 
   async close() {

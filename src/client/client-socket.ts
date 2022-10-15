@@ -48,6 +48,7 @@ export class ClientSocket {
 
   connect() {
     this.closedGracefully = false
+
     this.socket = new IsomorphicWebSocket(this.uri)
 
     this.socket.addEventListener(WebSocketEvents.OPEN, this.handleOpen)
@@ -75,10 +76,9 @@ export class ClientSocket {
   }
 
   handleOpen = () => {
+    this.client.emit(ClientEvents.OPEN)
     this.ready = true
     this.currentReconnects = 0
-
-    this.client.emit(ClientEvents.OPEN)
   }
 
   handleMessage = ({ data, type, target }) => {
@@ -97,6 +97,8 @@ export class ClientSocket {
   }
 
   handleClose = ({ code, reason }) => {
+    this.client.emit(ClientEvents.CLOSE)
+
     this.client.debugger('Closing Socket', code, reason)
 
     if (this.ready)
