@@ -261,6 +261,7 @@ export class Client extends ClientChannel {
 
   async logout() {
     await this.call(Methods.RPC_LOGOUT)
+    this.authenticated = false
     this.clearContext()
     this.emit(ClientEvents.AUTH_CHANGED, false)
   }
