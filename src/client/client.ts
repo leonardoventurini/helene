@@ -76,8 +76,6 @@ export class Client extends ClientChannel {
   port: number
   secure: boolean
 
-  ready = false
-
   channels: Map<string, ClientChannel> = new Map()
 
   timeouts: Set<Timeout> = new Set()
@@ -85,6 +83,7 @@ export class Client extends ClientChannel {
 
   allowedContextKeys: string[] = []
 
+  ready = false
   axios = axios
 
   constructor({
@@ -128,6 +127,10 @@ export class Client extends ClientChannel {
         this.debugger('DevTools attached')
       })
     }
+  }
+
+  get isConnecting() {
+    return !!this.clientSocket?.connecting
   }
 
   get isOffline() {
@@ -182,7 +185,7 @@ export class Client extends ClientChannel {
   }
 
   async connect() {
-    this.clientSocket.connect()
+    await this.clientSocket.connect()
 
     return await this.isReady()
   }

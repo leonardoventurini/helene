@@ -25,6 +25,7 @@ describe('React Hooks', () => {
         expect(result.current).to.be.deep.equal({
           isOnline: true,
           isOffline: false,
+          isConnecting: false,
         })
       })
 
@@ -34,6 +35,7 @@ describe('React Hooks', () => {
         expect(result.current).to.be.deep.equal({
           isOnline: false,
           isOffline: true,
+          isConnecting: false,
         })
       })
 
@@ -43,6 +45,35 @@ describe('React Hooks', () => {
         expect(result.current).to.be.deep.equal({
           isOnline: true,
           isOffline: false,
+          isConnecting: false,
+        })
+      })
+    })
+
+    it('should show the connection state when the client is connecting', async () => {
+      const { wrapper } = test
+
+      const { result } = renderHook(() => useConnectionState(), { wrapper })
+
+      await test.client.close()
+
+      test.client.connect().catch(console.error)
+
+      await waitFor(() => {
+        expect(result.current).to.be.deep.equal({
+          isOnline: false,
+          isOffline: true,
+          isConnecting: true,
+        })
+      })
+
+      await test.client.isReady()
+
+      await waitFor(() => {
+        expect(result.current).to.be.deep.equal({
+          isOnline: true,
+          isOffline: false,
+          isConnecting: false,
         })
       })
     })

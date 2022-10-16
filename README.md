@@ -33,6 +33,7 @@ Simple, easy.
   - [useClient Hook](#useclient-hook)
   - [useAuth Hook](#useauth-hook)
   - [useEvent Hook](#useevent-hook)
+  - [useConnectionState Hook](#useconnectionstate-hook)
 - [Roadmap](#roadmap)
 - [License](#license)
 
@@ -281,7 +282,7 @@ useEvent(
 ### useConnectionState Hook
 
 ```jsx
-const { isOnline, isOffline } = useConnectionState()
+const { isOnline, isOffline, isConnecting } = useConnectionState()
 ```
 
 ## License
