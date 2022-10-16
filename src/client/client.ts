@@ -86,6 +86,8 @@ export class Client extends ClientChannel {
   ready = false
   axios = axios
 
+  authenticated = false
+
   constructor({
     host = 'localhost',
     port,
@@ -139,10 +141,6 @@ export class Client extends ClientChannel {
 
   get isOnline() {
     return !!this.clientSocket?.ready
-  }
-
-  get authenticated() {
-    return !!this.context?.token
   }
 
   debugger(...args) {
@@ -213,12 +211,17 @@ export class Client extends ClientChannel {
 
     const context = this.allowedContextKeys.length
       ? pick(this.context ?? {}, this.allowedContextKeys)
-      : { token }
+      : {}
 
     const result = await this.call(Methods.RPC_INIT, {
       token,
       ...context,
     })
+
+    /**
+     * It needs to validate the token first as it can be invalid,
+     */
+    this.authenticated = Boolean(result)
 
     await this.updateContext(result || {}, false)
 
