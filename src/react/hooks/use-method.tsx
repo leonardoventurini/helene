@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useClient } from './use-client'
-import memoizee from 'memoizee'
 import { ClientEvents, HeleneEvents, NO_CHANNEL } from '../../constants'
 import { isFunction, noop } from 'lodash'
 import { useDebouncedCallback } from 'use-debounce'
 import { useEvent } from './use-event'
-import { EJSON } from 'ejson2'
 import { useCircuitBreaker } from './use-circuit-breaker'
+import { useMethodRefresh } from './use-method-refresh'
+import { useCaller } from './use-caller'
+import { CallOptions } from '../../client/client'
 
 export type UseMethodParams = {
   method?: string
@@ -21,6 +22,7 @@ export type UseMethodParams = {
   authenticated?: boolean
   debounced?: number
   lazy?: boolean
+  http?: boolean
 
   /**
    * Conditionally run the method or return a placeholder value.
@@ -31,80 +33,7 @@ export type UseMethodParams = {
    * Params required to call the method.
    */
   required?: string[]
-}
-
-export const useCaller = ({ client, cache, maxAge }) => {
-  return useCallback(
-    cache
-      ? memoizee(client?.call, {
-          maxAge,
-          promise: true,
-          normalizer: p => EJSON.stringify(p),
-        })
-      : client?.call,
-    [cache, client],
-  )
-}
-
-export const useMethodRefresh = ({
-  authenticated,
-  caller,
-  client,
-  memoParams,
-  method,
-  setError,
-  setLoading,
-  setResult,
-  shouldCall,
-  startLoading,
-  timeout,
-  deps,
-}) => {
-  return useCallback(
-    (callback?) => {
-      if (!client.ready) return
-      if (!method) return
-      if (!shouldCall) return
-
-      if (authenticated && !client.authenticated) {
-        setLoading(false)
-        return
-      }
-
-      startLoading()
-
-      let successful = false
-
-      caller
-        ?.call(client, method, memoParams, { timeout })
-        .then(_result => {
-          setResult(_result)
-          setError(undefined)
-          successful = true
-        })
-        .catch(e => {
-          setError(e)
-          setResult(undefined)
-        })
-        .finally(() => {
-          startLoading.cancel()
-          setLoading(false)
-          isFunction(callback) && callback()
-        })
-    },
-    [
-      client,
-      method,
-      memoParams,
-      timeout,
-      setResult,
-      setLoading,
-      setError,
-      client.authenticated,
-      ...deps,
-    ],
-  )
-}
+} & CallOptions
 
 export const useMethod = ({
   method = null,
@@ -114,13 +43,13 @@ export const useMethod = ({
   defaultValue = null,
   cache = false,
   maxAge = 60000,
-  timeout = undefined,
   deps = [],
   authenticated = false,
   debounced = null,
   parse = null,
   lazy = false,
   required = [],
+  ...methodOptions
 }: UseMethodParams) => {
   const client = useClient()
 
@@ -169,7 +98,7 @@ export const useMethod = ({
     setResult,
     shouldCall,
     startLoading,
-    timeout,
+    methodOptions,
     deps,
   })
 

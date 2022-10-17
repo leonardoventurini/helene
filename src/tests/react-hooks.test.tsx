@@ -125,6 +125,37 @@ describe('React Hooks', () => {
         })
       })
     })
+
+    it('should call the method using http', async () => {
+      let count = 0
+      let socket
+
+      test.server.addMethod('count', async function () {
+        socket = this.socket
+
+        return ++count
+      })
+
+      const { wrapper } = test
+
+      expect(socket).to.be.undefined
+
+      const { result } = renderHook(
+        () => useMethod({ method: 'count', http: true }),
+        {
+          wrapper,
+        },
+      )
+
+      await waitFor(() => {
+        expect(result.current).to.containSubset({
+          result: 1,
+          loading: false,
+        })
+      })
+
+      expect(socket).to.be.null
+    })
   })
 
   it('useEvent', async () => {
