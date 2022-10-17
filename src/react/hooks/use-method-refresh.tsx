@@ -13,6 +13,7 @@ export const useMethodRefresh = ({
   shouldCall,
   startLoading,
   methodOptions,
+  defaultValue,
   deps,
 }) => {
   return useCallback(
@@ -24,6 +25,7 @@ export const useMethodRefresh = ({
 
       if (authenticated && !client.authenticated) {
         setLoading(false)
+        setResult(defaultValue)
         return
       }
 
@@ -56,6 +58,7 @@ export const useMethodRefresh = ({
       setLoading,
       setError,
       client.authenticated,
+      defaultValue,
       ...Object.values(methodOptions),
       ...deps,
     ],

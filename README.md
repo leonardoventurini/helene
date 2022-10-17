@@ -143,7 +143,7 @@ You can also use middleware functions which can be reused:
 
 ```js
 server.addMethod('helene:rocks',
-  async () => ({ hello: true }), 
+  async (...args) => ({ hello: true, ...args }), 
   { 
     middleware: [
       // You can also throw something in here to block execution.
@@ -187,7 +187,7 @@ Then you can subscribe to it from the client:
 client.subscribe('event')
 ```
 
-You can now listen to that even in the client app:
+You can now listen to that event in the client app:
 
 ```js
 client.on('event', console.log)

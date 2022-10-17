@@ -99,6 +99,7 @@ export const useMethod = ({
     shouldCall,
     startLoading,
     methodOptions,
+    defaultValue,
     deps,
   })
 
@@ -121,6 +122,14 @@ export const useMethod = ({
   useEvent(
     {
       event: ClientEvents.INITIALIZED,
+    },
+    refreshCallback,
+    [refreshCallback],
+  )
+
+  useEvent(
+    {
+      event: ClientEvents.AUTH_CHANGED,
     },
     refreshCallback,
     [refreshCallback],
