@@ -2,7 +2,6 @@ import WebSocket from 'ws'
 import { Server } from '../server'
 import { ServerEvents, WebSocketEvents } from '../../constants'
 import http from 'http'
-import url from 'url'
 import { Errors, PublicError, SchemaValidationError } from '../../errors'
 import { ClientNode } from '../client-node'
 import IsomorphicWebSocket from 'isomorphic-ws'
@@ -46,8 +45,6 @@ export class WebSocketTransport {
   }
 
   handleConnection = (socket: WebSocket, request: http.IncomingMessage) => {
-    const { pathname } = url.parse(request.url, true)
-
     const node = new ClientNode(
       socket,
       undefined,
@@ -56,6 +53,7 @@ export class WebSocketTransport {
     )
 
     node.setId(request)
+
     this.server.addClient(node)
 
     socket.on(WebSocketEvents.CLOSE, this.handleClose(node))
@@ -65,6 +63,8 @@ export class WebSocketTransport {
     )
 
     socket.on(WebSocketEvents.MESSAGE, this.handleMessage(node))
+
+    this.server.emit(ServerEvents.CONNECTION, socket)
   }
 
   handleClose = (node: ClientNode) => () => {
