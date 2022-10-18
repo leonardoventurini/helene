@@ -5,7 +5,7 @@ export const useMethodRefresh = ({
   authenticated,
   caller,
   client,
-  memoParams,
+  params,
   method,
   setError,
   setLoading,
@@ -34,7 +34,7 @@ export const useMethodRefresh = ({
       let successful = false
 
       caller
-        .call(client, method, memoParams, methodOptions)
+        .call(client, method, params, methodOptions)
         .then(_result => {
           setResult(_result)
           setError(undefined)
@@ -53,7 +53,7 @@ export const useMethodRefresh = ({
     [
       client,
       method,
-      memoParams,
+      params,
       setResult,
       setLoading,
       setError,

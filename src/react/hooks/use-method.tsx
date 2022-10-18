@@ -37,10 +37,10 @@ export type UseMethodParams = {
 
 export const useMethod = ({
   method = null,
-  params = undefined,
+  params: _params = undefined,
   event = null,
   channel = NO_CHANNEL,
-  defaultValue = null,
+  defaultValue: _defaultValue = null,
   cache = false,
   maxAge = 60000,
   deps = [],
@@ -53,7 +53,8 @@ export const useMethod = ({
 }: UseMethodParams) => {
   const client = useClient()
 
-  const memoParams = useMemo(() => params, deps)
+  const defaultValue = useMemo(() => _defaultValue, deps)
+  const params = useMemo(() => _params, deps)
 
   const [error, setError] = useState(null)
   const [result, setResult] = useState(null)
@@ -61,7 +62,7 @@ export const useMethod = ({
 
   const { shouldCall, placeholderValue } = useCircuitBreaker({
     parse,
-    params: memoParams,
+    params,
     required,
     deps,
   })
@@ -91,7 +92,7 @@ export const useMethod = ({
     authenticated,
     caller,
     client,
-    memoParams,
+    params,
     method,
     setError,
     setLoading,
@@ -102,8 +103,6 @@ export const useMethod = ({
     defaultValue,
     deps,
   })
-
-  const initializing = useCallback(() => setLoading(true), [])
 
   const debouncedRefresh = useDebouncedCallback(refresh, debounced ?? 100)
 
@@ -116,7 +115,9 @@ export const useMethod = ({
     {
       event: ClientEvents.INITIALIZING,
     },
-    initializing,
+    () => {
+      setLoading(true)
+    },
   )
 
   useEvent(
@@ -140,7 +141,7 @@ export const useMethod = ({
     if (!client) return
 
     if (!lazy) refreshCallback()
-  }, [client, method, memoParams, debounced])
+  }, [client, method, params, debounced])
 
   useEvent({ event, channel, subscribe: true }, refreshCallback, [
     refreshCallback,

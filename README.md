@@ -34,6 +34,7 @@ Simple, easy.
   - [useAuth Hook](#useauth-hook)
   - [useEvent Hook](#useevent-hook)
   - [useConnectionState Hook](#useconnectionstate-hook)
+  - [useDepsChange Hook](#usedepschange-hook)
 - [Roadmap](#roadmap)
 - [License](#license)
 
@@ -283,6 +284,14 @@ useEvent(
 
 ```jsx
 const { isOnline, isOffline, isConnecting } = useConnectionState()
+```
+
+### useDepsChange Hook
+
+Logs changes in hook deps, useful for debugging.
+
+```jsx
+useDepsChange(deps, { name: 'Hello World'})
 ```
 
 ## License
