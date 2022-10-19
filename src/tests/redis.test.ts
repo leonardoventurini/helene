@@ -72,9 +72,26 @@ describe('Redis Pub/Sub', function () {
 
     await test1.client.login({})
 
-    const stats = await test1.client.call('online:stats')
+    test1.server.addEvent('test1')
+    test1.server.addEvent('test2')
+    test1.server.addEvent('test3')
+
+    await test1.client.subscribe('test1')
+    await test1.client.subscribe('test2')
+    await test1.client.subscribe('test3')
+
+    await test1.client.channel('test:channel').subscribe('test')
+
+    let stats = await test1.client.call('online:stats')
 
     expect(stats).to.have.property('clients').that.equals(2)
+
+    await test1.server.redisTransport.close()
+    test1.server.redisTransport = undefined
+
+    stats = await test1.client.call('online:stats')
+
+    expect(stats).to.have.property('clients').that.equals(1)
   })
 
   it('should remove client from redis upon disconnecting', async () => {

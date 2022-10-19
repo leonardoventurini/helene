@@ -8,7 +8,7 @@ export const onlineStats = () =>
       }
 
       return {
-        clients: this.server.clients.size,
+        clients: this.server.allClients.size,
       }
     },
     { protected: true },
