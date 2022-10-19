@@ -7,7 +7,18 @@ export const rpcOn = server =>
     function ({ events, channel = NO_CHANNEL }) {
       if (isEmpty(events)) return {}
 
+      const channelDisallowed =
+        server.shouldAllowChannelSubscribe &&
+        !server.shouldAllowChannelSubscribe(this, channel)
+
       return events.reduce((acc, eventName) => {
+        if (channelDisallowed) {
+          return {
+            ...acc,
+            [eventName]: false,
+          }
+        }
+
         const event = server.events.get(eventName)
 
         if (!event) {

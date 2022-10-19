@@ -67,4 +67,41 @@ describe('Channel', () => {
 
     await otherClient.close()
   })
+
+  it('should allow or disallow channel subscription', async () => {
+    test.server.setAuth({
+      auth(context: any) {
+        return context?.token ? { ...context, user: { _id: 'id' } } : false
+      },
+      async logIn({ email, password }) {
+        if (email === 'test@helene.test' && password === '123456') {
+          return {
+            token: 'test',
+          }
+        }
+      },
+    })
+
+    test.server.addEvent('any:event')
+
+    let channelName = null
+
+    test.server.setChannelAuthorization((client, channel) => {
+      channelName = channel
+
+      return client.authenticated
+    })
+
+    let res = await test.client.channel('any:channel').subscribe('any:event')
+
+    expect(res).to.have.property('any:event').that.is.false
+
+    await test.client.login({ email: 'test@helene.test', password: '123456' })
+
+    res = await test.client.channel('any:channel').subscribe('any:event')
+
+    expect(res).to.have.property('any:event').that.is.true
+
+    expect(channelName).to.be.equal('any:channel')
+  })
 })

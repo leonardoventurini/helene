@@ -27,6 +27,8 @@ declare global {
   var Helene: Server
 }
 
+export type ChannelChecker = (node: ClientNode, channel: string) => boolean
+
 export type AuthFunction = (this: ClientNode, context: any) => any
 
 export type RateLimit =
@@ -49,6 +51,7 @@ export type ServerOptions = {
   allowedContextKeys?: string[]
   useRedis?: boolean
   rateLimit?: RateLimit
+  shouldAllowChannelSubscribe?: ChannelChecker
 }
 
 export class Server extends ServerChannel {
@@ -71,6 +74,8 @@ export class Server extends ServerChannel {
   events: Map<string, Event> = new Map()
 
   ready = false
+
+  shouldAllowChannelSubscribe: ChannelChecker
 
   static ERROR_EVENT = 'error'
 
@@ -165,6 +170,10 @@ export class Server extends ServerChannel {
     this.isAuthEnabled = true
     this.auth = auth
     this.addMethod(Methods.RPC_LOGIN, logIn)
+  }
+
+  setChannelAuthorization(checker: ChannelChecker) {
+    this.shouldAllowChannelSubscribe = checker
   }
 
   async close() {
