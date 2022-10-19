@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { PageManager } from '../../utils/page-manager'
+import { PageManager } from '@/utils/page-manager'
 import { useClient } from './use-client'
 import { debounce } from 'lodash'
 import { EJSON } from 'ejson2'

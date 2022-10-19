@@ -108,6 +108,8 @@ describe('Server', function () {
 
     await server.waitFor(ServerEvents.DISCONNECTION)
 
+    expect(server.allClients.size).to.equal(0)
+
     expect(server.clients.size).to.equal(0)
 
     expect(server.channel('test:channel').clients.get('test').size).to.equal(0)

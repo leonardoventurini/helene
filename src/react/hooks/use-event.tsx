@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useClient } from './use-client'
-import { NO_CHANNEL } from '../../constants'
+import { NO_CHANNEL } from '@/constants'
 import { isString } from 'lodash'
 
 export type UseEventParams = {

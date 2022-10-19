@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useClient } from './use-client'
-import { ClientEvents } from '../../constants'
+import { ClientEvents } from '@/constants'
 
 export const useConnectionState = () => {
   const client = useClient()

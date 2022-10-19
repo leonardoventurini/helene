@@ -1,8 +1,8 @@
 import IsomorphicWebSocket from 'isomorphic-ws'
 import { Client, WebSocketOptions } from './client'
-import { ClientEvents, WebSocketEvents } from '../constants'
-import { Presentation } from '../server/presentation'
-import { WebSocketMessageOptions } from '../server/transports/websocket-transport'
+import { ClientEvents, WebSocketEvents } from '@/constants'
+import { Presentation } from '@/server/presentation'
+import { WebSocketMessageOptions } from '@/server/transports/websocket-transport'
 
 export class ClientSocket {
   client: Client

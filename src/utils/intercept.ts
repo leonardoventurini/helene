@@ -1,4 +1,4 @@
-import { AnyFunction } from '../types'
+import { AnyFunction } from '@/types'
 import { isNil, isPlainObject } from 'lodash'
 
 /**

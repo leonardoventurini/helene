@@ -1,8 +1,8 @@
-import { WebSocketMessageOptions } from '../server/transports/websocket-transport'
+import { WebSocketMessageOptions } from '@/server/transports/websocket-transport'
 import { PromiseQueue } from './promise-queue'
 import { ClientSocket } from './client-socket'
-import { Presentation } from '../server/presentation'
-import { MethodParams } from '../server/method'
+import { Presentation } from '@/server/presentation'
+import { MethodParams } from '@/server/method'
 import {
   isEmpty,
   isFunction,
@@ -13,14 +13,14 @@ import {
   merge,
   pick,
 } from 'lodash'
-import { ClientEvents, NO_CHANNEL, TOKEN_HEADER_KEY } from '../constants'
+import { ClientEvents, NO_CHANNEL, TOKEN_HEADER_KEY } from '@/constants'
 import { ClientHttp } from './client-http'
 import { ClientChannel } from './client-channel'
 import axios from 'axios'
-import { Errors } from '../errors'
+import { Errors } from '@/errors'
 import qs from 'query-string'
-import { Methods } from '../server/methods'
-import { Environment } from '../utils/environment'
+import { Methods } from '@/server/methods'
+import { Environment } from '@/utils/environment'
 import { EJSON } from 'ejson2'
 import Timeout = NodeJS.Timeout
 
