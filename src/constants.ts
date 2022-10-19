@@ -56,5 +56,4 @@ export enum Methods {
   RPC_OFF = 'rpc:off',
   LIST_METHODS = 'list:methods',
   KEEP_ALIVE = 'keep:alive',
-  ONLINE_STATS = 'online:stats',
 }

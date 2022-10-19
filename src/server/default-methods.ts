@@ -3,7 +3,6 @@ import { Server } from './server'
 import {
   keepAlive,
   listMethods,
-  onlineStats,
   rpcInit,
   rpcLogout,
   rpcOff,
@@ -22,5 +21,4 @@ export const DefaultMethods: {
   [Methods.RPC_OFF]: rpcOff,
   [Methods.RPC_INIT]: rpcInit,
   [Methods.RPC_LOGOUT]: rpcLogout,
-  [Methods.ONLINE_STATS]: onlineStats,
 }

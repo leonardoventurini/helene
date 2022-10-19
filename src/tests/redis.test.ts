@@ -82,14 +82,14 @@ describe('Redis Pub/Sub', function () {
 
     await test1.client.channel('test:channel').subscribe('test')
 
-    let stats = await test1.client.call('online:stats')
+    let stats = await test1.server.getOnlineStats()
 
     expect(stats).to.have.property('clients').that.equals(2)
 
     await test1.server.redisTransport.close()
     test1.server.redisTransport = undefined
 
-    stats = await test1.client.call('online:stats')
+    stats = await test1.server.getOnlineStats()
 
     expect(stats).to.have.property('clients').that.equals(1)
   })

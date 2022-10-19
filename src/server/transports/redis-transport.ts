@@ -37,12 +37,10 @@ export class RedisTransport {
 
   private async addClient(client: ClientNode) {
     await this.pub.sAdd(`helene:clients:${this.server.uuid}`, client._id)
-    this.server.channel('admin').refresh('online:stats')
   }
 
   private async removeClient(client: ClientNode) {
     await this.pub.sRem(`helene:clients:${this.server.uuid}`, client._id)
-    this.server.channel('admin').refresh('online:stats')
   }
 
   private async connect() {

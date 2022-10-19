@@ -259,4 +259,14 @@ export class Server extends ServerChannel {
     this.channels.set(name, channel)
     return channel
   }
+
+  async getOnlineStats() {
+    if (this.server.redisTransport) {
+      return await this.redisTransport.getStats()
+    }
+
+    return {
+      clients: this.allClients.size,
+    }
+  }
 }
