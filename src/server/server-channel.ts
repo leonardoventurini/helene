@@ -14,34 +14,41 @@ const AllEvents: string[] = [
 ]
 
 export class ServerChannel extends EventEmitter2 {
-  chName: string
+  channelName: string
   server: Server
-  events: Map<string, Event> = new Map()
+  clients: Map<string, Set<ClientNode>> = new Map()
 
-  constructor(name: string) {
+  constructor(channelName: string) {
     super()
-    this.chName = name
+    this.channelName = channelName
 
-    this.onAny(event => {
+    this.onAny((event, value) => {
       if (
-        !this.events.has(event as string) &&
+        !this.server.events.has(event as string) &&
         !AllEvents.includes(event as string)
       ) {
         console.warn('Event Not Registered:', event)
+      }
+
+      if (this.server.events.has(event as string)) {
+        const eventObject = this.server.events.get(event as string)
+        eventObject.handler(this, value)
       }
     })
   }
 
   setServer(server: Server) {
     this.server = server
-
-    this.server.eventBlueprints.forEach((opts, name) => {
-      this.addEvent(name, opts, false)
-    })
   }
 
   propagate(event: string, payload: string) {
-    this.events.get(event)?.propagate(payload)
+    const eventObject = this.server.events.get(event)
+
+    const clients = this.clients.get(eventObject.name) ?? new Set()
+
+    for (const client of clients) {
+      client.event(payload)
+    }
   }
 
   defer(event: string, params?: Presentation.Params) {
@@ -60,45 +67,53 @@ export class ServerChannel extends EventEmitter2 {
   /**
    * Declares a new event.
    */
-  addEvent(name: string, opts?: EventOptions, global = true) {
-    if (this.events.has(name)) return
+  addEvent(name: string, opts?: EventOptions) {
+    if (this.server.events.has(name)) {
+      this.server.events.delete(name)
+    }
 
     const event = new Event(name, this.server, this, opts)
 
-    this.events.set(name, event)
-    this.on(name, event.handler.bind(event))
+    this.server.events.set(name, event)
+  }
 
-    if (global) {
-      this.server.eventBlueprints.set(name, opts)
-      this.server.addEventToAllChannels(name, opts)
+  addChannelClient(eventName: string, client: ClientNode) {
+    if (!this.clients.get(eventName)?.add(client)) {
+      this.clients.set(eventName, new Set([client]))
     }
   }
 
   deleteClientNode(node: ClientNode) {
-    this.events.forEach(event => event.clients.delete(node._id))
+    this.clients.forEach(clients => {
+      clients.delete(node)
+    })
   }
 
   get list() {
-    return Array.from(this.events.keys())
+    return Array.from(this.server.events.keys())
   }
 
   get length() {
-    return this.events.size
+    return this.server.events.size
   }
 
   get(event: string) {
-    return this.events.get(event)
+    return this.server.events.get(event)
   }
 
   has(event: string) {
-    return this.events.has(event)
+    return this.server.events.has(event)
   }
 
   delete(event: string) {
-    return this.events.delete(event)
+    return this.server.events.delete(event)
   }
 
   clear() {
-    this.events.clear()
+    this.clients.clear()
+  }
+
+  isSubscribed(client: ClientNode, event: Event) {
+    return !!this.clients.get(event.name)?.has(client)
   }
 }

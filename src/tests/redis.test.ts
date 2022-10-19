@@ -8,6 +8,14 @@ describe('Redis Pub/Sub', function () {
   const test1 = new TestUtility({ globalInstance: false, useRedis: true })
   const test2 = new TestUtility({ globalInstance: false, useRedis: true })
 
+  afterEach(async () => {
+    const keys = await redis.pub.keys('helene:*')
+
+    for (const key of keys) {
+      await redis.pub.del(key)
+    }
+  })
+
   it('the server object should have the redis transport instantiated', async () => {
     expect(test1.server)
       .to.have.property('redisTransport')
@@ -75,7 +83,7 @@ describe('Redis Pub/Sub', function () {
     let clients = await redis.pub.sMembers(`helene:clients:${uuid}`)
 
     expect(clients).to.deep.equals(
-      Array.from(test1.server.clients.values()).map(c => c._id),
+      Array.from(test1.server.allClients.values()).map(c => c._id),
     )
 
     await test1.client.close()
@@ -94,7 +102,7 @@ describe('Redis Pub/Sub', function () {
     let clients = await redis.pub.sMembers(`helene:clients:${uuid}`)
 
     expect(clients).to.deep.equals(
-      Array.from(test1.server.clients.values()).map(c => c._id),
+      Array.from(test1.server.allClients.values()).map(c => c._id),
     )
 
     await test1.server.close()

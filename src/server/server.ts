@@ -19,7 +19,7 @@ import { Methods } from './methods'
 import { Environment } from '../utils/environment'
 import { ServerChannel } from './server-channel'
 import { DefaultMethods } from './default-methods'
-import { EventOptions } from './event'
+import { Event } from './event'
 import { combineLatest, fromEvent } from 'rxjs'
 
 declare global {
@@ -66,9 +66,9 @@ export class Server extends ServerChannel {
   rateLimit: RateLimit
 
   methods: Map<string, Method> = new Map()
-  clients: Map<string, ClientNode> = new Map()
+  allClients: Map<string, ClientNode> = new Map()
   channels: Map<string, ServerChannel> = new Map()
-  eventBlueprints: Map<string, EventOptions> = new Map()
+  events: Map<string, Event> = new Map()
 
   ready = false
 
@@ -168,9 +168,10 @@ export class Server extends ServerChannel {
   }
 
   async close() {
-    this.clients.forEach(node => node.close())
-    this.clients.clear()
+    this.allClients.forEach(node => node.close())
+    this.allClients.clear()
     this.methods.clear()
+    this.channels.forEach(channel => channel.clear())
     this.channels.clear()
 
     await this.redisTransport?.close()
@@ -219,11 +220,11 @@ export class Server extends ServerChannel {
   }
 
   addClient(node: ClientNode) {
-    this.clients.set(node._id, node)
+    this.allClients.set(node._id, node)
   }
 
   deleteClient(node: ClientNode) {
-    this.clients.delete(node._id)
+    this.allClients.delete(node._id)
     this.channels.forEach(channel => channel.deleteClientNode(node))
   }
 
@@ -248,9 +249,5 @@ export class Server extends ServerChannel {
     channel.setServer(this.server)
     this.channels.set(name, channel)
     return channel
-  }
-
-  addEventToAllChannels(name: string, opts?: EventOptions) {
-    this.channels.forEach(channel => channel.addEvent(name, opts, false))
   }
 }

@@ -75,7 +75,7 @@ export class RedisTransport {
     this.server.emit(ServerEvents.REDIS_CONNECT)
 
     this.pub.on('ready', () => {
-      this.server.clients.forEach(client => this.addClient(client))
+      this.server.allClients.forEach(client => this.addClient(client))
     })
   }
 
@@ -116,7 +116,7 @@ export class RedisTransport {
    */
   public async refreshRedis() {
     await this.pub.sAdd(`helene:servers`, this.server.uuid)
-    this.server.clients.forEach(client => this.addClient(client))
+    this.server.allClients.forEach(client => this.addClient(client))
   }
 
   public async getStats() {

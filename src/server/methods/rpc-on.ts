@@ -1,5 +1,5 @@
 import { Method } from '../method'
-import { NO_CHANNEL } from '../../constants'
+import { NO_CHANNEL } from '@/constants'
 import { isEmpty } from 'lodash'
 
 export const rpcOn = server =>
@@ -8,7 +8,7 @@ export const rpcOn = server =>
       if (isEmpty(events)) return {}
 
       return events.reduce((acc, eventName) => {
-        const event = server.channel(channel).events.get(eventName)
+        const event = server.events.get(eventName)
 
         if (!event) {
           return {
@@ -27,7 +27,8 @@ export const rpcOn = server =>
           }
         }
 
-        event.clients.set(this._id, this)
+        const serverChannel = server.channel(channel)
+        serverChannel.addChannelClient(event.name, this)
 
         return {
           ...acc,

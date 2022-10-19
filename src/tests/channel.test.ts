@@ -11,14 +11,12 @@ describe('Channel', () => {
 
     test.server.addEvent(event)
 
-    expect(test.server).to.have.property('eventBlueprints').that.has.lengthOf(2)
+    expect(test.server).to.have.property('events').that.has.lengthOf(2)
 
     const channelName = Presentation.uuid()
     const channel = test.server.channel(channelName)
 
-    expect(channel).to.have.property('events').that.has.lengthOf(2)
-
-    expect(channel.events.has(event)).to.be.true
+    expect(channel.server.events.has(event)).to.be.true
   })
 
   it('should add event to all channels', async () => {
@@ -30,9 +28,9 @@ describe('Channel', () => {
 
     expect(test.server.events.has(event)).to.be.true
 
-    channel.events.delete(event)
+    channel.server.events.delete(event)
 
-    expect(channel).to.have.property('events').that.has.lengthOf(1)
+    expect(test.server).to.have.property('events').that.has.lengthOf(1)
   })
 
   it('should subscribe to an event in a specific channel', async () => {

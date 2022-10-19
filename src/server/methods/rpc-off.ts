@@ -1,12 +1,13 @@
 import { Method } from '../method'
-import { NO_CHANNEL } from '../../constants'
-import { Errors } from '../../errors'
+import { NO_CHANNEL } from '@/constants'
+import { Errors } from '@/errors'
 
 export const rpcOff = server =>
   new Method(
     function ({ events, channel = NO_CHANNEL }) {
       return events.reduce((acc, eventName) => {
-        const event = server.channel(channel).events.get(eventName)
+        const ch = server.channel(channel)
+        const event = ch.events.get(eventName)
 
         if (!event) {
           return {
@@ -15,7 +16,7 @@ export const rpcOff = server =>
           }
         }
 
-        const isSubscribed = event.isSubscribed(this)
+        const isSubscribed = ch.isSubscribed(this, event)
 
         if (!isSubscribed) {
           return {
@@ -24,7 +25,7 @@ export const rpcOff = server =>
           }
         }
 
-        event.clients.delete(this._id)
+        ch.clients.get(event.name).delete(this)
 
         return {
           ...acc,

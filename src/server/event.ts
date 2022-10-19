@@ -27,7 +27,6 @@ export class Event {
   uuid: string
   name: string
   isProtected: boolean
-  clients: Map<string, ClientNode> = new Map()
   channel: ServerChannel
   server: Server
 
@@ -63,31 +62,21 @@ export class Event {
     }
   }
 
-  propagate(payload: string) {
-    this.clients.forEach(client => client.event(payload))
-  }
-
-  handler(params: Presentation.Params) {
-    const channel = this.channel.chName
-
+  handler(channel: ServerChannel, params: Presentation.Params) {
     const payload = Presentation.Outbound.event({
       event: this.name,
-      channel,
+      channel: channel.channelName,
       params,
     })
 
     if (this.server?.redisTransport?.pub) {
       this.server.redisTransport
-        .publish(this.name, channel, payload)
+        .publish(this.name, channel.channelName, payload)
         .catch(console.error)
 
       return
     }
 
-    this.propagate(payload)
-  }
-
-  isSubscribed(client) {
-    return this.clients.has(client._id)
+    channel.propagate(this.name, payload)
   }
 }

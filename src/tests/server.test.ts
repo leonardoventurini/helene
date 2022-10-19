@@ -100,11 +100,9 @@ describe('Server', function () {
 
     await client.channel('test:channel').subscribe('test')
 
-    expect(server.clients.size).to.equal(1)
+    expect(server.allClients.size).to.equal(1)
 
-    expect(
-      server.channels.get('test:channel').events.get('test').clients.size,
-    ).to.equal(1)
+    expect(server.channel('test:channel').clients.get('test').size).to.equal(1)
 
     client.close().catch(console.error)
 
@@ -112,8 +110,6 @@ describe('Server', function () {
 
     expect(server.clients.size).to.equal(0)
 
-    expect(
-      server.channels.get('test:channel').events.get('test').clients.size,
-    ).to.equal(0)
+    expect(server.channel('test:channel').clients.get('test').size).to.equal(0)
   })
 })
