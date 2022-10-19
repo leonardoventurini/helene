@@ -7,7 +7,7 @@ export const rpcOff = server =>
     function ({ events, channel = NO_CHANNEL }) {
       return events.reduce((acc, eventName) => {
         const ch = server.channel(channel)
-        const event = ch.events.get(eventName)
+        const event = ch.server.events.get(eventName)
 
         if (!event) {
           return {

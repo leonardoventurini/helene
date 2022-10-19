@@ -26,4 +26,24 @@ describe('Unsubscribe', () => {
 
     expect(data).to.have.property('test:event:2').that.is.true
   })
+
+  it('should unsubscribe from channel', async () => {
+    await test.server.addEvent('test:event')
+
+    await test.client.channel('test:channel').subscribe('test:event')
+
+    expect(
+      test.server.channel('test:channel').clients.get('test:event'),
+    ).to.have.length(1)
+
+    const data = await test.client
+      .channel('test:channel')
+      .unsubscribe('test:event')
+
+    expect(data).to.have.property('test:event').that.is.true
+
+    expect(
+      test.server.channel('test:channel').clients.get('test:event'),
+    ).to.have.length(0)
+  })
 })
