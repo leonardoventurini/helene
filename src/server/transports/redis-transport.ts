@@ -67,6 +67,8 @@ export class RedisTransport {
     this.addClient = this.addClient.bind(this)
     this.removeClient = this.removeClient.bind(this)
 
+    await this.pub.sAdd(`helene:servers`, this.server.uuid)
+
     this.server.on(ServerEvents.CONNECTION, this.addClient)
     this.server.on(ServerEvents.DISCONNECTION, this.removeClient)
 
@@ -98,7 +100,8 @@ export class RedisTransport {
     this.server.off(ServerEvents.DISCONNECTION, this.removeClient)
 
     if (this.pub) {
-      this.pub.del(`helene:clients:${this.server.uuid}`).catch(console.error)
+      await this.pub.del(`helene:clients:${this.server.uuid}`)
+      await this.pub.sRem(`helene:servers`, this.server.uuid)
     }
 
     if (this.pub?.isOpen) await this.pub.quit()
@@ -108,8 +111,24 @@ export class RedisTransport {
     this.sub = undefined
   }
 
+  /**
+   * @todo Call this upon event fired to every container.
+   */
+  public async refreshRedis() {
+    await this.pub.sAdd(`helene:servers`, this.server.uuid)
+    this.server.clients.forEach(client => this.addClient(client))
+  }
+
   public async getStats() {
-    const clients = await this.pub.sCard(`helene:clients:${this.server.uuid}`)
+    const servers = await this.pub.sMembers(`helene:servers`)
+
+    let clients = await Promise.all(
+      servers.map(async server => {
+        return await this.pub.sCard(`helene:clients:${server}`)
+      }),
+    )
+
+    clients = clients.reduce((acc, val) => acc + val, 0)
 
     return {
       clients,

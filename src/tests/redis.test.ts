@@ -27,6 +27,22 @@ describe('Redis Pub/Sub', function () {
     expect(data).to.have.property('message').that.equals('test')
   })
 
+  it('should add server id to redis', async () => {
+    const { uuid } = test1.server
+
+    let servers = await redis.pub.sMembers(`helene:servers`)
+
+    expect(servers).to.include(uuid)
+    expect(servers).to.include(test2.server.uuid)
+
+    await test1.server.close()
+
+    servers = await redis.pub.sMembers(`helene:servers`)
+
+    expect(servers).to.not.include(uuid)
+    expect(servers).to.include(test2.server.uuid)
+  })
+
   it('should emit an event in one server and both clients should fire', async () => {
     await test1.createEvent('monkey:king')
     await test2.createEvent('monkey:king')
@@ -50,7 +66,7 @@ describe('Redis Pub/Sub', function () {
 
     const stats = await test1.client.call('online:stats')
 
-    expect(stats).to.have.property('clients').that.equals(1)
+    expect(stats).to.have.property('clients').that.equals(2)
   })
 
   it('should remove client from redis upon disconnecting', async () => {
