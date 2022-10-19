@@ -106,7 +106,7 @@ describe('Server', function () {
       server.channels.get('test:channel').events.get('test').clients.size,
     ).to.equal(1)
 
-    await client.close()
+    client.close().catch(console.error)
 
     await server.waitFor(ServerEvents.DISCONNECTION)
 

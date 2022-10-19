@@ -62,6 +62,12 @@ You can create a new server instance like so:
 new Server({
   host: 'localhost',
   port: 80,
+  redis: {
+    // We use redis to propagate events to all containers in a cluster
+    // This is the default value, you can omit this option
+    url: 'redis://localhost:6379',
+  },
+  useRedis: true, // If you don't need redis, you can omit this option, false by default
 })
 ```
 

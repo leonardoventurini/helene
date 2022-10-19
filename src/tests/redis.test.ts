@@ -37,4 +37,54 @@ describe('Redis Pub/Sub', function () {
 
     expect(data2).to.be.equal(11)
   })
+
+  it('should get the online stats', async () => {
+    test1.server.setAuth({
+      logIn: () => {
+        return { token: '1' }
+      },
+      auth: () => ({ user: { _id: 1 } }),
+    })
+
+    await test1.client.login({})
+
+    const stats = await test1.client.call('online:stats')
+
+    expect(stats).to.have.property('clients').that.equals(1)
+  })
+
+  it('should remove client from redis upon disconnecting', async () => {
+    const { uuid } = test1.server
+
+    let clients = await redis.pub.sMembers(`helene:clients:${uuid}`)
+
+    expect(clients).to.deep.equals(
+      Array.from(test1.server.clients.values()).map(c => c._id),
+    )
+
+    await test1.client.close()
+
+    // Make sure the server had time to remove the client from redis
+    await test1.sleep(10)
+
+    clients = await redis.pub.sMembers(`helene:clients:${uuid}`)
+
+    expect(clients).to.deep.equals([])
+  })
+
+  it('should remove server key from redis', async () => {
+    const { uuid } = test1.server
+
+    let clients = await redis.pub.sMembers(`helene:clients:${uuid}`)
+
+    expect(clients).to.deep.equals(
+      Array.from(test1.server.clients.values()).map(c => c._id),
+    )
+
+    await test1.server.close()
+
+    clients = await redis.pub.sMembers(`helene:clients:${uuid}`)
+
+    expect(clients).to.deep.equals([])
+  })
 })

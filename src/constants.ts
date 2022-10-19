@@ -19,6 +19,7 @@ export enum ServerEvents {
   SOCKET_ERROR = 'socket:error',
   ERROR = 'error',
   REDIS_CONNECT = 'redis:connect',
+  READY = 'ready',
 }
 
 export enum ClientEvents {

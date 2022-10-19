@@ -1,12 +1,15 @@
 import { Method } from './method'
 import { Server } from './server'
-import { keepAlive } from './methods/keep-alive'
-import { listMethods } from './methods/list-methods'
-import { rpcOn } from './methods/rpc-on'
-import { rpcOff } from './methods/rpc-off'
-import { rpcInit } from './methods/rpc-init'
-import { rpcLogout } from './methods/rpc-logout'
-import { Methods } from './methods'
+import {
+  keepAlive,
+  listMethods,
+  Methods,
+  onlineStats,
+  rpcInit,
+  rpcLogout,
+  rpcOff,
+  rpcOn,
+} from './methods'
 
 type MethodBuilder = (server: Server) => Method
 
@@ -19,4 +22,5 @@ export const DefaultMethods: {
   [Methods.RPC_OFF]: rpcOff,
   [Methods.RPC_INIT]: rpcInit,
   [Methods.RPC_LOGOUT]: rpcLogout,
+  [Methods.ONLINE_STATS]: onlineStats,
 }

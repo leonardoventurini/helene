@@ -8,7 +8,7 @@ import { Presentation } from './presentation'
 import { Request, Response } from 'express'
 import { HeleneAsyncLocalStorage } from './helene-async-local-storage'
 import { RateLimiter } from 'limiter'
-import { RateLimit } from './server'
+import { RateLimit, Server } from './server'
 import { ObjectId } from 'bson'
 
 export type ClientNodeContext = Record<string, any>
@@ -23,13 +23,16 @@ export class ClientNode {
   res?: Response = {} as Response
   isServer = false
   limiter: RateLimiter
+  server: Server
 
   constructor(
+    server: Server,
     socket?: WebSocket,
     req?: Request,
     res?: Response,
     limit?: RateLimit,
   ) {
+    this.server = server
     this.socket = socket
     this.req = req
     this.res = res

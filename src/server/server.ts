@@ -6,7 +6,12 @@ import { WebSocketTransport } from './transports/websocket-transport'
 import { Method, MethodFunction, MethodOptions, MethodParams } from './method'
 import { ClientNode } from './client-node'
 import { RedisTransport } from './transports/redis-transport'
-import { ClientEvents, HeleneEvents, NO_CHANNEL } from '../constants'
+import {
+  ClientEvents,
+  HeleneEvents,
+  NO_CHANNEL,
+  ServerEvents,
+} from '../constants'
 import { RequestListener } from 'http'
 import * as assert from 'assert'
 import { isFunction, isObject, isString } from 'lodash'
@@ -15,6 +20,7 @@ import { Environment } from '../utils/environment'
 import { ServerChannel } from './server-channel'
 import { DefaultMethods } from './default-methods'
 import { EventOptions } from './event'
+import { combineLatest, fromEvent } from 'rxjs'
 
 declare global {
   // eslint-disable-next-line no-var
@@ -63,6 +69,8 @@ export class Server extends ServerChannel {
   clients: Map<string, ClientNode> = new Map()
   channels: Map<string, ServerChannel> = new Map()
   eventBlueprints: Map<string, EventOptions> = new Map()
+
+  ready = false
 
   static ERROR_EVENT = 'error'
 
@@ -126,6 +134,27 @@ export class Server extends ServerChannel {
     this.addEvent(HeleneEvents.METHOD_REFRESH)
 
     this.channels.set(NO_CHANNEL, this)
+
+    const serverEvents = []
+
+    serverEvents.push(fromEvent(this, ServerEvents.LISTENING))
+
+    if (this.redisTransport) {
+      serverEvents.push(fromEvent(this, ServerEvents.REDIS_CONNECT))
+    }
+
+    combineLatest(serverEvents).subscribe(() => {
+      this.ready = true
+      this.emit(ServerEvents.READY, true)
+    })
+  }
+
+  isReady() {
+    return new Promise(resolve => {
+      if (this.ready) resolve(true)
+
+      this.once(ServerEvents.READY, resolve)
+    })
   }
 
   get express() {
@@ -168,7 +197,7 @@ export class Server extends ServerChannel {
 
     const methodInstance = this.methods.get(method)
 
-    const node = new ClientNode()
+    const node = new ClientNode(this)
 
     node.isServer = true
 

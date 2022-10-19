@@ -46,6 +46,7 @@ export class WebSocketTransport {
 
   handleConnection = (socket: WebSocket, request: http.IncomingMessage) => {
     const node = new ClientNode(
+      this.server,
       socket,
       undefined,
       undefined,
@@ -64,12 +65,12 @@ export class WebSocketTransport {
 
     socket.on(WebSocketEvents.MESSAGE, this.handleMessage(node))
 
-    this.server.emit(ServerEvents.CONNECTION, socket)
+    this.server.emit(ServerEvents.CONNECTION, node)
   }
 
   handleClose = (node: ClientNode) => () => {
-    this.server.deleteClient(node)
     this.server.emit(ServerEvents.DISCONNECTION, node)
+    this.server.deleteClient(node)
   }
 
   handleMessage = (node: ClientNode) => async (data: WebSocket.Data) => {

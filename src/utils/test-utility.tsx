@@ -1,6 +1,5 @@
 import { Server, ServerOptions } from '../server/server'
-import { HttpTransportEvents } from '../server/transports/http-transport'
-import { ClientEvents, NO_CHANNEL } from '../constants'
+import { ClientEvents, NO_CHANNEL, ServerEvents } from '../constants'
 import { Client, ClientOptions } from '../client/client'
 import { ClientProvider } from '../react/components'
 import React from 'react'
@@ -53,7 +52,7 @@ export class TestUtility {
         await server?.close()
       })
 
-      server.once(HttpTransportEvents.HTTP_LISTENING, () => resolve(server))
+      server.once(ServerEvents.READY, () => resolve(server))
       server.once(Server.ERROR_EVENT, error => reject(error))
     })
   }
