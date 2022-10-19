@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { TestUtility } from '../utils/test-utility'
+import { TestUtility } from './utils/test-utility'
 import { Server } from '../server/server'
 import { HttpTransport } from '../server/transports/http-transport'
 import { WebSocketTransport } from '../server/transports/websocket-transport'

@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { Errors } from '../errors'
-import { TestUtility } from '../utils/test-utility'
+import { TestUtility } from './utils/test-utility'
 import path from 'path'
 import request from 'supertest'
 import { range } from 'lodash'

@@ -10,7 +10,7 @@
     "watch": "tsc --watch",
     "clean": "rm -rf lib",
     "test": "nodemon --watch 'src/**/*' -e ts,tsx --exec 'yarn test:mocha'",
-    "test:mocha": "NODE_ENV=test mocha -r ts-node/register/transpile-only 'src/**/*.test.*' --extension ts,tsx --file 'src/utils/setup-tests.ts' --exit"
+    "test:mocha": "NODE_ENV=test mocha -r ts-node/register/transpile-only 'src/**/*.test.*' --extension ts,tsx --file 'src/tests/utils/setup-tests.ts' --exit"
   },
   "dependencies": {
     "axios": "^0.27.2",

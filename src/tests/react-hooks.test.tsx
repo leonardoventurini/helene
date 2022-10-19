@@ -2,7 +2,7 @@ import React from 'react'
 import { expect } from 'chai'
 import { render, screen, waitFor } from '@testing-library/react'
 import { renderHook } from '@testing-library/react-hooks'
-import { TestUtility } from '../utils/test-utility'
+import { TestUtility } from './utils/test-utility'
 import { useConnectionState, useEvent, useMethod } from '../react/hooks'
 import sinon from 'sinon'
 

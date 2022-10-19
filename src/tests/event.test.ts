@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { TestUtility } from '../utils/test-utility'
+import { TestUtility } from './utils/test-utility'
 import { ClientEvents, NO_CHANNEL } from '../constants'
 
 describe('Events', function () {

@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { TestUtility } from '../utils/test-utility'
+import { TestUtility } from './utils/test-utility'
 
 describe('Unsubscribe', () => {
   const test = new TestUtility()

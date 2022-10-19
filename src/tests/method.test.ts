@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { TestUtility } from '../utils/test-utility'
+import { TestUtility } from './utils/test-utility'
 import { Errors, PublicError } from '../errors'
 import { Presentation } from '../server/presentation'
 import { ClientNode } from '../server/client-node'
