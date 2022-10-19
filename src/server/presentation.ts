@@ -1,8 +1,8 @@
 import { identity, isString } from 'lodash'
-import { Helpers } from '@/utils/helpers'
+import { Helpers } from '../utils/helpers'
 import { v4 } from 'uuid'
-import { Errors } from '@/errors'
-import { Environment } from '@/utils/environment'
+import { Errors } from '../errors'
+import { Environment } from '../utils/environment'
 import { EJSON } from 'ejson2'
 
 export namespace Presentation {

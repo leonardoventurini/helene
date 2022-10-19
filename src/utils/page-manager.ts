@@ -1,6 +1,6 @@
 import { EventEmitter2 } from 'eventemitter2'
 import { first, isEmpty, isNaN, last } from 'lodash'
-import { Client } from '@/client/client'
+import { Client } from '../client/client'
 
 export const PLACEHOLDER = 'PLACEHOLDER'
 

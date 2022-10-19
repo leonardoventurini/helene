@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useClient } from './use-client'
-import { ClientEvents, HeleneEvents, NO_CHANNEL } from '@/constants'
+import { ClientEvents, HeleneEvents, NO_CHANNEL } from '../../constants'
 import { isFunction, noop } from 'lodash'
 import { useDebouncedCallback } from 'use-debounce'
 import { useEvent } from './use-event'
 import { useCircuitBreaker } from './use-circuit-breaker'
 import { useMethodRefresh } from './use-method-refresh'
 import { useCaller } from './use-caller'
-import { CallOptions } from '@/client/client'
+import { CallOptions } from '../../client/client'
 
 export type UseMethodParams = {
   method?: string

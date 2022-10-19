@@ -1,5 +1,5 @@
 import { createClient, RedisClientOptions } from 'redis'
-import { NO_CHANNEL, RedisListeners, ServerEvents } from '@/constants'
+import { NO_CHANNEL, RedisListeners, ServerEvents } from '../../constants'
 import { Server } from '../server'
 import { Presentation } from '../presentation'
 import { ClientNode } from '../client-node'

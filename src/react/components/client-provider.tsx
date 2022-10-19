@@ -1,5 +1,5 @@
 import React, { PropsWithChildren, useEffect, useState } from 'react'
-import { Client, ClientOptions } from '@/client/client'
+import { Client, ClientOptions } from '../../client/client'
 
 export const ClientContext = React.createContext(null)
 

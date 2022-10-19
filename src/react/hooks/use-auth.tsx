@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ClientEvents } from '@/constants'
+import { ClientEvents } from '../../constants'
 import { cloneDeep } from 'lodash'
 import { useClient } from './use-client'
 

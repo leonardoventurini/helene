@@ -11,12 +11,12 @@ import {
   HeleneEvents,
   NO_CHANNEL,
   ServerEvents,
-} from '@/constants'
+} from '../constants'
 import { RequestListener } from 'http'
 import * as assert from 'assert'
 import { isFunction, isObject, isString } from 'lodash'
 import { Methods } from './methods'
-import { Environment } from '@/utils/environment'
+import { Environment } from '../utils/environment'
 import { ServerChannel } from './server-channel'
 import { DefaultMethods } from './default-methods'
 import { Event } from './event'

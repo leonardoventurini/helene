@@ -1,9 +1,9 @@
 import { Client } from './client'
 import axios from 'axios'
 import { Reject, Resolve } from './promise-queue'
-import { Presentation } from '@/server/presentation'
+import { Presentation } from '../server/presentation'
 import http from 'axios/lib/adapters/http'
-import { Environment } from '@/utils/environment'
+import { Environment } from '../utils/environment'
 
 export class ClientHttp {
   client: Client
