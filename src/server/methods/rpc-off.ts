@@ -1,6 +1,6 @@
+import { NO_CHANNEL } from '../../constants'
 import { Method } from '../method'
-import { NO_CHANNEL } from '@/constants'
-import { Errors } from '@/errors'
+import { Errors } from '../../errors'
 
 export const rpcOff = server =>
   new Method(

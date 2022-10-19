@@ -15,10 +15,6 @@
     "skipLibCheck": true,
     "sourceMap": true,
     "target": "ES2021",
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["src/*"]
-    }
   },
   "include": [
     "src/**/*"
