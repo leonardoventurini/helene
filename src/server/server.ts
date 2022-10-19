@@ -9,13 +9,13 @@ import { RedisTransport } from './transports/redis-transport'
 import {
   ClientEvents,
   HeleneEvents,
+  Methods,
   NO_CHANNEL,
   ServerEvents,
 } from '../constants'
 import { RequestListener } from 'http'
 import * as assert from 'assert'
 import { isFunction, isObject, isString } from 'lodash'
-import { Methods } from './methods'
 import { Environment } from '../utils/environment'
 import { ServerChannel } from './server-channel'
 import { DefaultMethods } from './default-methods'

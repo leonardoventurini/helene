@@ -3,13 +3,13 @@ import { Server } from './server'
 import {
   keepAlive,
   listMethods,
-  Methods,
   onlineStats,
   rpcInit,
   rpcLogout,
   rpcOff,
   rpcOn,
 } from './methods'
+import { Methods } from '../constants'
 
 type MethodBuilder = (server: Server) => Method
 

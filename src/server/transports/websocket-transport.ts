@@ -1,12 +1,11 @@
 import WebSocket from 'ws'
 import { Server } from '../server'
-import { ServerEvents, WebSocketEvents } from '../../constants'
+import { Methods, ServerEvents, WebSocketEvents } from '../../constants'
 import http from 'http'
 import { Errors, PublicError, SchemaValidationError } from '../../errors'
 import { ClientNode } from '../client-node'
 import IsomorphicWebSocket from 'isomorphic-ws'
 import { Presentation } from '../presentation'
-import { Methods } from '../methods'
 import MethodCallPayload = Presentation.MethodCallPayload
 
 export enum WebSocketTransportEvents {
