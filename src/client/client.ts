@@ -259,7 +259,7 @@ export class Client extends ClientChannel {
     }
 
     if (isPlainObject(response)) {
-      await this.updateContext(response)
+      await this.setContext(response)
     }
   }
 
