@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
-import { useClient } from './use-client'
+import { useCallback } from 'react'
 import { NO_CHANNEL } from '../../constants'
-import { isString } from 'lodash'
+import { useSubscribe } from './use-subscribe'
 
 export type UseEventParams = {
   event: string
@@ -20,42 +19,18 @@ export function useEvent(
   fn: (...args: any[]) => void,
   deps: any[] = [],
 ) {
-  const [ready, setReady] = useState(false)
-  const client = useClient()
   const refreshCallback = useCallback(fn, deps)
 
-  useEffect(() => setReady(false), [client, channel, event, refreshCallback])
-
-  useEffect(() => {
-    if (!active) return
-    if (!event) return
-    if (!client) return
-    if (!channel) return
-
-    const ch = client.channel(channel)
-
-    if (subscribe) {
-      ch.subscribe(event)
-        .then(result => {
-          if (isString(result[event]))
-            throw new Error(`[${event}] ${result[event]}`)
-          ch.on(event, refreshCallback)
-          setReady(true)
-        })
-        .catch(console.error)
-    } else {
+  return useSubscribe({
+    event,
+    channel,
+    setup(ch) {
       ch.on(event, refreshCallback)
-      setReady(true)
-    }
-
-    return () => {
+    },
+    teardown(ch) {
       ch.off(event, refreshCallback)
-
-      if (subscribe) {
-        ch.unsubscribe(event).catch(console.error)
-      }
-    }
-  }, [client, channel, event, refreshCallback])
-
-  return ready
+    },
+    subscribe,
+    deps: [refreshCallback],
+  })
 }

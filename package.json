@@ -68,7 +68,8 @@
   },
   "peerDependencies": {
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "rxjs": "^7"
   },
   "author": "Leonardo Venturini",
   "license": "MIT",
