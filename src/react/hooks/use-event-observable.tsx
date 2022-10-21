@@ -1,7 +1,8 @@
 import { NO_CHANNEL } from '../../constants'
 import { useChannel } from './use-channel'
-import { fromEvent } from 'rxjs'
+import { EMPTY, fromEvent } from 'rxjs'
 import { useSubscribe } from './use-subscribe'
+import { useMemo } from 'react'
 
 export function useEventObservable(
   event: string,
@@ -16,5 +17,5 @@ export function useEventObservable(
 
   const ch = useChannel(channel)
 
-  return fromEvent(ch, event)
+  return useMemo(() => (ch ? fromEvent(ch, event) : EMPTY), [ch, event])
 }
