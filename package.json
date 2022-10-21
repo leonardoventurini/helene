@@ -6,7 +6,6 @@
   "main": "lib/index.js",
   "scripts": {
     "build": "rm -rf lib && tsc",
-    "build:docs": "typedoc src --out docs/typedoc",
     "watch": "tsc --watch",
     "clean": "rm -rf lib",
     "test": "nodemon --watch 'src/**/*' -e ts,tsx --exec 'yarn test:mocha'",
