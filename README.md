@@ -1,3 +1,4 @@
+![Tests](https://github.com/leonardoventurini/helene/actions/workflows/test.yml/badge.svg)
 ![npm](https://img.shields.io/npm/v/helene?style=flat-square)
 ![GitHub](https://img.shields.io/github/license/leonardoventurini/helene?style=flat-square)
 ![GitHub watchers](https://img.shields.io/github/watchers/leonardoventurini/helene?style=social)
