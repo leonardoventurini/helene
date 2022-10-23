@@ -227,7 +227,11 @@ export class Client extends ClientChannel {
      */
     this.authenticated = Boolean(result)
 
-    await this.updateContext(result || {}, false)
+    if (result) {
+      await this.updateContext(result, false)
+    } else {
+      this.clearContext()
+    }
 
     await this.resubscribeAllChannels()
 
