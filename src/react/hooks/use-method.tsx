@@ -8,8 +8,6 @@ import { useCircuitBreaker } from './use-circuit-breaker'
 import { useMethodRefresh } from './use-method-refresh'
 import { useCaller } from './use-caller'
 import { CallOptions } from '../../client/client'
-import { useEventObservable } from './use-event-observable'
-import { useCombinedDebounce } from './use-combined-debounce'
 
 export type UseMethodParams = {
   method?: string
@@ -117,19 +115,30 @@ export const useMethod = ({
     {
       event: ClientEvents.INITIALIZING,
     },
-    () => setLoading(true),
+    () => {
+      setLoading(true)
+    },
   )
 
-  const authChanged$ = useEventObservable(ClientEvents.AUTH_CHANGED)
-  const initialized$ = useEventObservable(ClientEvents.INITIALIZED)
+  useEvent(
+    {
+      event: ClientEvents.INITIALIZED,
+    },
+    refreshCallback,
+    [refreshCallback],
+  )
 
-  useCombinedDebounce({
-    observables: [authChanged$, initialized$],
-    callback: refreshCallback,
-  })
+  useEvent(
+    {
+      event: ClientEvents.AUTH_CHANGED,
+    },
+    refreshCallback,
+    [refreshCallback],
+  )
 
   useEffect(() => {
     if (!method) return
+    if (!client) return
 
     if (!lazy) refreshCallback()
   }, [client, method, params, debounced])
