@@ -28,9 +28,9 @@ export class RedisTransport {
     url: 'redis://localhost:6379',
   }
 
-  constructor(server: Server, opts: RedisClientOptions) {
+  constructor(server: Server, opts: RedisClientOptions | boolean) {
     this.server = server
-    this.opts = opts
+    this.opts = Object.assign({}, RedisTransport.defaultRedisOpts, opts)
 
     this.connect().catch(console.error)
   }

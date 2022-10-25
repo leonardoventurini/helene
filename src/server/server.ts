@@ -45,11 +45,10 @@ export type ServerOptions = {
   origins?: string[]
   debug?: boolean
   ws?: WebSocket.ServerOptions
-  redis?: RedisClientOptions
+  redis?: RedisClientOptions | boolean
   requestListener?: RequestListener
   globalInstance?: boolean
   allowedContextKeys?: string[]
-  useRedis?: boolean
   rateLimit?: RateLimit
   shouldAllowChannelSubscribe?: ChannelChecker
 }
@@ -89,7 +88,6 @@ export class Server extends ServerChannel {
     requestListener,
     globalInstance = true,
     allowedContextKeys = [],
-    useRedis = false,
     rateLimit = false,
   }: ServerOptions = {}) {
     super(NO_CHANNEL)
@@ -125,12 +123,7 @@ export class Server extends ServerChannel {
       ...ws,
     })
 
-    this.redisTransport = useRedis
-      ? new RedisTransport(this, {
-          url: `redis://${this.host}:6379`,
-          ...redis,
-        })
-      : null
+    this.redisTransport = redis ? new RedisTransport(this, redis) : null
 
     if (Environment.isDevelopment) {
       this.instrumentDebugger()

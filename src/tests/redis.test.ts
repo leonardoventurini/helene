@@ -6,8 +6,8 @@ import { Presentation } from '../server/presentation'
 
 describe('Redis Pub/Sub', function () {
   const redis = new RedisTestUtil()
-  const test1 = new TestUtility({ globalInstance: false, useRedis: true })
-  const test2 = new TestUtility({ globalInstance: false, useRedis: true })
+  const test1 = new TestUtility({ globalInstance: false, redis: true })
+  const test2 = new TestUtility({ globalInstance: false, redis: true })
 
   afterEach(async () => {
     const keys = await redis.pub.keys('helene:*')

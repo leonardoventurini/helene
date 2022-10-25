@@ -11,7 +11,11 @@ export class TestUtility {
   host = 'localhost'
   port: number
 
-  constructor({ debug = false, globalInstance = true, useRedis = false } = {}) {
+  constructor({
+    debug = false,
+    globalInstance = true,
+    redis = undefined,
+  } = {}) {
     this.port = this.randomPort
 
     beforeEach(async () => {
@@ -19,7 +23,7 @@ export class TestUtility {
         debug,
         globalInstance,
         origins: ['http://localhost'],
-        useRedis,
+        redis,
       })
 
       this.client = await this.createClient({ debug })
