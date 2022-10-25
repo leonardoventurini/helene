@@ -11,6 +11,7 @@ import { RateLimiter } from 'limiter'
 import { RateLimit, Server } from './server'
 import { ObjectId } from 'bson'
 import { EventEmitter2 } from 'eventemitter2'
+import { ServerEvents } from '../constants'
 
 export type ClientNodeContext = Record<string, any>
 
@@ -113,6 +114,7 @@ export class ClientNode extends EventEmitter2 {
   }
 
   close() {
-    this.socket?.close()
+    this.server.emit(ServerEvents.DISCONNECTION, this)
+    this.socket.terminate()
   }
 }
