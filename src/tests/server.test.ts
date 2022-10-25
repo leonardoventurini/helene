@@ -104,9 +104,19 @@ describe('Server', function () {
 
     expect(server.channel('test:channel').clients.get('test').size).to.equal(1)
 
+    let nodeEmittedDisconnect = false
+
+    const [node] = server.channel('test:channel').clients.get('test')
+
+    node.once(ServerEvents.DISCONNECT, () => {
+      nodeEmittedDisconnect = true
+    })
+
     client.close().catch(console.error)
 
     await server.waitFor(ServerEvents.DISCONNECTION)
+
+    expect(nodeEmittedDisconnect).to.be.true
 
     expect(server.clients.size).to.equal(0)
 

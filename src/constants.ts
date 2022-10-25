@@ -16,6 +16,7 @@ export enum ServerEvents {
   LISTENING = 'listening',
   CONNECTION = 'connection',
   DISCONNECTION = 'disconnection',
+  DISCONNECT = 'disconnect',
   SOCKET_ERROR = 'socket:error',
   ERROR = 'error',
   REDIS_CONNECT = 'redis:connect',

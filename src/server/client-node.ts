@@ -10,10 +10,11 @@ import { HeleneAsyncLocalStorage } from './helene-async-local-storage'
 import { RateLimiter } from 'limiter'
 import { RateLimit, Server } from './server'
 import { ObjectId } from 'bson'
+import { EventEmitter2 } from 'eventemitter2'
 
 export type ClientNodeContext = Record<string, any>
 
-export class ClientNode {
+export class ClientNode extends EventEmitter2 {
   _id: string
   isAuthenticated = false
   context: ClientNodeContext
@@ -32,6 +33,8 @@ export class ClientNode {
     res?: Response,
     limit?: RateLimit,
   ) {
+    super()
+
     this.server = server
     this.socket = socket
     this.req = req
