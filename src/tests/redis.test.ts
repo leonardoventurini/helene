@@ -2,7 +2,7 @@ import { expect } from 'chai'
 import { RedisTestUtil } from './utils/redis-test-util'
 import { TestUtility } from './utils/test-utility'
 import { RedisTransport } from '../server/transports/redis-transport'
-import { Presentation } from '../server/presentation'
+import { ObjectId } from 'bson'
 
 describe('Redis Pub/Sub', function () {
   const redis = new RedisTestUtil()
@@ -66,7 +66,7 @@ describe('Redis Pub/Sub', function () {
   it('should get the online stats', async () => {
     expect(test1.server.redisTransport).to.be.instanceof(RedisTransport)
 
-    const userId = Presentation.uuid()
+    const userId = new ObjectId()
 
     test1.server.setAuth({
       logIn: () => {
@@ -92,7 +92,9 @@ describe('Redis Pub/Sub', function () {
     let stats = await test1.server.getOnlineStats()
 
     expect(stats).to.have.property('clientCount').that.equals(2)
-    expect(stats).to.have.property('users').that.deep.equals([userId])
+    expect(stats)
+      .to.have.property('users')
+      .that.deep.equals([userId.toString()])
 
     await test1.server.redisTransport.close()
 
@@ -101,7 +103,9 @@ describe('Redis Pub/Sub', function () {
     stats = await test1.server.getOnlineStats()
 
     expect(stats).to.have.property('clientCount').that.equals(1)
-    expect(stats).to.have.property('users').that.deep.equals([userId])
+    expect(stats)
+      .to.have.property('users')
+      .that.deep.equals([userId.toString()])
   })
 
   it('should remove client from redis upon disconnecting', async () => {

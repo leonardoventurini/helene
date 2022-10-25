@@ -261,7 +261,15 @@ export class Server extends ServerChannel {
     const users = new Set()
 
     this.allClients.forEach(client => {
-      if (client.userId) users.add(client.userId)
+      if (client.userId) {
+        let userId = client.userId
+
+        if (isObject(userId) && userId.constructor.name === 'ObjectId') {
+          userId = userId.toString()
+        }
+
+        users.add(userId)
+      }
     })
 
     return {

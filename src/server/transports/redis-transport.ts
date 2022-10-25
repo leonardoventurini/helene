@@ -3,6 +3,7 @@ import { NO_CHANNEL, RedisListeners, ServerEvents } from '../../constants'
 import { Server } from '../server'
 import { Presentation } from '../presentation'
 import { ClientNode } from '../client-node'
+import { isObject } from 'lodash'
 
 export type RedisMessage = {
   event: string
@@ -54,7 +55,14 @@ export class RedisTransport {
    */
   private async addUser(client: ClientNode) {
     if (!client.userId) return
-    await this.pub.sAdd(`helene:users:${this.server.uuid}`, client.userId)
+
+    let userId = client.userId
+
+    if (isObject(userId) && userId.constructor.name === 'ObjectId') {
+      userId = userId.toString()
+    }
+
+    await this.pub.sAdd(`helene:users:${this.server.uuid}`, userId)
   }
 
   private async connect() {
