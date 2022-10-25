@@ -3,7 +3,7 @@ import { NO_CHANNEL, RedisListeners, ServerEvents } from '../../constants'
 import { Server } from '../server'
 import { Presentation } from '../presentation'
 import { ClientNode } from '../client-node'
-import { isObject } from 'lodash'
+import { Helpers } from '../../utils/helpers'
 
 export type RedisMessage = {
   event: string
@@ -45,7 +45,10 @@ export class RedisTransport {
 
     // We can reuse this method since all authenticated users are clients.
     if (client.userId) {
-      await this.pub.sRem(`helene:users:${this.server.uuid}`, client.userId)
+      await this.pub.sRem(
+        `helene:users:${this.server.uuid}`,
+        Helpers.toString(client.userId),
+      )
     }
   }
 
@@ -56,13 +59,10 @@ export class RedisTransport {
   private async addUser(client: ClientNode) {
     if (!client.userId) return
 
-    let userId = client.userId
-
-    if (isObject(userId) && userId.constructor.name === 'ObjectId') {
-      userId = userId.toString()
-    }
-
-    await this.pub.sAdd(`helene:users:${this.server.uuid}`, userId)
+    await this.pub.sAdd(
+      `helene:users:${this.server.uuid}`,
+      Helpers.toString(client.userId),
+    )
   }
 
   private async connect() {

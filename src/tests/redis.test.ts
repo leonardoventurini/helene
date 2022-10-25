@@ -3,6 +3,7 @@ import { RedisTestUtil } from './utils/redis-test-util'
 import { TestUtility } from './utils/test-utility'
 import { RedisTransport } from '../server/transports/redis-transport'
 import { ObjectId } from 'bson'
+import { ServerEvents } from '../constants'
 
 describe('Redis Pub/Sub', function () {
   const redis = new RedisTestUtil()
@@ -106,6 +107,10 @@ describe('Redis Pub/Sub', function () {
     expect(stats)
       .to.have.property('users')
       .that.deep.equals([userId.toString()])
+
+    await test1.client.close()
+
+    await test1.server.waitFor(ServerEvents.DISCONNECTION)
   })
 
   it('should remove client from redis upon disconnecting', async () => {

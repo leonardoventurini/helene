@@ -1,4 +1,4 @@
-import { isArray } from 'lodash'
+import { isArray, isObject } from 'lodash'
 
 export namespace Helpers {
   export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>
@@ -38,5 +38,13 @@ export namespace Helpers {
 
   export function ensureArray(value: any) {
     return isArray(value) ? value : [value]
+  }
+
+  export function toString(id: any) {
+    if (isObject(id) && id.constructor.name === 'ObjectId') {
+      return id.toString()
+    }
+
+    return String(id)
   }
 }
