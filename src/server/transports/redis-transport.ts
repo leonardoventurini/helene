@@ -71,7 +71,8 @@ export class RedisTransport {
       const { event, channel, message } =
         Presentation.decode<RedisMessage>(redisMessage)
 
-      this.server.debugger(`Redis Transport Received:`, event, message)
+      // Do not add a debugger here, it will cause an infinite loop since it
+      // triggers an event this also goes through the transport.
 
       this.server.channel(channel).propagate(event, message)
     })
@@ -97,7 +98,8 @@ export class RedisTransport {
   async publish(event: string, channel: string = NO_CHANNEL, message: string) {
     if (!this.pub) return
 
-    this.server.debugger(`Redis Transport Published:`, event, message)
+    // Do not add a debugger here, it will cause an infinite loop since it
+    // triggers an event this also goes through the transport.
 
     return this.pub.publish(
       RedisListeners.EVENTS,
