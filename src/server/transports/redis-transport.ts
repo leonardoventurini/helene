@@ -47,7 +47,7 @@ export class RedisTransport {
     if (client.userId) {
       if (
         Array.from(this.server.allClients.values()).filter(
-          c => c.userId === client.userId,
+          c => Helpers.toString(c.userId) === Helpers.toString(client.userId),
         ).length === 0
       )
         await this.pub.sRem(
