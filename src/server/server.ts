@@ -261,12 +261,20 @@ export class Server extends ServerChannel {
   }
 
   async getOnlineStats() {
-    if (this.server.redisTransport) {
+    if (this.redisTransport) {
       return await this.redisTransport.getStats()
     }
 
+    const users = new Set()
+
+    this.allClients.forEach(client => {
+      if (client.userId) users.add(client.userId)
+    })
+
     return {
-      clients: this.allClients.size,
+      clientCount: this.allClients.size,
+      userCount: users.size,
+      users: Array.from(users),
     }
   }
 }

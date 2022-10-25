@@ -1,5 +1,6 @@
 import { Method } from '../method'
 import { pick } from 'lodash'
+import { ServerEvents } from '../../constants'
 
 export const rpcInit = server =>
   new Method(
@@ -25,6 +26,8 @@ export const rpcInit = server =>
         }
 
         this.userId = this.context.user._id
+
+        server.emit(ServerEvents.AUTHENTICATION, this)
 
         return pick(result, server.allowedContextKeys)
       }

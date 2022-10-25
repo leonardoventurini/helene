@@ -41,6 +41,20 @@ export class RedisTransport {
 
   private async removeClient(client: ClientNode) {
     await this.pub.sRem(`helene:clients:${this.server.uuid}`, client._id)
+
+    // We can reuse this method since all authenticated users are clients.
+    if (client.userId) {
+      await this.pub.sRem(`helene:users:${this.server.uuid}`, client.userId)
+    }
+  }
+
+  /**
+   * We need this call because once the client connects it is not necessarily
+   * a authenticated yet.
+   */
+  private async addUser(client: ClientNode) {
+    if (!client.userId) return
+    await this.pub.sAdd(`helene:users:${this.server.uuid}`, client.userId)
   }
 
   private async connect() {
@@ -65,10 +79,13 @@ export class RedisTransport {
     this.addClient = this.addClient.bind(this)
     this.removeClient = this.removeClient.bind(this)
 
+    this.addUser = this.addUser.bind(this)
+
     await this.pub.sAdd(`helene:servers`, this.server.uuid)
 
     this.server.on(ServerEvents.CONNECTION, this.addClient)
     this.server.on(ServerEvents.DISCONNECTION, this.removeClient)
+    this.server.on(ServerEvents.AUTHENTICATION, this.addUser)
 
     this.server.emit(ServerEvents.REDIS_CONNECT)
 
@@ -109,27 +126,26 @@ export class RedisTransport {
     this.sub = undefined
   }
 
-  /**
-   * @todo Call this upon event fired to every container.
-   */
-  public async refreshRedis() {
-    await this.pub.sAdd(`helene:servers`, this.server.uuid)
-    this.server.allClients.forEach(client => this.addClient(client))
-  }
-
   public async getStats() {
+    let clientCount = 0
+    let userCount = 0
+    const users = new Set()
+
     const servers = await this.pub.sMembers(`helene:servers`)
 
-    let clients = await Promise.all(
-      servers.map(async server => {
-        return await this.pub.sCard(`helene:clients:${server}`)
-      }),
-    )
+    for (const server of servers) {
+      clientCount += await this.pub.sCard(`helene:clients:${server}`)
+      userCount += await this.pub.sCard(`helene:users:${server}`)
 
-    clients = clients.reduce((acc, val) => acc + val, 0)
+      const serverUsers = await this.pub.sMembers(`helene:users:${server}`)
+
+      serverUsers.forEach(user => users.add(user))
+    }
 
     return {
-      clients,
+      clientCount,
+      userCount,
+      users: Array.from(users),
     }
   }
 }
