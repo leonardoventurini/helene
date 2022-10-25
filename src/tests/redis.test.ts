@@ -113,6 +113,52 @@ describe('Redis Pub/Sub', function () {
     await test1.server.waitFor(ServerEvents.DISCONNECTION)
   })
 
+  it('should only remove the user if no other clients with that same userId are connected', async () => {
+    const userId = new ObjectId()
+    const client1 = await test1.createClient()
+    const client2 = await test1.createClient()
+
+    test1.server.setAuth({
+      logIn: () => {
+        return { token: '1' }
+      },
+      auth: () => ({ user: { _id: userId } }),
+    })
+
+    await client1.login({})
+    await client2.login({})
+
+    await client1.isReady()
+    await client2.isReady()
+
+    const stats = await test1.server.getOnlineStats()
+
+    expect(stats).to.have.property('clientCount').that.equals(4)
+    expect(stats)
+      .to.have.property('users')
+      .that.deep.equals([userId.toString()])
+
+    await client1.close()
+
+    await test1.server.waitFor(ServerEvents.DISCONNECTION)
+
+    const stats2 = await test1.server.getOnlineStats()
+
+    expect(stats2).to.have.property('clientCount').that.equals(3)
+    expect(stats2)
+      .to.have.property('users')
+      .that.deep.equals([userId.toString()])
+
+    await client2.close()
+
+    await test1.server.waitFor(ServerEvents.DISCONNECTION)
+
+    const stats3 = await test1.server.getOnlineStats()
+
+    expect(stats3).to.have.property('clientCount').that.equals(2)
+    expect(stats3).to.have.property('users').that.deep.equals([])
+  })
+
   it('should remove client from redis upon disconnecting', async () => {
     const { uuid } = test1.server
 

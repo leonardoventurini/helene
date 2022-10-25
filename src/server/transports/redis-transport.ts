@@ -45,10 +45,15 @@ export class RedisTransport {
 
     // We can reuse this method since all authenticated users are clients.
     if (client.userId) {
-      await this.pub.sRem(
-        `helene:users:${this.server.uuid}`,
-        Helpers.toString(client.userId),
+      if (
+        Array.from(this.server.allClients.values()).filter(
+          c => c.userId === client.userId,
+        ).length === 0
       )
+        await this.pub.sRem(
+          `helene:users:${this.server.uuid}`,
+          Helpers.toString(client.userId),
+        )
     }
   }
 

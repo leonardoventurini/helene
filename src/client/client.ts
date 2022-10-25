@@ -193,6 +193,10 @@ export class Client extends ClientChannel {
   }
 
   async close() {
+    if (!this.ready) return null
+
+    this.ready = false
+
     this.timeouts.forEach(timeout => clearTimeout(timeout))
 
     clearTimeout(this.keepAliveInterval)
