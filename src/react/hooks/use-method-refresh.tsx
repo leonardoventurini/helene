@@ -18,7 +18,6 @@ export const useMethodRefresh = ({
 }) => {
   return useCallback(
     (callback?) => {
-      if (!client.ready) return
       if (!method) return
       if (!shouldCall) return
       if (!caller) return
@@ -57,7 +56,7 @@ export const useMethodRefresh = ({
       setResult,
       setLoading,
       setError,
-      client.authenticated,
+      client?.authenticated,
       defaultValue,
       ...Object.values(methodOptions),
       ...deps,
