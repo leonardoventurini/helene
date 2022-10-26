@@ -24,7 +24,7 @@ export const ClientProvider = ({
     () => () => {
       client?.close().catch(console.error)
     },
-    [],
+    [client],
   )
 
   return (

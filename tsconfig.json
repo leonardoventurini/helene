@@ -7,7 +7,7 @@
     "incremental": true,
     "jsx": "react",
     "module": "CommonJS",
-    "moduleResolution": "node",
+    "moduleResolution": "Node",
     "noImplicitAny": false,
     "noUnusedLocals": false,
     "outDir": "./lib",
