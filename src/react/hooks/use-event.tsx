@@ -24,12 +24,18 @@ export function useEvent(
   return useSubscribe({
     event,
     channel,
-    setup(ch) {
-      ch.on(event, refreshCallback)
-    },
-    teardown(ch) {
-      ch.off(event, refreshCallback)
-    },
+    setup: useCallback(
+      ch => {
+        ch.on(event, refreshCallback)
+      },
+      [event, refreshCallback],
+    ),
+    teardown: useCallback(
+      ch => {
+        ch.off(event, refreshCallback)
+      },
+      [event, refreshCallback],
+    ),
     subscribe,
     deps: [refreshCallback],
   })
