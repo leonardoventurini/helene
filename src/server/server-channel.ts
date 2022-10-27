@@ -44,6 +44,11 @@ export class ServerChannel extends EventEmitter2 {
   propagate(event: string, payload: string) {
     const eventObject = this.server.events.get(event)
 
+    if (!eventObject) {
+      console.log('Event Not Registered:', event)
+      return
+    }
+
     const clients = this.clients.get(eventObject.name) ?? new Set()
 
     for (const client of clients) {
