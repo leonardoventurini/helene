@@ -99,10 +99,9 @@ export class ClientNode extends EventEmitter2 {
   /**
    * It is already encoded as string once it reaches here.
    *
-   * @param payload
-   * @param opts
+   * @warning There is an `event` property already in the super class.
    */
-  event(payload: string, opts?: WebSocketMessageOptions) {
+  sendEvent(payload: string, opts?: WebSocketMessageOptions) {
     this.socket?.send(payload, opts)
   }
 

@@ -52,7 +52,7 @@ export class ServerChannel extends EventEmitter2 {
     const clients = this.clients.get(eventObject.name) ?? new Set()
 
     for (const client of clients) {
-      client.event(payload)
+      client.sendEvent(payload)
     }
   }
 
