@@ -1,5 +1,5 @@
 import { NO_CHANNEL } from '../../constants'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useClient } from './use-client'
 import { isString } from 'lodash'
 import { ClientChannel } from '../../client/client-channel'
@@ -23,9 +23,8 @@ export function useSubscribe({
 }: UseSubscribeParams) {
   const client = useClient()
   const [ready, setReady] = useState(false)
-  const teardownRef = useRef(false)
 
-  const deps = [channel, event, subscribe].concat(_deps)
+  const deps = [channel, event, subscribe, setup, teardown].concat(_deps)
 
   useEffect(() => {
     if (!event) return
@@ -35,17 +34,14 @@ export function useSubscribe({
 
     const ch = client.channel(channel)
 
+    setup?.(ch)
+
     if (subscribe) {
       ch.subscribe(event)
         .then(result => {
           if (isString(result[event]))
             throw new Error(`[${event}] ${result[event]}`)
-          setup?.(ch)
           setReady(true)
-
-          if (teardownRef.current) {
-            teardown?.(ch)
-          }
         })
         .catch(console.error)
     } else {
@@ -54,7 +50,6 @@ export function useSubscribe({
     }
 
     return () => {
-      teardownRef.current = true
       teardown?.(ch)
     }
   }, deps)
