@@ -3,6 +3,7 @@ import { Client, WebSocketOptions } from './client'
 import { ClientEvents, WebSocketEvents } from '../constants'
 import { Presentation } from '../server/presentation'
 import { WebSocketMessageOptions } from '../server/transports/websocket-transport'
+import retry from 'retry'
 
 export class ClientSocket {
   client: Client
@@ -11,30 +12,20 @@ export class ClientSocket {
   protocol: string
   uri: string
 
-  autoConnect: boolean
-  maxReconnects: number
-  reconnect: boolean
-  reconnectInterval: number
-  currentReconnects = 0
-
   closedGracefully = false
   ready = false
   connecting = false
+  reconnecting = false
 
-  constructor(
-    client: Client,
-    {
-      autoConnect = true,
-      reconnect = true,
-      reconnectInterval = 5000,
-      maxReconnects = 10,
-    }: WebSocketOptions = {},
-  ) {
+  options: WebSocketOptions = {
+    autoConnect: true,
+    reconnect: true,
+    reconnectRetries: 10,
+  }
+
+  constructor(client: Client, options: WebSocketOptions = {}) {
     this.client = client
-    this.autoConnect = autoConnect
-    this.maxReconnects = maxReconnects
-    this.reconnect = reconnect
-    this.reconnectInterval = reconnectInterval
+    this.options = { ...this.options, ...options }
 
     this.protocol = this.client.secure ? `wss://` : `ws://`
 
@@ -44,7 +35,7 @@ export class ClientSocket {
       this.uri = `${this.protocol}${this.client.host}/`
     }
 
-    if (this.autoConnect)
+    if (this.options.autoConnect)
       this.connect().catch(error => console.error('Auto Connect Error', error))
   }
 
@@ -52,7 +43,7 @@ export class ClientSocket {
     this.client.emit(ClientEvents.OPEN)
     this.connecting = false
     this.ready = true
-    this.currentReconnects = 0
+    this.reconnecting = false
   }
 
   private handleMessage = ({ data, type, target }) => {
@@ -72,10 +63,35 @@ export class ClientSocket {
     this.client.emit(ClientEvents.ERROR, error)
   }
 
+  private reconnect() {
+    if (!this.options.reconnect) return
+    if (this.reconnecting) return
+
+    this.reconnecting = true
+
+    const operation = retry.operation({
+      retries: this.options.reconnectRetries,
+      factor: 1.5,
+      minTimeout: 1000,
+      maxTimeout: 60 * 1000,
+      randomize: true,
+    })
+
+    operation.attempt(currentAttempt => {
+      console.log('[Helene] Reconnecting...', currentAttempt)
+      this.connect().catch(error => {
+        if (operation.retry(error)) return
+
+        console.error('[Helene] Reconnect Failed', operation.mainError())
+      })
+    })
+  }
+
+  /**
+   * This runs if the connection is interrupted or if the server fails to establish a new connection.
+   */
   private handleClose = ({ code, reason }) => {
     this.client.emit(ClientEvents.CLOSE)
-
-    this.client.debugger('Closing Socket', code, reason)
 
     if (this.ready)
       setTimeout(() => this.client.emit(ClientEvents.CLOSE, code, reason), 0)
@@ -88,17 +104,7 @@ export class ClientSocket {
 
     if (this.closedGracefully) return
 
-    this.currentReconnects++
-
-    if (
-      this.reconnect &&
-      (this.maxReconnects > this.currentReconnects || this.maxReconnects === 0)
-    ) {
-      setTimeout(
-        () => this.connect().catch(console.error),
-        this.reconnectInterval,
-      )
-    }
+    this.reconnect()
   }
 
   public close(code?: number, data?: string) {

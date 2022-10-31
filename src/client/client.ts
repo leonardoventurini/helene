@@ -33,12 +33,7 @@ export type ErrorHandler = (error: Presentation.ErrorPayload) => any
 export type WebSocketOptions = {
   autoConnect?: boolean
   reconnect?: boolean
-
-  /**
-   * @todo Implement backoff.
-   */
-  reconnectInterval?: number
-  maxReconnects?: number
+  reconnectRetries?: number
 }
 
 export type WebSocketRequestParams = {
