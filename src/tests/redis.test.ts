@@ -138,7 +138,7 @@ describe('Redis Pub/Sub', function () {
       .to.have.property('users')
       .that.deep.equals([userId.toString()])
 
-    await client1.close()
+    client1.close().catch(console.error)
 
     await test1.server.waitFor(ServerEvents.DISCONNECTION)
 
