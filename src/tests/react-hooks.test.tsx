@@ -158,59 +158,103 @@ describe('React Hooks', () => {
     })
   })
 
-  it('useEvent', async () => {
-    test.server.addEvent('set:value')
+  describe('useEvent', () => {
+    it('should subscribe', async () => {
+      test.server.addEvent('set:value')
 
-    let value = 0
+      let value = 0
 
-    await test.client.isReady()
+      await test.client.isReady()
 
-    const unsub = sinon.fake.returns(Promise.resolve())
+      const unsub = sinon.fake.returns(Promise.resolve())
 
-    test.client.channel().unsubscribe = unsub
+      test.client.channel().unsubscribe = unsub
 
-    const { wrapper } = test
+      const { wrapper } = test
 
-    const { result, rerender } = renderHook(
-      ({ event }: any) =>
-        useEvent(
-          { event, subscribe: true },
-          val => {
-            value = val
-          },
-          [value],
-        ),
-      { wrapper, initialProps: { event: 'set:value' } },
-    )
+      const { result, rerender } = renderHook(
+        ({ event }: any) =>
+          useEvent(
+            { event, subscribe: true },
+            val => {
+              value = val
+            },
+            [value],
+          ),
+        { wrapper, initialProps: { event: 'set:value' } },
+      )
 
-    await waitFor(() => {
-      expect(result.current).to.equal(true)
+      expect(test.client._events)
+        .to.have.property('set:value')
+        .that.is.a('function')
+
+      await waitFor(() => {
+        expect(result.current).to.equal(true)
+      })
+
+      test.server.defer('set:value', 42)
+
+      await waitFor(() => {
+        expect(value).to.equal(42)
+      })
+
+      expect(unsub.called).to.be.false
+
+      test.server.addEvent('another:event')
+
+      rerender({ event: 'another:event' })
+
+      expect(unsub.called).to.be.true
+
+      unsub.resetHistory()
+
+      await waitFor(() => {
+        expect(result.current).to.equal(true)
+      })
+
+      test.server.defer('another:event', 'hello')
+
+      await waitFor(() => {
+        expect(value).to.equal('hello')
+      })
     })
 
-    test.server.defer('set:value', 42)
+    it('should use local event', async () => {
+      const values = []
 
-    await waitFor(() => {
-      expect(value).to.equal(42)
-    })
+      await test.client.isReady()
 
-    expect(unsub.called).to.be.false
+      const { wrapper } = test
 
-    test.server.addEvent('another:event')
+      const { result, rerender } = renderHook(
+        ({ event }: any) =>
+          useEvent(
+            { event },
+            val => {
+              values.push(val)
+            },
+            [values],
+          ),
+        { wrapper, initialProps: { event: 'set:value' } },
+      )
 
-    rerender({ event: 'another:event' })
+      rerender({ event: 'another:event' })
+      rerender({ event: 'set:value' })
 
-    expect(unsub.called).to.be.true
+      // Only one callback should be ever registered for the same event used as a hook.
+      expect(test.client._events)
+        .to.have.property('set:value')
+        .that.is.a('function')
 
-    unsub.resetHistory()
+      await waitFor(() => {
+        expect(result.current).to.equal(true)
+      })
 
-    await waitFor(() => {
-      expect(result.current).to.equal(true)
-    })
+      test.client.emit('set:value', 42)
 
-    test.server.defer('another:event', 'hello')
-
-    await waitFor(() => {
-      expect(value).to.equal('hello')
+      await waitFor(() => {
+        expect(values).to.be.deep.equal([42])
+      })
     })
   })
 })

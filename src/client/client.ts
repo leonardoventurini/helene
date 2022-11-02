@@ -26,6 +26,7 @@ import { Errors } from '../errors'
 import qs from 'query-string'
 import { Environment } from '../utils/environment'
 import { EJSON } from 'ejson2'
+import { AnyFunction } from '../types'
 import Timeout = NodeJS.Timeout
 
 export type ErrorHandler = (error: Presentation.ErrorPayload) => any
@@ -86,6 +87,7 @@ export class Client extends ClientChannel {
   axios = axios
 
   authenticated = false
+  _events: AnyFunction[]
 
   constructor({
     host = 'localhost',

@@ -45,7 +45,6 @@ export function useSubscribe({
         })
         .catch(console.error)
     } else {
-      setup?.(ch)
       setReady(true)
     }
 
