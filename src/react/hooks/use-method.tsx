@@ -51,6 +51,10 @@ export const useMethod = ({
   required = [],
   ...methodOptions
 }: UseMethodParams) => {
+  if (!method) {
+    throw new Error('Method name is required.')
+  }
+
   const client = useClient()
 
   const defaultValue = useMemo(() => _defaultValue, deps)
@@ -58,7 +62,7 @@ export const useMethod = ({
 
   const [error, setError] = useState(null)
   const [result, setResult] = useState(null)
-  const [loading, setLoading] = useState(!!method)
+  const [loading, setLoading] = useState(!lazy)
 
   const { shouldCall, placeholderValue } = useCircuitBreaker({
     parse,
