@@ -138,5 +138,8 @@ describe('Server', function () {
     expect(server.allClients.get(client.uuid).meta).to.deep.equal({
       test: true,
     })
+
+    expect(server.allClients.get(client.uuid).remoteAddress).to.be.a('string')
+      .and.not.be.empty
   })
 })

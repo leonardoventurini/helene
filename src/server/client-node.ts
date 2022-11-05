@@ -27,6 +27,7 @@ export class ClientNode extends EventEmitter2 {
   isServer = false
   limiter: RateLimiter
   server: Server
+  remoteAddress: string | string[]
 
   constructor(
     server: Server,

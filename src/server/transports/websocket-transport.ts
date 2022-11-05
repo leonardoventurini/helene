@@ -52,6 +52,9 @@ export class WebSocketTransport {
       this.server.rateLimit,
     )
 
+    node.remoteAddress =
+      request.headers['x-forwarded-for'] || request.socket.remoteAddress
+
     node.setId(request)
 
     this.server.addClient(node)
