@@ -135,11 +135,12 @@ describe('Server', function () {
       Array.from(server.allClients.values()).map(({ _id }) => _id),
     ).to.be.deep.equal([client.uuid])
 
-    expect(server.allClients.get(client.uuid).meta).to.deep.equal({
+    const node = server.allClients.get(client.uuid)
+
+    expect(node.meta).to.deep.equal({
       test: true,
     })
 
-    expect(server.allClients.get(client.uuid).remoteAddress).to.be.a('string')
-      .and.not.be.empty
+    expect(node.remoteAddress).to.be.a('string').and.not.be.empty
   })
 })

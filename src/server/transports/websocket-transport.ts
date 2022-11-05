@@ -52,8 +52,10 @@ export class WebSocketTransport {
       this.server.rateLimit,
     )
 
+    node.headers = request.headers as any
     node.remoteAddress =
       request.headers['x-forwarded-for'] || request.socket.remoteAddress
+    node.userAgent = request.headers['user-agent']
 
     node.setId(request)
 
