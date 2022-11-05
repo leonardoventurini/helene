@@ -6,6 +6,7 @@ export const rpcLogout = server =>
     async function () {
       this.context = null
       this.authenticated = false
+      this.userId = null
       server.emit(ServerEvents.LOGOUT, this)
       return true
     },
