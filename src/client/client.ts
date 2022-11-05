@@ -57,6 +57,7 @@ export type CallOptions = {
   http?: boolean
   timeout?: number
   ws?: WebSocketMessageOptions
+  httpFallback?: boolean
 }
 
 /**
@@ -278,7 +279,7 @@ export class Client extends ClientChannel {
   void(
     method: string,
     params?: MethodParams,
-    { ws, http }: CallOptions = {},
+    { ws, http, httpFallback = true }: CallOptions = {},
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       const uuid = Presentation.uuid()
@@ -290,11 +291,11 @@ export class Client extends ClientChannel {
         void: true,
       }
 
-      if (http) {
+      if (http || (!this.clientSocket.ready && httpFallback)) {
         return this.clientHttp.request(payload, null, reject)
       }
 
-      this.clientSocket.socket.send(
+      this.clientSocket?.socket?.send(
         Presentation.Inbound.call(payload),
         ws,
         (error: any) => {
@@ -312,7 +313,7 @@ export class Client extends ClientChannel {
   async call(
     method: string,
     params?: MethodParams,
-    { timeout = 20000, ws, http }: CallOptions = {},
+    { timeout = 20000, ws, http, httpFallback = true }: CallOptions = {},
   ): Promise<any> {
     this.debugger(`Calling ${method}`, params)
 
@@ -321,7 +322,7 @@ export class Client extends ClientChannel {
 
       const payload = { uuid, method, params }
 
-      if (http || !this.clientSocket.ready) {
+      if (http || (!this.clientSocket.ready && httpFallback)) {
         return this.clientHttp.request(payload, resolve, reject)
       }
 
