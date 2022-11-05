@@ -1,8 +1,8 @@
+import React from 'react'
 import { Server, ServerOptions } from '../../server/server'
 import { ClientEvents, NO_CHANNEL, ServerEvents } from '../../constants'
 import { Client, ClientOptions } from '../../client/client'
-import { ClientProvider } from '../../react/components'
-import React from 'react'
+import { ClientProvider } from '../../react'
 import { SingletonHooksContainer } from 'react-singleton-hook'
 
 export class TestUtility {
