@@ -2,8 +2,6 @@ import { createClient, RedisClientOptions } from 'redis'
 import { NO_CHANNEL, RedisListeners, ServerEvents } from '../../constants'
 import { Server } from '../server'
 import { Presentation } from '../presentation'
-import { ClientNode } from '../client-node'
-import { Helpers } from '../../utils/helpers'
 
 export type RedisMessage = {
   event: string
@@ -36,40 +34,6 @@ export class RedisTransport {
     this.connect().catch(console.error)
   }
 
-  private async addClient(client: ClientNode) {
-    await this.pub.sAdd(`helene:clients:${this.server.uuid}`, client._id)
-  }
-
-  private async removeClient(client: ClientNode) {
-    await this.pub.sRem(`helene:clients:${this.server.uuid}`, client._id)
-
-    // We can reuse this method since all authenticated users are clients.
-    if (client.userId) {
-      if (
-        Array.from(this.server.allClients.values()).filter(
-          c => Helpers.toString(c.userId) === Helpers.toString(client.userId),
-        ).length === 0
-      )
-        await this.pub.sRem(
-          `helene:users:${this.server.uuid}`,
-          Helpers.toString(client.userId),
-        )
-    }
-  }
-
-  /**
-   * We need this call because once the client connects it is not necessarily
-   * a authenticated yet.
-   */
-  private async addUser(client: ClientNode) {
-    if (!client.userId) return
-
-    await this.pub.sAdd(
-      `helene:users:${this.server.uuid}`,
-      Helpers.toString(client.userId),
-    )
-  }
-
   private async connect() {
     this.pub = createClient({
       ...RedisTransport.defaultRedisOpts,
@@ -90,22 +54,7 @@ export class RedisTransport {
       this.server.channel(channel).propagate(event, message)
     })
 
-    this.addClient = this.addClient.bind(this)
-    this.removeClient = this.removeClient.bind(this)
-
-    this.addUser = this.addUser.bind(this)
-
-    await this.pub.sAdd(`helene:servers`, this.server.uuid)
-
-    this.server.on(ServerEvents.CONNECTION, this.addClient)
-    this.server.on(ServerEvents.DISCONNECTION, this.removeClient)
-    this.server.on(ServerEvents.AUTHENTICATION, this.addUser)
-
     this.server.emit(ServerEvents.REDIS_CONNECT)
-
-    this.pub.on('ready', () => {
-      this.server.allClients.forEach(client => this.addClient(client))
-    })
   }
 
   async publish(event: string, channel: string = NO_CHANNEL, message: string) {
@@ -126,9 +75,6 @@ export class RedisTransport {
   }
 
   async close() {
-    this.server.off(ServerEvents.CONNECTION, this.addClient)
-    this.server.off(ServerEvents.DISCONNECTION, this.removeClient)
-
     if (this.pub) {
       await this.pub.del(`helene:clients:${this.server.uuid}`)
       await this.pub.sRem(`helene:servers`, this.server.uuid)

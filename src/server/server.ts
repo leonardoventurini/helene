@@ -252,30 +252,4 @@ export class Server extends ServerChannel {
     this.channels.set(name, channel)
     return channel
   }
-
-  async getOnlineStats() {
-    if (this.redisTransport) {
-      return await this.redisTransport.getStats()
-    }
-
-    const users = new Set()
-
-    this.allClients.forEach(client => {
-      if (client.userId) {
-        let userId = client.userId
-
-        if (isObject(userId) && userId.constructor.name === 'ObjectId') {
-          userId = userId.toString()
-        }
-
-        users.add(userId)
-      }
-    })
-
-    return {
-      clientCount: this.allClients.size,
-      userCount: users.size,
-      users: Array.from(users),
-    }
-  }
 }
