@@ -105,7 +105,7 @@ describe('HTTP', async () => {
       const href = test.client.href('test')
 
       expect(href).to.equal(
-        `http://${test.client.host}:${test.client.port}/test`,
+        `http://${test.client.options.host}:${test.client.options.port}/test`,
       )
     })
   })

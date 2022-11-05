@@ -4,7 +4,8 @@ import { ServerEvents } from '../../constants'
 
 export const rpcInit = server =>
   new Method(
-    async function (context) {
+    async function ({ meta, ...context }) {
+      this.meta = meta
       this.context = context
 
       if (server.auth instanceof Function) {

@@ -122,4 +122,21 @@ describe('Server', function () {
 
     expect(server.channel('test:channel').clients.get('test').size).to.equal(0)
   })
+
+  it('should send meta data to the server', async () => {
+    const server = await test.createRandomSrv({ globalInstance: false })
+
+    const client = await test.createClient({
+      port: server.port,
+      meta: { test: true },
+    })
+
+    expect(
+      Array.from(server.allClients.values()).map(({ _id }) => _id),
+    ).to.be.deep.equal([client.uuid])
+
+    expect(server.allClients.get(client.uuid).meta).to.deep.equal({
+      test: true,
+    })
+  })
 })

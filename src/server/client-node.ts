@@ -18,6 +18,7 @@ export type ClientNodeContext = Record<string, any>
 export class ClientNode extends EventEmitter2 {
   _id: string
   isAuthenticated = false
+  meta: Record<string, any> = {}
   context: ClientNodeContext
   userId: ObjectId | string | null = null
   socket?: WebSocket = {} as WebSocket
@@ -75,7 +76,7 @@ export class ClientNode extends EventEmitter2 {
   setId(request: http.IncomingMessage) {
     const { query } = url.parse(request.url, true)
 
-    this._id = (query?.socket_id as string) ?? uuid()
+    this._id = (query?.uuid as string) ?? uuid()
   }
 
   setContext(context: ClientNodeContext) {

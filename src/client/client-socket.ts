@@ -27,12 +27,12 @@ export class ClientSocket {
     this.client = client
     this.options = { ...this.options, ...options }
 
-    this.protocol = this.client.secure ? `wss://` : `ws://`
+    this.protocol = this.client.options.secure ? `wss://` : `ws://`
 
-    if (this.client.port) {
-      this.uri = `${this.protocol}${this.client.host}:${this.client.port}/`
+    if (this.client.options.port) {
+      this.uri = `${this.protocol}${this.client.options.host}:${this.client.options.port}/`
     } else {
-      this.uri = `${this.protocol}${this.client.host}/`
+      this.uri = `${this.protocol}${this.client.options.host}/`
     }
 
     if (this.options.autoConnect)
@@ -132,7 +132,9 @@ export class ClientSocket {
     this.closedGracefully = false
 
     return new Promise((resolve, reject) => {
-      this.socket = new IsomorphicWebSocket(this.uri)
+      this.socket = new IsomorphicWebSocket(
+        `${this.uri}?uuid=${this.client.uuid}`,
+      )
 
       this.socket.addEventListener(WebSocketEvents.OPEN, () => {
         this.handleOpen()

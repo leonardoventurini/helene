@@ -13,12 +13,12 @@ export class ClientHttp {
 
   constructor(client: Client) {
     this.client = client
-    this.protocol = this.client.secure ? `https://` : `http://`
+    this.protocol = this.client.options.secure ? `https://` : `http://`
 
-    if (this.client.port) {
-      this.host = `${this.protocol}${this.client.host}:${this.client.port}`
+    if (this.client.options.port) {
+      this.host = `${this.protocol}${this.client.options.host}:${this.client.options.port}`
     } else {
-      this.host = `${this.protocol}${this.client.host}`
+      this.host = `${this.protocol}${this.client.options.host}`
     }
 
     this.uri = `${this.host}/__h`

@@ -50,6 +50,7 @@ export type ClientOptions = {
   errorHandler?: ErrorHandler
   debug?: boolean
   allowedContextKeys?: string[]
+  meta?: Record<string, any>
 }
 
 export type CallOptions = {
@@ -71,48 +72,37 @@ export class Client extends ClientChannel {
   context: Record<string, any> = {}
   errorHandler: ErrorHandler
 
-  debug: boolean
-  host: string
-  port: number
-  secure: boolean
-
   channels: Map<string, ClientChannel> = new Map()
 
   timeouts: Set<Timeout> = new Set()
   keepAliveInterval: Timeout = null
 
-  allowedContextKeys: string[] = []
-
   ready = false
-  axios = axios
 
   authenticated = false
   _events: AnyFunction[]
 
-  constructor({
-    host = 'localhost',
-    port,
-    secure = false,
-    errorHandler = null,
-    ws,
-    debug = false,
-    allowedContextKeys = [],
-  }: ClientOptions = {}) {
+  options: ClientOptions = {
+    host: 'localhost',
+    secure: false,
+    errorHandler: null,
+    debug: false,
+    allowedContextKeys: [],
+    meta: {},
+  }
+
+  constructor(options: ClientOptions = {}) {
     super(NO_CHANNEL)
 
     this.uuid = Presentation.uuid()
 
     this.setClient(this)
 
-    this.debug = debug
-    this.host = host
-    this.port = port
-    this.secure = secure
-    this.errorHandler = errorHandler
-    this.clientSocket = new ClientSocket(this, ws)
+    this.options = merge(this.options, options)
+
+    this.clientSocket = new ClientSocket(this, this.options.ws)
     this.clientHttp = new ClientHttp(this)
     this.queue = new PromiseQueue()
-    this.allowedContextKeys = allowedContextKeys
 
     this.channels.set(NO_CHANNEL, this)
 
@@ -145,7 +135,7 @@ export class Client extends ClientChannel {
   }
 
   debugger(...args) {
-    if (this.debug) console.debug(...args)
+    if (this.options.debug) console.debug(...args)
   }
 
   async loadContext() {
@@ -214,12 +204,13 @@ export class Client extends ClientChannel {
 
     if (token && !isString(token)) throw new Error(Errors.INVALID_TOKEN)
 
-    const context = this.allowedContextKeys.length
-      ? pick(this.context ?? {}, this.allowedContextKeys)
+    const context = this.options.allowedContextKeys.length
+      ? pick(this.context ?? {}, this.options.allowedContextKeys)
       : {}
 
     const result = await this.call(Methods.RPC_INIT, {
       token,
+      meta: this.options.meta,
       ...context,
     })
 
