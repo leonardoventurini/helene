@@ -12,6 +12,7 @@ export enum WebSocketEvents {
 
 export enum ServerEvents {
   AUTHENTICATION = 'authentication',
+  LOGOUT = 'logout',
   UPGRADE = 'upgrade',
   REQUEST = 'request',
   LISTENING = 'listening',
