@@ -27,6 +27,8 @@
     "lodash": "^4.17.21",
     "memoizee": "^0.4.15",
     "query-string": "^7.1.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "react-singleton-hook": "^3.4.0",
     "redis": "^4.2.0",
     "resize-observer-polyfill": "^1.5.1",
@@ -59,8 +61,6 @@
     "jsdom-global": "^3.0.2",
     "mocha": "^10.0.0",
     "nodemon": "^2.0.19",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
     "sinon": "^13.0.1",
     "sinon-chai": "^3.7.0",
     "supertest": "^6.2.4",
@@ -68,18 +68,6 @@
     "tsconfig-paths": "^4.1.0",
     "typescript": "^4.7.4",
     "wtfnode": "^0.9.1"
-  },
-  "peerDependencies": {
-    "react": "^18",
-    "react-dom": "^18"
-  },
-  "peerDependenciesMeta": {
-    "react": {
-      "optional": true
-    },
-    "react-dom": {
-      "optional": true
-    }
   },
   "author": "Leonardo Venturini",
   "license": "MIT",

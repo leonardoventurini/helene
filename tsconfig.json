@@ -17,12 +17,9 @@
     "target": "ES2021",
   },
   "include": [
-    "src/**/*"
+    "./src/**/*"
   ],
   "exclude": [
-    "src/tests/**/*"
+    "./src/tests/**/*"
   ],
-  "ts-node": {
-    "require": ["tsconfig-paths/register"]
-  }
 }
