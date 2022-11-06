@@ -1,6 +1,6 @@
 {
   "name": "helene",
-  "version": "0.7.28",
+  "version": "0.7.29",
   "description": "A real-time reactive framework for Node and React",
   "browser": "lib/index.browser.js",
   "main": "lib/index.js",
