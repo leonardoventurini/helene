@@ -83,6 +83,8 @@ export class Client extends ClientChannel {
   authenticated = false
   _events: AnyFunction[]
 
+  axios = axios
+
   options: ClientOptions = {
     host: 'localhost',
     secure: false,
