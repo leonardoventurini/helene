@@ -450,8 +450,6 @@ export class Client extends ClientChannel {
   async attachDevTools() {
     const generateId = () => (Date.now() + Math.random()).toString(36)
 
-    await this.subscribe(ClientEvents.DEBUGGER)
-
     this.on(ClientEvents.OUTBOUND_MESSAGE, content => {
       // @ts-ignore
       window.__helene_devtools_log_message?.({

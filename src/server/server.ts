@@ -6,17 +6,10 @@ import { WebSocketTransport } from './transports/websocket-transport'
 import { Method, MethodFunction, MethodOptions, MethodParams } from './method'
 import { ClientNode } from './client-node'
 import { RedisTransport } from './transports/redis-transport'
-import {
-  ClientEvents,
-  HeleneEvents,
-  Methods,
-  NO_CHANNEL,
-  ServerEvents,
-} from '../constants'
+import { HeleneEvents, Methods, NO_CHANNEL, ServerEvents } from '../constants'
 import { RequestListener } from 'http'
 import * as assert from 'assert'
 import { isFunction, isObject, isString } from 'lodash'
-import { Environment } from '../utils/environment'
 import { ServerChannel } from './server-channel'
 import { DefaultMethods } from './default-methods'
 import { Event } from './event'
@@ -125,10 +118,6 @@ export class Server extends ServerChannel {
 
     this.redisTransport = redis ? new RedisTransport(this, redis) : null
 
-    if (Environment.isDevelopment) {
-      this.instrumentDebugger()
-    }
-
     this.addEvent(HeleneEvents.METHOD_REFRESH)
 
     this.channels.set(NO_CHANNEL, this)
@@ -192,7 +181,7 @@ export class Server extends ServerChannel {
   }
 
   debugger(...args) {
-    if (Environment.isDevelopment) this.emit(ClientEvents.DEBUGGER, args)
+    if (this.debug) console.debug(...args)
   }
 
   async call(method: string, params?: MethodParams): Promise<any> {
@@ -205,10 +194,6 @@ export class Server extends ServerChannel {
     node.isServer = true
 
     return await methodInstance.exec(params, node)
-  }
-
-  instrumentDebugger() {
-    this.addEvent(ClientEvents.DEBUGGER)
   }
 
   createDefaultMethods() {
