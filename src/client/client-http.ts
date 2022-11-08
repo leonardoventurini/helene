@@ -1,9 +1,9 @@
 import { Client } from './client'
-import axios from 'axios'
 import { Reject, Resolve } from './promise-queue'
 import { Presentation } from '../server/presentation'
-import http from 'axios/lib/adapters/http'
-import { Environment } from '../utils/environment'
+import { EJSON } from 'ejson2'
+import { TOKEN_HEADER_KEY } from '../constants'
+import { fetch } from 'fetch-undici'
 
 export class ClientHttp {
   client: Client
@@ -30,17 +30,28 @@ export class ClientHttp {
     reject: Reject,
   ) {
     try {
-      const { data: result } = await axios.post(
-        this.uri,
-        {
+      const data = await fetch(this.uri, {
+        method: 'POST',
+        headers: {
+          Accept: 'text/plain, */*',
+          'Content-Type': 'text/plain',
+          ...(this.client.context.token
+            ? { [TOKEN_HEADER_KEY]: this.client.context.token }
+            : {}),
+        },
+        body: EJSON.stringify({
           context: this.client.context,
           payload,
-        },
-        {
-          withCredentials: true,
-          adapter: Environment.isNode ? http : undefined,
-        },
-      )
+        }),
+      })
+
+      let result = await data.text()
+
+      try {
+        result = EJSON.parse(result)
+      } catch {
+        throw new Error(`${data.status} ${data.statusText}: ${result}`)
+      }
 
       if (
         result instanceof Object &&

@@ -5,6 +5,7 @@ import { renderHook } from '@testing-library/react-hooks'
 import { TestUtility } from './utils/test-utility'
 import { useConnectionState, useEvent, useMethod } from '../react/hooks'
 import sinon from 'sinon'
+import { omit } from 'lodash'
 
 describe('React Hooks', () => {
   const test = new TestUtility()
@@ -148,7 +149,7 @@ describe('React Hooks', () => {
       )
 
       await waitFor(() => {
-        expect(result.current).to.containSubset({
+        expect(omit(result.current, 'client')).to.containSubset({
           result: 1,
           loading: false,
         })

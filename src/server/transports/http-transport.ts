@@ -9,6 +9,7 @@ import { ClientNode } from '../client-node'
 import { createHttpTerminator, HttpTerminator } from 'http-terminator'
 
 import rateLimit from 'express-rate-limit'
+import { EJSON } from 'ejson2'
 import MethodCallPayload = Presentation.MethodCallPayload
 
 declare module 'express' {
@@ -43,7 +44,14 @@ export class HttpTransport {
     })
 
     this.express = express()
-    this.express.use(express.json())
+    this.express.use(express.urlencoded({ extended: true }))
+    this.express.use(
+      express.json({
+        type: ['application/json'],
+      }),
+    )
+
+    this.express.use(express.text({ type: 'text/plain' }))
 
     if (limit) {
       const limiter = rateLimit({
@@ -111,7 +119,7 @@ export class HttpTransport {
   }
 
   requestHandler = async (req: Request, res: Response) => {
-    const transport: RequestTransport = req.body ?? {}
+    const transport: RequestTransport = req.body ? EJSON.parse(req.body) : {}
 
     if (!transport.payload) {
       return res.json(
@@ -124,7 +132,7 @@ export class HttpTransport {
       )
     }
 
-    const payload = transport.payload
+    const { payload } = transport
 
     const method = this.server.getMethod(payload.method)
 
@@ -174,7 +182,7 @@ export class HttpTransport {
     try {
       const result = await method.exec(payload.params, clientNode)
 
-      res.json(result)
+      res.send(EJSON.stringify(result))
     } catch (error) {
       console.error(error)
 

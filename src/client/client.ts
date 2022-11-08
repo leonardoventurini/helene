@@ -13,15 +13,9 @@ import {
   merge,
   pick,
 } from 'lodash'
-import {
-  ClientEvents,
-  Methods,
-  NO_CHANNEL,
-  TOKEN_HEADER_KEY,
-} from '../constants'
+import { ClientEvents, Methods, NO_CHANNEL } from '../constants'
 import { ClientHttp } from './client-http'
 import { ClientChannel } from './client-channel'
-import axios from 'axios'
 import { Errors } from '../errors'
 import qs from 'query-string'
 import { Environment } from '../utils/environment'
@@ -82,8 +76,6 @@ export class Client extends ClientChannel {
 
   authenticated = false
   _events: AnyFunction[]
-
-  axios = axios
 
   options: ClientOptions = {
     host: 'localhost',
@@ -233,12 +225,6 @@ export class Client extends ClientChannel {
     this.ready = true
 
     this.debugger('Authentication Changed', result)
-
-    if (token) {
-      axios.defaults.headers.common = {
-        [TOKEN_HEADER_KEY]: token,
-      }
-    }
 
     clearInterval(this.keepAliveInterval)
 
