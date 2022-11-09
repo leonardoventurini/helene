@@ -26,7 +26,7 @@ export enum ServerEvents {
 }
 
 export enum ClientEvents {
-  AUTH_CHANGED = 'auth:changed',
+  LOGOUT = 'auth:logout',
   CLOSE = 'close',
   ERROR = 'error',
   INITIALIZING = 'initializing',

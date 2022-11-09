@@ -233,7 +233,6 @@ export class Client extends ClientChannel {
     }, 20000)
 
     this.emit(ClientEvents.INITIALIZED, result)
-    this.emit(ClientEvents.AUTH_CHANGED, result)
   }
 
   async login(params: WebSocketRequestParams, opts?: CallOptions) {
@@ -252,7 +251,7 @@ export class Client extends ClientChannel {
     await this.call(Methods.RPC_LOGOUT)
     this.authenticated = false
     this.clearContext()
-    this.emit(ClientEvents.AUTH_CHANGED, false)
+    this.emit(ClientEvents.LOGOUT, false)
   }
 
   async resubscribeAllChannels() {

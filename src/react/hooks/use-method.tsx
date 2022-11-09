@@ -120,24 +120,35 @@ export const useMethod = ({
       event: ClientEvents.INITIALIZING,
     },
     () => {
-      setLoading(true)
+      if (authenticated) {
+        setLoading(true)
+      }
     },
+    [authenticated],
   )
 
   useEvent(
     {
       event: ClientEvents.INITIALIZED,
     },
-    refreshCallback,
-    [refreshCallback],
+    () => {
+      if (authenticated) {
+        refreshCallback()
+      }
+    },
+    [refreshCallback, authenticated],
   )
 
   useEvent(
     {
-      event: ClientEvents.AUTH_CHANGED,
+      event: ClientEvents.LOGOUT,
     },
-    refreshCallback,
-    [refreshCallback],
+    () => {
+      if (authenticated) {
+        refreshCallback()
+      }
+    },
+    [refreshCallback, authenticated],
   )
 
   useEffect(() => {
