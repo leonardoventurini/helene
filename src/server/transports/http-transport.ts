@@ -10,6 +10,7 @@ import { createHttpTerminator, HttpTerminator } from 'http-terminator'
 
 import rateLimit from 'express-rate-limit'
 import { EJSON } from 'ejson2'
+import { isString } from 'lodash'
 import MethodCallPayload = Presentation.MethodCallPayload
 
 declare module 'express' {
@@ -47,7 +48,7 @@ export class HttpTransport {
     this.express.use(express.urlencoded({ extended: true }))
     this.express.use(
       express.json({
-        type: ['application/json'],
+        type: 'application/json',
       }),
     )
 
@@ -119,45 +120,37 @@ export class HttpTransport {
   }
 
   requestHandler = async (req: Request, res: Response) => {
-    const transport: RequestTransport = req.body ? EJSON.parse(req.body) : {}
+    let uuid
+    let payload
 
-    if (!transport.payload) {
-      return res.json(
-        Presentation.Outbound.error(
-          {
-            message: Errors.INVALID_REQUEST,
-          },
-          true,
-        ),
-      )
-    }
+    try {
+      const transport: RequestTransport =
+        req.body && isString(req.body) ? EJSON.parse(req.body) : {}
 
-    const { payload } = transport
+      console.log({ body: req.body })
 
-    const method = this.server.getMethod(payload.method)
-
-    const clientNode = new ClientNode(this.server, null, req, res)
-
-    if (!method) {
-      return res.json(
-        Presentation.Outbound.error(
-          {
-            message: Errors.METHOD_NOT_FOUND,
-            method: payload.method,
-          },
-          true,
-        ),
-      )
-    }
-
-    if (method.isProtected) {
-      const serverContext = await this.getServerContext(req, transport.context)
-
-      if (serverContext === false) {
+      if (!transport.payload) {
         return res.json(
           Presentation.Outbound.error(
             {
-              message: Errors.METHOD_FORBIDDEN,
+              message: Errors.INVALID_REQUEST,
+            },
+            true,
+          ),
+        )
+      }
+
+      payload = transport.payload
+
+      const method = this.server.getMethod(payload.method)
+
+      const clientNode = new ClientNode(this.server, null, req, res)
+
+      if (!method) {
+        return res.json(
+          Presentation.Outbound.error(
+            {
+              message: Errors.METHOD_NOT_FOUND,
               method: payload.method,
             },
             true,
@@ -165,21 +158,38 @@ export class HttpTransport {
         )
       }
 
-      clientNode.authenticated = Boolean(serverContext)
-      clientNode.setContext(serverContext)
-
-      if (!serverContext?.user || !serverContext?.user?._id) {
-        throw new Error(
-          'The auth function must return a user object with a valid "_id" property',
+      if (method.isProtected) {
+        const serverContext = await this.getServerContext(
+          req,
+          transport.context,
         )
+
+        if (serverContext === false) {
+          return res.json(
+            Presentation.Outbound.error(
+              {
+                message: Errors.METHOD_FORBIDDEN,
+                method: payload.method,
+              },
+              true,
+            ),
+          )
+        }
+
+        clientNode.authenticated = Boolean(serverContext)
+        clientNode.setContext(serverContext)
+
+        if (!serverContext?.user || !serverContext?.user?._id) {
+          throw new Error(
+            'The auth function must return a user object with a valid "_id" property',
+          )
+        }
+
+        clientNode.userId = serverContext.user._id
       }
 
-      clientNode.userId = serverContext.user._id
-    }
+      uuid = payload?.uuid ? { uuid: payload.uuid } : null
 
-    const uuid = payload?.uuid ? { uuid: payload.uuid } : null
-
-    try {
       const result = await method.exec(payload.params, clientNode)
 
       res.send(EJSON.stringify(result))
