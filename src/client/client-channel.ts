@@ -31,8 +31,13 @@ export class ClientChannel extends EventEmitter2 {
     const events = Helpers.ensureArray(event)
 
     if (isEmpty(events)) return {}
+    if (!this.client.clientSocket.ready) return {}
 
-    const result = await this.client.call(Methods.RPC_ON, { events, channel })
+    const result = await this.client.call(
+      Methods.RPC_ON,
+      { events, channel },
+      { httpFallback: false },
+    )
 
     Object.entries(result).forEach(([event, result]) => {
       if (result) this.events.add(event)
