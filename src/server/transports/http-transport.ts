@@ -127,8 +127,6 @@ export class HttpTransport {
       const transport: RequestTransport =
         req.body && isString(req.body) ? EJSON.parse(req.body) : {}
 
-      console.log({ body: req.body })
-
       if (!transport.payload) {
         return res.json(
           Presentation.Outbound.error(
