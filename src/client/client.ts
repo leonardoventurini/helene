@@ -29,6 +29,7 @@ export type WebSocketOptions = {
   autoConnect?: boolean
   reconnect?: boolean
   reconnectRetries?: number
+  path?: string
 }
 
 export type WebSocketRequestParams = {

@@ -21,6 +21,7 @@ export class ClientSocket {
     autoConnect: true,
     reconnect: true,
     reconnectRetries: 10,
+    path: '/',
   }
 
   constructor(client: Client, options: WebSocketOptions = {}) {
@@ -30,9 +31,9 @@ export class ClientSocket {
     this.protocol = this.client.options.secure ? `wss://` : `ws://`
 
     if (this.client.options.port) {
-      this.uri = `${this.protocol}${this.client.options.host}:${this.client.options.port}/`
+      this.uri = `${this.protocol}${this.client.options.host}:${this.client.options.port}${this.options.path}`
     } else {
-      this.uri = `${this.protocol}${this.client.options.host}/`
+      this.uri = `${this.protocol}${this.client.options.host}${this.options.path}`
     }
 
     if (this.options.autoConnect)
