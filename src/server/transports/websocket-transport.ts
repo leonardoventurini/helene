@@ -1,6 +1,11 @@
 import WebSocket from 'ws'
 import { Server } from '../server'
-import { Methods, ServerEvents, WebSocketEvents } from '../../constants'
+import {
+  HELENE_WS_PATH,
+  Methods,
+  ServerEvents,
+  WebSocketEvents,
+} from '../../constants'
 import http from 'http'
 import { Errors, PublicError, SchemaValidationError } from '../../errors'
 import { ClientNode } from '../client-node'
@@ -18,14 +23,17 @@ export type WebSocketMessageOptions = Parameters<IsomorphicWebSocket['send']>[1]
 export class WebSocketTransport {
   server: Server
   wss: WebSocket.Server
+  options: WebSocket.ServerOptions = {
+    noServer: true,
+    path: HELENE_WS_PATH,
+  }
 
   constructor(server: Server, opts: WebSocket.ServerOptions) {
     this.server = server
 
-    this.wss = new WebSocket.Server({
-      noServer: true,
-      ...opts,
-    })
+    Object.assign(this.options, opts ?? {})
+
+    this.wss = new WebSocket.Server(this.options)
 
     this.wss.on(WebSocketEvents.CONNECTION, this.handleConnection)
 
@@ -37,7 +45,7 @@ export class WebSocketTransport {
       ServerEvents.UPGRADE,
       (request, socket, head) => {
         // Allows other upgrade requests to work alongside Helene, e.g. NextJS HMR.
-        if (!request.url.startsWith(opts.path ?? '/')) return
+        if (!request.url.startsWith(this.options.path)) return
 
         this.wss.handleUpgrade(request, socket, head, socket => {
           this.wss.emit(WebSocketEvents.CONNECTION, socket, request)

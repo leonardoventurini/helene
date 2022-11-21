@@ -1,6 +1,6 @@
 import IsomorphicWebSocket from 'isomorphic-ws'
 import { Client, WebSocketOptions } from './client'
-import { ClientEvents, WebSocketEvents } from '../constants'
+import { ClientEvents, HELENE_WS_PATH, WebSocketEvents } from '../constants'
 import { Presentation } from '../server/presentation'
 import { WebSocketMessageOptions } from '../server/transports/websocket-transport'
 import retry from 'retry'
@@ -21,12 +21,13 @@ export class ClientSocket {
     autoConnect: true,
     reconnect: true,
     reconnectRetries: 10,
-    path: '/',
+    path: HELENE_WS_PATH,
   }
 
   constructor(client: Client, options: WebSocketOptions = {}) {
     this.client = client
-    this.options = { ...this.options, ...options }
+
+    Object.assign(this.options, options ?? {})
 
     this.protocol = this.client.options.secure ? `wss://` : `ws://`
 
