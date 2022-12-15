@@ -45,14 +45,8 @@ export class HttpTransport {
     })
 
     this.express = express()
-    this.express.use(express.urlencoded({ extended: true }))
-    this.express.use(
-      express.json({
-        type: 'application/json',
-      }),
-    )
-
-    this.express.use(express.text({ type: 'text/plain' }))
+    this.express.use('/__h', express.urlencoded({ extended: true }))
+    this.express.use('/__h', express.text({ type: 'text/plain' }))
 
     if (limit) {
       const limiter = rateLimit({
@@ -63,7 +57,7 @@ export class HttpTransport {
         legacyHeaders: false,
       })
 
-      this.express.use(limiter)
+      this.express.use('/__h', limiter)
     }
 
     if (origins) this.setCORS(origins)
