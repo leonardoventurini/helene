@@ -5,9 +5,9 @@
   "browser": "index.browser.js",
   "main": "index.js",
   "scripts": {
-    "build": "rm -rf lib && tsc",
+    "build": "tsc",
     "watch": "tsc --watch",
-    "clean": "rm -rf lib",
+    "clean": "rm -rf client react server utils index.* tsconfig.tsbuildinfo",
     "test": "nodemon --watch 'src/**/*' -e ts,tsx --exec 'yarn test:mocha'",
     "test:mocha": "NODE_ENV=test mocha -r ts-node/register/transpile-only 'src/**/*.test.*' --extension ts,tsx --file 'src/tests/utils/setup-tests.ts' --exit"
   },
