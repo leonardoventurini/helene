@@ -233,7 +233,7 @@ await client.channel('chat:1').subscribe('message')
 
 ## React
 
-Helene includes some helpful utilities and hooks for working with React.
+Helene includes some helpful utilities and hooks for working with React. All react utilities are exported from the `helene/react` module.
 
 ### Provider
 
