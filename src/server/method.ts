@@ -5,9 +5,9 @@ import { v4 as uuid } from 'uuid'
 import { HeleneAsyncLocalStorage } from './helene-async-local-storage'
 import { isEmpty } from 'lodash'
 import { intercept } from '../utils/intercept'
-import { AnyFunction } from '../types'
+import { AnyFunction } from '../utils/types'
 import { AnyObjectSchema } from 'yup'
-import { Errors, SchemaValidationError } from '../errors'
+import { Errors, SchemaValidationError } from '../utils/errors'
 import { EJSON } from 'ejson2'
 
 export type MethodParams = any

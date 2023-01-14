@@ -8,7 +8,7 @@ import {
   rpcOff,
   rpcOn,
 } from './methods'
-import { Methods } from '../constants'
+import { Methods } from '../utils/constants'
 
 type MethodBuilder = (server: Server) => Method
 

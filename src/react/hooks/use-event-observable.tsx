@@ -1,4 +1,4 @@
-import { NO_CHANNEL } from '../../constants'
+import { NO_CHANNEL } from '../../utils/constants'
 import { useChannel } from './use-channel'
 import { EMPTY, fromEvent } from 'rxjs'
 import { useSubscribe } from './use-subscribe'

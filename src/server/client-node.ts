@@ -11,7 +11,7 @@ import { RateLimiter } from 'limiter'
 import { RateLimit, Server } from './server'
 import { ObjectId } from 'bson'
 import { EventEmitter2 } from 'eventemitter2'
-import { ServerEvents } from '../constants'
+import { ServerEvents } from '../utils/constants'
 
 export type ClientNodeContext = Record<string, any>
 

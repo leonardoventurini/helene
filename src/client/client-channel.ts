@@ -2,7 +2,7 @@ import { EventEmitter2 } from 'eventemitter2'
 import { Client } from './client'
 import { isEmpty, isString } from 'lodash'
 import { Helpers } from '../utils/helpers'
-import { Methods } from '../constants'
+import { Methods } from '../utils/constants'
 
 export class ClientChannel extends EventEmitter2 {
   client: Client

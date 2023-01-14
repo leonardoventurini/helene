@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { TestUtility } from './utils/test-utility'
-import { Errors, PublicError } from '../errors'
+import { Errors, PublicError } from '../utils/errors'
 import { Presentation } from '../server/presentation'
 import { ClientNode } from '../server/client-node'
 import { HeleneAsyncLocalStorage } from '../server/helene-async-local-storage'

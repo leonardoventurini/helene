@@ -1,6 +1,6 @@
 import { Method } from '../method'
 import { isEmpty } from 'lodash'
-import { NO_CHANNEL } from '../../constants'
+import { NO_CHANNEL } from '../../utils/constants'
 
 export const rpcOn = server =>
   new Method(

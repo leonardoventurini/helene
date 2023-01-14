@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useClient } from './use-client'
-import { ClientEvents, HeleneEvents, NO_CHANNEL } from '../../constants'
+import { ClientEvents, HeleneEvents, NO_CHANNEL } from '../../utils/constants'
 import { isFunction, noop } from 'lodash'
 import { useDebouncedCallback } from 'use-debounce'
 import { useEvent } from './use-event'

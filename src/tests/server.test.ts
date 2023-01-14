@@ -4,7 +4,7 @@ import { Server } from '../server/server'
 import { HttpTransport } from '../server/transports/http-transport'
 import { WebSocketTransport } from '../server/transports/websocket-transport'
 import { EJSON } from 'ejson2'
-import { ServerEvents } from '../constants'
+import { ServerEvents } from '../utils/constants'
 
 describe('Server', function () {
   const test = new TestUtility()

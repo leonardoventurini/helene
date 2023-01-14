@@ -1,7 +1,7 @@
 import { identity, isString } from 'lodash'
 import { Helpers } from '../utils/helpers'
 import { v4 } from 'uuid'
-import { Errors } from '../errors'
+import { Errors } from '../utils/errors'
 import { Environment } from '../utils/environment'
 import { EJSON } from 'ejson2'
 

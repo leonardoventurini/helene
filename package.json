@@ -12,7 +12,6 @@
     "test:mocha": "NODE_ENV=test mocha -r ts-node/register/transpile-only 'src/**/*.test.*' --extension ts,tsx --file 'src/tests/utils/setup-tests.ts' --exit"
   },
   "dependencies": {
-    "ahooks": "^3.7.2",
     "bson": "^4.7.0",
     "classnames": "^2.3.1",
     "cors": "^2.8.5",
@@ -27,8 +26,6 @@
     "lodash": "^4.17.21",
     "memoizee": "^0.4.15",
     "query-string": "^7.1.1",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
     "react-singleton-hook": "^3.4.0",
     "redis": "^4.2.0",
     "resize-observer-polyfill": "^1.5.1",
@@ -85,5 +82,9 @@
   "volta": {
     "node": "18.3.0",
     "yarn": "1.22.19"
+  },
+  "peerDependencies": {
+    "react": "^18",
+    "react-dom": "^18"
   }
 }

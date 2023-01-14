@@ -1,4 +1,4 @@
-import { NO_CHANNEL } from '../../constants'
+import { NO_CHANNEL } from '../../utils/constants'
 import { useEffect, useState } from 'react'
 import { useClient } from './use-client'
 import { isString } from 'lodash'

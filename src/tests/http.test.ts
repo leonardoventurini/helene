@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { Errors } from '../errors'
+import { Errors } from '../utils/errors'
 import { TestUtility } from './utils/test-utility'
 import path from 'path'
 import request from 'supertest'

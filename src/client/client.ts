@@ -13,14 +13,14 @@ import {
   merge,
   pick,
 } from 'lodash'
-import { ClientEvents, Methods, NO_CHANNEL } from '../constants'
+import { ClientEvents, Methods, NO_CHANNEL } from '../utils/constants'
 import { ClientHttp } from './client-http'
 import { ClientChannel } from './client-channel'
-import { Errors } from '../errors'
+import { Errors } from '../utils/errors'
 import qs from 'query-string'
 import { Environment } from '../utils/environment'
 import { EJSON } from 'ejson2'
-import { AnyFunction } from '../types'
+import { AnyFunction } from '../utils/types'
 import Timeout = NodeJS.Timeout
 
 export type ErrorHandler = (error: Presentation.ErrorPayload) => any

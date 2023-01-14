@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { TestUtility } from './utils/test-utility'
-import { Errors } from '../errors'
+import { Errors } from '../utils/errors'
 
 describe('Auth', async () => {
   const test = new TestUtility()

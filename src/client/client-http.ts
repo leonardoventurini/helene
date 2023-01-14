@@ -2,7 +2,7 @@ import { Client } from './client'
 import { Reject, Resolve } from './promise-queue'
 import { Presentation } from '../server/presentation'
 import { EJSON } from 'ejson2'
-import { TOKEN_HEADER_KEY } from '../constants'
+import { TOKEN_HEADER_KEY } from '../utils/constants'
 import { fetch } from 'fetch-undici'
 
 export class ClientHttp {

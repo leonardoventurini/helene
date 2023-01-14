@@ -5,9 +5,9 @@ import {
   Methods,
   ServerEvents,
   WebSocketEvents,
-} from '../../constants'
+} from '../../utils/constants'
 import http from 'http'
-import { Errors, PublicError, SchemaValidationError } from '../../errors'
+import { Errors, PublicError, SchemaValidationError } from '../../utils/errors'
 import { ClientNode } from '../client-node'
 import IsomorphicWebSocket from 'isomorphic-ws'
 import { Presentation } from '../presentation'

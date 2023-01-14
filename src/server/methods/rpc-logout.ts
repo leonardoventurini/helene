@@ -1,5 +1,5 @@
 import { Method } from '../method'
-import { ServerEvents } from '../../constants'
+import { ServerEvents } from '../../utils/constants'
 
 export const rpcLogout = server =>
   new Method(

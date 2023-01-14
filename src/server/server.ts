@@ -6,7 +6,12 @@ import { WebSocketTransport } from './transports/websocket-transport'
 import { Method, MethodFunction, MethodOptions, MethodParams } from './method'
 import { ClientNode } from './client-node'
 import { RedisTransport } from './transports/redis-transport'
-import { HeleneEvents, Methods, NO_CHANNEL, ServerEvents } from '../constants'
+import {
+  HeleneEvents,
+  Methods,
+  NO_CHANNEL,
+  ServerEvents,
+} from '../utils/constants'
 import { RequestListener } from 'http'
 import * as assert from 'assert'
 import { isFunction, isObject, isString } from 'lodash'

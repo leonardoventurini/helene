@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { NO_CHANNEL } from '../../constants'
+import { NO_CHANNEL } from '../../utils/constants'
 import { useSubscribe } from './use-subscribe'
 
 export type UseEventParams = {

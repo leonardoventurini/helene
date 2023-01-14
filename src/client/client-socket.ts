@@ -1,6 +1,10 @@
 import IsomorphicWebSocket from 'isomorphic-ws'
 import { Client, WebSocketOptions } from './client'
-import { ClientEvents, HELENE_WS_PATH, WebSocketEvents } from '../constants'
+import {
+  ClientEvents,
+  HELENE_WS_PATH,
+  WebSocketEvents,
+} from '../utils/constants'
 import { Presentation } from '../server/presentation'
 import { WebSocketMessageOptions } from '../server/transports/websocket-transport'
 import retry from 'retry'
