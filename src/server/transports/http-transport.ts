@@ -4,7 +4,7 @@ import cors from 'cors'
 import { RateLimit, Server } from '../server'
 import { Errors, PublicError, SchemaValidationError } from '../../utils/errors'
 import { ServerEvents, TOKEN_HEADER_KEY } from '../../utils/constants'
-import { Presentation } from '../presentation'
+import { Presentation } from '../../utils/presentation'
 import { ClientNode } from '../client-node'
 import { createHttpTerminator, HttpTerminator } from 'http-terminator'
 

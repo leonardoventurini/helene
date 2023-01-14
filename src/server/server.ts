@@ -1,17 +1,9 @@
 import WebSocket from 'ws'
-import { v4 as uuid } from 'uuid'
 import { RedisClientOptions } from 'redis'
-import { HttpTransport } from './transports/http-transport'
-import { WebSocketTransport } from './transports/websocket-transport'
+import { HttpTransport, RedisTransport, WebSocketTransport } from './transports'
 import { Method, MethodFunction, MethodOptions, MethodParams } from './method'
 import { ClientNode } from './client-node'
-import { RedisTransport } from './transports/redis-transport'
-import {
-  HeleneEvents,
-  Methods,
-  NO_CHANNEL,
-  ServerEvents,
-} from '../utils/constants'
+import { HeleneEvents, Methods, NO_CHANNEL, ServerEvents } from '../utils'
 import { RequestListener } from 'http'
 import * as assert from 'assert'
 import { isFunction, isObject, isString } from 'lodash'
@@ -19,6 +11,7 @@ import { ServerChannel } from './server-channel'
 import { DefaultMethods } from './default-methods'
 import { Event } from './event'
 import { combineLatest, fromEvent } from 'rxjs'
+import { Presentation } from '../utils/presentation'
 
 declare global {
   // eslint-disable-next-line no-var
@@ -108,7 +101,7 @@ export class Server extends ServerChannel {
     this.requestListener = requestListener
     this.debug = debug
 
-    this.uuid = uuid()
+    this.uuid = Presentation.uuid()
 
     this.rateLimit = rateLimit
 

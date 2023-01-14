@@ -5,7 +5,7 @@ import {
   HELENE_WS_PATH,
   WebSocketEvents,
 } from '../utils/constants'
-import { Presentation } from '../server/presentation'
+import { Presentation } from '../utils/presentation'
 import { WebSocketMessageOptions } from '../server/transports/websocket-transport'
 import retry from 'retry'
 

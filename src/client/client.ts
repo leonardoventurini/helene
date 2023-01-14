@@ -1,7 +1,7 @@
 import { WebSocketMessageOptions } from '../server/transports/websocket-transport'
 import { PromiseQueue } from './promise-queue'
 import { ClientSocket } from './client-socket'
-import { Presentation } from '../server/presentation'
+import { Presentation } from '../utils/presentation'
 import { MethodParams } from '../server/method'
 import {
   isEmpty,

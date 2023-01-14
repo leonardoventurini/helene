@@ -1,13 +1,10 @@
 import memoize from 'memoizee'
 import { ClientNode } from './client-node'
-import { Presentation } from './presentation'
-import { v4 as uuid } from 'uuid'
+import { Presentation } from '../utils/presentation'
 import { HeleneAsyncLocalStorage } from './helene-async-local-storage'
 import { isEmpty } from 'lodash'
-import { intercept } from '../utils/intercept'
-import { AnyFunction } from '../utils/types'
+import { AnyFunction, Errors, intercept, SchemaValidationError } from '../utils'
 import { AnyObjectSchema } from 'yup'
-import { Errors, SchemaValidationError } from '../utils/errors'
 import { EJSON } from 'ejson2'
 
 export type MethodParams = any
@@ -78,7 +75,7 @@ export class Method {
     const result = await this.runMiddleware(cleanParams, node)
 
     return HeleneAsyncLocalStorage.run(
-      { executionId: uuid(), context: node.context },
+      { executionId: Presentation.uuid(), context: node.context },
       async () => this.fn.call(node, result),
     )
   }

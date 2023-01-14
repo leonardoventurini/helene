@@ -1,9 +1,7 @@
 import { identity, isString } from 'lodash'
-import { Helpers } from '../utils/helpers'
-import { v4 } from 'uuid'
-import { Errors } from '../utils/errors'
-import { Environment } from '../utils/environment'
+import { Environment, Errors, Helpers } from './index'
 import { EJSON } from 'ejson2'
+import { v4 } from 'uuid'
 
 export namespace Presentation {
   export type Params = Record<string, any> | any[] | any

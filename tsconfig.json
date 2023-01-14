@@ -10,7 +10,7 @@
     "moduleResolution": "Node",
     "noImplicitAny": false,
     "noUnusedLocals": false,
-    "outDir": "./lib",
+    "outDir": ".",
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "sourceMap": true,

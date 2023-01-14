@@ -10,7 +10,7 @@ import http from 'http'
 import { Errors, PublicError, SchemaValidationError } from '../../utils/errors'
 import { ClientNode } from '../client-node'
 import IsomorphicWebSocket from 'isomorphic-ws'
-import { Presentation } from '../presentation'
+import { Presentation } from '../../utils/presentation'
 import MethodCallPayload = Presentation.MethodCallPayload
 
 export enum WebSocketTransportEvents {

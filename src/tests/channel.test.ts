@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { TestUtility } from './utils/test-utility'
-import { Presentation } from '../server/presentation'
+import { Presentation } from '../utils/presentation'
 import { defer } from 'lodash'
 
 describe('Channel', () => {

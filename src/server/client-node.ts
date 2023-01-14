@@ -1,17 +1,16 @@
 import WebSocket from 'ws'
-import { WebSocketMessageOptions } from './transports/websocket-transport'
+import { WebSocketMessageOptions } from './transports'
 import http from 'http'
 import url from 'url'
-import { v4 as uuid } from 'uuid'
 import { isString } from 'lodash'
-import { Presentation } from './presentation'
+import { Presentation } from '../utils/presentation'
 import { Request, Response } from 'express'
 import { HeleneAsyncLocalStorage } from './helene-async-local-storage'
 import { RateLimiter } from 'limiter'
 import { RateLimit, Server } from './server'
 import { ObjectId } from 'bson'
 import { EventEmitter2 } from 'eventemitter2'
-import { ServerEvents } from '../utils/constants'
+import { ServerEvents } from '../utils'
 
 export type ClientNodeContext = Record<string, any>
 
@@ -79,7 +78,7 @@ export class ClientNode extends EventEmitter2 {
   setId(request: http.IncomingMessage) {
     const { query } = url.parse(request.url, true)
 
-    this._id = (query?.uuid as string) ?? uuid()
+    this._id = (query?.uuid as string) ?? Presentation.uuid()
   }
 
   setContext(context: ClientNodeContext) {

@@ -1,9 +1,8 @@
 import { EventEmitter2 } from 'eventemitter2'
 import { Server } from './server'
-import { Presentation } from './presentation'
-import { HttpTransportEvents } from './transports/http-transport'
-import { HeleneEvents, ServerEvents } from '../utils/constants'
-import { WebSocketTransportEvents } from './transports/websocket-transport'
+import { Presentation } from '../utils/presentation'
+import { HttpTransportEvents, WebSocketTransportEvents } from './transports'
+import { HeleneEvents, ServerEvents } from '../utils'
 import { Event, EventOptions } from './event'
 import { ClientNode } from './client-node'
 

@@ -1,7 +1,7 @@
 import { createClient, RedisClientOptions } from 'redis'
 import { NO_CHANNEL, RedisListeners, ServerEvents } from '../../utils/constants'
 import { Server } from '../server'
-import { Presentation } from '../presentation'
+import { Presentation } from '../../utils/presentation'
 
 export type RedisMessage = {
   event: string

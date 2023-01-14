@@ -1,6 +1,5 @@
 import { Server } from './server'
-import { v4 as uuid } from 'uuid'
-import { Presentation } from './presentation'
+import { Presentation } from '../utils/presentation'
 import { ClientNode } from './client-node'
 import { ServerChannel } from './server-channel'
 
@@ -42,7 +41,7 @@ export class Event {
     channel: ServerChannel,
     opts?: EventOptions,
   ) {
-    this.uuid = uuid()
+    this.uuid = Presentation.uuid()
     this.name = name
     this.server = server
     this.channel = channel
