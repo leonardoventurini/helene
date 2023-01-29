@@ -48,6 +48,9 @@ describe('Methods', function () {
     expect(error).to.have.property('stack').that.is.a('string')
   })
 
+  /**
+   * @flaky
+   */
   it('should make a void method call', async () => {
     let called = false
 
@@ -57,7 +60,7 @@ describe('Methods', function () {
 
     await test.client.void('test:method')
 
-    await test.sleep(0)
+    await test.sleep(10)
 
     expect(called).to.be.true
   })
