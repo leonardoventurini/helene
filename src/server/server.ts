@@ -18,7 +18,10 @@ declare global {
   var Helene: Server
 }
 
-export type ChannelChecker = (node: ClientNode, channel: string) => boolean
+export type ChannelChecker = (
+  node: ClientNode,
+  channel: string,
+) => Promise<boolean>
 
 export type AuthFunction = (this: ClientNode, context: any) => any
 
@@ -65,7 +68,7 @@ export class Server extends ServerChannel {
 
   ready = false
 
-  shouldAllowChannelSubscribe: ChannelChecker
+  shouldAllowChannelSubscribe: ChannelChecker = async () => true
 
   static ERROR_EVENT = 'error'
 

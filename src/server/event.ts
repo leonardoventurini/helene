@@ -19,7 +19,7 @@ export type EventOptions = {
     client: ClientNode,
     eventName: string,
     channel: string,
-  ) => boolean
+  ) => Promise<boolean>
 }
 
 export class Event {
@@ -33,7 +33,7 @@ export class Event {
     client: ClientNode,
     eventName: string,
     channel: string,
-  ) => boolean = () => true
+  ) => Promise<boolean> = async () => true
 
   constructor(
     name: string,
@@ -51,7 +51,9 @@ export class Event {
     if (opts?.user) {
       this.isProtected = true
 
-      this.shouldSubscribe = function (client, event, channel) {
+      this.shouldSubscribe = async function (client, event, channel) {
+        if (!client.userId) return false
+
         return channel === client.userId.toString()
       }
     }
