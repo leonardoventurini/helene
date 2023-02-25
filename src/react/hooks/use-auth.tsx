@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ClientEvents } from '../../utils/constants'
+import { ClientEvents } from '../../utils'
 import { cloneDeep } from 'lodash'
 import { useClient } from './use-client'
 import { useDebouncedCallback } from 'use-debounce'
@@ -7,7 +7,7 @@ import { useDebouncedCallback } from 'use-debounce'
 export function useAuth() {
   const client = useClient()
   const [ready, setReady] = useState(false)
-  const [authenticated, setAuthenticated] = useState(false)
+  const [authenticated, setAuthenticated] = useState(client.authenticated)
   const [context, setContext] = useState({})
 
   const updateState = useDebouncedCallback(() => {
