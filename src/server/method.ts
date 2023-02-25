@@ -4,8 +4,9 @@ import { Presentation } from '../utils/presentation'
 import { HeleneAsyncLocalStorage } from './helene-async-local-storage'
 import { isEmpty } from 'lodash'
 import { AnyFunction, Errors, intercept, SchemaValidationError } from '../utils'
-import { AnyObjectSchema } from 'yup'
+import { AnyObjectSchema, ObjectSchema } from 'yup'
 import { EJSON } from 'ejson2'
+import { create, Struct } from 'superstruct'
 
 export type MethodParams = any
 export type MethodFunction = (this: ClientNode, params?: MethodParams) => any
@@ -16,7 +17,11 @@ export interface MethodOptions {
   maxAge?: number
   protected?: boolean
   middleware?: AnyFunction[]
-  schema?: AnyObjectSchema
+
+  /**
+   * Supports Yup and Superstruct schemas.
+   */
+  schema?: AnyObjectSchema | Struct
 }
 
 export class Method {
@@ -24,7 +29,7 @@ export class Method {
   fn: MethodFunction
   isProtected: boolean
   middleware: AnyFunction[]
-  schema: AnyObjectSchema = null
+  schema: AnyObjectSchema | Struct = null
 
   constructor(fn: MethodFunction, opts: MethodOptions) {
     const { cache, maxAge = 60000, schema } = opts ?? {}
@@ -63,12 +68,18 @@ export class Method {
 
     if (this.schema) {
       try {
-        await this.schema.validate(params)
+        if (this.schema instanceof Struct) {
+          cleanParams = create(params, this.schema)
+        }
 
-        cleanParams = this.schema.cast(params, { stripUnknown: true })
+        if (this.schema instanceof ObjectSchema) {
+          await this.schema.validate(params)
+
+          cleanParams = this.schema.cast(params, { stripUnknown: true })
+        }
       } catch (error) {
         console.error(error)
-        throw new SchemaValidationError(Errors.INVALID_PARAMS, error.errors)
+        throw new SchemaValidationError(Errors.INVALID_PARAMS)
       }
     }
 

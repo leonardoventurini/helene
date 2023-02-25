@@ -31,6 +31,7 @@
     "resize-observer-polyfill": "^1.5.1",
     "retry": "^0.13.1",
     "rxjs": "^7.5.7",
+    "superstruct": "^1.0.3",
     "use-debounce": "^7.0.1",
     "uuid": "^8.3.2",
     "ws": "^8.8.1",

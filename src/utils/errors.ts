@@ -8,7 +8,7 @@ export class PublicError extends Error {
 export class SchemaValidationError extends Error {
   errors: string[]
 
-  constructor(message: string, errors: string[]) {
+  constructor(message: string, errors?: string[]) {
     super(message)
     this.name = 'Schema Validation Error'
     this.errors = errors

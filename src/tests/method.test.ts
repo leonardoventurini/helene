@@ -1,10 +1,10 @@
 import { expect } from 'chai'
 import { TestUtility } from './utils/test-utility'
-import { Errors, PublicError } from '../utils/errors'
+import { Errors, PublicError } from '../utils'
 import { Presentation } from '../utils/presentation'
-import { ClientNode } from '../server/client-node'
-import { HeleneAsyncLocalStorage } from '../server/helene-async-local-storage'
-import { boolean, object } from 'yup'
+import { ClientNode, HeleneAsyncLocalStorage } from '../server'
+import * as yup from 'yup'
+import superstruct from 'superstruct'
 import { range } from 'lodash'
 
 describe('Methods', function () {
@@ -143,8 +143,8 @@ describe('Methods', function () {
       'validated:method',
       ({ knownProperty }) => Boolean(knownProperty),
       {
-        schema: object({
-          knownProperty: boolean().required(),
+        schema: yup.object({
+          knownProperty: yup.boolean().required(),
         }),
       },
     )
@@ -152,6 +152,28 @@ describe('Methods', function () {
     await expect(test.client.call('validated:method')).to.be.rejectedWith(
       Errors.INVALID_PARAMS,
     )
+
+    const result = await test.client.call('validated:method', {
+      knownProperty: true,
+    })
+
+    expect(result).to.be.true
+  })
+
+  it('should regsiter and call a method with schema validation using superstruct', async () => {
+    test.server.addMethod(
+      'validated:method',
+      ({ knownProperty }) => Boolean(knownProperty),
+      {
+        schema: superstruct.object({
+          knownProperty: superstruct.boolean(),
+        }),
+      },
+    )
+
+    await expect(
+      test.client.call('validated:method', { knownProperty: 1 }),
+    ).to.be.rejectedWith(Errors.INVALID_PARAMS)
 
     const result = await test.client.call('validated:method', {
       knownProperty: true,
