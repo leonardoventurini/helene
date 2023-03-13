@@ -710,6 +710,11 @@ assertion-error@^1.1.0:
   resolved "https://registry.npmjs.org/assertion-error/-/assertion-error-1.1.0.tgz"
   integrity sha512-jgsaNduz+ndvGyFt3uSuWqvy4lCnIJiovtouQN5JZHOKCS2QuhEdbcQHFhVksz2N2U9hXJo8odG7ETyWlEeuDw==
 
+async@^3.2.4:
+  version "3.2.4"
+  resolved "https://registry.yarnpkg.com/async/-/async-3.2.4.tgz#2d22e00f8cddeb5fde5dd33522b56d1cf569a81c"
+  integrity sha512-iAB+JbDEGXhyIUavoDl9WP/Jj106Kz9DEn1DPgYw5ruDn0e3Wgi3sKFm55sASdGBNOQB8F59d9qQ7deqrHA8wQ==
+
 asynckit@^0.4.0:
   version "0.4.0"
   resolved "https://registry.npmjs.org/asynckit/-/asynckit-0.4.0.tgz"
@@ -729,6 +734,13 @@ binary-extensions@^2.0.0:
   version "2.2.0"
   resolved "https://registry.npmjs.org/binary-extensions/-/binary-extensions-2.2.0.tgz"
   integrity sha512-jDctJ/IVQbZoJykoeHbhXpOlNBqGNcwXJKJog42E5HDPUwQTSdjCHdihjj0DlnheQ7blbT6dHOafNAiS8ooQKA==
+
+binary-search-tree@^0.2.6:
+  version "0.2.6"
+  resolved "https://registry.yarnpkg.com/binary-search-tree/-/binary-search-tree-0.2.6.tgz#c6d29194e286827fcffe079010e6bf77def10ce3"
+  integrity sha512-31s1g+tO0sNzUOzaCulb4sXV5ThJe/Iliz0NWW0fBpgY6scixeKVZ5M1UBXtpGg7JuK6pf/6CiQcOHCDGfdaTg==
+  dependencies:
+    underscore "~1.4.4"
 
 body-parser@1.20.1:
   version "1.20.1"
@@ -2497,6 +2509,11 @@ minimist@^1.2.0, minimist@^1.2.6:
   resolved "https://registry.npmjs.org/minimist/-/minimist-1.2.6.tgz"
   integrity sha512-Jsjnk4bw3YJqYzbdyBiNsPWHPfO++UGG749Cxs6peCu5Xg4nrena6OVxOYxrQTqww0Jmwt+Ref8rggumkTLz9Q==
 
+mkdirp@^2.1.5:
+  version "2.1.5"
+  resolved "https://registry.yarnpkg.com/mkdirp/-/mkdirp-2.1.5.tgz#78d7eaf15e069ba7b6b47d76dd94cfadf7a4062f"
+  integrity sha512-jbjfql+shJtAPrFoKxHOXip4xS+kul9W3OzfzzrqueWK2QMGon2bFH2opl6W9EagBThjEz+iysyi/swOoVfB/w==
+
 mocha@^10.0.0:
   version "10.0.0"
   resolved "https://registry.yarnpkg.com/mocha/-/mocha-10.0.0.tgz#205447d8993ec755335c4b13deba3d3a13c4def9"
@@ -3632,6 +3649,11 @@ undefsafe@^2.0.5:
   version "2.0.5"
   resolved "https://registry.npmjs.org/undefsafe/-/undefsafe-2.0.5.tgz"
   integrity sha512-WxONCrssBM8TSPRqN5EmsjVrsv4A8X12J4ArBiiayv3DyyG3ZlIg6yysuuSYdZsVz3TKcTg2fd//Ujd4CHV1iA==
+
+underscore@~1.4.4:
+  version "1.4.4"
+  resolved "https://registry.yarnpkg.com/underscore/-/underscore-1.4.4.tgz#61a6a32010622afa07963bf325203cf12239d604"
+  integrity sha512-ZqGrAgaqqZM7LGRzNjLnw5elevWb5M8LEoDMadxIW3OWbcv72wMMgKdwOKpd5Fqxe8choLD8HN3iSj3TUh/giQ==
 
 undici@^5.0.0:
   version "5.12.0"
