@@ -86,6 +86,8 @@ export class Server extends ServerChannel {
   }: ServerOptions = {}) {
     super(NO_CHANNEL)
 
+    this.setMaxListeners(1024)
+
     this.setServer(this)
     this.createDefaultMethods()
 
