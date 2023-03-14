@@ -4,7 +4,7 @@
 
 import async from 'async'
 
-export function Executor(...args) {
+export function Executor() {
   this.buffer = []
   this.ready = false
 
@@ -16,17 +16,19 @@ export function Executor(...args) {
     for (let i = 0; i < task.arguments.length; i += 1) {
       newArguments.push(task.arguments[i])
     }
+
     const lastArg = task.arguments[task.arguments.length - 1]
 
     // Always tell the queue task is complete. Execute callback if any was given.
     if (typeof lastArg === 'function') {
       // Callback was supplied
-      newArguments[newArguments.length - 1] = function () {
+      newArguments[newArguments.length - 1] = function (...args) {
         if (typeof setImmediate === 'function') {
           setImmediate(cb)
         } else {
           process.nextTick(cb)
         }
+
         lastArg(...args)
       }
     } else if (!lastArg && task.arguments.length !== 0) {

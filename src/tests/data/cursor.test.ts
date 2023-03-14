@@ -33,7 +33,7 @@ describe('Cursor', function () {
         },
         function (cb) {
           d.loadDatabase(function (err) {
-            assert.isNull(err)
+            assert.notExists(err)
             d.getAllData().length.should.equal(0)
             return cb()
           })

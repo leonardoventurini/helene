@@ -6,3 +6,5 @@ import chaiSubset from 'chai-subset'
 chai.use(chaiAsPromised)
 chai.use(sinonChai)
 chai.use(chaiSubset)
+
+chai.should()

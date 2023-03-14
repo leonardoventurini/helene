@@ -85,7 +85,9 @@ export function Persistence(options) {
  */
 Persistence.ensureDirectoryExists = function (dir, cb) {
   const callback = cb || noop
-  Storage.mkdirp(dir).catch(callback)
+  Storage.mkdirp(dir)
+    .then(result => cb(null, result))
+    .catch(callback)
 }
 
 /**

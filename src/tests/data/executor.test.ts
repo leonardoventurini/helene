@@ -159,7 +159,7 @@ describe('Executor', function () {
           },
           function (cb) {
             d.loadDatabase(function (err) {
-              assert.isNull(err)
+              assert.notExists(err)
               d.getAllData().length.should.equal(0)
               return cb()
             })
@@ -188,7 +188,7 @@ describe('Executor', function () {
     it('Works in the right order even with no supplied callback', function (done) {
       testExecutorWorksWithoutCallback(d, done)
     })
-  }) // ==== End of 'With persistent database' ====
+  })
 
   describe('With non persistent database', function () {
     let d
@@ -198,7 +198,7 @@ describe('Executor', function () {
       d.inMemoryOnly.should.equal(true)
 
       d.loadDatabase(function (err) {
-        assert.isNull(err)
+        assert.isUndefined(err)
         d.getAllData().length.should.equal(0)
         return done()
       })

@@ -2,7 +2,7 @@ import async from 'async'
 import { Executor } from './executor'
 import { Index } from './indexes'
 import util from 'util'
-import _, { noop } from 'lodash'
+import _, { isDate, isObject, noop } from 'lodash'
 import { Persistence } from './persistence'
 import { Cursor } from './cursor'
 import { uid } from './custom-utils'
@@ -286,117 +286,125 @@ Datastore.prototype.getCandidates = function (
     dontExpireStaleDocs = false
   }
 
-  async.waterfall([
-    // STEP 1: get candidates list by checking indexes from most to least frequent usecase
-    function (cb) {
-      // For a basic match
-      usableQueryKeys = []
-      Object.keys(query).forEach(function (k) {
-        if (
-          typeof query[k] === 'string' ||
-          typeof query[k] === 'number' ||
-          typeof query[k] === 'boolean' ||
-          util.isDate(query[k]) ||
-          query[k] === null
-        ) {
-          usableQueryKeys.push(k)
-        }
-      })
-      usableQueryKeys = _.intersection(usableQueryKeys, indexNames)
-      if (usableQueryKeys.length > 0) {
-        return cb(
-          null,
-          self.indexes[usableQueryKeys[0]].getMatching(
-            query[usableQueryKeys[0]],
-          ),
-        )
-      }
-
-      // For $in match
-      usableQueryKeys = []
-      Object.keys(query).forEach(function (k) {
-        if (query[k] && '$in' in query[k]) {
-          usableQueryKeys.push(k)
-        }
-      })
-      usableQueryKeys = _.intersection(usableQueryKeys, indexNames)
-      if (usableQueryKeys.length > 0) {
-        return cb(
-          null,
-          self.indexes[usableQueryKeys[0]].getMatching(
-            query[usableQueryKeys[0]].$in,
-          ),
-        )
-      }
-
-      // For a comparison match
-      usableQueryKeys = []
-      Object.keys(query).forEach(function (k) {
-        const item = query[k]
-
-        const modifiers = ['$lt', '$lte', '$gt', '$gte']
-
-        if (query[k] && modifiers.some(m => m in item)) {
-          usableQueryKeys.push(k)
-        }
-      })
-      usableQueryKeys = _.intersection(usableQueryKeys, indexNames)
-      if (usableQueryKeys.length > 0) {
-        return cb(
-          null,
-          self.indexes[usableQueryKeys[0]].getBetweenBounds(
-            query[usableQueryKeys[0]],
-          ),
-        )
-      }
-
-      // By default, return all the DB data
-      return cb(null, self.getAllData())
-    },
-    // STEP 2: remove all expired documents
-    function (docs) {
-      if (dontExpireStaleDocs) {
-        return callback(null, docs)
-      }
-
-      const expiredDocsIds = [],
-        validDocs = [],
-        ttlIndexesFieldNames = Object.keys(self.ttlIndexes)
-
-      docs.forEach(function (doc) {
-        let valid = true
-        ttlIndexesFieldNames.forEach(function (i) {
+  async.waterfall(
+    [
+      // STEP 1: get candidates list by checking indexes from most to least frequent usecase
+      function (cb) {
+        // For a basic match
+        usableQueryKeys = []
+        Object.keys(query).forEach(function (k) {
           if (
-            doc[i] !== undefined &&
-            util.isDate(doc[i]) &&
-            Date.now() > doc[i].getTime() + self.ttlIndexes[i] * 1000
+            typeof query[k] === 'string' ||
+            typeof query[k] === 'number' ||
+            typeof query[k] === 'boolean' ||
+            util.isDate(query[k]) ||
+            query[k] === null
           ) {
-            valid = false
+            usableQueryKeys.push(k)
           }
         })
-        if (valid) {
-          validDocs.push(doc)
-        } else {
-          expiredDocsIds.push(doc._id)
+        usableQueryKeys = _.intersection(usableQueryKeys, indexNames)
+        if (usableQueryKeys.length > 0) {
+          return cb(
+            null,
+            self.indexes[usableQueryKeys[0]].getMatching(
+              query[usableQueryKeys[0]],
+            ),
+          )
         }
-      })
 
-      async.eachSeries(
-        expiredDocsIds,
-        function (_id, cb) {
-          self._remove({ _id: _id }, {}, function (err) {
-            if (err) {
-              return callback(err)
+        // For $in match
+        usableQueryKeys = []
+        Object.keys(query).forEach(function (k) {
+          if (isObject(query[k]) && '$in' in query[k]) {
+            usableQueryKeys.push(k)
+          }
+        })
+        usableQueryKeys = _.intersection(usableQueryKeys, indexNames)
+        if (usableQueryKeys.length > 0) {
+          return cb(
+            null,
+            self.indexes[usableQueryKeys[0]].getMatching(
+              query[usableQueryKeys[0]].$in,
+            ),
+          )
+        }
+
+        // For a comparison match
+        usableQueryKeys = []
+        Object.keys(query).forEach(function (k) {
+          const item = query[k]
+
+          const modifiers = ['$lt', '$lte', '$gt', '$gte']
+
+          if (isObject(query[k]) && modifiers.some(m => m in item)) {
+            usableQueryKeys.push(k)
+          }
+        })
+        usableQueryKeys = _.intersection(usableQueryKeys, indexNames)
+        if (usableQueryKeys.length > 0) {
+          return cb(
+            null,
+            self.indexes[usableQueryKeys[0]].getBetweenBounds(
+              query[usableQueryKeys[0]],
+            ),
+          )
+        }
+
+        // By default, return all the DB data
+        return cb(null, self.getAllData())
+      },
+      // STEP 2: remove all expired documents
+      function (docs, wcb) {
+        if (dontExpireStaleDocs) {
+          return wcb(null, docs)
+        }
+
+        const expiredDocsIds = [],
+          validDocs = [],
+          ttlIndexesFieldNames = Object.keys(self.ttlIndexes)
+
+        docs.forEach(function (doc) {
+          let valid = true
+          ttlIndexesFieldNames.forEach(function (i) {
+            if (
+              doc[i] !== undefined &&
+              isDate(doc[i]) &&
+              Date.now() > doc[i].getTime() + self.ttlIndexes[i] * 1000
+            ) {
+              valid = false
             }
-            return cb()
           })
-        },
-        function (err) {
-          return callback(null, validDocs)
-        },
-      )
+          if (valid) {
+            validDocs.push(doc)
+          } else {
+            expiredDocsIds.push(doc._id)
+          }
+        })
+
+        async.eachSeries(
+          expiredDocsIds,
+          function (_id, cb) {
+            self._remove({ _id: _id }, {}, function (err) {
+              if (err) {
+                return wcb(err)
+              }
+              return cb()
+            })
+          },
+          function (err) {
+            return wcb(null, validDocs)
+          },
+        )
+      },
+    ],
+    function (err, res) {
+      if (err) {
+        return callback(err)
+      }
+      return callback(null, res)
     },
-  ])
+  )
 }
 
 /**
@@ -555,19 +563,22 @@ Datastore.prototype.find = function (query, projection, callback) {
       break
   }
 
-  const cursor = new Cursor(this, query, function (err, docs, callback) {
+  const cursor = new Cursor(this, query, function (err, docs, _callback) {
     const res = []
+
     if (err) {
-      return callback(err)
+      return _callback(err)
     }
 
     for (let i = 0; i < docs.length; i += 1) {
       res.push(deepCopy(docs[i]))
     }
-    return callback(null, res)
+
+    return _callback(null, res)
   })
 
   cursor.projection(projection)
+
   if (typeof callback === 'function') {
     cursor.exec(callback)
   } else {
@@ -579,6 +590,7 @@ Datastore.prototype.find = function (query, projection, callback) {
  * Find one document matching the query
  * @param {Object} query MongoDB-style query
  * @param {Object} projection MongoDB-style projection
+ * @param callback
  */
 Datastore.prototype.findOne = function (query, projection, callback) {
   switch (arguments.length) {
@@ -594,18 +606,20 @@ Datastore.prototype.findOne = function (query, projection, callback) {
       break
   }
 
-  const cursor = new Cursor(this, query, function (err, docs, callback) {
+  const cursor = new Cursor(this, query, function (err, docs, _callback) {
     if (err) {
-      return callback(err)
+      return _callback(err)
     }
+
     if (docs.length === 1) {
-      return callback(null, deepCopy(docs[0]))
+      return _callback(null, deepCopy(docs[0]))
     } else {
-      return callback(null, null)
+      return _callback(null, null)
     }
   })
 
   cursor.projection(projection).limit(1)
+
   if (typeof callback === 'function') {
     cursor.exec(callback)
   } else {
@@ -651,108 +665,113 @@ Datastore.prototype._update = function (query, updateQuery, options, cb) {
   const multi = options.multi !== undefined ? options.multi : false
   const upsert = options.upsert !== undefined ? options.upsert : false
 
-  async.waterfall([
-    function (cb) {
-      // If upsert option is set, check whether we need to insert the doc
-      if (!upsert) {
-        return cb()
-      }
-
-      // Need to use an internal function not tied to the executor to avoid deadlock
-      const cursor = new Cursor(self, query)
-      cursor.limit(1)._exec(function (err, docs) {
-        if (err) {
-          return callback(err)
-        }
-        if (docs.length === 1) {
+  async
+    .waterfall([
+      function (cb) {
+        // If upsert option is set, check whether we need to insert the doc
+        if (!upsert) {
           return cb()
-        } else {
-          let toBeInserted
-
-          try {
-            checkObject(updateQuery)
-            // updateQuery is a simple object with no modifier, use it as the document to insert
-            toBeInserted = updateQuery
-          } catch (e) {
-            // updateQuery contains modifiers, use the find query as the base,
-            // strip it from all operators and update it according to updateQuery
-            try {
-              toBeInserted = modify(deepCopy(query, true), updateQuery)
-            } catch (err) {
-              return callback(err)
-            }
-          }
-
-          return self._insert(toBeInserted, function (err, newDoc) {
-            if (err) {
-              return callback(err)
-            }
-            return callback(null, 1, newDoc, true)
-          })
-        }
-      })
-    },
-    function () {
-      // Perform the update
-      let modifiedDoc, createdAt
-
-      const modifications = []
-
-      self.getCandidates(query, function (err, candidates) {
-        if (err) {
-          return callback(err)
         }
 
-        // Preparing update (if an error is thrown here neither the datafile nor
-        // the in-memory indexes are affected)
-        try {
-          for (i = 0; i < candidates.length; i += 1) {
-            if (match(candidates[i], query) && (multi || numReplaced === 0)) {
-              numReplaced += 1
-              if (self.timestampData) {
-                createdAt = candidates[i].createdAt
-              }
-              modifiedDoc = modify(candidates[i], updateQuery)
-              if (self.timestampData) {
-                modifiedDoc.createdAt = createdAt
-                modifiedDoc.updatedAt = new Date()
-              }
-              modifications.push({ oldDoc: candidates[i], newDoc: modifiedDoc })
-            }
-          }
-        } catch (err) {
-          return callback(err)
-        }
-
-        // Change the docs in memory
-        try {
-          self.updateIndexes(modifications)
-        } catch (err) {
-          return callback(err)
-        }
-
-        // Update the datafile
-        const updatedDocs = pluck(modifications, 'newDoc')
-        self.persistence.persistNewState(updatedDocs, function (err) {
+        // Need to use an internal function not tied to the executor to avoid deadlock
+        const cursor = new Cursor(self, query)
+        cursor.limit(1)._exec(function (err, docs) {
           if (err) {
             return callback(err)
           }
-          if (!options.returnUpdatedDocs) {
-            return callback(null, numReplaced)
+          if (docs.length === 1) {
+            return cb()
           } else {
-            let updatedDocsDC = []
-            updatedDocs.forEach(function (doc) {
-              updatedDocsDC.push(deepCopy(doc))
-            })
-            if (!multi) {
-              updatedDocsDC = updatedDocsDC[0]
+            let toBeInserted
+
+            try {
+              checkObject(updateQuery)
+              // updateQuery is a simple object with no modifier, use it as the document to insert
+              toBeInserted = updateQuery
+            } catch (e) {
+              // updateQuery contains modifiers, use the find query as the base,
+              // strip it from all operators and update it according to updateQuery
+              try {
+                toBeInserted = modify(deepCopy(query, true), updateQuery)
+              } catch (err) {
+                return callback(err)
+              }
             }
-            return callback(null, numReplaced, updatedDocsDC)
+
+            return self._insert(toBeInserted, function (err, newDoc) {
+              if (err) {
+                return callback(err)
+              }
+              return callback(null, 1, newDoc, true)
+            })
           }
         })
-      })
-    },
-  ])
+      },
+      function () {
+        // Perform the update
+        let modifiedDoc, createdAt
+
+        const modifications = []
+
+        self.getCandidates(query, function (err, candidates) {
+          if (err) {
+            return callback(err)
+          }
+
+          // Preparing update (if an error is thrown here neither the datafile nor
+          // the in-memory indexes are affected)
+          try {
+            for (i = 0; i < candidates.length; i += 1) {
+              if (match(candidates[i], query) && (multi || numReplaced === 0)) {
+                numReplaced += 1
+                if (self.timestampData) {
+                  createdAt = candidates[i].createdAt
+                }
+                modifiedDoc = modify(candidates[i], updateQuery)
+                if (self.timestampData) {
+                  modifiedDoc.createdAt = createdAt
+                  modifiedDoc.updatedAt = new Date()
+                }
+                modifications.push({
+                  oldDoc: candidates[i],
+                  newDoc: modifiedDoc,
+                })
+              }
+            }
+          } catch (err) {
+            return callback(err)
+          }
+
+          // Change the docs in memory
+          try {
+            self.updateIndexes(modifications)
+          } catch (err) {
+            return callback(err)
+          }
+
+          // Update the datafile
+          const updatedDocs = pluck(modifications, 'newDoc')
+          self.persistence.persistNewState(updatedDocs, function (err) {
+            if (err) {
+              return callback(err)
+            }
+            if (!options.returnUpdatedDocs) {
+              return callback(null, numReplaced)
+            } else {
+              let updatedDocsDC = []
+              updatedDocs.forEach(function (doc) {
+                updatedDocsDC.push(deepCopy(doc))
+              })
+              if (!multi) {
+                updatedDocsDC = updatedDocsDC[0]
+              }
+              return callback(null, numReplaced, updatedDocsDC)
+            }
+          })
+        })
+      },
+    ])
+    .catch(console.error)
 }
 
 Datastore.prototype.update = function (...args) {

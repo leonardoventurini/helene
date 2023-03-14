@@ -58,11 +58,10 @@ Cursor.prototype.projection = function (projection) {
  * Apply the projection
  */
 Cursor.prototype.project = function (candidates) {
-  let res = [],
-    self = this,
-    keepId,
-    action,
-    keys
+  const res = [],
+    self = this
+
+  let action
 
   if (
     this._projection === undefined ||
@@ -71,11 +70,13 @@ Cursor.prototype.project = function (candidates) {
     return candidates
   }
 
-  keepId = this._projection._id === 0 ? false : true
+  const keepId = this._projection._id !== 0
+
   this._projection = _.omit(this._projection, '_id')
 
   // Check for consistency
-  keys = Object.keys(this._projection)
+  const keys = Object.keys(this._projection)
+
   keys.forEach(function (k) {
     if (action !== undefined && self._projection[k] !== action) {
       throw new Error("Can't both keep and omit fields except for _id")
@@ -120,7 +121,7 @@ Cursor.prototype.project = function (candidates) {
  * Will return pointers to matched elements (shallow copies), returning full copies is the role of find or findOne
  * This is an internal function, use exec which uses the executor
  *
- * @param {Function} callback - Signature: err, results
+ * @param _callback
  */
 Cursor.prototype._exec = function (_callback) {
   let res = [],
