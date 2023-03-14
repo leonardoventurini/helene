@@ -290,20 +290,16 @@ export class Collection extends EventEmitter2 {
    *
    * @api private Use Datastore.insert which has the same signature
    */
-  _insert(newDoc, insertCallback = noop) {
-    let preparedDoc
+  async _insert(newDoc, insertCallback = noop) {
+    const preparedDoc = this.prepareDocumentForInsertion(newDoc)
 
-    try {
-      preparedDoc = this.prepareDocumentForInsertion(newDoc)
-      this._insertInCache(preparedDoc)
-    } catch (e) {
-      return insertCallback(e)
-    }
+    this._insertInCache(preparedDoc)
 
-    this.persistence
-      .persistNewState(isArray(preparedDoc) ? preparedDoc : [preparedDoc])
-      .then(() => insertCallback(null, deepCopy(preparedDoc)))
-      .catch(err => insertCallback(err))
+    await this.persistence.persistNewState(
+      isArray(preparedDoc) ? preparedDoc : [preparedDoc],
+    )
+
+    return deepCopy(preparedDoc)
   }
 
   /**
