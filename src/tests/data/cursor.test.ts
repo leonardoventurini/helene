@@ -3,7 +3,7 @@ import fs from 'fs'
 import path from 'path'
 import _ from 'lodash'
 import async from 'async'
-import { Datastore } from '../../data/datastore'
+import { Collection } from '../../data/collection'
 import { Persistence } from '../../data/persistence'
 import { Cursor } from '../../data/cursor'
 import { pluck } from '../../data/utils'
@@ -14,7 +14,7 @@ describe('Cursor', function () {
   let d
 
   beforeEach(function (done) {
-    d = new Datastore({ filename: testDb })
+    d = new Collection({ filename: testDb })
     d.filename.should.equal(testDb)
     d.inMemoryOnly.should.equal(false)
 
@@ -225,7 +225,7 @@ describe('Cursor', function () {
     })
 
     it('Sorting strings with custom string comparison function', function (done) {
-      const db = new Datastore({
+      const db = new Collection({
         inMemoryOnly: true,
         autoload: true,
         compareStrings: function (a, b) {

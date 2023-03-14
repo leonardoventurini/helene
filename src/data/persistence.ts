@@ -14,17 +14,17 @@ import { deserialize, serialize } from './serialization'
 import { uid } from './custom-utils'
 import { Storage } from './storage'
 import { noop } from 'lodash'
-import { Datastore } from './datastore'
+import { Collection } from './collection'
 
 type Options = {
-  db: Datastore
+  db: Collection
   corruptAlertThreshold?: number
   afterSerialization?: (s: string) => string
   beforeDeserialization?: (s: string) => string
 }
 
 export class Persistence {
-  db: Datastore
+  db: Collection
   inMemoryOnly: boolean
   filename: string
   corruptAlertThreshold: number
@@ -37,7 +37,7 @@ export class Persistence {
 
   /**
    * Create a new Persistence object for database options.db
-   * @param {Datastore} options.db
+   * @param {Collection} options.db
    * @param {Boolean} options.nodeWebkitAppName Optional, specify the name of your NW app if you want options.filename to be relative to the directory where
    *                                            Node Webkit stores application data such as cookies and local storage (the best place to store data in my opinion)
    */

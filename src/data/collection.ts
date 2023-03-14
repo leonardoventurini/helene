@@ -1,7 +1,6 @@
 import async from 'async'
 import { Executor } from './executor'
 import { Index } from './indexes'
-import util from 'util'
 import _, { isArray, isDate, isObject, noop } from 'lodash'
 import { Persistence } from './persistence'
 import { Cursor } from './cursor'
@@ -22,7 +21,7 @@ type Options = {
   compareStrings?: (a: string, b: string) => number
 }
 
-export class Datastore extends EventEmitter2 {
+export class Collection extends EventEmitter2 {
   filename: string | null
   inMemoryOnly: boolean
   autoload: boolean
@@ -315,7 +314,7 @@ export class Datastore extends EventEmitter2 {
               typeof query[k] === 'string' ||
               typeof query[k] === 'number' ||
               typeof query[k] === 'boolean' ||
-              util.isDate(query[k]) ||
+              isDate(query[k]) ||
               query[k] === null
             ) {
               usableQueryKeys.push(k)
@@ -474,7 +473,7 @@ export class Datastore extends EventEmitter2 {
     let preparedDoc
     const self = this
 
-    if (util.isArray(newDoc)) {
+    if (isArray(newDoc)) {
       preparedDoc = []
       newDoc.forEach(function (doc) {
         preparedDoc.push(self.prepareDocumentForInsertion(doc))

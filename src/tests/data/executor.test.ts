@@ -6,7 +6,7 @@ import path from 'path'
 
 import async from 'async'
 import { noop } from 'lodash'
-import { Datastore } from '../../data/datastore'
+import { Collection } from '../../data/collection'
 import { Persistence } from '../../data/persistence'
 
 const testDb = 'workspace/test.db'
@@ -116,7 +116,7 @@ describe('Executor', function () {
     let d
 
     beforeEach(function (done) {
-      d = new Datastore({ filename: testDb })
+      d = new Collection({ filename: testDb })
       d.filename.should.equal(testDb)
       d.inMemoryOnly.should.equal(false)
 
@@ -173,7 +173,7 @@ describe('Executor', function () {
     let d
 
     beforeEach(function (done) {
-      d = new Datastore({ inMemoryOnly: true })
+      d = new Collection({ inMemoryOnly: true })
       d.inMemoryOnly.should.equal(true)
 
       d.loadDatabase(function (err) {

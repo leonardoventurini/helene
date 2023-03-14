@@ -1,6 +1,6 @@
 import { assert, expect } from 'chai'
 import { deserialize, serialize } from '../../data/serialization'
-import { Datastore } from '../../data/datastore'
+import { Collection } from '../../data/collection'
 
 import _, { isDate } from 'lodash'
 
@@ -139,7 +139,7 @@ describe('Model', function () {
       }
 
       fs.existsSync('workspace/test1.db').should.equal(false)
-      const db1 = new Datastore({ filename: 'workspace/test1.db' })
+      const db1 = new Collection({ filename: 'workspace/test1.db' })
 
       db1.loadDatabase(function (err) {
         assert.notExists(err)
@@ -147,7 +147,7 @@ describe('Model', function () {
         db1.insert({ hello: badString }, function (err) {
           assert.notExists(err)
 
-          const db2 = new Datastore({ filename: 'workspace/test1.db' })
+          const db2 = new Collection({ filename: 'workspace/test1.db' })
 
           db2.loadDatabase(function (err) {
             assert.notExists(err)

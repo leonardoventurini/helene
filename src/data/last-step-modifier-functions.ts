@@ -1,4 +1,3 @@
-import util from 'util'
 import _, { isArray } from 'lodash'
 import { compareThings, match } from './model'
 
@@ -56,7 +55,7 @@ export const LastStepModifierFunctions = {
           'Can only use $slice in cunjunction with $each when $push to array',
         )
       }
-      if (!util.isArray(value.$each)) {
+      if (!isArray(value.$each)) {
         throw new Error('$each requires an array value')
       }
 
