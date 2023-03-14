@@ -194,13 +194,12 @@ export class Persistence {
    * @param {Array} newDocs Can be empty if no doc was updated/removed
    * @param {Function} cb Optional, signature: err
    */
-  persistNewState(newDocs, cb) {
+  async persistNewState(newDocs) {
     const self = this
     let toPersist = ''
-    const callback = cb || noop
     // In-memory only datastore
     if (self.inMemoryOnly) {
-      return callback(null)
+      return null
     }
 
     newDocs.forEach(function (doc) {
@@ -208,12 +207,10 @@ export class Persistence {
     })
 
     if (toPersist.length === 0) {
-      return callback(null)
+      return null
     }
 
-    Storage.appendFile(self.filename, toPersist, 'utf8', function (err) {
-      return callback(err)
-    })
+    await Storage.appendFile(self.filename, toPersist, 'utf8')
   }
 
   /**

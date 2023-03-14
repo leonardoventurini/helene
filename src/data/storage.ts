@@ -8,6 +8,7 @@
  */
 
 import fs from 'fs'
+import { appendFile } from 'fs/promises'
 import mkdirp from 'mkdirp'
 import async from 'async'
 import path from 'path'
@@ -18,7 +19,7 @@ export const Storage = {
   rename: fs.rename,
   writeFile: fs.writeFile,
   unlink: fs.unlink,
-  appendFile: fs.appendFile,
+  appendFile,
   readFile: fs.readFile,
   mkdirp: mkdirp,
   /**

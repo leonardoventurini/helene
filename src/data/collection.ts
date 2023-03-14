@@ -153,21 +153,20 @@ export class Collection extends EventEmitter2 {
    * @param {Boolean} options.unique
    * @param {Boolean} options.sparse
    * @param {Number} options.expireAfterSeconds - Optional, if set this index becomes a TTL index (only works on Date fields, not arrays of Date)
-   * @param {Function} cb Optional callback, signature: err
+   * @param options
    */
-  ensureIndex(options, cb?) {
+  async ensureIndex(options) {
     let err
-    const callback = cb || noop
 
     options = options || {}
 
     if (!options.fieldName) {
       err = new Error('Cannot create an index without a fieldName')
       err.missingFieldName = true
-      return callback(err)
+      throw err
     }
     if (this.indexes[options.fieldName]) {
-      return callback(null)
+      return null
     }
 
     this.indexes[options.fieldName] = new Index(options)
@@ -179,40 +178,20 @@ export class Collection extends EventEmitter2 {
       this.indexes[options.fieldName].insert(this.getAllData())
     } catch (e) {
       delete this.indexes[options.fieldName]
-      return callback(e)
+      throw e
     }
 
     // We may want to force all options to be persisted including defaults, not just the ones passed the index creation function
-    this.persistence.persistNewState(
-      [{ $$indexCreated: options }],
-      function (err) {
-        if (err) {
-          return callback(err)
-        }
-        return callback(null)
-      },
-    )
+    await this.persistence.persistNewState([{ $$indexCreated: options }])
   }
 
   /**
    * Remove an index
-   * @param {String} fieldName
-   * @param {Function} cb Optional callback, signature: err
    */
-  removeIndex(fieldName, cb) {
-    const callback = cb || noop
-
+  async removeIndex(fieldName: string) {
     delete this.indexes[fieldName]
 
-    this.persistence.persistNewState(
-      [{ $$indexRemoved: fieldName }],
-      function (err) {
-        if (err) {
-          return callback(err)
-        }
-        return callback(null)
-      },
-    )
+    await this.persistence.persistNewState([{ $$indexRemoved: fieldName }])
   }
 
   /**
@@ -441,15 +420,10 @@ export class Collection extends EventEmitter2 {
       return insertCallback(e)
     }
 
-    this.persistence.persistNewState(
-      isArray(preparedDoc) ? preparedDoc : [preparedDoc],
-      function (err) {
-        if (err) {
-          return insertCallback(err)
-        }
-        return insertCallback(null, deepCopy(preparedDoc))
-      },
-    )
+    this.persistence
+      .persistNewState(isArray(preparedDoc) ? preparedDoc : [preparedDoc])
+      .then(() => insertCallback(null, deepCopy(preparedDoc)))
+      .catch(err => insertCallback(err))
   }
 
   /**
@@ -770,23 +744,23 @@ export class Collection extends EventEmitter2 {
 
             // Update the datafile
             const updatedDocs = pluck(modifications, 'newDoc')
-            self.persistence.persistNewState(updatedDocs, function (err) {
-              if (err) {
-                return callback(err)
-              }
-              if (!options.returnUpdatedDocs) {
-                return callback(null, numReplaced)
-              } else {
-                let updatedDocsDC = []
-                updatedDocs.forEach(function (doc) {
-                  updatedDocsDC.push(deepCopy(doc))
-                })
-                if (!multi) {
-                  updatedDocsDC = updatedDocsDC[0]
+            self.persistence
+              .persistNewState(updatedDocs)
+              .then(() => {
+                if (!options.returnUpdatedDocs) {
+                  return callback(null, numReplaced)
+                } else {
+                  let updatedDocsDC = []
+                  updatedDocs.forEach(function (doc) {
+                    updatedDocsDC.push(deepCopy(doc))
+                  })
+                  if (!multi) {
+                    updatedDocsDC = updatedDocsDC[0]
+                  }
+                  return callback(null, numReplaced, updatedDocsDC)
                 }
-                return callback(null, numReplaced, updatedDocsDC)
-              }
-            })
+              })
+              .catch(err => callback(err))
           })
         },
       ])
@@ -837,12 +811,10 @@ export class Collection extends EventEmitter2 {
         return callback(err)
       }
 
-      self.persistence.persistNewState(removedDocs, function (err) {
-        if (err) {
-          return callback(err)
-        }
-        return callback(null, numRemoved)
-      })
+      self.persistence
+        .persistNewState(removedDocs)
+        .then(() => callback(null, numRemoved))
+        .catch(err => callback(err))
     })
   }
 
