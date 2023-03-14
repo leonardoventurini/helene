@@ -10,7 +10,7 @@ export type Query = {
   [key: string]: any
 }
 
-export type ExecFn = (err: Error, data: any, callback: CallableFunction) => void
+export type ExecFn = (data: any) => Promise<any>
 
 export class Cursor {
   db: Collection
@@ -142,104 +142,81 @@ export class Cursor {
    * Get all matching elements
    * Will return pointers to matched elements (shallow copies), returning full copies is the role of find or findOne
    * This is an internal function, use exec which uses the executor
-   *
-   * @param execCallback
    */
-  _exec(execCallback) {
+  async _exec() {
     let res = [],
       added = 0,
       skipped = 0,
-      error = null,
       i,
       keys,
       key
 
     const self = this
 
-    function callback(error, res?) {
-      if (self.execFn) {
-        return self.execFn(error, res, execCallback)
-      } else {
-        return execCallback(error, res)
+    const candidates = await this.db.getCandidates(this.query)
+
+    for (i = 0; i < candidates.length; i += 1) {
+      if (match(candidates[i], self.query)) {
+        // If a sort is defined, wait for the results to be sorted before applying limit and skip
+        if (!self._sort) {
+          if (self._skip && self._skip > skipped) {
+            skipped += 1
+          } else {
+            res.push(candidates[i])
+            added += 1
+            if (self._limit && self._limit <= added) {
+              break
+            }
+          }
+        } else {
+          res.push(candidates[i])
+        }
       }
     }
 
-    this.db.getCandidates(this.query, function (err, candidates) {
-      if (err) {
-        return callback(err)
-      }
+    // Apply all sorts
+    if (self._sort) {
+      keys = Object.keys(self._sort)
 
-      try {
-        for (i = 0; i < candidates.length; i += 1) {
-          if (match(candidates[i], self.query)) {
-            // If a sort is defined, wait for the results to be sorted before applying limit and skip
-            if (!self._sort) {
-              if (self._skip && self._skip > skipped) {
-                skipped += 1
-              } else {
-                res.push(candidates[i])
-                added += 1
-                if (self._limit && self._limit <= added) {
-                  break
-                }
-              }
-            } else {
-              res.push(candidates[i])
-            }
+      // Sorting
+      const criteria = []
+      for (i = 0; i < keys.length; i++) {
+        key = keys[i]
+        criteria.push({ key: key, direction: self._sort[key] })
+      }
+      res.sort(function (a, b) {
+        let criterion, compare, i
+        for (i = 0; i < criteria.length; i++) {
+          criterion = criteria[i]
+          compare =
+            criterion.direction *
+            compareThings(
+              getDotValue(a, criterion.key),
+              getDotValue(b, criterion.key),
+              self.db.compareStrings,
+            )
+          if (compare !== 0) {
+            return compare
           }
         }
-      } catch (err) {
-        return callback(err)
-      }
+        return 0
+      })
 
-      // Apply all sorts
-      if (self._sort) {
-        keys = Object.keys(self._sort)
+      // Applying limit and skip
+      const limit = self._limit || res.length,
+        skip = self._skip || 0
 
-        // Sorting
-        const criteria = []
-        for (i = 0; i < keys.length; i++) {
-          key = keys[i]
-          criteria.push({ key: key, direction: self._sort[key] })
-        }
-        res.sort(function (a, b) {
-          let criterion, compare, i
-          for (i = 0; i < criteria.length; i++) {
-            criterion = criteria[i]
-            compare =
-              criterion.direction *
-              compareThings(
-                getDotValue(a, criterion.key),
-                getDotValue(b, criterion.key),
-                self.db.compareStrings,
-              )
-            if (compare !== 0) {
-              return compare
-            }
-          }
-          return 0
-        })
+      res = res.slice(skip, skip + limit)
+    }
 
-        // Applying limit and skip
-        const limit = self._limit || res.length,
-          skip = self._skip || 0
+    res = self.project(res)
 
-        res = res.slice(skip, skip + limit)
-      }
+    res = await this.execFn(res)
 
-      // Apply projection
-      try {
-        res = self.project(res)
-      } catch (e) {
-        error = e
-        res = undefined
-      }
-
-      return callback(error, res)
-    })
+    return res
   }
 
-  exec(...args) {
-    this.db.executor.push({ this: this, fn: this._exec, arguments: args })
+  async exec() {
+    this.db.executor.push({ this: this, fn: this._exec, arguments: [] })
   }
 }

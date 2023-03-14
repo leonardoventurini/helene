@@ -1,4 +1,3 @@
-import async from 'async'
 import { Executor } from './executor'
 import { Index } from './indexes'
 import { isArray, noop } from 'lodash'
@@ -275,7 +274,7 @@ export class Collection extends EventEmitter2 {
    * @param {Query} query
    * @param {Boolean} dontExpireStaleDocs Optional, defaults to false, if true don't remove stale docs. Useful for the remove function which shouldn't be impacted by expirations
    */
-  async getCandidates(query, dontExpireStaleDocs) {
+  async getCandidates(query, dontExpireStaleDocs = false) {
     const indexNames = Object.keys(this.indexes)
 
     const docs = await checkIndexesFromMostToLeast.call(this, query, indexNames)
@@ -385,7 +384,7 @@ export class Collection extends EventEmitter2 {
     }
   }
 
-  insert(...args) {
+  async insert(...args) {
     this.executor.push({ this: this, fn: this._insert, arguments: args })
   }
 
@@ -393,19 +392,12 @@ export class Collection extends EventEmitter2 {
    * Count all documents matching the query
    * @param {Object} query MongoDB-style query
    */
-  count(query, callback) {
-    const cursor = new Cursor(this, query, function (err, docs, callback) {
-      if (err) {
-        return callback(err)
-      }
-      return callback(null, docs.length)
+  async count(query) {
+    const cursor = new Cursor(this, query, async function (docs) {
+      return docs.length
     })
 
-    if (typeof callback === 'function') {
-      cursor.exec(callback)
-    } else {
-      return cursor
-    }
+    return await cursor.exec()
   }
 
   /**
@@ -413,84 +405,40 @@ export class Collection extends EventEmitter2 {
    * If no callback is passed, we return the cursor so that user can limit, skip and finally exec
    * @param {Object} query MongoDB-style query
    * @param {Object} projection MongoDB-style projection
-   * @param callback
    */
-  find(query, projection, callback) {
-    switch (arguments.length) {
-      case 1:
-        projection = {}
-        // callback is undefined, will return a cursor
-        break
-      case 2:
-        if (typeof projection === 'function') {
-          callback = projection
-          projection = {}
-        } // If not assume projection is an object and callback undefined
-        break
-    }
-
-    const cursor = new Cursor(this, query, function (err, docs, _callback) {
+  async find(query, projection) {
+    const cursor = new Cursor(this, query, async function (docs) {
       const res = []
-
-      if (err) {
-        return _callback(err)
-      }
 
       for (let i = 0; i < docs.length; i += 1) {
         res.push(deepCopy(docs[i]))
       }
 
-      return _callback(null, res)
+      return res
     })
 
     cursor.projection(projection)
 
-    if (typeof callback === 'function') {
-      cursor.exec(callback)
-    } else {
-      return cursor
-    }
+    return await cursor.exec()
   }
 
   /**
    * Find one document matching the query
    * @param {Object} query MongoDB-style query
    * @param {Object} projection MongoDB-style projection
-   * @param callback
    */
-  findOne(query, projection, callback) {
-    switch (arguments.length) {
-      case 1:
-        projection = {}
-        // callback is undefined, will return a cursor
-        break
-      case 2:
-        if (typeof projection === 'function') {
-          callback = projection
-          projection = {}
-        } // If not assume projection is an object and callback undefined
-        break
-    }
-
-    const cursor = new Cursor(this, query, function (err, docs, _callback) {
-      if (err) {
-        return _callback(err)
-      }
-
+  async findOne(query, projection) {
+    const cursor = new Cursor(this, query, async function (docs) {
       if (docs.length === 1) {
-        return _callback(null, deepCopy(docs[0]))
+        return deepCopy(docs[0])
       } else {
-        return _callback(null, null)
+        return null
       }
     })
 
     cursor.projection(projection).limit(1)
 
-    if (typeof callback === 'function') {
-      cursor.exec(callback)
-    } else {
-      return cursor
-    }
+    return await cursor.exec()
   }
 
   /**
@@ -518,129 +466,82 @@ export class Collection extends EventEmitter2 {
    *
    * @api private Use Datastore.update which has the same signature
    */
-  _update(query, updateQuery, options, cb) {
+  async _update(query, updateQuery, options) {
     let numReplaced = 0,
       i
 
-    if (typeof options === 'function') {
-      cb = options
-      options = {}
-    }
     const self = this
-    const callback = cb || noop
     const multi = options.multi !== undefined ? options.multi : false
     const upsert = options.upsert !== undefined ? options.upsert : false
 
-    async
-      .waterfall([
-        function (cb) {
-          // If upsert option is set, check whether we need to insert the doc
-          if (!upsert) {
-            return cb()
-          }
+    // If upsert option is set, check whether we need to insert the doc
+    if (upsert) {
+      const cursor = new Cursor(self, query)
+      const docs = await cursor.limit(1)._exec()
 
-          // Need to use an internal function not tied to the executor to avoid deadlock
-          const cursor = new Cursor(self, query)
-          cursor.limit(1)._exec(function (err, docs) {
-            if (err) {
-              return callback(err)
-            }
-            if (docs.length === 1) {
-              return cb()
-            } else {
-              let toBeInserted
+      if (docs.length !== 1) {
+        let toBeInserted
 
-              try {
-                checkObject(updateQuery)
-                // updateQuery is a simple object with no modifier, use it as the document to insert
-                toBeInserted = updateQuery
-              } catch (e) {
-                // updateQuery contains modifiers, use the find query as the base,
-                // strip it from all operators and update it according to updateQuery
-                try {
-                  toBeInserted = modify(deepCopy(query, true), updateQuery)
-                } catch (err) {
-                  return callback(err)
-                }
-              }
+        try {
+          checkObject(updateQuery)
+          // updateQuery is a simple object with no modifier, use it as the document to insert
+          toBeInserted = updateQuery
+        } catch (e) {
+          // updateQuery contains modifiers, use the find query as the base,
+          // strip it from all operators and update it according to updateQuery
+          toBeInserted = modify(deepCopy(query, true), updateQuery)
+        }
 
-              return self._insert(toBeInserted, function (err, newDoc) {
-                if (err) {
-                  return callback(err)
-                }
-                return callback(null, 1, newDoc, true)
-              })
-            }
-          })
-        },
-        function () {
-          // Perform the update
-          let modifiedDoc, createdAt
+        const newDoc = await self._insert(toBeInserted)
 
-          const modifications = []
+        return [1, newDoc, true]
+      }
+    }
 
-          self.getCandidates(query, function (err, candidates) {
-            if (err) {
-              return callback(err)
-            }
+    // Perform the update
+    let modifiedDoc, createdAt
 
-            // Preparing update (if an error is thrown here neither the datafile nor
-            // the in-memory indexes are affected)
-            try {
-              for (i = 0; i < candidates.length; i += 1) {
-                if (
-                  match(candidates[i], query) &&
-                  (multi || numReplaced === 0)
-                ) {
-                  numReplaced += 1
-                  if (self.timestampData) {
-                    createdAt = candidates[i].createdAt
-                  }
-                  modifiedDoc = modify(candidates[i], updateQuery)
-                  if (self.timestampData) {
-                    modifiedDoc.createdAt = createdAt
-                    modifiedDoc.updatedAt = new Date()
-                  }
-                  modifications.push({
-                    oldDoc: candidates[i],
-                    newDoc: modifiedDoc,
-                  })
-                }
-              }
-            } catch (err) {
-              return callback(err)
-            }
+    const modifications = []
 
-            // Change the docs in memory
-            try {
-              self.updateIndexes(modifications)
-            } catch (err) {
-              return callback(err)
-            }
+    const candidates = await this.getCandidates(query)
 
-            // Update the datafile
-            const updatedDocs = pluck(modifications, 'newDoc')
-            self.persistence
-              .persistNewState(updatedDocs)
-              .then(() => {
-                if (!options.returnUpdatedDocs) {
-                  return callback(null, numReplaced)
-                } else {
-                  let updatedDocsDC = []
-                  updatedDocs.forEach(function (doc) {
-                    updatedDocsDC.push(deepCopy(doc))
-                  })
-                  if (!multi) {
-                    updatedDocsDC = updatedDocsDC[0]
-                  }
-                  return callback(null, numReplaced, updatedDocsDC)
-                }
-              })
-              .catch(err => callback(err))
-          })
-        },
-      ])
-      .catch(console.error)
+    for (i = 0; i < candidates.length; i += 1) {
+      if (match(candidates[i], query) && (multi || numReplaced === 0)) {
+        numReplaced += 1
+        if (self.timestampData) {
+          createdAt = candidates[i].createdAt
+        }
+        modifiedDoc = modify(candidates[i], updateQuery)
+        if (self.timestampData) {
+          modifiedDoc.createdAt = createdAt
+          modifiedDoc.updatedAt = new Date()
+        }
+        modifications.push({
+          oldDoc: candidates[i],
+          newDoc: modifiedDoc,
+        })
+      }
+    }
+
+    // Change the docs in memory
+    self.updateIndexes(modifications)
+
+    // Update the datafile
+    const updatedDocs = pluck(modifications, 'newDoc')
+    const persistedDocs = await self.persistence.persistNewState(updatedDocs)
+
+    if (!options.returnUpdatedDocs) {
+      return numReplaced
+    } else {
+      let updatedDocsDC = []
+      persistedDocs.forEach(function (doc) {
+        updatedDocsDC.push(deepCopy(doc))
+      })
+      if (!multi) {
+        updatedDocsDC = updatedDocsDC[0]
+      }
+      return [numReplaced, updatedDocsDC]
+    }
   }
 
   update(...args) {
