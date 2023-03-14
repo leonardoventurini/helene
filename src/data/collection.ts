@@ -119,8 +119,8 @@ export class Collection extends EventEmitter2 {
   /**
    * Load the database from the datafile, and trigger the execution of buffered commands if any
    */
-  loadDatabase(...args) {
-    this.executor.push(
+  async loadDatabase(...args) {
+    await this.executor.push(
       {
         this: this.persistence,
         fn: this.persistence.loadDatabase,
@@ -385,7 +385,7 @@ export class Collection extends EventEmitter2 {
   }
 
   async insert(...args) {
-    this.executor.push({ this: this, fn: this._insert, arguments: args })
+    await this.executor.push({ this: this, fn: this._insert, arguments: args })
   }
 
   /**
@@ -544,8 +544,8 @@ export class Collection extends EventEmitter2 {
     }
   }
 
-  update(...args) {
-    this.executor.push({ this: this, fn: this._update, arguments: args })
+  async update(...args) {
+    await this.executor.push({ this: this, fn: this._update, arguments: args })
   }
 
   /**
@@ -580,7 +580,7 @@ export class Collection extends EventEmitter2 {
     return numRemoved
   }
 
-  remove(...args) {
-    this.executor.push({ this: this, fn: this._remove, arguments: args })
+  async remove(...args) {
+    await this.executor.push({ this: this, fn: this._remove, arguments: args })
   }
 }

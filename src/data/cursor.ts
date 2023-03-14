@@ -217,6 +217,6 @@ export class Cursor {
   }
 
   async exec() {
-    this.db.executor.push({ this: this, fn: this._exec, arguments: [] })
+    await this.db.executor.push({ this: this, fn: this._exec, arguments: [] })
   }
 }

@@ -23,7 +23,10 @@ export class Executor {
     this.ready = false
 
     // This queue will execute all commands, one-by-one in order
-    this.queue = async.queue(function (task: Task, queueCallback: Callback) {
+    this.queue = async.queue(async function (
+      task: Task,
+      queueCallback: Callback,
+    ) {
       const newArguments = []
 
       // task.arguments is an array-like object on which adding a new field doesn't work, so we transform it into a real array
@@ -58,7 +61,8 @@ export class Executor {
       }
 
       task.fn.apply(task.this, newArguments)
-    }, 1)
+    },
+    1)
   }
 
   /**
@@ -72,11 +76,16 @@ export class Executor {
    * @param {Boolean} forceQueuing Optional (defaults to false) force executor to queue task even if it is not ready
    */
   push(task: Task, forceQueuing = false) {
-    if (this.ready || forceQueuing) {
-      this.queue.push(task)
-    } else {
-      this.buffer.push(task)
-    }
+    return new Promise((resolve, reject) => {
+      if (this.ready || forceQueuing) {
+        this.queue.push(task).then(
+          r => resolve(r),
+          e => reject(e),
+        )
+      } else {
+        this.buffer.push(task)
+      }
+    })
   }
 
   /**
@@ -84,11 +93,16 @@ export class Executor {
    * Automatically sets executor as ready
    */
   processBuffer() {
-    let i
-    this.ready = true
-    for (i = 0; i < this.buffer.length; i += 1) {
-      this.queue.push(this.buffer[i])
-    }
-    this.buffer = []
+    return new Promise((resolve, reject) => {
+      let i
+      this.ready = true
+      for (i = 0; i < this.buffer.length; i += 1) {
+        this.queue.push(this.buffer[i]).then(
+          r => resolve(r),
+          e => reject(e),
+        )
+      }
+      this.buffer = []
+    })
   }
 }

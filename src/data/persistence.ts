@@ -156,8 +156,8 @@ export class Persistence {
   /**
    * Queue a rewrite of the datafile
    */
-  compactDatafile() {
-    this.db.executor.push({
+  async compactDatafile() {
+    await this.db.executor.push({
       this: this,
       fn: this.persistCachedDatabase,
       arguments: [],
@@ -175,7 +175,7 @@ export class Persistence {
     this.stopAutocompaction()
 
     this.autocompactionIntervalId = setInterval(function () {
-      self.compactDatafile()
+      self.compactDatafile().catch(console.error)
     }, realInterval)
   }
 
