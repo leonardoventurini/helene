@@ -27,7 +27,7 @@ import { EventEmitter } from 'events'
  * Event Emitter - Events
  * * compaction.done - Fired whenever a compaction operation was finished
  */
-export function Datastore(options) {
+export function Datastore(options?) {
   let filename
 
   // Retrocompatibility with v0.6 and before
@@ -134,7 +134,7 @@ Datastore.prototype.resetIndexes = function (newData?) {
  * @param {Number} options.expireAfterSeconds - Optional, if set this index becomes a TTL index (only works on Date fields, not arrays of Date)
  * @param {Function} cb Optional callback, signature: err
  */
-Datastore.prototype.ensureIndex = function (options, cb) {
+Datastore.prototype.ensureIndex = function (options, cb?) {
   let err
   const callback = cb || noop
 
@@ -275,7 +275,7 @@ Datastore.prototype.updateIndexes = function (oldDoc, newDoc) {
 Datastore.prototype.getCandidates = function (
   query,
   dontExpireStaleDocs,
-  callback,
+  callback?,
 ) {
   const indexNames = Object.keys(this.indexes),
     self = this

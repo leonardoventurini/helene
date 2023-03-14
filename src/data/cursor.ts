@@ -11,7 +11,7 @@ import _ from 'lodash'
  * @param {Query} query - The query this cursor will operate on
  * @param {Function} execFn - Handler to be executed after cursor has found the results and before the callback passed to find/findOne/update/remove
  */
-export function Cursor(db, query, execFn?) {
+export function Cursor(db, query?, execFn?) {
   this.db = db
   this.query = query || {}
   if (execFn) {
