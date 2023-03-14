@@ -5,7 +5,7 @@
  * Querying, update
  */
 
-import _, { isArray, isDate, isRegExp } from 'lodash'
+import _, { isArray, isDate, isNull, isObject, isRegExp } from 'lodash'
 import { ComparisonFunctions } from './comparison-functions'
 import { LastStepModifierFunctions } from './last-step-modifier-functions'
 import { LogicalOperators } from './logical-operators'
@@ -259,11 +259,14 @@ function createModifierFunction(modifier) {
         } // Bad looking specific fix, needs to be generalized modifiers that behave like $unset are implemented
         obj[fieldParts[0]] = {}
       }
-      modifierFunctions[modifier](
-        obj[fieldParts[0]],
-        fieldParts.slice(1),
-        value,
-      )
+
+      const nextObj = obj[fieldParts[0]]
+
+      if (isNull(nextObj) || !isObject(nextObj)) {
+        return
+      }
+
+      modifierFunctions[modifier](nextObj, fieldParts.slice(1), value)
     }
   }
 }
@@ -317,6 +320,7 @@ export function modify(obj, updateQuery) {
       }
 
       const keys = Object.keys(updateQuery[m])
+
       keys.forEach(function (k) {
         modifierFunctions[m](newDoc, k, updateQuery[m][k])
       })

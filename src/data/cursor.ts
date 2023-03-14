@@ -121,9 +121,9 @@ Cursor.prototype.project = function (candidates) {
  * Will return pointers to matched elements (shallow copies), returning full copies is the role of find or findOne
  * This is an internal function, use exec which uses the executor
  *
- * @param _callback
+ * @param execCallback
  */
-Cursor.prototype._exec = function (_callback) {
+Cursor.prototype._exec = function (execCallback) {
   let res = [],
     added = 0,
     skipped = 0,
@@ -136,9 +136,9 @@ Cursor.prototype._exec = function (_callback) {
 
   function callback(error, res?) {
     if (self.execFn) {
-      return self.execFn(error, res, _callback)
+      return self.execFn(error, res, execCallback)
     } else {
-      return _callback(error, res)
+      return execCallback(error, res)
     }
   }
 

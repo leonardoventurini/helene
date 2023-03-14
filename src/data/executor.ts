@@ -3,13 +3,22 @@
  */
 
 import async from 'async'
+import { last } from 'lodash'
+
+type Callback = (...args: any[]) => any
+
+type Task = {
+  this: any
+  fn: Callback
+  arguments: any[]
+}
 
 export function Executor() {
   this.buffer = []
   this.ready = false
 
   // This queue will execute all commands, one-by-one in order
-  this.queue = async.queue(function (task, cb) {
+  this.queue = async.queue(function (task: Task, queueCallback: Callback) {
     const newArguments = []
 
     // task.arguments is an array-like object on which adding a new field doesn't work, so we transform it into a real array
@@ -17,29 +26,29 @@ export function Executor() {
       newArguments.push(task.arguments[i])
     }
 
-    const lastArg = task.arguments[task.arguments.length - 1]
+    const lastArg = last(task.arguments)
 
     // Always tell the queue task is complete. Execute callback if any was given.
     if (typeof lastArg === 'function') {
       // Callback was supplied
       newArguments[newArguments.length - 1] = function (...args) {
-        if (typeof setImmediate === 'function') {
-          setImmediate(cb)
-        } else {
-          process.nextTick(cb)
-        }
-
         lastArg(...args)
+
+        if (typeof setImmediate === 'function') {
+          setImmediate(queueCallback)
+        } else {
+          process.nextTick(queueCallback)
+        }
       }
     } else if (!lastArg && task.arguments.length !== 0) {
       // false/undefined/null supplied as callbback
       newArguments[newArguments.length - 1] = function () {
-        cb()
+        queueCallback()
       }
     } else {
       // Nothing supplied as callback
       newArguments.push(function () {
-        cb()
+        queueCallback()
       })
     }
 

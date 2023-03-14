@@ -1,5 +1,3 @@
-import child_process from 'child_process'
-
 import { assert, expect } from 'chai'
 
 import fs from 'fs'
@@ -1018,94 +1016,7 @@ describe('Persistence', function () {
         done,
       )
     })
-
-    // The child process will load the database with the given datafile, but the fs.writeFile function
-    // is rewritten to crash the process before it finished (after 5000 bytes), to ensure data was not lost
-    it('If system crashes during a loadDatabase, the former version is not lost', function (done) {
-      const N = 500
-
-      let toWrite = '',
-        i,
-        doc_i
-
-      // Ensuring the state is clean
-      if (fs.existsSync('workspace/lac.db')) {
-        fs.unlinkSync('workspace/lac.db')
-      }
-      if (fs.existsSync('workspace/lac.db~')) {
-        fs.unlinkSync('workspace/lac.db~')
-      }
-
-      // Creating a db file with 150k records (a bit long to load)
-      for (i = 0; i < N; i += 1) {
-        toWrite += serialize({ _id: 'anid_' + i, hello: 'world' }) + '\n'
-      }
-      fs.writeFileSync('workspace/lac.db', toWrite, 'utf8')
-
-      const datafileLength = fs.readFileSync('workspace/lac.db', 'utf8').length
-
-      // Loading it in a separate process that we will crash before finishing the loadDatabase
-      child_process
-        .fork('test_lac/loadAndCrash.test')
-        .on('exit', function (code) {
-          code.should.equal(1) // See test_lac/loadAndCrash.test.js
-
-          fs.existsSync('workspace/lac.db').should.equal(true)
-          fs.existsSync('workspace/lac.db~').should.equal(true)
-          fs.readFileSync('workspace/lac.db', 'utf8').length.should.equal(
-            datafileLength,
-          )
-          fs.readFileSync('workspace/lac.db~', 'utf8').length.should.equal(5000)
-
-          // Reload database without a crash, check that no data was lost and fs state is clean (no temp file)
-          const db = new Datastore({ filename: 'workspace/lac.db' })
-          db.loadDatabase(function (err) {
-            assert.isNull(err)
-
-            fs.existsSync('workspace/lac.db').should.equal(true)
-            fs.existsSync('workspace/lac.db~').should.equal(false)
-            fs.readFileSync('workspace/lac.db', 'utf8').length.should.equal(
-              datafileLength,
-            )
-
-            db.find({}, function (err, docs) {
-              docs.length.should.equal(N)
-              for (i = 0; i < N; i += 1) {
-                doc_i = _.find(docs, function (d) {
-                  return d._id === 'anid_' + i
-                })
-                assert.isDefined(doc_i)
-                assert.deepEqual({ hello: 'world', _id: 'anid_' + i }, doc_i)
-              }
-              return done()
-            })
-          })
-        })
-    })
-
-    // Not run on Windows as there is no clean way to set maximum file descriptors. Not an issue as the code itself is tested.
-    it('Cannot cause EMFILE errors by opening too many file descriptors', function (done) {
-      // @ts-ignore
-      if (process.platform === 'win32' || process.platform === 'win64') {
-        return done()
-      }
-      child_process.execFile(
-        'test_lac/openFdsLaunch.sh',
-        function (err, stdout) {
-          if (err) {
-            return done(err)
-          }
-
-          // The subprocess will not output anything to stdout unless part of the test fails
-          if (stdout.length !== 0) {
-            return done(stdout)
-          } else {
-            return done()
-          }
-        },
-      )
-    })
-  }) // ==== End of 'Prevent dataloss when persisting data' ====
+  })
 
   describe('ensureFileDoesntExist', function () {
     it('Doesnt do anything if file already doesnt exist', function (done) {

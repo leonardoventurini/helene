@@ -2,7 +2,7 @@ import async from 'async'
 import { Executor } from './executor'
 import { Index } from './indexes'
 import util from 'util'
-import _, { isDate, isObject, noop } from 'lodash'
+import _, { isArray, isDate, isObject, noop } from 'lodash'
 import { Persistence } from './persistence'
 import { Cursor } from './cursor'
 import { uid } from './custom-utils'
@@ -410,28 +410,27 @@ Datastore.prototype.getCandidates = function (
 /**
  * Insert a new document
  * @param newDoc
- * @param {Function} cb Optional callback, signature: err, insertedDoc
+ * @param {Function} insertCallback Optional callback, signature: err, insertedDoc
  *
  * @api private Use Datastore.insert which has the same signature
  */
-Datastore.prototype._insert = function (newDoc, cb) {
-  const callback = cb || noop
+Datastore.prototype._insert = function (newDoc, insertCallback = noop) {
   let preparedDoc
 
   try {
     preparedDoc = this.prepareDocumentForInsertion(newDoc)
     this._insertInCache(preparedDoc)
   } catch (e) {
-    return callback(e)
+    return insertCallback(e)
   }
 
   this.persistence.persistNewState(
-    util.isArray(preparedDoc) ? preparedDoc : [preparedDoc],
+    isArray(preparedDoc) ? preparedDoc : [preparedDoc],
     function (err) {
       if (err) {
-        return callback(err)
+        return insertCallback(err)
       }
-      return callback(null, deepCopy(preparedDoc))
+      return insertCallback(null, deepCopy(preparedDoc))
     },
   )
 }
