@@ -1,13 +1,17 @@
 import async from 'async'
 import { Executor } from './executor'
 import { Index } from './indexes'
-import _, { isArray, isDate, isObject, noop } from 'lodash'
+import { isArray, noop } from 'lodash'
 import { Persistence } from './persistence'
 import { Cursor } from './cursor'
 import { uid } from './custom-utils'
 import { checkObject, deepCopy, match, modify } from './model'
 import { pluck } from './utils'
 import { EventEmitter2 } from 'eventemitter2'
+import {
+  checkIndexesFromMostToLeast,
+  removeExpiredDocuments,
+} from './_get-candidates'
 
 type Options = {
   filename?: string
@@ -270,137 +274,13 @@ export class Collection extends EventEmitter2 {
    *
    * @param {Query} query
    * @param {Boolean} dontExpireStaleDocs Optional, defaults to false, if true don't remove stale docs. Useful for the remove function which shouldn't be impacted by expirations
-   * @param {Function} callback Signature err, candidates
    */
-  getCandidates(query, dontExpireStaleDocs, callback?) {
-    const indexNames = Object.keys(this.indexes),
-      self = this
-    let usableQueryKeys
+  async getCandidates(query, dontExpireStaleDocs) {
+    const indexNames = Object.keys(this.indexes)
 
-    if (typeof dontExpireStaleDocs === 'function') {
-      callback = dontExpireStaleDocs
-      dontExpireStaleDocs = false
-    }
+    const docs = await checkIndexesFromMostToLeast.call(this, query, indexNames)
 
-    async.waterfall(
-      [
-        // STEP 1: get candidates list by checking indexes from most to least frequent usecase
-        function (cb) {
-          // For a basic match
-          usableQueryKeys = []
-          Object.keys(query).forEach(function (k) {
-            if (
-              typeof query[k] === 'string' ||
-              typeof query[k] === 'number' ||
-              typeof query[k] === 'boolean' ||
-              isDate(query[k]) ||
-              query[k] === null
-            ) {
-              usableQueryKeys.push(k)
-            }
-          })
-          usableQueryKeys = _.intersection(usableQueryKeys, indexNames)
-          if (usableQueryKeys.length > 0) {
-            return cb(
-              null,
-              self.indexes[usableQueryKeys[0]].getMatching(
-                query[usableQueryKeys[0]],
-              ),
-            )
-          }
-
-          // For $in match
-          usableQueryKeys = []
-          Object.keys(query).forEach(function (k) {
-            if (isObject(query[k]) && '$in' in query[k]) {
-              usableQueryKeys.push(k)
-            }
-          })
-          usableQueryKeys = _.intersection(usableQueryKeys, indexNames)
-          if (usableQueryKeys.length > 0) {
-            return cb(
-              null,
-              self.indexes[usableQueryKeys[0]].getMatching(
-                query[usableQueryKeys[0]].$in,
-              ),
-            )
-          }
-
-          // For a comparison match
-          usableQueryKeys = []
-          Object.keys(query).forEach(function (k) {
-            const item = query[k]
-
-            const modifiers = ['$lt', '$lte', '$gt', '$gte']
-
-            if (isObject(query[k]) && modifiers.some(m => m in item)) {
-              usableQueryKeys.push(k)
-            }
-          })
-          usableQueryKeys = _.intersection(usableQueryKeys, indexNames)
-          if (usableQueryKeys.length > 0) {
-            return cb(
-              null,
-              self.indexes[usableQueryKeys[0]].getBetweenBounds(
-                query[usableQueryKeys[0]],
-              ),
-            )
-          }
-
-          // By default, return all the DB data
-          return cb(null, self.getAllData())
-        },
-        // STEP 2: remove all expired documents
-        function (docs, wcb) {
-          if (dontExpireStaleDocs) {
-            return wcb(null, docs)
-          }
-
-          const expiredDocsIds = [],
-            validDocs = [],
-            ttlIndexesFieldNames = Object.keys(self.ttlIndexes)
-
-          docs.forEach(function (doc) {
-            let valid = true
-            ttlIndexesFieldNames.forEach(function (i) {
-              if (
-                doc[i] !== undefined &&
-                isDate(doc[i]) &&
-                Date.now() > doc[i].getTime() + self.ttlIndexes[i] * 1000
-              ) {
-                valid = false
-              }
-            })
-            if (valid) {
-              validDocs.push(doc)
-            } else {
-              expiredDocsIds.push(doc._id)
-            }
-          })
-
-          async.eachSeries(
-            expiredDocsIds,
-            function (_id, cb) {
-              self._remove({ _id: _id }, {}, function (err) {
-                if (err) {
-                  return wcb(err)
-                }
-                return cb()
-              })
-            },
-            function (err) {
-              return wcb(null, validDocs)
-            },
-          )
-        },
-      ],
-      function (err, res) {
-        if (err) {
-          return callback(err)
-        }
-        return callback(null, res)
-      },
-    )
+    return await removeExpiredDocuments.call(this, docs, dontExpireStaleDocs)
   }
 
   /**
@@ -777,45 +657,30 @@ export class Collection extends EventEmitter2 {
    * @param {Object} query
    * @param {Object} options Optional options
    *                 options.multi If true, can update multiple documents (defaults to false)
-   * @param {Function} cb Optional callback, signature: err, numRemoved
    *
    * @api private Use Datastore.remove which has the same signature
    */
-  _remove(query, options, cb) {
+  async _remove(query, options?) {
     let numRemoved = 0
 
     const self = this
     const removedDocs = []
 
-    if (typeof options === 'function') {
-      cb = options
-      options = {}
-    }
-    const callback = cb || noop
     const multi = options.multi !== undefined ? options.multi : false
 
-    this.getCandidates(query, true, function (err, candidates) {
-      if (err) {
-        return callback(err)
-      }
+    const candidates = await this.getCandidates(query, true)
 
-      try {
-        candidates.forEach(function (d) {
-          if (match(d, query) && (multi || numRemoved === 0)) {
-            numRemoved += 1
-            removedDocs.push({ $$deleted: true, _id: d._id })
-            self.removeFromIndexes(d)
-          }
-        })
-      } catch (err) {
-        return callback(err)
+    candidates.forEach(function (d) {
+      if (match(d, query) && (multi || numRemoved === 0)) {
+        numRemoved += 1
+        removedDocs.push({ $$deleted: true, _id: d._id })
+        self.removeFromIndexes(d)
       }
-
-      self.persistence
-        .persistNewState(removedDocs)
-        .then(() => callback(null, numRemoved))
-        .catch(err => callback(err))
     })
+
+    await self.persistence.persistNewState(removedDocs)
+
+    return numRemoved
   }
 
   remove(...args) {
