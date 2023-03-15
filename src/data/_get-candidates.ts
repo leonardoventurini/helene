@@ -91,13 +91,9 @@ export async function removeExpiredDocuments(docs, dontExpireStaleDocs) {
     }
   })
 
-  try {
-    for (const _id of expiredDocsIds) {
-      await this._remove({ _id: _id })
-    }
-
-    return validDocs
-  } catch {
-    return validDocs
+  for (const _id of expiredDocsIds) {
+    await this.remove({ _id: _id })
   }
+
+  return validDocs
 }

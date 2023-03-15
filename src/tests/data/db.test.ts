@@ -11,37 +11,21 @@ import { pluck } from '../../data/utils'
 const testDb = 'workspace/test.db',
   reloadTimeUpperBound = 60 // In ms, an upper bound for the reload time used to check createdAt and updatedAt
 
-describe('Database', function () {
-  let d
+describe.only('Database', function () {
+  let collection: Collection
 
-  beforeEach(function (done) {
-    d = new Collection({ filename: testDb })
-    d.filename.should.equal(testDb)
-    d.inMemoryOnly.should.equal(false)
+  beforeEach(async () => {
+    collection = new Collection({ filename: testDb })
+    collection.filename.should.equal(testDb)
+    collection.inMemoryOnly.should.equal(false)
 
-    async.waterfall(
-      [
-        function (cb) {
-          Persistence.ensureDirectoryExists(path.dirname(testDb), function () {
-            fs.exists(testDb, function (exists) {
-              if (exists) {
-                fs.unlink(testDb, cb)
-              } else {
-                return cb()
-              }
-            })
-          })
-        },
-        function (cb) {
-          d.loadDatabase(function (err) {
-            assert.notExists(err)
-            d.getAllData().length.should.equal(0)
-            return cb()
-          })
-        },
-      ],
-      done,
-    )
+    await Persistence.ensureDirectoryExists(path.dirname(testDb))
+
+    fs.existsSync(testDb) && fs.unlinkSync(testDb)
+
+    await collection.loadDatabase()
+
+    collection.getAllData().length.should.equal(0)
   })
 
   it('Constructor compatibility with v0.6-', function () {
@@ -59,25 +43,25 @@ describe('Database', function () {
   })
 
   describe('Autoloading', function () {
-    it('Can autoload a database and query it right away', function (done) {
+    it('Can autoload a database and query it right away', async function () {
       const fileStr =
-          serialize({ _id: '1', a: 5, planet: 'Earth' }) +
-          '\n' +
-          serialize({ _id: '2', a: 5, planet: 'Mars' }) +
-          '\n',
-        autoDb = 'workspace/auto.db'
-
+        serialize({ _id: '1', a: 5, planet: 'Earth' }) +
+        '\n' +
+        serialize({ _id: '2', a: 5, planet: 'Mars' }) +
+        '\n'
+      const autoDb = 'workspace/auto.db'
       fs.writeFileSync(autoDb, fileStr, 'utf8')
+
       const db = new Collection({ filename: autoDb, autoload: true })
 
-      db.find({}, function (err, docs) {
-        assert.isNull(err)
-        docs.length.should.equal(2)
-        done()
-      })
+      await db.waitFor('ready')
+
+      const docs = await db.find({}).exec()
+
+      docs.length.should.equal(2)
     })
 
-    it('Throws if autoload fails', function (done) {
+    it('Throws if autoload fails', async () => {
       const fileStr =
           serialize({ _id: '1', a: 5, planet: 'Earth' }) +
           '\n' +
@@ -91,7 +75,6 @@ describe('Database', function () {
       // Check the loadDatabase generated an error
       function onload(err) {
         err.errorType.should.equal('uniqueViolated')
-        done()
       }
 
       const db = new Collection({
@@ -100,176 +83,137 @@ describe('Database', function () {
         onload: onload,
       })
 
-      db.find({}, function () {
-        done(new Error('Find should not be executed since autoload failed'))
-      })
+      await db.find({}).exec()
     })
   })
 
   describe('Insert', function () {
-    it('Able to insert a document in the database, setting an _id if none provided, and retrieve it even after a reload', function (done) {
-      d.find({}, function (err, docs) {
-        docs.length.should.equal(0)
+    it('Able to insert a document in the database, setting an _id if none provided, and retrieve it even after a reload', async () => {
+      let docs = await collection.find({}).exec()
+      docs.length.should.equal(0)
 
-        d.insert({ somedata: 'ok' }, function () {
-          // The data was correctly updated
-          d.find({}, function (err, docs) {
-            assert.isNull(err)
-            docs.length.should.equal(1)
-            Object.keys(docs[0]).length.should.equal(2)
-            docs[0].somedata.should.equal('ok')
-            assert.isDefined(docs[0]._id)
+      await collection.insert({ somedata: 'ok' })
 
-            // After a reload the data has been correctly persisted
-            d.loadDatabase(function () {
-              d.find({}, function (err, docs) {
-                assert.isNull(err)
-                docs.length.should.equal(1)
-                Object.keys(docs[0]).length.should.equal(2)
-                docs[0].somedata.should.equal('ok')
-                assert.isDefined(docs[0]._id)
+      // The data was correctly updated
+      docs = await collection.find({}).exec()
+      docs.length.should.equal(1)
+      Object.keys(docs[0]).length.should.equal(2)
+      docs[0].somedata.should.equal('ok')
+      assert.isDefined(docs[0]._id)
 
-                done()
-              })
-            })
-          })
-        })
-      })
+      // After a reload the data has been correctly persisted
+      await collection.loadDatabase()
+      docs = await collection.find({}).exec()
+      docs.length.should.equal(1)
+      Object.keys(docs[0]).length.should.equal(2)
+      docs[0].somedata.should.equal('ok')
+      assert.isDefined(docs[0]._id)
     })
 
-    it('Can insert multiple documents in the database', function (done) {
-      d.find({}, function (err, docs) {
-        docs.length.should.equal(0)
+    it('Can insert multiple documents in the database', async function () {
+      const docs = await collection.find({}).exec()
+      docs.length.should.equal(0)
 
-        d.insert({ somedata: 'ok' }, function () {
-          d.insert({ somedata: 'another' }, function () {
-            d.insert({ somedata: 'again' }, function () {
-              d.find({}, function (err, docs) {
-                docs.length.should.equal(3)
-                pluck(docs, 'somedata').should.contain('ok')
-                pluck(docs, 'somedata').should.contain('another')
-                pluck(docs, 'somedata').should.contain('again')
-                done()
-              })
-            })
-          })
-        })
-      })
+      await collection.insert({ somedata: 'ok' })
+      await collection.insert({ somedata: 'another' })
+      await collection.insert({ somedata: 'again' })
+
+      const newDocs = await collection.find({}).exec()
+      newDocs.length.should.equal(3)
+      pluck(newDocs, 'somedata').should.contain('ok')
+      pluck(newDocs, 'somedata').should.contain('another')
+      pluck(newDocs, 'somedata').should.contain('again')
     })
 
-    it('Can insert and get back from DB complex objects with all primitive and secondary types', function (done) {
+    it('Can insert and get back from DB complex objects with all primitive and secondary types', async function () {
       const da = new Date(),
         obj = { a: ['ee', 'ff', 42], date: da, subobj: { a: 'b', b: 'c' } }
-      d.insert(obj, function () {
-        d.findOne({}, function (err, res) {
-          assert.isNull(err)
-          res.a.length.should.equal(3)
-          res.a[0].should.equal('ee')
-          res.a[1].should.equal('ff')
-          res.a[2].should.equal(42)
-          res.date.getTime().should.equal(da.getTime())
-          res.subobj.a.should.equal('b')
-          res.subobj.b.should.equal('c')
+      await collection.insert(obj)
+      const res = await collection.findOne({})
 
-          done()
-        })
-      })
+      res.a.length.should.equal(3)
+      res.a[0].should.equal('ee')
+      res.a[1].should.equal('ff')
+      res.a[2].should.equal(42)
+      res.date.getTime().should.equal(da.getTime())
+      res.subobj.a.should.equal('b')
+      res.subobj.b.should.equal('c')
     })
 
-    it('If an object returned from the DB is modified and refetched, the original value should be found', function (done) {
-      d.insert({ a: 'something' }, function () {
-        d.findOne({}, function (err, doc) {
-          doc.a.should.equal('something')
-          doc.a = 'another thing'
-          doc.a.should.equal('another thing')
+    it('If an object returned from the DB is modified and refetched, the original value should be found', async function () {
+      await collection.insert({ a: 'something' })
+      let doc = await collection.findOne({})
+      doc.a.should.equal('something')
+      doc.a = 'another thing'
+      doc.a.should.equal('another thing')
 
-          // Re-fetching with findOne should yield the persisted value
-          d.findOne({}, function (err, doc) {
-            doc.a.should.equal('something')
-            doc.a = 'another thing'
-            doc.a.should.equal('another thing')
+      // Re-fetching with findOne should yield the persisted value
+      doc = await collection.findOne({})
+      doc.a.should.equal('something')
+      doc.a = 'another thing'
+      doc.a.should.equal('another thing')
 
-            // Re-fetching with find should yield the persisted value
-            d.find({}, function (err, docs) {
-              docs[0].a.should.equal('something')
-
-              done()
-            })
-          })
-        })
-      })
+      // Re-fetching with find should yield the persisted value
+      const docs = await collection.find({}).exec()
+      docs[0].a.should.equal('something')
     })
 
-    it('Cannot insert a doc that has a field beginning with a $ sign', function (done) {
-      d.insert({ $something: 'atest' }, function (err) {
-        assert.isDefined(err)
-        done()
-      })
+    it('Cannot insert a doc that has a field beginning with a $ sign', async function () {
+      await assert.isRejected(collection.insert({ $something: 'atest' }))
     })
 
-    it('If an _id is already given when we insert a document, use that instead of generating a random one', function (done) {
-      d.insert({ _id: 'test', stuff: true }, function (err, newDoc) {
-        if (err) {
-          return done(err)
-        }
+    it('If an _id is already given when we insert a document, use that instead of generating a random one', async function () {
+      const newDoc = await collection.insert({ _id: 'test', stuff: true })
+      newDoc.stuff.should.equal(true)
+      newDoc._id.should.equal('test')
 
-        newDoc.stuff.should.equal(true)
-        newDoc._id.should.equal('test')
-
-        d.insert({ _id: 'test', otherstuff: 42 }, function (err) {
-          err.errorType.should.equal('uniqueViolated')
-
-          done()
-        })
-      })
+      try {
+        await collection.insert({ _id: 'test', otherstuff: 42 })
+      } catch (err) {
+        err.errorType.should.equal('uniqueViolated')
+      }
     })
 
-    it('Modifying the insertedDoc after an insert doesnt change the copy saved in the database', function (done) {
-      d.insert({ a: 2, hello: 'world' }, function (err, newDoc) {
-        newDoc.hello = 'changed'
-
-        d.findOne({ a: 2 }, function (err, doc) {
-          doc.hello.should.equal('world')
-          done()
-        })
-      })
+    it('Modifying the insertedDoc after an insert doesnt change the copy saved in the database', async function () {
+      const newDoc = await collection.insert({ a: 2, hello: 'world' })
+      newDoc.hello = 'changed'
+      const doc = await collection.findOne({ a: 2 })
+      doc.hello.should.equal('world')
     })
 
-    it('Can insert an array of documents at once', function (done) {
+    it('Can insert an array of documents at once', async function () {
       const docs = [
         { a: 5, b: 'hello' },
         { a: 42, b: 'world' },
       ]
 
-      d.insert(docs, function () {
-        d.find({}, function (err, docs) {
-          docs.length.should.equal(2)
-          _.find(docs, function (doc) {
-            return doc.a === 5
-          }).b.should.equal('hello')
-          _.find(docs, function (doc) {
-            return doc.a === 42
-          }).b.should.equal('world')
+      await collection.remove({}, { multi: true })
+      await collection.insert(docs)
+      const foundDocs = await collection.find({}).exec()
 
-          // The data has been persisted correctly
-          const data = _.filter(
-            fs.readFileSync(testDb, 'utf8').split('\n'),
-            function (line) {
-              return line.length > 0
-            },
-          )
-          data.length.should.equal(2)
-          deserialize(data[0]).a.should.equal(5)
-          deserialize(data[0]).b.should.equal('hello')
-          deserialize(data[1]).a.should.equal(42)
-          deserialize(data[1]).b.should.equal('world')
+      foundDocs.length.should.equal(2)
+      _.find(foundDocs, function (doc) {
+        return doc.a === 5
+      }).b.should.equal('hello')
+      _.find(foundDocs, function (doc) {
+        return doc.a === 42
+      }).b.should.equal('world')
 
-          done()
-        })
-      })
+      // The data has been persisted correctly
+      const data = _.filter(
+        fs.readFileSync(testDb, 'utf8').split('\n'),
+        function (line) {
+          return line.length > 0
+        },
+      )
+      data.length.should.equal(2)
+      deserialize(data[0]).a.should.equal(5)
+      deserialize(data[0]).b.should.equal('hello')
+      deserialize(data[1]).a.should.equal(42)
+      deserialize(data[1]).b.should.equal('world')
     })
 
-    it('If a bulk insert violates a constraint, all changes are rolled back', function (done) {
+    it('If a bulk insert violates a constraint, all changes are rolled back', async function () {
       const docs = [
         { a: 5, b: 'hello' },
         { a: 42, b: 'world' },
@@ -277,1230 +221,834 @@ describe('Database', function () {
         { a: 7 },
       ]
 
-      d.ensureIndex({ fieldName: 'a', unique: true }, function () {
-        // Important to specify callback here to make sure filesystem synced
-        d.insert(docs, function (err) {
-          err.errorType.should.equal('uniqueViolated')
+      await collection.ensureIndex({ fieldName: 'a', unique: true })
 
-          d.find({}, function (err, docs) {
-            // Datafile only contains index definition
-            const datafileContents = deserialize(
-              fs.readFileSync(testDb, 'utf8'),
-            )
-            assert.deepEqual(datafileContents, {
-              $$indexCreated: { fieldName: 'a', unique: true },
-            })
+      try {
+        await collection.insert(docs)
+      } catch (err) {
+        err.errorType.should.equal('uniqueViolated')
 
-            docs.length.should.equal(0)
+        const docs = await collection.find().exec()
 
-            done()
-          })
+        // Datafile only contains index definition
+        const datafileContents = deserialize(fs.readFileSync(testDb, 'utf8'))
+        assert.deepEqual(datafileContents, {
+          $$indexCreated: { fieldName: 'a', unique: true },
         })
-      })
-    })
 
-    it('If timestampData option is set, a createdAt field is added and persisted', function (done) {
-      const newDoc = { hello: 'world' },
-        beginning = Date.now()
-      d = new Collection({
-        filename: testDb,
-        timestampData: true,
-        autoload: true,
-      })
-      d.find({}, function (err, docs) {
-        assert.isNull(err)
         docs.length.should.equal(0)
-
-        d.insert(newDoc, function (err, insertedDoc) {
-          // No side effect on given input
-          assert.deepEqual(newDoc, { hello: 'world' })
-          // Insert doc has two new fields, _id and createdAt
-          insertedDoc.hello.should.equal('world')
-          assert.isDefined(insertedDoc.createdAt)
-          assert.isDefined(insertedDoc.updatedAt)
-          insertedDoc.createdAt.should.equal(insertedDoc.updatedAt)
-          assert.isDefined(insertedDoc._id)
-          Object.keys(insertedDoc).length.should.equal(4)
-          assert.isBelow(
-            Math.abs(insertedDoc.createdAt.getTime() - beginning),
-            reloadTimeUpperBound,
-          ) // No more than 30ms should have elapsed (worst case, if there is a flush)
-
-          // Modifying results of insert doesn't change the cache
-          insertedDoc.bloup = 'another'
-          Object.keys(insertedDoc).length.should.equal(5)
-
-          d.find({}, function (err, docs) {
-            docs.length.should.equal(1)
-            assert.deepEqual(newDoc, { hello: 'world' })
-            assert.deepEqual(
-              {
-                hello: 'world',
-                _id: insertedDoc._id,
-                createdAt: insertedDoc.createdAt,
-                updatedAt: insertedDoc.updatedAt,
-              },
-              docs[0],
-            )
-
-            // All data correctly persisted on disk
-            d.loadDatabase(function () {
-              d.find({}, function (err, docs) {
-                docs.length.should.equal(1)
-                assert.deepEqual(newDoc, { hello: 'world' })
-                assert.deepEqual(
-                  {
-                    hello: 'world',
-                    _id: insertedDoc._id,
-                    createdAt: insertedDoc.createdAt,
-                    updatedAt: insertedDoc.updatedAt,
-                  },
-                  docs[0],
-                )
-
-                done()
-              })
-            })
-          })
-        })
-      })
+      }
     })
 
-    it("If timestampData option not set, don't create a createdAt and a updatedAt field", function (done) {
-      d.insert({ hello: 'world' }, function (err, insertedDoc) {
-        Object.keys(insertedDoc).length.should.equal(2)
-        assert.isUndefined(insertedDoc.createdAt)
-        assert.isUndefined(insertedDoc.updatedAt)
-
-        d.find({}, function (err, docs) {
-          docs.length.should.equal(1)
-          assert.deepEqual(docs[0], insertedDoc)
-
-          done()
-        })
-      })
-    })
-
-    it("If timestampData is set but createdAt is specified by user, don't change it", function (done) {
-      const newDoc = { hello: 'world', createdAt: new Date(234) },
-        beginning = Date.now()
-      d = new Collection({
+    it('If timestampData option is set, a createdAt field is added and persisted', async function () {
+      const newDoc = { hello: 'world' }
+      const beginning = Date.now()
+      collection = new Collection({
         filename: testDb,
         timestampData: true,
         autoload: true,
       })
-      d.insert(newDoc, function (err, insertedDoc) {
-        Object.keys(insertedDoc).length.should.equal(4)
-        insertedDoc.createdAt.getTime().should.equal(234) // Not modified
-        assert.isBelow(
-          insertedDoc.updatedAt.getTime() - beginning,
-          reloadTimeUpperBound,
-        ) // Created
 
-        d.find({}, function (err, docs) {
-          assert.deepEqual(insertedDoc, docs[0])
+      await collection.waitFor('ready')
 
-          d.loadDatabase(function () {
-            d.find({}, function (err, docs) {
-              assert.deepEqual(insertedDoc, docs[0])
+      let docs = await collection.find({}).exec()
+      docs.length.should.equal(0)
 
-              done()
-            })
-          })
-        })
-      })
+      const insertedDoc = await collection.insert(newDoc)
+      assert.deepEqual(newDoc, { hello: 'world' })
+      insertedDoc.hello.should.equal('world')
+      assert.isDefined(insertedDoc.createdAt)
+      assert.isDefined(insertedDoc.updatedAt)
+      insertedDoc.createdAt.should.equal(insertedDoc.updatedAt)
+      assert.isDefined(insertedDoc._id)
+      Object.keys(insertedDoc).length.should.equal(4)
+      assert.isBelow(
+        Math.abs(insertedDoc.createdAt.getTime() - beginning),
+        reloadTimeUpperBound,
+      )
+
+      insertedDoc.bloup = 'another'
+      Object.keys(insertedDoc).length.should.equal(5)
+
+      docs = await collection.find({}).exec()
+      docs.length.should.equal(1)
+      assert.deepEqual(newDoc, { hello: 'world' })
+      assert.deepEqual(
+        {
+          hello: 'world',
+          _id: insertedDoc._id,
+          createdAt: insertedDoc.createdAt,
+          updatedAt: insertedDoc.updatedAt,
+        },
+        docs[0],
+      )
+
+      await collection.loadDatabase()
+
+      docs = await collection.find({}).exec()
+      docs.length.should.equal(1)
+      assert.deepEqual(newDoc, { hello: 'world' })
+      assert.deepEqual(
+        {
+          hello: 'world',
+          _id: insertedDoc._id,
+          createdAt: insertedDoc.createdAt,
+          updatedAt: insertedDoc.updatedAt,
+        },
+        docs[0],
+      )
     })
 
-    it("If timestampData is set but updatedAt is specified by user, don't change it", function (done) {
+    it("If timestampData option not set, don't create a createdAt and a updatedAt field", async function () {
+      const insertedDoc = await collection.insert({ hello: 'world' })
+      Object.keys(insertedDoc).length.should.equal(2)
+      assert.isUndefined(insertedDoc.createdAt)
+      assert.isUndefined(insertedDoc.updatedAt)
+
+      const docs = await collection.find({}).exec()
+      docs.length.should.equal(1)
+      assert.deepEqual(docs[0], insertedDoc)
+    })
+
+    it("If timestampData is set but createdAt is specified by user, don't change it", async function () {
+      const newDoc = { hello: 'world', createdAt: new Date(234) }
+      const beginning = Date.now()
+      collection = new Collection({
+        filename: testDb,
+        timestampData: true,
+        autoload: true,
+      })
+
+      await collection.waitFor('ready')
+
+      const insertedDoc = await collection.insert(newDoc)
+
+      Object.keys(insertedDoc).length.should.equal(4)
+
+      insertedDoc.createdAt.getTime().should.equal(234) // Not modified
+
+      assert.isBelow(
+        insertedDoc.updatedAt.getTime() - beginning,
+        reloadTimeUpperBound,
+      ) // Created
+
+      const docs = await collection.find({}).exec()
+      assert.deepEqual(insertedDoc, docs[0])
+
+      await collection.loadDatabase()
+
+      const reloadedDocs = await collection.find({}).exec()
+      assert.deepEqual(insertedDoc, reloadedDocs[0])
+    })
+
+    it("If timestampData is set but updatedAt is specified by user, don't change it", async function () {
       const newDoc = { hello: 'world', updatedAt: new Date(234) },
         beginning = Date.now()
-      d = new Collection({
+
+      collection = new Collection({
         filename: testDb,
         timestampData: true,
         autoload: true,
       })
-      d.insert(newDoc, function (err, insertedDoc) {
-        Object.keys(insertedDoc).length.should.equal(4)
-        insertedDoc.updatedAt.getTime().should.equal(234) // Not modified
-        assert.isBelow(
-          insertedDoc.createdAt.getTime() - beginning,
-          reloadTimeUpperBound,
-        ) // Created
 
-        d.find({}, function (err, docs) {
-          assert.deepEqual(insertedDoc, docs[0])
+      await collection.waitFor('ready')
 
-          d.loadDatabase(function () {
-            d.find({}, function (err, docs) {
-              assert.deepEqual(insertedDoc, docs[0])
+      const insertedDoc = await collection.insert(newDoc)
 
-              done()
-            })
-          })
-        })
-      })
+      Object.keys(insertedDoc).length.should.equal(4)
+      insertedDoc.updatedAt.getTime().should.equal(234) // Not modified
+      assert.isBelow(
+        insertedDoc.createdAt.getTime() - beginning,
+        reloadTimeUpperBound,
+      ) // Created
+
+      const docs = await collection.find({}).exec()
+      assert.deepEqual(insertedDoc, docs[0])
+
+      await collection.loadDatabase()
+
+      const updatedDocs = await collection.find({}).exec()
+      assert.deepEqual(insertedDoc, updatedDocs[0])
     })
 
-    it('Can insert a doc with id 0', function (done) {
-      d.insert({ _id: 0, hello: 'world' }, function (err, doc) {
-        doc._id.should.equal(0)
-        doc.hello.should.equal('world')
-        done()
-      })
-    })
-
-    /**
-     * Complicated behavior here. Basically we need to test that when a user function throws an exception, it is not caught
-     * in NeDB and the callback called again, transforming a user error into a NeDB error.
-     *
-     * So we need a way to check that the callback is called only once and the exception thrown is indeed the client exception
-     * Mocha's exception handling mechanism interferes with this since it already registers a listener on uncaughtException
-     * which we need to use since findOne is not called in the same turn of the event loop (so no try/catch)
-     * So we remove all current listeners, put our own which when called will register the former listeners (incl. Mocha's) again.
-     *
-     * Note: maybe using an in-memory only NeDB would give us an easier solution
-     */
-    it('If the callback throws an uncaught exception, do not catch it inside findOne, this is userspace concern', function (done) {
-      let tryCount = 0
-      const currentUncaughtExceptionHandlers =
-        process.listeners('uncaughtException')
-      let i
-
-      process.removeAllListeners('uncaughtException')
-
-      process.on('uncaughtException', function MINE(ex) {
-        process.removeAllListeners('uncaughtException')
-
-        for (i = 0; i < currentUncaughtExceptionHandlers.length; i += 1) {
-          process.on('uncaughtException', currentUncaughtExceptionHandlers[i])
-        }
-
-        ex.message.should.equal('SOME EXCEPTION')
-        done()
-      })
-
-      d.insert({ a: 5 }, function () {
-        d.findOne({ a: 5 }, function () {
-          if (tryCount === 0) {
-            tryCount += 1
-            throw new Error('SOME EXCEPTION')
-          } else {
-            done(new Error('Callback was called twice'))
-          }
-        })
-      })
+    it('Can insert a doc with id 0', async function () {
+      const doc = await collection.insert({ _id: 0, hello: 'world' })
+      doc._id.should.equal(0)
+      doc.hello.should.equal('world')
     })
   })
 
   describe('#getCandidates', function () {
-    it('Can use an index to get docs with a basic match', function (done) {
-      d.ensureIndex({ fieldName: 'tf' }, function () {
-        d.insert({ tf: 4 }, function (err, _doc1) {
-          d.insert({ tf: 6 }, function () {
-            d.insert({ tf: 4, an: 'other' }, function (err, _doc2) {
-              d.insert({ tf: 9 }, function () {
-                d.getCandidates({ r: 6, tf: 4 }, function (err, data) {
-                  const doc1 = _.find(data, function (d) {
-                      return d._id === _doc1._id
-                    }),
-                    doc2 = _.find(data, function (d) {
-                      return d._id === _doc2._id
-                    })
-                  data.length.should.equal(2)
-                  assert.deepEqual(doc1, { _id: doc1._id, tf: 4 })
-                  assert.deepEqual(doc2, { _id: doc2._id, tf: 4, an: 'other' })
+    it('Can use an index to get docs with a basic match', async function () {
+      await collection.ensureIndex({ fieldName: 'tf' })
+      const doc1 = await collection.insert({ tf: 4 })
+      await collection.insert({ tf: 6 })
+      const doc2 = await collection.insert({ tf: 4, an: 'other' })
+      await collection.insert({ tf: 9 })
 
-                  done()
-                })
-              })
-            })
-          })
-        })
-      })
+      const data = await collection.getCandidates({ r: 6, tf: 4 })
+      const foundDoc1 = data.find(d => d._id === doc1._id)
+      const foundDoc2 = data.find(d => d._id === doc2._id)
+
+      assert.equal(data.length, 2)
+      assert.deepEqual(foundDoc1, { _id: doc1._id, tf: 4 })
+      assert.deepEqual(foundDoc2, { _id: doc2._id, tf: 4, an: 'other' })
     })
 
-    it('Can use an index to get docs with a $in match', function (done) {
-      d.ensureIndex({ fieldName: 'tf' }, function () {
-        d.insert({ tf: 4 }, function () {
-          d.insert({ tf: 6 }, function (err, _doc1) {
-            d.insert({ tf: 4, an: 'other' }, function () {
-              d.insert({ tf: 9 }, function (err, _doc2) {
-                d.getCandidates(
-                  { r: 6, tf: { $in: [6, 9, 5] } },
-                  function (err, data) {
-                    const doc1 = _.find(data, function (d) {
-                        return d._id === _doc1._id
-                      }),
-                      doc2 = _.find(data, function (d) {
-                        return d._id === _doc2._id
-                      })
-                    data.length.should.equal(2)
-                    assert.deepEqual(doc1, { _id: doc1._id, tf: 6 })
-                    assert.deepEqual(doc2, { _id: doc2._id, tf: 9 })
+    it('Can use an index to get docs with a $in match', async function () {
+      await collection.ensureIndex({ fieldName: 'tf' })
 
-                    done()
-                  },
-                )
-              })
-            })
-          })
-        })
+      await collection.insert({ tf: 4 })
+      const doc1 = await collection.insert({ tf: 6 })
+      await collection.insert({ tf: 4, an: 'other' })
+      const doc2 = await collection.insert({ tf: 9 })
+
+      const data = await collection.getCandidates({
+        r: 6,
+        tf: { $in: [6, 9, 5] },
       })
+
+      const foundDoc1 = data.find(d => d._id === doc1._id)
+      const foundDoc2 = data.find(d => d._id === doc2._id)
+
+      data.length.should.equal(2)
+      assert.deepEqual(foundDoc1, { _id: foundDoc1._id, tf: 6 })
+      assert.deepEqual(foundDoc2, { _id: foundDoc2._id, tf: 9 })
     })
 
-    it('If no index can be used, return the whole database', function (done) {
-      d.ensureIndex({ fieldName: 'tf' }, function () {
-        d.insert({ tf: 4 }, function (err, _doc1) {
-          d.insert({ tf: 6 }, function (err, _doc2) {
-            d.insert({ tf: 4, an: 'other' }, function (err, _doc3) {
-              d.insert({ tf: 9 }, function (err, _doc4) {
-                d.getCandidates(
-                  { r: 6, notf: { $in: [6, 9, 5] } },
-                  function (err, data) {
-                    const doc1 = _.find(data, function (d) {
-                        return d._id === _doc1._id
-                      }),
-                      doc2 = _.find(data, function (d) {
-                        return d._id === _doc2._id
-                      }),
-                      doc3 = _.find(data, function (d) {
-                        return d._id === _doc3._id
-                      }),
-                      doc4 = _.find(data, function (d) {
-                        return d._id === _doc4._id
-                      })
-                    data.length.should.equal(4)
-                    assert.deepEqual(doc1, { _id: doc1._id, tf: 4 })
-                    assert.deepEqual(doc2, { _id: doc2._id, tf: 6 })
-                    assert.deepEqual(doc3, {
-                      _id: doc3._id,
-                      tf: 4,
-                      an: 'other',
-                    })
-                    assert.deepEqual(doc4, { _id: doc4._id, tf: 9 })
+    it('If no index can be used, return the whole database', async function () {
+      const _doc1 = await collection.insert({ tf: 4 })
+      const _doc2 = await collection.insert({ tf: 6 })
+      const _doc3 = await collection.insert({ tf: 4, an: 'other' })
+      const _doc4 = await collection.insert({ tf: 9 })
 
-                    done()
-                  },
-                )
-              })
-            })
-          })
-        })
+      const data = await collection.getCandidates({
+        r: 6,
+        notf: { $in: [6, 9, 5] },
       })
+
+      const doc1 = _.find(data, function (d) {
+        return d._id === _doc1._id
+      })
+      const doc2 = _.find(data, function (d) {
+        return d._id === _doc2._id
+      })
+      const doc3 = _.find(data, function (d) {
+        return d._id === _doc3._id
+      })
+      const doc4 = _.find(data, function (d) {
+        return d._id === _doc4._id
+      })
+
+      data.length.should.equal(4)
+      assert.deepEqual(doc1, { _id: doc1._id, tf: 4 })
+      assert.deepEqual(doc2, { _id: doc2._id, tf: 6 })
+      assert.deepEqual(doc3, { _id: doc3._id, tf: 4, an: 'other' })
+      assert.deepEqual(doc4, { _id: doc4._id, tf: 9 })
     })
 
-    it('Can use indexes for comparison matches', function (done) {
-      d.ensureIndex({ fieldName: 'tf' }, function () {
-        d.insert({ tf: 4 }, function (err, _doc1) {
-          d.insert({ tf: 6 }, function (err, _doc2) {
-            d.insert({ tf: 4, an: 'other' }, function (err, _doc3) {
-              d.insert({ tf: 9 }, function (err, _doc4) {
-                d.getCandidates(
-                  { r: 6, tf: { $lte: 9, $gte: 6 } },
-                  function (err, data) {
-                    const doc2 = _.find(data, function (d) {
-                        return d._id === _doc2._id
-                      }),
-                      doc4 = _.find(data, function (d) {
-                        return d._id === _doc4._id
-                      })
-                    data.length.should.equal(2)
-                    assert.deepEqual(doc2, { _id: doc2._id, tf: 6 })
-                    assert.deepEqual(doc4, { _id: doc4._id, tf: 9 })
-
-                    done()
-                  },
-                )
-              })
-            })
-          })
-        })
+    it('Can use indexes for comparison matches', async function () {
+      await collection.ensureIndex({ fieldName: 'tf' })
+      const doc1 = await collection.insert({ tf: 4 })
+      const doc2 = await collection.insert({ tf: 6 })
+      const doc3 = await collection.insert({ tf: 4, an: 'other' })
+      const doc4 = await collection.insert({ tf: 9 })
+      const data = await collection.getCandidates({
+        r: 6,
+        tf: { $lte: 9, $gte: 6 },
       })
+      const foundDoc2 = _.find(data, function (d) {
+        return d._id === doc2._id
+      })
+      const foundDoc4 = _.find(data, function (d) {
+        return d._id === doc4._id
+      })
+      data.length.should.equal(2)
+      assert.deepEqual(foundDoc2, { _id: doc2._id, tf: 6 })
+      assert.deepEqual(foundDoc4, { _id: doc4._id, tf: 9 })
     })
 
-    it('Can set a TTL index that expires documents', function (done) {
-      d.ensureIndex({ fieldName: 'exp', expireAfterSeconds: 0.2 }, function () {
-        d.insert({ hello: 'world', exp: new Date() }, function () {
-          setTimeout(function () {
-            d.findOne({}, function (err, doc) {
-              assert.isNull(err)
-              doc.hello.should.equal('world')
-
-              setTimeout(function () {
-                d.findOne({}, function (err, doc) {
-                  assert.isNull(err)
-                  assert.isNull(doc)
-
-                  d.on('compaction.done', function () {
-                    // After compaction, no more mention of the document, correctly removed
-                    const datafileContents = fs.readFileSync(testDb, 'utf8')
-                    datafileContents.split('\n').length.should.equal(2)
-                    assert.isNull(datafileContents.match(/world/))
-
-                    // New datastore on same datafile is empty
-                    const d2 = new Collection({
-                      filename: testDb,
-                      autoload: true,
-                    })
-                    d2.findOne({}, function (err, doc) {
-                      assert.isNull(err)
-                      assert.isNull(doc)
-
-                      done()
-                    })
-                  })
-
-                  d.persistence.compactDatafile()
-                })
-              }, 101)
-            })
-          }, 100)
-        })
+    it('Can set a TTL index that expires documents', async function () {
+      await collection.ensureIndex({
+        fieldName: 'exp',
+        expireAfterSeconds: 0.2,
       })
+      await collection.insert({ hello: 'world', exp: new Date() })
+
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      let doc = await collection.findOne({})
+      doc.hello.should.equal('world')
+
+      await new Promise(resolve => setTimeout(resolve, 101))
+
+      doc = await collection.findOne({})
+      assert.isNull(doc)
+
+      await collection.persistence.compactDatafile()
+
+      // After compaction, no more mention of the document, correctly removed
+      const datafileContents = fs.readFileSync(testDb, 'utf8')
+
+      datafileContents.split('\n').length.should.equal(2)
+      assert.isNull(datafileContents.match(/world/))
+
+      // New datastore on same datafile is empty
+      const d2 = new Collection({ filename: testDb, autoload: true })
+
+      await d2.waitFor('ready')
+
+      doc = await d2.findOne({})
+
+      assert.isNull(doc)
     })
 
-    it('TTL indexes can expire multiple documents and only what needs to be expired', function (done) {
-      d.ensureIndex({ fieldName: 'exp', expireAfterSeconds: 0.2 }, function () {
-        d.insert({ hello: 'world1', exp: new Date() }, function () {
-          d.insert({ hello: 'world2', exp: new Date() }, function () {
-            d.insert(
-              { hello: 'world3', exp: new Date(new Date().getTime() + 100) },
-              function () {
-                setTimeout(function () {
-                  d.find({}, function (err, docs) {
-                    assert.isNull(err)
-                    docs.length.should.equal(3)
-
-                    setTimeout(function () {
-                      d.find({}, function (err, docs) {
-                        assert.isNull(err)
-                        docs.length.should.equal(1)
-                        docs[0].hello.should.equal('world3')
-
-                        setTimeout(function () {
-                          d.find({}, function (err, docs) {
-                            assert.isNull(err)
-                            docs.length.should.equal(0)
-
-                            done()
-                          })
-                        }, 101)
-                      })
-                    }, 101)
-                  })
-                }, 100)
-              },
-            )
-          })
-        })
+    it('TTL indexes can expire multiple documents and only what needs to be expired', async function () {
+      await collection.ensureIndex({
+        fieldName: 'exp',
+        expireAfterSeconds: 0.2,
       })
+      await collection.insert({ hello: 'world1', exp: new Date() })
+      await collection.insert({ hello: 'world2', exp: new Date() })
+      await collection.insert({
+        hello: 'world3',
+        exp: new Date(new Date().getTime() + 100),
+      })
+
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      let docs = await collection.find({}).exec()
+      docs.length.should.equal(3)
+
+      await new Promise(resolve => setTimeout(resolve, 101))
+
+      docs = await collection.find({}).exec()
+      docs.length.should.equal(1)
+      docs[0].hello.should.equal('world3')
+
+      await new Promise(resolve => setTimeout(resolve, 101))
+
+      docs = await collection.find({}).exec()
+      docs.length.should.equal(0)
     })
 
-    it('Document where indexed field is absent or not a date are ignored', function (done) {
-      d.ensureIndex({ fieldName: 'exp', expireAfterSeconds: 0.2 }, function () {
-        d.insert({ hello: 'world1', exp: new Date() }, function () {
-          d.insert({ hello: 'world2', exp: 'not a date' }, function () {
-            d.insert({ hello: 'world3' }, function () {
-              setTimeout(function () {
-                d.find({}, function (err, docs) {
-                  assert.isNull(err)
-                  docs.length.should.equal(3)
-
-                  setTimeout(function () {
-                    d.find({}, function (err, docs) {
-                      assert.isNull(err)
-                      docs.length.should.equal(2)
-
-                      docs[0].hello.should.not.equal('world1')
-                      docs[1].hello.should.not.equal('world1')
-
-                      done()
-                    })
-                  }, 101)
-                })
-              }, 100)
-            })
-          })
-        })
+    it('Document where indexed field is absent or not a date are ignored', async function () {
+      await collection.ensureIndex({
+        fieldName: 'exp',
+        expireAfterSeconds: 0.2,
       })
+
+      await Promise.all([
+        collection.insert({ hello: 'world1', exp: new Date() }),
+        collection.insert({ hello: 'world2', exp: 'not a date' }),
+        collection.insert({ hello: 'world3' }),
+      ])
+
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      let docs = await collection.find().exec()
+      docs.length.should.equal(3)
+
+      await new Promise(resolve => setTimeout(resolve, 101))
+
+      docs = await collection.find().exec()
+      docs.length.should.equal(2)
+      docs[0].hello.should.not.equal('world1')
+      docs[1].hello.should.not.equal('world1')
     })
-  }) // ==== End of '#getCandidates' ==== //
+  })
 
   describe('Find', function () {
-    it('Can find all documents if an empty query is used', function (done) {
-      async.waterfall(
-        [
-          function (cb) {
-            d.insert({ somedata: 'ok' }, function () {
-              d.insert(
-                { somedata: 'another', plus: 'additional data' },
-                function () {
-                  d.insert({ somedata: 'again' }, function (err) {
-                    return cb(err)
-                  })
-                },
-              )
-            })
-          },
-          function (cb) {
-            // Test with empty object
-            d.find({}, function (err, docs) {
-              assert.isNull(err)
-              docs.length.should.equal(3)
-              pluck(docs, 'somedata').should.contain('ok')
-              pluck(docs, 'somedata').should.contain('another')
-              _.find(docs, function (d) {
-                return d.somedata === 'another'
-              }).plus.should.equal('additional data')
-              pluck(docs, 'somedata').should.contain('again')
-              return cb()
-            })
-          },
-        ],
-        done,
-      )
+    it('Can find all documents if an empty query is used', async function () {
+      await collection.insert({ somedata: 'ok' })
+      await collection.insert({ somedata: 'another', plus: 'additional data' })
+      await collection.insert({ somedata: 'again' })
+
+      const docs = await collection.find({}).exec()
+      docs.length.should.equal(3)
+      pluck(docs, 'somedata').should.contain('ok')
+      pluck(docs, 'somedata').should.contain('another')
+      _.find(docs, function (d) {
+        return d.somedata === 'another'
+      }).plus.should.equal('additional data')
+      pluck(docs, 'somedata').should.contain('again')
     })
 
-    it('Can find all documents matching a basic query', function (done) {
-      async.waterfall(
-        [
-          function (cb) {
-            d.insert({ somedata: 'ok' }, function () {
-              d.insert(
-                { somedata: 'again', plus: 'additional data' },
-                function () {
-                  d.insert({ somedata: 'again' }, function (err) {
-                    return cb(err)
-                  })
-                },
-              )
-            })
-          },
-          function (cb) {
-            // Test with query that will return docs
-            d.find({ somedata: 'again' }, function (err, docs) {
-              assert.isNull(err)
-              docs.length.should.equal(2)
-              pluck(docs, 'somedata').should.not.contain('ok')
-              return cb()
-            })
-          },
-          function (cb) {
-            // Test with query that doesn't match anything
-            d.find({ somedata: 'nope' }, function (err, docs) {
-              assert.isNull(err)
-              docs.length.should.equal(0)
-              return cb()
-            })
-          },
-        ],
-        done,
-      )
+    it('Can find all documents matching a basic query', async function () {
+      await collection.insert({ somedata: 'ok' })
+      await collection.insert({ somedata: 'again', plus: 'additional data' })
+      await collection.insert({ somedata: 'again' })
+
+      // Test with query that will return docs
+      let docs = await collection.find({ somedata: 'again' }).exec()
+      docs.length.should.equal(2)
+      pluck(docs, 'somedata').should.not.contain('ok')
+
+      // Test with query that doesn't match anything
+      docs = await collection.find({ somedata: 'nope' }).exec()
+      docs.length.should.equal(0)
     })
 
-    it('Can find one document matching a basic query and return null if none is found', function (done) {
-      async.waterfall(
-        [
-          function (cb) {
-            d.insert({ somedata: 'ok' }, function () {
-              d.insert(
-                { somedata: 'again', plus: 'additional data' },
-                function () {
-                  d.insert({ somedata: 'again' }, function (err) {
-                    return cb(err)
-                  })
-                },
-              )
-            })
-          },
-          function (cb) {
-            // Test with query that will return docs
-            d.findOne({ somedata: 'ok' }, function (err, doc) {
-              assert.isNull(err)
-              Object.keys(doc).length.should.equal(2)
-              doc.somedata.should.equal('ok')
-              assert.isDefined(doc._id)
-              return cb()
-            })
-          },
-          function (cb) {
-            // Test with query that doesn't match anything
-            d.findOne({ somedata: 'nope' }, function (err, doc) {
-              assert.isNull(err)
-              assert.isNull(doc)
-              return cb()
-            })
-          },
-        ],
-        done,
-      )
+    it('Can find one document matching a basic query and return null if none is found', async function () {
+      await collection.insert({ somedata: 'ok' })
+      await collection.insert({ somedata: 'again', plus: 'additional data' })
+      await collection.insert({ somedata: 'again' })
+
+      // Test with query that will return docs
+      let doc = await collection.findOne({ somedata: 'ok' })
+      Object.keys(doc).length.should.equal(2)
+      doc.somedata.should.equal('ok')
+      assert.isDefined(doc._id)
+
+      // Test with query that doesn't match anything
+      doc = await collection.findOne({ somedata: 'nope' })
+      assert.isNull(doc)
     })
 
-    it('Can find dates and objects (non JS-native types)', function (done) {
+    it('Can find dates and objects (non JS-native types)', async function () {
       const date1 = new Date(1234543),
         date2 = new Date(9999)
-      d.insert({ now: date1, sth: { name: 'nedb' } }, function () {
-        d.findOne({ now: date1 }, function (err, doc) {
-          assert.isNull(err)
-          doc.sth.name.should.equal('nedb')
 
-          d.findOne({ now: date2 }, function (err, doc) {
-            assert.isNull(err)
-            assert.isNull(doc)
+      await collection.remove({}, { multi: true })
 
-            d.findOne({ sth: { name: 'nedb' } }, function (err, doc) {
-              assert.isNull(err)
-              doc.sth.name.should.equal('nedb')
+      await collection.insert({ now: date1, sth: { name: 'nedb' } })
 
-              d.findOne({ sth: { name: 'other' } }, function (err, doc) {
-                assert.isNull(err)
-                assert.isNull(doc)
+      let doc = await collection.findOne({ now: date1 })
+      doc.sth.name.should.equal('nedb')
 
-                done()
-              })
-            })
-          })
-        })
-      })
+      doc = await collection.findOne({ now: date2 })
+      assert.isNull(doc)
+
+      doc = await collection.findOne({ sth: { name: 'nedb' } })
+      doc.sth.name.should.equal('nedb')
+
+      doc = await collection.findOne({ sth: { name: 'other' } })
+      assert.isNull(doc)
     })
 
-    it('Can use dot-notation to query subfields', function (done) {
-      d.insert({ greeting: { english: 'hello' } }, function () {
-        d.findOne({ 'greeting.english': 'hello' }, function (err, doc) {
-          assert.isNull(err)
-          doc.greeting.english.should.equal('hello')
+    it('Can use dot-notation to query subfields', async function () {
+      await collection.insert({ greeting: { english: 'hello' } })
 
-          d.findOne({ 'greeting.english': 'hellooo' }, function (err, doc) {
-            assert.isNull(err)
-            assert.isNull(doc)
+      let doc = await collection.findOne({ 'greeting.english': 'hello' })
+      doc.greeting.english.should.equal('hello')
 
-            d.findOne({ 'greeting.englis': 'hello' }, function (err, doc) {
-              assert.isNull(err)
-              assert.isNull(doc)
+      doc = await collection.findOne({ 'greeting.english': 'hellooo' })
+      assert.isNull(doc)
 
-              done()
-            })
-          })
-        })
-      })
+      doc = await collection.findOne({ 'greeting.englis': 'hello' })
+      assert.isNull(doc)
     })
 
-    it('Array fields match if any element matches', function (done) {
-      d.insert({ fruits: ['pear', 'apple', 'banana'] }, function (err, doc1) {
-        d.insert(
-          { fruits: ['coconut', 'orange', 'pear'] },
-          function (err, doc2) {
-            d.insert({ fruits: ['banana'] }, function (err, doc3) {
-              d.find({ fruits: 'pear' }, function (err, docs) {
-                assert.isNull(err)
-                docs.length.should.equal(2)
-                pluck(docs, '_id').should.contain(doc1._id)
-                pluck(docs, '_id').should.contain(doc2._id)
-
-                d.find({ fruits: 'banana' }, function (err, docs) {
-                  assert.isNull(err)
-                  docs.length.should.equal(2)
-                  pluck(docs, '_id').should.contain(doc1._id)
-                  pluck(docs, '_id').should.contain(doc3._id)
-
-                  d.find({ fruits: 'doesntexist' }, function (err, docs) {
-                    assert.isNull(err)
-                    docs.length.should.equal(0)
-
-                    done()
-                  })
-                })
-              })
-            })
-          },
-        )
+    it('Array fields match if any element matches', async function () {
+      const doc1 = await collection.insert({
+        fruits: ['pear', 'apple', 'banana'],
       })
+      const doc2 = await collection.insert({
+        fruits: ['coconut', 'orange', 'pear'],
+      })
+      const doc3 = await collection.insert({ fruits: ['banana'] })
+
+      let docs = await collection.find({ fruits: 'pear' }).exec()
+      docs.length.should.equal(2)
+      pluck(docs, '_id').should.contain(doc1._id)
+      pluck(docs, '_id').should.contain(doc2._id)
+
+      docs = await collection.find({ fruits: 'banana' }).exec()
+      docs.length.should.equal(2)
+      pluck(docs, '_id').should.contain(doc1._id)
+      pluck(docs, '_id').should.contain(doc3._id)
+
+      docs = await collection.find({ fruits: 'doesntexist' }).exec()
+      docs.length.should.equal(0)
     })
 
-    it('Returns an error if the query is not well formed', function (done) {
-      d.insert({ hello: 'world' }, function () {
-        d.find({ $or: { hello: 'world' } }, function (err, docs) {
-          assert.isDefined(err)
-          assert.isUndefined(docs)
+    it('Returns an error if the query is not well formed', async function () {
+      await collection.insert({ hello: 'world' })
+      let docs, doc
+      let err = null
 
-          d.findOne({ $or: { hello: 'world' } }, function (err, doc) {
-            assert.isDefined(err)
-            assert.isUndefined(doc)
+      try {
+        docs = await collection.find({ $or: { hello: 'world' } }).exec()
+      } catch (error) {
+        err = error
+      }
+      assert.isDefined(err)
+      assert.isUndefined(docs)
 
-            done()
-          })
-        })
-      })
+      try {
+        doc = await collection.findOne({ $or: { hello: 'world' } })
+      } catch (error) {
+        err = error
+      }
+      assert.isDefined(err)
+      assert.isUndefined(doc)
     })
 
-    it('Changing the documents returned by find or findOne do not change the database state', function (done) {
-      d.insert({ a: 2, hello: 'world' }, function () {
-        d.findOne({ a: 2 }, function (err, doc) {
-          doc.hello = 'changed'
-
-          d.findOne({ a: 2 }, function (err, doc) {
-            doc.hello.should.equal('world')
-
-            d.find({ a: 2 }, function (err, docs) {
-              docs[0].hello = 'changed'
-
-              d.findOne({ a: 2 }, function (err, doc) {
-                doc.hello.should.equal('world')
-
-                done()
-              })
-            })
-          })
-        })
-      })
+    it('Changing the documents returned by find or findOne do not change the database state', async () => {
+      await collection.insert({ a: 2, hello: 'world' })
+      let doc = await collection.findOne({ a: 2 })
+      doc.hello = 'changed'
+      doc = await collection.findOne({ a: 2 })
+      doc.hello.should.equal('world')
+      const docs = await collection.find({ a: 2 }).exec()
+      docs[0].hello = 'changed'
+      doc = await collection.findOne({ a: 2 })
+      doc.hello.should.equal('world')
     })
 
-    it('Can use sort, skip and limit if the callback is not passed to find but to exec', function (done) {
-      d.insert({ a: 2, hello: 'world' }, function () {
-        d.insert({ a: 24, hello: 'earth' }, function () {
-          d.insert({ a: 13, hello: 'blueplanet' }, function () {
-            d.insert({ a: 15, hello: 'home' }, function () {
-              d.find({})
-                .sort({ a: 1 })
-                .limit(2)
-                .exec(function (err, docs) {
-                  assert.isNull(err)
-                  docs.length.should.equal(2)
-                  docs[0].hello.should.equal('world')
-                  docs[1].hello.should.equal('blueplanet')
-                  done()
-                })
-            })
-          })
-        })
-      })
+    it('Can use projections in find, normal or cursor way', async function () {
+      await collection.insert({ a: 2, hello: 'world' })
+      await collection.insert({ a: 24, hello: 'earth' })
+
+      let docs = await collection.find({ a: 2 }, { a: 0, _id: 0 }).exec()
+      docs.length.should.equal(1)
+      assert.deepEqual(docs[0], { hello: 'world' })
+
+      docs = await collection.find({ a: 2 }, { a: 0, _id: 0 }).exec()
+      docs.length.should.equal(1)
+      assert.deepEqual(docs[0], { hello: 'world' })
+
+      // Can't use both modes at once if not _id
+      let err
+      try {
+        await collection.find({ a: 2 }, { a: 0, hello: 1 }).exec()
+      } catch (e) {
+        err = e
+      }
+      assert.isNotNull(err)
+
+      err = null
+      try {
+        await collection.find({ a: 2 }, { a: 0, hello: 1 }).exec()
+      } catch (e) {
+        err = e
+      }
+      assert.isNotNull(err)
     })
 
-    it('Can use sort and skip if the callback is not passed to findOne but to exec', function (done) {
-      d.insert({ a: 2, hello: 'world' }, function () {
-        d.insert({ a: 24, hello: 'earth' }, function () {
-          d.insert({ a: 13, hello: 'blueplanet' }, function () {
-            d.insert({ a: 15, hello: 'home' }, function () {
-              // No skip no query
-              d.findOne({})
-                .sort({ a: 1 })
-                .exec(function (err, doc) {
-                  assert.isNull(err)
-                  doc.hello.should.equal('world')
+    it('Can use projections in findOne, normal or cursor way', async function () {
+      await collection.insert({ a: 2, hello: 'world' })
+      await collection.insert({ a: 24, hello: 'earth' })
 
-                  // A query
-                  d.findOne({ a: { $gt: 14 } })
-                    .sort({ a: 1 })
-                    .exec(function (err, doc) {
-                      assert.isNull(err)
-                      doc.hello.should.equal('home')
+      const doc1 = await collection.findOne({ a: 2 }, { a: 0, _id: 0 })
+      assert.deepEqual(doc1, { hello: 'world' })
 
-                      // And a skip
-                      d.findOne({ a: { $gt: 14 } })
-                        .sort({ a: 1 })
-                        .skip(1)
-                        .exec(function (err, doc) {
-                          assert.isNull(err)
-                          doc.hello.should.equal('earth')
+      const doc2 = await collection.findOne({ a: 2 }, { a: 0, _id: 0 })
+      assert.deepEqual(doc2, { hello: 'world' })
 
-                          // No result
-                          d.findOne({ a: { $gt: 14 } })
-                            .sort({ a: 1 })
-                            .skip(2)
-                            .exec(function (err, doc) {
-                              assert.isNull(err)
-                              assert.isNull(doc)
+      // Can't use both modes at once if not _id
+      await assert.isRejected(collection.findOne({ a: 2 }, { a: 0, hello: 1 }))
 
-                              done()
-                            })
-                        })
-                    })
-                })
-            })
-          })
-        })
-      })
+      await assert.isRejected(collection.findOne({ a: 2 }, { a: 0, hello: 1 }))
     })
-
-    it('Can use projections in find, normal or cursor way', function (done) {
-      d.insert({ a: 2, hello: 'world' }, function () {
-        d.insert({ a: 24, hello: 'earth' }, function () {
-          d.find({ a: 2 }, { a: 0, _id: 0 }, function (err, docs) {
-            assert.isNull(err)
-            docs.length.should.equal(1)
-            assert.deepEqual(docs[0], { hello: 'world' })
-
-            d.find({ a: 2 }, { a: 0, _id: 0 }).exec(function (err, docs) {
-              assert.isNull(err)
-              docs.length.should.equal(1)
-              assert.deepEqual(docs[0], { hello: 'world' })
-
-              // Can't use both modes at once if not _id
-              d.find({ a: 2 }, { a: 0, hello: 1 }, function (err, docs) {
-                assert.isNotNull(err)
-                assert.isUndefined(docs)
-
-                d.find({ a: 2 }, { a: 0, hello: 1 }).exec(function (err, docs) {
-                  assert.isNotNull(err)
-                  assert.isUndefined(docs)
-
-                  done()
-                })
-              })
-            })
-          })
-        })
-      })
-    })
-
-    it('Can use projections in findOne, normal or cursor way', function (done) {
-      d.insert({ a: 2, hello: 'world' }, function () {
-        d.insert({ a: 24, hello: 'earth' }, function () {
-          d.findOne({ a: 2 }, { a: 0, _id: 0 }, function (err, doc) {
-            assert.isNull(err)
-            assert.deepEqual(doc, { hello: 'world' })
-
-            d.findOne({ a: 2 }, { a: 0, _id: 0 }).exec(function (err, doc) {
-              assert.isNull(err)
-              assert.deepEqual(doc, { hello: 'world' })
-
-              // Can't use both modes at once if not _id
-              d.findOne({ a: 2 }, { a: 0, hello: 1 }, function (err, doc) {
-                assert.isNotNull(err)
-                assert.isUndefined(doc)
-
-                d.findOne({ a: 2 }, { a: 0, hello: 1 }).exec(function (
-                  err,
-                  doc,
-                ) {
-                  assert.isNotNull(err)
-                  assert.isUndefined(doc)
-
-                  done()
-                })
-              })
-            })
-          })
-        })
-      })
-    })
-  }) // ==== End of 'Find' ==== //
+  })
 
   describe('Count', function () {
-    it('Count all documents if an empty query is used', function (done) {
-      async.waterfall(
-        [
-          function (cb) {
-            d.insert({ somedata: 'ok' }, function () {
-              d.insert(
-                { somedata: 'another', plus: 'additional data' },
-                function () {
-                  d.insert({ somedata: 'again' }, function (err) {
-                    return cb(err)
-                  })
-                },
-              )
-            })
-          },
-          function (cb) {
-            // Test with empty object
-            d.count({}, function (err, docs) {
-              assert.isNull(err)
-              docs.should.equal(3)
-              return cb()
-            })
-          },
-        ],
-        done,
-      )
+    it('Count all documents if an empty query is used', async function () {
+      await collection.insert({ somedata: 'ok' })
+      await collection.insert({ somedata: 'another', plus: 'additional data' })
+      await collection.insert({ somedata: 'again' })
+
+      const count = await collection.count({})
+
+      assert.equal(count, 3)
     })
 
-    it('Count all documents matching a basic query', function (done) {
-      async.waterfall(
-        [
-          function (cb) {
-            d.insert({ somedata: 'ok' }, function () {
-              d.insert(
-                { somedata: 'again', plus: 'additional data' },
-                function () {
-                  d.insert({ somedata: 'again' }, function (err) {
-                    return cb(err)
-                  })
-                },
-              )
-            })
-          },
-          function (cb) {
-            // Test with query that will return docs
-            d.count({ somedata: 'again' }, function (err, docs) {
-              assert.isNull(err)
-              docs.should.equal(2)
-              return cb()
-            })
-          },
-          function (cb) {
-            // Test with query that doesn't match anything
-            d.count({ somedata: 'nope' }, function (err, docs) {
-              assert.isNull(err)
-              docs.should.equal(0)
-              return cb()
-            })
-          },
-        ],
-        done,
-      )
+    it('Count all documents matching a basic query', async function () {
+      await collection.insert({ somedata: 'ok' })
+      await collection.insert({ somedata: 'again', plus: 'additional data' })
+      await collection.insert({ somedata: 'again' })
+
+      // Test with query that will return docs
+      const docs = await collection.find({ somedata: 'again' }).exec()
+      let count = await collection.count({ somedata: 'again' })
+      count.should.equal(docs.length)
+
+      // Test with query that doesn't match anything
+      count = await collection.count({ somedata: 'nope' })
+      count.should.equal(0)
     })
 
-    it('Array fields match if any element matches', function (done) {
-      d.insert({ fruits: ['pear', 'apple', 'banana'] }, function () {
-        d.insert({ fruits: ['coconut', 'orange', 'pear'] }, function () {
-          d.insert({ fruits: ['banana'] }, function () {
-            d.count({ fruits: 'pear' }, function (err, docs) {
-              assert.isNull(err)
-              docs.should.equal(2)
+    it('Array fields match if any element matches', async function () {
+      await collection.insert({ fruits: ['pear', 'apple', 'banana'] })
+      await collection.insert({ fruits: ['coconut', 'orange', 'pear'] })
+      await collection.insert({ fruits: ['banana'] })
 
-              d.count({ fruits: 'banana' }, function (err, docs) {
-                assert.isNull(err)
-                docs.should.equal(2)
+      let docs = await collection.find({ fruits: 'pear' }).exec()
+      assert.equal(docs.length, 2)
 
-                d.count({ fruits: 'doesntexist' }, function (err, docs) {
-                  assert.isNull(err)
-                  docs.should.equal(0)
+      docs = await collection.find({ fruits: 'banana' }).exec()
+      assert.equal(docs.length, 2)
 
-                  done()
-                })
-              })
-            })
-          })
-        })
-      })
+      docs = await collection.find({ fruits: 'doesntexist' }).exec()
+      assert.equal(docs.length, 0)
     })
 
-    it('Returns an error if the query is not well formed', function (done) {
-      d.insert({ hello: 'world' }, function () {
-        d.count({ $or: { hello: 'world' } }, function (err, docs) {
-          assert.isDefined(err)
-          assert.isUndefined(docs)
+    it('Returns an error if the query is not well formed', async function () {
+      await collection.insert({ hello: 'world' })
 
-          done()
-        })
-      })
+      await assert.isRejected(collection.count({ $or: { hello: 'world' } }))
     })
   })
 
   describe('Update', function () {
-    it("If the query doesn't match anything, database is not modified", function (done) {
-      async.waterfall(
-        [
-          function (cb) {
-            d.insert({ somedata: 'ok' }, function () {
-              d.insert(
-                { somedata: 'again', plus: 'additional data' },
-                function () {
-                  d.insert({ somedata: 'another' }, function (err) {
-                    return cb(err)
-                  })
-                },
-              )
-            })
-          },
-          function (cb) {
-            // Test with query that doesn't match anything
-            d.update(
-              { somedata: 'nope' },
-              { newDoc: 'yes' },
-              { multi: true },
-              function (err, n) {
-                assert.isNull(err)
-                n.should.equal(0)
+    it("If the query doesn't match anything, database is not modified", async function () {
+      await collection.insert({ somedata: 'ok' })
+      await collection.insert({ somedata: 'again', plus: 'additional data' })
+      await collection.insert({ somedata: 'another' })
 
-                d.find({}, function (err, docs) {
-                  const doc1 = _.find(docs, function (d) {
-                      return d.somedata === 'ok'
-                    }),
-                    doc2 = _.find(docs, function (d) {
-                      return d.somedata === 'again'
-                    }),
-                    doc3 = _.find(docs, function (d) {
-                      return d.somedata === 'another'
-                    })
-                  docs.length.should.equal(3)
-                  assert.isUndefined(
-                    _.find(docs, function (d) {
-                      return d.newDoc === 'yes'
-                    }),
-                  )
-
-                  assert.deepEqual(doc1, { _id: doc1._id, somedata: 'ok' })
-                  assert.deepEqual(doc2, {
-                    _id: doc2._id,
-                    somedata: 'again',
-                    plus: 'additional data',
-                  })
-                  assert.deepEqual(doc3, { _id: doc3._id, somedata: 'another' })
-
-                  return cb()
-                })
-              },
-            )
-          },
-        ],
-        done,
+      // Test with query that doesn't match anything
+      const n = await collection.update(
+        { somedata: 'nope' },
+        { newDoc: 'yes' },
+        { multi: true },
       )
+
+      n.should.equal(0)
+
+      const docs = await collection.find({}).exec()
+
+      const doc1 = _.find(docs, function (d) {
+        return d.somedata === 'ok'
+      })
+      const doc2 = _.find(docs, function (d) {
+        return d.somedata === 'again'
+      })
+      const doc3 = _.find(docs, function (d) {
+        return d.somedata === 'another'
+      })
+
+      docs.length.should.equal(3)
+      assert.isUndefined(
+        _.find(docs, function (d) {
+          return d.newDoc === 'yes'
+        }),
+      )
+
+      assert.deepEqual(doc1, { _id: doc1._id, somedata: 'ok' })
+      assert.deepEqual(doc2, {
+        _id: doc2._id,
+        somedata: 'again',
+        plus: 'additional data',
+      })
+      assert.deepEqual(doc3, { _id: doc3._id, somedata: 'another' })
     })
 
-    it('If timestampData option is set, update the updatedAt field', function (done) {
+    it('If timestampData option is set, update the updatedAt field', async function () {
       const beginning = Date.now()
-      d = new Collection({
+
+      collection = new Collection({
         filename: testDb,
         autoload: true,
         timestampData: true,
       })
-      d.insert({ hello: 'world' }, function (err, insertedDoc) {
-        assert.isBelow(
-          insertedDoc.updatedAt.getTime() - beginning,
-          reloadTimeUpperBound,
-        )
-        assert.isBelow(
-          insertedDoc.createdAt.getTime() - beginning,
-          reloadTimeUpperBound,
-        )
-        Object.keys(insertedDoc).length.should.equal(4)
 
-        // Wait 100ms before performing the update
-        setTimeout(function () {
-          const step1 = Date.now()
-          d.update(
-            { _id: insertedDoc._id },
-            { $set: { hello: 'mars' } },
-            {},
-            function () {
-              d.find({ _id: insertedDoc._id }, function (err, docs) {
-                docs.length.should.equal(1)
-                Object.keys(docs[0]).length.should.equal(4)
-                docs[0]._id.should.equal(insertedDoc._id)
-                docs[0].createdAt.should.equal(insertedDoc.createdAt)
-                docs[0].hello.should.equal('mars')
-                assert.isAbove(docs[0].updatedAt.getTime() - beginning, 99) // updatedAt modified
-                assert.isBelow(
-                  docs[0].updatedAt.getTime() - step1,
-                  reloadTimeUpperBound,
-                ) // updatedAt modified
+      await collection.waitFor('ready')
 
-                done()
-              })
-            },
-          )
-        }, 100)
+      const insertedDoc = await collection.insert({ hello: 'world' })
+
+      assert.isBelow(
+        insertedDoc.updatedAt.getTime() - beginning,
+        reloadTimeUpperBound,
+      )
+
+      assert.isBelow(
+        insertedDoc.createdAt.getTime() - beginning,
+        reloadTimeUpperBound,
+      )
+
+      Object.keys(insertedDoc).length.should.equal(4)
+
+      // Wait 100ms before performing the update
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      const step1 = Date.now()
+
+      await collection.update(
+        { _id: insertedDoc._id },
+        { $set: { hello: 'mars' } },
+        {},
+      )
+
+      const docs = await collection.find({ _id: insertedDoc._id }).exec()
+
+      docs.length.should.equal(1)
+      Object.keys(docs[0]).length.should.equal(4)
+      docs[0]._id.should.equal(insertedDoc._id)
+      docs[0].createdAt.should.deep.equal(insertedDoc.createdAt)
+      docs[0].hello.should.equal('mars')
+      assert.isAbove(docs[0].updatedAt.getTime() - beginning, 99) // updatedAt modified
+      assert.isBelow(docs[0].updatedAt.getTime() - step1, reloadTimeUpperBound) // updatedAt modified
+    })
+
+    it('Can update multiple documents matching the query', async function () {
+      let id1, id2, id3
+
+      async function testPostUpdateState() {
+        const docs = await collection.find({}).exec()
+
+        const doc1 = _.find(docs, function (d) {
+            return d._id === id1
+          }),
+          doc2 = _.find(docs, function (d) {
+            return d._id === id2
+          }),
+          doc3 = _.find(docs, function (d) {
+            return d._id === id3
+          })
+
+        docs.length.should.equal(3)
+
+        Object.keys(doc1).length.should.equal(2)
+        doc1.somedata.should.equal('ok')
+        doc1._id.should.equal(id1)
+
+        Object.keys(doc2).length.should.equal(2)
+        doc2.newDoc.should.equal('yes')
+        doc2._id.should.equal(id2)
+
+        Object.keys(doc3).length.should.equal(2)
+        doc3.newDoc.should.equal('yes')
+        doc3._id.should.equal(id3)
+      }
+
+      await collection
+        .insert({ somedata: 'ok' })
+        .then(doc1 => {
+          id1 = doc1._id
+          return collection.insert({
+            somedata: 'again',
+            plus: 'additional data',
+          })
+        })
+        .then(doc2 => {
+          id2 = doc2._id
+          return collection.insert({ somedata: 'again' })
+        })
+        .then(doc3 => {
+          id3 = doc3._id
+        })
+
+      await collection
+        .update({ somedata: 'again' }, { newDoc: 'yes' }, { multi: true })
+        .then(n => {
+          n.should.equal(2)
+        })
+
+      await testPostUpdateState()
+
+      await collection.loadDatabase()
+
+      await testPostUpdateState()
+    })
+
+    it('Can update only one document matching the query', async function () {
+      // eslint-disable-next-line prefer-const
+      let id1, id2, id3
+
+      // Test DB state after update and reload
+      async function testPostUpdateState() {
+        const docs = await collection.find({}).exec()
+
+        const doc1 = _.find(docs, function (d) {
+            return d._id === id1
+          }),
+          doc2 = _.find(docs, function (d) {
+            return d._id === id2
+          }),
+          doc3 = _.find(docs, function (d) {
+            return d._id === id3
+          })
+
+        docs.length.should.equal(3)
+
+        assert.deepEqual(doc1, { somedata: 'ok', _id: doc1._id })
+
+        // doc2 or doc3 was modified. Since we sort on _id, and it is random
+        // it can be either of two situations
+        try {
+          assert.deepEqual(doc2, { newDoc: 'yes', _id: doc2._id })
+          assert.deepEqual(doc3, { somedata: 'again', _id: doc3._id })
+        } catch (e) {
+          assert.deepEqual(doc2, {
+            somedata: 'again',
+            plus: 'additional data',
+            _id: doc2._id,
+          })
+          assert.deepEqual(doc3, { newDoc: 'yes', _id: doc3._id })
+        }
+      }
+
+      const doc1 = await collection.insert({ somedata: 'ok' })
+      id1 = doc1._id
+      const doc2 = await collection.insert({
+        somedata: 'again',
+        plus: 'additional data',
       })
-    })
+      id2 = doc2._id
+      const doc3 = await collection.insert({ somedata: 'again' })
+      id3 = doc3._id
 
-    it('Can update multiple documents matching the query', function (done) {
-      let id1, id2, id3
-
-      // Test DB state after update and reload
-      function testPostUpdateState(cb) {
-        d.find({}, function (err, docs) {
-          const doc1 = _.find(docs, function (d) {
-              return d._id === id1
-            }),
-            doc2 = _.find(docs, function (d) {
-              return d._id === id2
-            }),
-            doc3 = _.find(docs, function (d) {
-              return d._id === id3
-            })
-          docs.length.should.equal(3)
-
-          Object.keys(doc1).length.should.equal(2)
-          doc1.somedata.should.equal('ok')
-          doc1._id.should.equal(id1)
-
-          Object.keys(doc2).length.should.equal(2)
-          doc2.newDoc.should.equal('yes')
-          doc2._id.should.equal(id2)
-
-          Object.keys(doc3).length.should.equal(2)
-          doc3.newDoc.should.equal('yes')
-          doc3._id.should.equal(id3)
-
-          return cb()
-        })
-      }
-
-      // Actually launch the tests
-      async.waterfall(
-        [
-          function (cb) {
-            d.insert({ somedata: 'ok' }, function (err, doc1) {
-              id1 = doc1._id
-              d.insert(
-                { somedata: 'again', plus: 'additional data' },
-                function (err, doc2) {
-                  id2 = doc2._id
-                  d.insert({ somedata: 'again' }, function (err, doc3) {
-                    id3 = doc3._id
-                    return cb(err)
-                  })
-                },
-              )
-            })
-          },
-          function (cb) {
-            d.update(
-              { somedata: 'again' },
-              { newDoc: 'yes' },
-              { multi: true },
-              function (err, n) {
-                assert.isNull(err)
-                n.should.equal(2)
-                return cb()
-              },
-            )
-          },
-          async.apply(testPostUpdateState),
-          function (cb) {
-            d.loadDatabase(function (err) {
-              cb(err)
-            })
-          },
-          async.apply(testPostUpdateState),
-        ],
-        done,
+      // Test with query that doesn't match anything
+      const n = await collection.update(
+        { somedata: 'not exists' },
+        { newDoc: 'yes' },
+        { multi: false },
       )
-    })
 
-    it('Can update only one document matching the query', function (done) {
-      let id1, id2, id3
+      n.should.equal(0)
 
-      // Test DB state after update and reload
-      function testPostUpdateState(cb) {
-        d.find({}, function (err, docs) {
-          const doc1 = _.find(docs, function (d) {
-              return d._id === id1
-            }),
-            doc2 = _.find(docs, function (d) {
-              return d._id === id2
-            }),
-            doc3 = _.find(docs, function (d) {
-              return d._id === id3
-            })
-          docs.length.should.equal(3)
+      await testPostUpdateState()
 
-          assert.deepEqual(doc1, { somedata: 'ok', _id: doc1._id })
+      await collection.loadDatabase()
 
-          // doc2 or doc3 was modified. Since we sort on _id, and it is random
-          // it can be either of two situations
-          try {
-            assert.deepEqual(doc2, { newDoc: 'yes', _id: doc2._id })
-            assert.deepEqual(doc3, { somedata: 'again', _id: doc3._id })
-          } catch (e) {
-            assert.deepEqual(doc2, {
-              somedata: 'again',
-              plus: 'additional data',
-              _id: doc2._id,
-            })
-            assert.deepEqual(doc3, { newDoc: 'yes', _id: doc3._id })
-          }
-
-          return cb()
-        })
-      }
-
-      // Actually launch the test
-      async.waterfall(
-        [
-          function (cb) {
-            d.insert({ somedata: 'ok' }, function (err, doc1) {
-              id1 = doc1._id
-              d.insert(
-                { somedata: 'again', plus: 'additional data' },
-                function (err, doc2) {
-                  id2 = doc2._id
-                  d.insert({ somedata: 'again' }, function (err, doc3) {
-                    id3 = doc3._id
-                    return cb(err)
-                  })
-                },
-              )
-            })
-          },
-          function (cb) {
-            // Test with query that doesn't match anything
-            d.update(
-              { somedata: 'again' },
-              { newDoc: 'yes' },
-              { multi: false },
-              function (err, n) {
-                assert.isNull(err)
-                n.should.equal(1)
-                return cb()
-              },
-            )
-          },
-          async.apply(testPostUpdateState),
-          function (cb) {
-            d.loadDatabase(function (err) {
-              return cb(err)
-            })
-          },
-          async.apply(testPostUpdateState), // The persisted state has been updated
-        ],
-        done,
-      )
+      await testPostUpdateState()
     })
 
     describe('Upserts', function () {
-      it('Can perform upserts if needed', function (done) {
-        d.update(
+      it('Can perform upserts if needed', async function () {
+        // test that update without upsert does not insert
+        const nr = await collection.update(
           { impossible: 'db is empty anyway' },
           { newDoc: true },
           {},
-          function (err, nr, upsert) {
-            assert.isNull(err)
-            nr.should.equal(0)
-            assert.isUndefined(upsert)
-
-            d.find({}, function (err, docs) {
-              docs.length.should.equal(0) // Default option for upsert is false
-
-              d.update(
-                { impossible: 'db is empty anyway' },
-                { something: 'created ok' },
-                { upsert: true },
-                function (err, nr, newDoc) {
-                  assert.isNull(err)
-                  nr.should.equal(1)
-                  newDoc.something.should.equal('created ok')
-                  assert.isDefined(newDoc._id)
-
-                  d.find({}, function (err, docs) {
-                    docs.length.should.equal(1) // Default option for upsert is false
-                    docs[0].something.should.equal('created ok')
-
-                    // Modifying the returned upserted document doesn't modify the database
-                    newDoc.newField = true
-                    d.find({}, function (err, docs) {
-                      docs[0].something.should.equal('created ok')
-                      assert.isUndefined(docs[0].newField)
-
-                      done()
-                    })
-                  })
-                },
-              )
-            })
-          },
         )
+
+        nr.should.equal(0)
+        const docs = await collection.find({}).exec()
+        docs.length.should.equal(0)
+
+        // test that upsert inserts
+        const upsert = await collection.update(
+          { impossible: 'db is empty anyway' },
+          { something: 'created ok' },
+          { upsert: true },
+        )
+
+        upsert.acknowledged.should.equal(true)
+
+        const newDoc = await collection.findOne({ something: 'created ok' })
+
+        newDoc.something.should.equal('created ok')
+
+        assert.isDefined(newDoc._id)
+        const docs2 = await collection.find({}).exec()
+        docs2.length.should.equal(1)
+        docs2[0].something.should.equal('created ok')
+
+        // Modifying the returned upserted document doesn't modify the database
+        newDoc.newField = true
+        const docs3 = await collection.find({}).exec()
+        assert.isUndefined(docs3[0].newField)
       })
 
       it('If the update query is a normal object with no modifiers, it is the doc that will be upserted', function (done) {
-        d.update(
+        collection.update(
           { $or: [{ a: 4 }, { a: 5 }] },
           { hello: 'world', bloup: 'blap' },
           { upsert: true },
           function () {
-            d.find({}, function (err, docs) {
+            collection.find({}, function (err, docs) {
               assert.isNull(err)
               docs.length.should.equal(1)
               const doc = docs[0]
@@ -1514,12 +1062,12 @@ describe('Database', function () {
       })
 
       it('If the update query contains modifiers, it is applied to the object resulting from removing all operators from the find query 1', function (done) {
-        d.update(
+        collection.update(
           { $or: [{ a: 4 }, { a: 5 }] },
           { $set: { hello: 'world' }, $inc: { bloup: 3 } },
           { upsert: true },
           function () {
-            d.find({ hello: 'world' }, function (err, docs) {
+            collection.find({ hello: 'world' }, function (err, docs) {
               assert.isNull(err)
               docs.length.should.equal(1)
               const doc = docs[0]
@@ -1533,12 +1081,12 @@ describe('Database', function () {
       })
 
       it('If the update query contains modifiers, it is applied to the object resulting from removing all operators from the find query 2', function (done) {
-        d.update(
+        collection.update(
           { $or: [{ a: 4 }, { a: 5 }], cac: 'rrr' },
           { $set: { hello: 'world' }, $inc: { bloup: 3 } },
           { upsert: true },
           function () {
-            d.find({ hello: 'world' }, function (err, docs) {
+            collection.find({ hello: 'world' }, function (err, docs) {
               assert.isNull(err)
               docs.length.should.equal(1)
               const doc = docs[0]
@@ -1553,7 +1101,7 @@ describe('Database', function () {
       })
 
       it('Performing upsert with badly formatted fields yields a standard error not an exception', function (done) {
-        d.update(
+        collection.update(
           { _id: '1234' },
           { $set: { $$badfield: 5 } },
           { upsert: true },
@@ -1566,29 +1114,29 @@ describe('Database', function () {
     }) // ==== End of 'Upserts' ==== //
 
     it('Cannot perform update if the update query is not either registered-modifiers-only or copy-only, or contain badly formatted fields', function (done) {
-      d.insert({ something: 'yup' }, function () {
-        d.update(
+      collection.insert({ something: 'yup' }, function () {
+        collection.update(
           {},
           { boom: { $badfield: 5 } },
           { multi: false },
           function (err) {
             assert.isDefined(err)
 
-            d.update(
+            collection.update(
               {},
               { boom: { 'bad.field': 5 } },
               { multi: false },
               function (err) {
                 assert.isDefined(err)
 
-                d.update(
+                collection.update(
                   {},
                   { $inc: { test: 5 }, mixed: 'rrr' },
                   { multi: false },
                   function (err) {
                     assert.isDefined(err)
 
-                    d.update(
+                    collection.update(
                       {},
                       { $inexistent: { test: 5 } },
                       { multi: false },
@@ -1610,32 +1158,35 @@ describe('Database', function () {
     it('Can update documents using multiple modifiers', function (done) {
       let id
 
-      d.insert({ something: 'yup', other: 40 }, function (err, newDoc) {
-        id = newDoc._id
+      collection.insert(
+        { something: 'yup', other: 40 },
+        function (err, newDoc) {
+          id = newDoc._id
 
-        d.update(
-          {},
-          { $set: { something: 'changed' }, $inc: { other: 10 } },
-          { multi: false },
-          function (err, nr) {
-            assert.isNull(err)
-            nr.should.equal(1)
+          collection.update(
+            {},
+            { $set: { something: 'changed' }, $inc: { other: 10 } },
+            { multi: false },
+            function (err, nr) {
+              assert.isNull(err)
+              nr.should.equal(1)
 
-            d.findOne({ _id: id }, function (err, doc) {
-              Object.keys(doc).length.should.equal(3)
-              doc._id.should.equal(id)
-              doc.something.should.equal('changed')
-              doc.other.should.equal(50)
+              collection.findOne({ _id: id }, function (err, doc) {
+                Object.keys(doc).length.should.equal(3)
+                doc._id.should.equal(id)
+                doc.something.should.equal('changed')
+                doc.other.should.equal(50)
 
-              done()
-            })
-          },
-        )
-      })
+                done()
+              })
+            },
+          )
+        },
+      )
     })
 
     it('Can upsert a document even with modifiers', function (done) {
-      d.update(
+      collection.update(
         { bloup: 'blap' },
         { $set: { hello: 'world' } },
         { upsert: true },
@@ -1646,7 +1197,7 @@ describe('Database', function () {
           newDoc.hello.should.equal('world')
           assert.isDefined(newDoc._id)
 
-          d.find({}, function (err, docs) {
+          collection.find({}, function (err, docs) {
             docs.length.should.equal(1)
             Object.keys(docs[0]).length.should.equal(3)
             docs[0].hello.should.equal('world')
@@ -1660,30 +1211,40 @@ describe('Database', function () {
     })
 
     it('When using modifiers, the only way to update subdocs is with the dot-notation', function (done) {
-      d.insert({ bloup: { blip: 'blap', other: true } }, function () {
+      collection.insert({ bloup: { blip: 'blap', other: true } }, function () {
         // Correct methos
-        d.update({}, { $set: { 'bloup.blip': 'hello' } }, {}, function () {
-          d.findOne({}, function (err, doc) {
-            doc.bloup.blip.should.equal('hello')
-            doc.bloup.other.should.equal(true)
+        collection.update(
+          {},
+          { $set: { 'bloup.blip': 'hello' } },
+          {},
+          function () {
+            collection.findOne({}, function (err, doc) {
+              doc.bloup.blip.should.equal('hello')
+              doc.bloup.other.should.equal(true)
 
-            // Wrong
-            d.update({}, { $set: { bloup: { blip: 'ola' } } }, {}, function () {
-              d.findOne({}, function (err, doc) {
-                doc.bloup.blip.should.equal('ola')
-                assert.isUndefined(doc.bloup.other) // This information was lost
+              // Wrong
+              collection.update(
+                {},
+                { $set: { bloup: { blip: 'ola' } } },
+                {},
+                function () {
+                  collection.findOne({}, function (err, doc) {
+                    doc.bloup.blip.should.equal('ola')
+                    assert.isUndefined(doc.bloup.other) // This information was lost
 
-                done()
-              })
+                    done()
+                  })
+                },
+              )
             })
-          })
-        })
+          },
+        )
       })
     })
 
     it('Returns an error if the query is not well formed', function (done) {
-      d.insert({ hello: 'world' }, function () {
-        d.update(
+      collection.insert({ hello: 'world' }, function () {
+        collection.update(
           { $or: { hello: 'world' } },
           { a: 1 },
           {},
@@ -1699,12 +1260,12 @@ describe('Database', function () {
     })
 
     it('If an error is thrown by a modifier, the database state is not changed', function (done) {
-      d.insert({ hello: 'world' }, function (err, newDoc) {
-        d.update({}, { $inc: { hello: 4 } }, {}, function (err, nr) {
+      collection.insert({ hello: 'world' }, function (err, newDoc) {
+        collection.update({}, { $inc: { hello: 4 } }, {}, function (err, nr) {
           assert.isDefined(err)
           assert.isUndefined(nr)
 
-          d.find({}, function (err, docs) {
+          collection.find({}, function (err, docs) {
             assert.deepEqual(docs, [{ _id: newDoc._id, hello: 'world' }])
 
             done()
@@ -1714,44 +1275,49 @@ describe('Database', function () {
     })
 
     it('Cant change the _id of a document', function (done) {
-      d.insert({ a: 2 }, function (err, newDoc) {
-        d.update({ a: 2 }, { a: 2, _id: 'nope' }, {}, function (err) {
+      collection.insert({ a: 2 }, function (err, newDoc) {
+        collection.update({ a: 2 }, { a: 2, _id: 'nope' }, {}, function (err) {
           assert.isDefined(err)
 
-          d.find({}, function (err, docs) {
+          collection.find({}, function (err, docs) {
             docs.length.should.equal(1)
             Object.keys(docs[0]).length.should.equal(2)
             docs[0].a.should.equal(2)
             docs[0]._id.should.equal(newDoc._id)
 
-            d.update({ a: 2 }, { $set: { _id: 'nope' } }, {}, function (err) {
-              assert.isDefined(err)
+            collection.update(
+              { a: 2 },
+              { $set: { _id: 'nope' } },
+              {},
+              function (err) {
+                assert.isDefined(err)
 
-              d.find({}, function (err, docs) {
-                docs.length.should.equal(1)
-                Object.keys(docs[0]).length.should.equal(2)
-                docs[0].a.should.equal(2)
-                docs[0]._id.should.equal(newDoc._id)
+                collection.find({}, function (err, docs) {
+                  docs.length.should.equal(1)
+                  Object.keys(docs[0]).length.should.equal(2)
+                  docs[0].a.should.equal(2)
+                  docs[0]._id.should.equal(newDoc._id)
 
-                done()
-              })
-            })
+                  done()
+                })
+              },
+            )
           })
         })
       })
     })
 
     it('Non-multi updates are persistent', function (done) {
-      d.insert({ a: 1, hello: 'world' }, function (err, doc1) {
-        d.insert({ a: 2, hello: 'earth' }, function (err, doc2) {
-          d.update(
+      collection.insert({ a: 1, hello: 'world' }, function (err, doc1) {
+        collection.insert({ a: 2, hello: 'earth' }, function (err, doc2) {
+          collection.update(
             { a: 2 },
             { $set: { hello: 'changed' } },
             {},
             function (err) {
               assert.isNull(err)
 
-              d.find({}, function (err, docs) {
+              collection.find({}, function (err, docs) {
                 docs.sort(function (a, b) {
                   return a.a - b.a
                 })
@@ -1768,10 +1334,10 @@ describe('Database', function () {
                 }).should.equal(true)
 
                 // Even after a reload the database state hasn't changed
-                d.loadDatabase(function (err) {
+                collection.loadDatabase(function (err) {
                   assert.isNull(err)
 
-                  d.find({}, function (err, docs) {
+                  collection.find({}, function (err, docs) {
                     docs.sort(function (a, b) {
                       return a.a - b.a
                     })
@@ -1798,17 +1364,17 @@ describe('Database', function () {
     })
 
     it('Multi updates are persistent', function (done) {
-      d.insert({ a: 1, hello: 'world' }, function (err, doc1) {
-        d.insert({ a: 2, hello: 'earth' }, function (err, doc2) {
-          d.insert({ a: 5, hello: 'pluton' }, function (err, doc3) {
-            d.update(
+      collection.insert({ a: 1, hello: 'world' }, function (err, doc1) {
+        collection.insert({ a: 2, hello: 'earth' }, function (err, doc2) {
+          collection.insert({ a: 5, hello: 'pluton' }, function (err, doc3) {
+            collection.update(
               { a: { $in: [1, 2] } },
               { $set: { hello: 'changed' } },
               { multi: true },
               function (err) {
                 assert.isNull(err)
 
-                d.find({}, function (err, docs) {
+                collection.find({}, function (err, docs) {
                   docs.sort(function (a, b) {
                     return a.a - b.a
                   })
@@ -1830,10 +1396,10 @@ describe('Database', function () {
                   }).should.equal(true)
 
                   // Even after a reload the database state hasn't changed
-                  d.loadDatabase(function (err) {
+                  collection.loadDatabase(function (err) {
                     assert.isNull(err)
 
-                    d.find({}, function (err, docs) {
+                    collection.find({}, function (err, docs) {
                       docs.sort(function (a, b) {
                         return a.a - b.a
                       })
@@ -1866,41 +1432,45 @@ describe('Database', function () {
     })
 
     it('Can update without the options arg (will use defaults then)', function (done) {
-      d.insert({ a: 1, hello: 'world' }, function (err, doc1) {
-        d.insert({ a: 2, hello: 'earth' }, function (err, doc2) {
-          d.insert({ a: 5, hello: 'pluton' }, function (err, doc3) {
-            d.update({ a: 2 }, { $inc: { a: 10 } }, function (err, nr) {
-              assert.isNull(err)
-              nr.should.equal(1)
-              d.find({}, function (err, docs) {
-                const d1 = _.find(docs, function (doc) {
-                    return doc._id === doc1._id
-                  }),
-                  d2 = _.find(docs, function (doc) {
-                    return doc._id === doc2._id
-                  }),
-                  d3 = _.find(docs, function (doc) {
-                    return doc._id === doc3._id
-                  })
-                d1.a.should.equal(1)
-                d2.a.should.equal(12)
-                d3.a.should.equal(5)
+      collection.insert({ a: 1, hello: 'world' }, function (err, doc1) {
+        collection.insert({ a: 2, hello: 'earth' }, function (err, doc2) {
+          collection.insert({ a: 5, hello: 'pluton' }, function (err, doc3) {
+            collection.update(
+              { a: 2 },
+              { $inc: { a: 10 } },
+              function (err, nr) {
+                assert.isNull(err)
+                nr.should.equal(1)
+                collection.find({}, function (err, docs) {
+                  const d1 = _.find(docs, function (doc) {
+                      return doc._id === doc1._id
+                    }),
+                    d2 = _.find(docs, function (doc) {
+                      return doc._id === doc2._id
+                    }),
+                    d3 = _.find(docs, function (doc) {
+                      return doc._id === doc3._id
+                    })
+                  d1.a.should.equal(1)
+                  d2.a.should.equal(12)
+                  d3.a.should.equal(5)
 
-                done()
-              })
-            })
+                  done()
+                })
+              },
+            )
           })
         })
       })
     })
 
     it('If a multi update fails on one document, previous updates should be rolled back', function (done) {
-      d.ensureIndex({ fieldName: 'a' })
-      d.insert({ a: 4 }, function (err, doc1) {
-        d.insert({ a: 5 }, function (err, doc2) {
-          d.insert({ a: 'abc' }, function (err, doc3) {
+      collection.ensureIndex({ fieldName: 'a' })
+      collection.insert({ a: 4 }, function (err, doc1) {
+        collection.insert({ a: 5 }, function (err, doc2) {
+          collection.insert({ a: 'abc' }, function (err, doc3) {
             // With this query, candidates are always returned in the order 4, 5, 'abc' so it's always the last one which fails
-            d.update(
+            collection.update(
               { a: { $in: [4, 5, 'abc'] } },
               { $inc: { a: 10 } },
               { multi: true },
@@ -1908,7 +1478,7 @@ describe('Database', function () {
                 assert.isDefined(err)
 
                 // No index modified
-                _.each(d.indexes, function (index) {
+                _.each(collection.indexes, function (index) {
                   const docs = index.getAll(),
                     d1 = _.find(docs, function (doc) {
                       return doc._id === doc1._id
@@ -1934,11 +1504,11 @@ describe('Database', function () {
     })
 
     it('If an index constraint is violated by an update, all changes should be rolled back', function (done) {
-      d.ensureIndex({ fieldName: 'a', unique: true })
-      d.insert({ a: 4 }, function (err, doc1) {
-        d.insert({ a: 5 }, function (err, doc2) {
+      collection.ensureIndex({ fieldName: 'a', unique: true })
+      collection.insert({ a: 4 }, function (err, doc1) {
+        collection.insert({ a: 5 }, function (err, doc2) {
           // With this query, candidates are always returned in the order 4, 5, 'abc' so it's always the last one which fails
-          d.update(
+          collection.update(
             { a: { $in: [4, 5, 'abc'] } },
             { $set: { a: 10 } },
             { multi: true },
@@ -1946,7 +1516,7 @@ describe('Database', function () {
               assert.isDefined(err)
 
               // Check that no index was modified
-              _.each(d.indexes, function (index) {
+              _.each(collection.indexes, function (index) {
                 const docs = index.getAll(),
                   d1 = _.find(docs, function (doc) {
                     return doc._id === doc1._id
@@ -1966,10 +1536,10 @@ describe('Database', function () {
     })
 
     it('If options.returnUpdatedDocs is true, return all matched docs', function (done) {
-      d.insert([{ a: 4 }, { a: 5 }, { a: 6 }], function (err, docs) {
+      collection.insert([{ a: 4 }, { a: 5 }, { a: 6 }], function (err, docs) {
         docs.length.should.equal(3)
 
-        d.update(
+        collection.update(
           { a: 7 },
           { $set: { u: 1 } },
           { multi: true, returnUpdatedDocs: true },
@@ -1977,7 +1547,7 @@ describe('Database', function () {
             num.should.equal(0)
             updatedDocs.length.should.equal(0)
 
-            d.update(
+            collection.update(
               { a: 5 },
               { $set: { u: 2 } },
               { multi: true, returnUpdatedDocs: true },
@@ -1987,7 +1557,7 @@ describe('Database', function () {
                 updatedDocs[0].a.should.equal(5)
                 updatedDocs[0].u.should.equal(2)
 
-                d.update(
+                collection.update(
                   { a: { $in: [4, 6] } },
                   { $set: { u: 3 } },
                   { multi: true, returnUpdatedDocs: true },
@@ -2044,11 +1614,11 @@ describe('Database', function () {
 
     describe('Callback signature', function () {
       it('Regular update, multi false', function (done) {
-        d.insert({ a: 1 })
-        d.insert({ a: 2 })
+        collection.insert({ a: 1 })
+        collection.insert({ a: 2 })
 
         // returnUpdatedDocs set to false
-        d.update(
+        collection.update(
           { a: 1 },
           { $set: { b: 20 } },
           {},
@@ -2059,7 +1629,7 @@ describe('Database', function () {
             assert.isUndefined(upsert)
 
             // returnUpdatedDocs set to true
-            d.update(
+            collection.update(
               { a: 1 },
               { $set: { b: 21 } },
               { returnUpdatedDocs: true },
@@ -2078,11 +1648,11 @@ describe('Database', function () {
       })
 
       it('Regular update, multi true', function (done) {
-        d.insert({ a: 1 })
-        d.insert({ a: 2 })
+        collection.insert({ a: 1 })
+        collection.insert({ a: 2 })
 
         // returnUpdatedDocs set to false
-        d.update(
+        collection.update(
           {},
           { $set: { b: 20 } },
           { multi: true },
@@ -2093,7 +1663,7 @@ describe('Database', function () {
             assert.isUndefined(upsert)
 
             // returnUpdatedDocs set to true
-            d.update(
+            collection.update(
               {},
               { $set: { b: 21 } },
               { multi: true, returnUpdatedDocs: true },
@@ -2111,11 +1681,11 @@ describe('Database', function () {
       })
 
       it('Upsert', function (done) {
-        d.insert({ a: 1 })
-        d.insert({ a: 2 })
+        collection.insert({ a: 1 })
+        collection.insert({ a: 2 })
 
         // Upsert flag not set
-        d.update(
+        collection.update(
           { a: 3 },
           { $set: { b: 20 } },
           {},
@@ -2126,7 +1696,7 @@ describe('Database', function () {
             assert.isUndefined(upsert)
 
             // Upsert flag set
-            d.update(
+            collection.update(
               { a: 3 },
               { $set: { b: 21 } },
               { upsert: true },
@@ -2137,7 +1707,7 @@ describe('Database', function () {
                 affectedDocuments.b.should.equal(21)
                 upsert.should.equal(true)
 
-                d.find({}, function (err, docs) {
+                collection.find({}, function (err, docs) {
                   docs.length.should.equal(3)
                   done()
                 })
@@ -2155,7 +1725,7 @@ describe('Database', function () {
 
       // Test DB status
       function testPostUpdateState(cb) {
-        d.find({}, function (err, docs) {
+        collection.find({}, function (err, docs) {
           docs.length.should.equal(1)
 
           Object.keys(docs[0]).length.should.equal(2)
@@ -2170,31 +1740,38 @@ describe('Database', function () {
       async.waterfall(
         [
           function (cb) {
-            d.insert({ somedata: 'ok' }, function (err, doc1) {
+            collection.insert({ somedata: 'ok' }, function (err, doc1) {
               id1 = doc1._id
-              d.insert(
+              collection.insert(
                 { somedata: 'again', plus: 'additional data' },
                 function (err, doc2) {
                   id2 = doc2._id
-                  d.insert({ somedata: 'again' }, function (err, doc3) {
-                    id3 = doc3._id
-                    return cb(err)
-                  })
+                  collection.insert(
+                    { somedata: 'again' },
+                    function (err, doc3) {
+                      id3 = doc3._id
+                      return cb(err)
+                    },
+                  )
                 },
               )
             })
           },
           function (cb) {
             // Test with query that doesn't match anything
-            d.remove({ somedata: 'again' }, { multi: true }, function (err, n) {
-              assert.isNull(err)
-              n.should.equal(2)
-              return cb()
-            })
+            collection.remove(
+              { somedata: 'again' },
+              { multi: true },
+              function (err, n) {
+                assert.isNull(err)
+                n.should.equal(2)
+                return cb()
+              },
+            )
           },
           async.apply(testPostUpdateState),
           function (cb) {
-            d.loadDatabase(function (err) {
+            collection.loadDatabase(function (err) {
               return cb(err)
             })
           },
@@ -2206,10 +1783,10 @@ describe('Database', function () {
 
     // This tests concurrency issues
     it('Remove can be called multiple times in parallel and everything that needs to be removed will be', function (done) {
-      d.insert({ planet: 'Earth' }, function () {
-        d.insert({ planet: 'Mars' }, function () {
-          d.insert({ planet: 'Saturn' }, function () {
-            d.find({}, function (err, docs) {
+      collection.insert({ planet: 'Earth' }, function () {
+        collection.insert({ planet: 'Mars' }, function () {
+          collection.insert({ planet: 'Saturn' }, function () {
+            collection.find({}, function (err, docs) {
               docs.length.should.equal(3)
 
               // Remove two docs simultaneously
@@ -2217,12 +1794,12 @@ describe('Database', function () {
               async.each(
                 toRemove,
                 function (planet, cb) {
-                  d.remove({ planet: planet }, function (err) {
+                  collection.remove({ planet: planet }, function (err) {
                     return cb(err)
                   })
                 },
                 function () {
-                  d.find({}, function (err, docs) {
+                  collection.find({}, function (err, docs) {
                     docs.length.should.equal(1)
 
                     done()
@@ -2236,25 +1813,29 @@ describe('Database', function () {
     })
 
     it('Returns an error if the query is not well formed', function (done) {
-      d.insert({ hello: 'world' }, function () {
-        d.remove({ $or: { hello: 'world' } }, {}, function (err, nr, upsert) {
-          assert.isDefined(err)
-          assert.isUndefined(nr)
-          assert.isUndefined(upsert)
+      collection.insert({ hello: 'world' }, function () {
+        collection.remove(
+          { $or: { hello: 'world' } },
+          {},
+          function (err, nr, upsert) {
+            assert.isDefined(err)
+            assert.isUndefined(nr)
+            assert.isUndefined(upsert)
 
-          done()
-        })
+            done()
+          },
+        )
       })
     })
 
     it('Non-multi removes are persistent', function (done) {
-      d.insert({ a: 1, hello: 'world' }, function (err, doc1) {
-        d.insert({ a: 2, hello: 'earth' }, function () {
-          d.insert({ a: 3, hello: 'moto' }, function (err, doc3) {
-            d.remove({ a: 2 }, {}, function (err) {
+      collection.insert({ a: 1, hello: 'world' }, function (err, doc1) {
+        collection.insert({ a: 2, hello: 'earth' }, function () {
+          collection.insert({ a: 3, hello: 'moto' }, function (err, doc3) {
+            collection.remove({ a: 2 }, {}, function (err) {
               assert.isNull(err)
 
-              d.find({}, function (err, docs) {
+              collection.find({}, function (err, docs) {
                 docs.sort(function (a, b) {
                   return a.a - b.a
                 })
@@ -2271,10 +1852,10 @@ describe('Database', function () {
                 }).should.equal(true)
 
                 // Even after a reload the database state hasn't changed
-                d.loadDatabase(function (err) {
+                collection.loadDatabase(function (err) {
                   assert.isNull(err)
 
-                  d.find({}, function (err, docs) {
+                  collection.find({}, function (err, docs) {
                     docs.sort(function (a, b) {
                       return a.a - b.a
                     })
@@ -2301,50 +1882,54 @@ describe('Database', function () {
     })
 
     it('Multi removes are persistent', function (done) {
-      d.insert({ a: 1, hello: 'world' }, function () {
-        d.insert({ a: 2, hello: 'earth' }, function (err, doc2) {
-          d.insert({ a: 3, hello: 'moto' }, function () {
-            d.remove({ a: { $in: [1, 3] } }, { multi: true }, function (err) {
-              assert.isNull(err)
+      collection.insert({ a: 1, hello: 'world' }, function () {
+        collection.insert({ a: 2, hello: 'earth' }, function (err, doc2) {
+          collection.insert({ a: 3, hello: 'moto' }, function () {
+            collection.remove(
+              { a: { $in: [1, 3] } },
+              { multi: true },
+              function (err) {
+                assert.isNull(err)
 
-              d.find({}, function (err, docs) {
-                docs.length.should.equal(1)
-                _.isEqual(docs[0], {
-                  _id: doc2._id,
-                  a: 2,
-                  hello: 'earth',
-                }).should.equal(true)
+                collection.find({}, function (err, docs) {
+                  docs.length.should.equal(1)
+                  _.isEqual(docs[0], {
+                    _id: doc2._id,
+                    a: 2,
+                    hello: 'earth',
+                  }).should.equal(true)
 
-                // Even after a reload the database state hasn't changed
-                d.loadDatabase(function (err) {
-                  assert.isNull(err)
+                  // Even after a reload the database state hasn't changed
+                  collection.loadDatabase(function (err) {
+                    assert.isNull(err)
 
-                  d.find({}, function (err, docs) {
-                    docs.length.should.equal(1)
-                    _.isEqual(docs[0], {
-                      _id: doc2._id,
-                      a: 2,
-                      hello: 'earth',
-                    }).should.equal(true)
+                    collection.find({}, function (err, docs) {
+                      docs.length.should.equal(1)
+                      _.isEqual(docs[0], {
+                        _id: doc2._id,
+                        a: 2,
+                        hello: 'earth',
+                      }).should.equal(true)
 
-                    done()
+                      done()
+                    })
                   })
                 })
-              })
-            })
+              },
+            )
           })
         })
       })
     })
 
     it('Can remove without the options arg (will use defaults then)', function (done) {
-      d.insert({ a: 1, hello: 'world' }, function (err, doc1) {
-        d.insert({ a: 2, hello: 'earth' }, function (err, doc2) {
-          d.insert({ a: 5, hello: 'pluton' }, function (err, doc3) {
-            d.remove({ a: 2 }, function (err, nr) {
+      collection.insert({ a: 1, hello: 'world' }, function (err, doc1) {
+        collection.insert({ a: 2, hello: 'earth' }, function (err, doc2) {
+          collection.insert({ a: 5, hello: 'pluton' }, function (err, doc3) {
+            collection.remove({ a: 2 }, function (err, nr) {
               assert.isNull(err)
               nr.should.equal(1)
-              d.find({}, function (err, docs) {
+              collection.find({}, function (err, docs) {
                 const d1 = _.find(docs, function (doc) {
                     return doc._id === doc1._id
                   }),
@@ -2377,22 +1962,28 @@ describe('Database', function () {
             serialize({ _id: 'bbb', z: '2', hello: 'world' }) +
             '\n' +
             serialize({ _id: 'ccc', z: '3', nested: { today: now } })
-        d.getAllData().length.should.equal(0)
+        collection.getAllData().length.should.equal(0)
 
         fs.writeFile(testDb, rawData, 'utf8', function () {
-          d.loadDatabase(function () {
-            d.getAllData().length.should.equal(3)
+          collection.loadDatabase(function () {
+            collection.getAllData().length.should.equal(3)
 
-            assert.deepEqual(Object.keys(d.indexes), ['_id'])
+            assert.deepEqual(Object.keys(collection.indexes), ['_id'])
 
-            d.ensureIndex({ fieldName: 'z' })
-            d.indexes.z.fieldName.should.equal('z')
-            d.indexes.z.unique.should.equal(false)
-            d.indexes.z.sparse.should.equal(false)
-            d.indexes.z.tree.getNumberOfKeys().should.equal(3)
-            d.indexes.z.tree.search('1')[0].should.equal(d.getAllData()[0])
-            d.indexes.z.tree.search('2')[0].should.equal(d.getAllData()[1])
-            d.indexes.z.tree.search('3')[0].should.equal(d.getAllData()[2])
+            collection.ensureIndex({ fieldName: 'z' })
+            collection.indexes.z.fieldName.should.equal('z')
+            collection.indexes.z.unique.should.equal(false)
+            collection.indexes.z.sparse.should.equal(false)
+            collection.indexes.z.tree.getNumberOfKeys().should.equal(3)
+            collection.indexes.z.tree
+              .search('1')[0]
+              .should.equal(collection.getAllData()[0])
+            collection.indexes.z.tree
+              .search('2')[0]
+              .should.equal(collection.getAllData()[1])
+            collection.indexes.z.tree
+              .search('3')[0]
+              .should.equal(collection.getAllData()[2])
 
             done()
           })
@@ -2400,30 +1991,30 @@ describe('Database', function () {
       })
 
       it('ensureIndex can be called twice on the same field, the second call will ahve no effect', function (done) {
-        Object.keys(d.indexes).length.should.equal(1)
-        Object.keys(d.indexes)[0].should.equal('_id')
+        Object.keys(collection.indexes).length.should.equal(1)
+        Object.keys(collection.indexes)[0].should.equal('_id')
 
-        d.insert({ planet: 'Earth' }, function () {
-          d.insert({ planet: 'Mars' }, function () {
-            d.find({}, function (err, docs) {
+        collection.insert({ planet: 'Earth' }, function () {
+          collection.insert({ planet: 'Mars' }, function () {
+            collection.find({}, function (err, docs) {
               docs.length.should.equal(2)
 
-              d.ensureIndex({ fieldName: 'planet' }, function (err) {
+              collection.ensureIndex({ fieldName: 'planet' }, function (err) {
                 assert.isNull(err)
-                Object.keys(d.indexes).length.should.equal(2)
-                Object.keys(d.indexes)[0].should.equal('_id')
-                Object.keys(d.indexes)[1].should.equal('planet')
+                Object.keys(collection.indexes).length.should.equal(2)
+                Object.keys(collection.indexes)[0].should.equal('_id')
+                Object.keys(collection.indexes)[1].should.equal('planet')
 
-                d.indexes.planet.getAll().length.should.equal(2)
+                collection.indexes.planet.getAll().length.should.equal(2)
 
                 // This second call has no effect, documents don't get inserted twice in the index
-                d.ensureIndex({ fieldName: 'planet' }, function (err) {
+                collection.ensureIndex({ fieldName: 'planet' }, function (err) {
                   assert.isNull(err)
-                  Object.keys(d.indexes).length.should.equal(2)
-                  Object.keys(d.indexes)[0].should.equal('_id')
-                  Object.keys(d.indexes)[1].should.equal('planet')
+                  Object.keys(collection.indexes).length.should.equal(2)
+                  Object.keys(collection.indexes)[0].should.equal('_id')
+                  Object.keys(collection.indexes)[1].should.equal('planet')
 
-                  d.indexes.planet.getAll().length.should.equal(2)
+                  collection.indexes.planet.getAll().length.should.equal(2)
 
                   done()
                 })
@@ -2438,78 +2029,91 @@ describe('Database', function () {
           serialize({ _id: 'aaa', z: '1', a: 2, ages: [1, 5, 12] }) +
           '\n' +
           serialize({ _id: 'bbb', z: '2', hello: 'world' })
-        d.getAllData().length.should.equal(0)
+        collection.getAllData().length.should.equal(0)
 
         fs.writeFile(testDb, rawData, 'utf8', function () {
-          d.loadDatabase(function () {
-            d.getAllData().length.should.equal(2)
+          collection.loadDatabase(function () {
+            collection.getAllData().length.should.equal(2)
 
-            assert.deepEqual(Object.keys(d.indexes), ['_id'])
+            assert.deepEqual(Object.keys(collection.indexes), ['_id'])
 
-            d.insert({ z: '12', yes: 'yes' }, function (err, newDoc1) {
-              d.insert({ z: '14', nope: 'nope' }, function (err, newDoc2) {
-                d.remove({ z: '2' }, {}, function () {
-                  d.update(
-                    { z: '1' },
-                    { $set: { yes: 'yep' } },
-                    {},
-                    function () {
-                      assert.deepEqual(Object.keys(d.indexes), ['_id'])
+            collection.insert({ z: '12', yes: 'yes' }, function (err, newDoc1) {
+              collection.insert(
+                { z: '14', nope: 'nope' },
+                function (err, newDoc2) {
+                  collection.remove({ z: '2' }, {}, function () {
+                    collection.update(
+                      { z: '1' },
+                      { $set: { yes: 'yep' } },
+                      {},
+                      function () {
+                        assert.deepEqual(Object.keys(collection.indexes), [
+                          '_id',
+                        ])
 
-                      d.ensureIndex({ fieldName: 'z' })
-                      d.indexes.z.fieldName.should.equal('z')
-                      d.indexes.z.unique.should.equal(false)
-                      d.indexes.z.sparse.should.equal(false)
-                      d.indexes.z.tree.getNumberOfKeys().should.equal(3)
+                        collection.ensureIndex({ fieldName: 'z' })
+                        collection.indexes.z.fieldName.should.equal('z')
+                        collection.indexes.z.unique.should.equal(false)
+                        collection.indexes.z.sparse.should.equal(false)
+                        collection.indexes.z.tree
+                          .getNumberOfKeys()
+                          .should.equal(3)
 
-                      // The pointers in the _id and z indexes are the same
-                      d.indexes.z.tree
-                        .search('1')[0]
-                        .should.equal(d.indexes._id.getMatching('aaa')[0])
-                      d.indexes.z.tree
-                        .search('12')[0]
-                        .should.equal(d.indexes._id.getMatching(newDoc1._id)[0])
-                      d.indexes.z.tree
-                        .search('14')[0]
-                        .should.equal(d.indexes._id.getMatching(newDoc2._id)[0])
+                        // The pointers in the _id and z indexes are the same
+                        collection.indexes.z.tree
+                          .search('1')[0]
+                          .should.equal(
+                            collection.indexes._id.getMatching('aaa')[0],
+                          )
+                        collection.indexes.z.tree
+                          .search('12')[0]
+                          .should.equal(
+                            collection.indexes._id.getMatching(newDoc1._id)[0],
+                          )
+                        collection.indexes.z.tree
+                          .search('14')[0]
+                          .should.equal(
+                            collection.indexes._id.getMatching(newDoc2._id)[0],
+                          )
 
-                      // The data in the z index is correct
-                      d.find({}, function (err, docs) {
-                        const doc0 = _.find(docs, function (doc) {
-                            return doc._id === 'aaa'
-                          }),
-                          doc1 = _.find(docs, function (doc) {
-                            return doc._id === newDoc1._id
-                          }),
-                          doc2 = _.find(docs, function (doc) {
-                            return doc._id === newDoc2._id
+                        // The data in the z index is correct
+                        collection.find({}, function (err, docs) {
+                          const doc0 = _.find(docs, function (doc) {
+                              return doc._id === 'aaa'
+                            }),
+                            doc1 = _.find(docs, function (doc) {
+                              return doc._id === newDoc1._id
+                            }),
+                            doc2 = _.find(docs, function (doc) {
+                              return doc._id === newDoc2._id
+                            })
+                          docs.length.should.equal(3)
+
+                          assert.deepEqual(doc0, {
+                            _id: 'aaa',
+                            z: '1',
+                            a: 2,
+                            ages: [1, 5, 12],
+                            yes: 'yep',
                           })
-                        docs.length.should.equal(3)
+                          assert.deepEqual(doc1, {
+                            _id: newDoc1._id,
+                            z: '12',
+                            yes: 'yes',
+                          })
+                          assert.deepEqual(doc2, {
+                            _id: newDoc2._id,
+                            z: '14',
+                            nope: 'nope',
+                          })
 
-                        assert.deepEqual(doc0, {
-                          _id: 'aaa',
-                          z: '1',
-                          a: 2,
-                          ages: [1, 5, 12],
-                          yes: 'yep',
+                          done()
                         })
-                        assert.deepEqual(doc1, {
-                          _id: newDoc1._id,
-                          z: '12',
-                          yes: 'yes',
-                        })
-                        assert.deepEqual(doc2, {
-                          _id: newDoc2._id,
-                          z: '14',
-                          nope: 'nope',
-                        })
-
-                        done()
-                      })
-                    },
-                  )
-                })
-              })
+                      },
+                    )
+                  })
+                },
+              )
             })
           })
         })
@@ -2523,31 +2127,31 @@ describe('Database', function () {
             serialize({ _id: 'bbb', z: '2', hello: 'world' }) +
             '\n' +
             serialize({ _id: 'ccc', z: '3', nested: { today: now } })
-        d.getAllData().length.should.equal(0)
+        collection.getAllData().length.should.equal(0)
 
-        d.ensureIndex({ fieldName: 'z' })
-        d.indexes.z.fieldName.should.equal('z')
-        d.indexes.z.unique.should.equal(false)
-        d.indexes.z.sparse.should.equal(false)
-        d.indexes.z.tree.getNumberOfKeys().should.equal(0)
+        collection.ensureIndex({ fieldName: 'z' })
+        collection.indexes.z.fieldName.should.equal('z')
+        collection.indexes.z.unique.should.equal(false)
+        collection.indexes.z.sparse.should.equal(false)
+        collection.indexes.z.tree.getNumberOfKeys().should.equal(0)
 
         fs.writeFile(testDb, rawData, 'utf8', function () {
-          d.loadDatabase(function () {
-            const doc1 = _.find(d.getAllData(), function (doc) {
+          collection.loadDatabase(function () {
+            const doc1 = _.find(collection.getAllData(), function (doc) {
                 return doc.z === '1'
               }),
-              doc2 = _.find(d.getAllData(), function (doc) {
+              doc2 = _.find(collection.getAllData(), function (doc) {
                 return doc.z === '2'
               }),
-              doc3 = _.find(d.getAllData(), function (doc) {
+              doc3 = _.find(collection.getAllData(), function (doc) {
                 return doc.z === '3'
               })
-            d.getAllData().length.should.equal(3)
+            collection.getAllData().length.should.equal(3)
 
-            d.indexes.z.tree.getNumberOfKeys().should.equal(3)
-            d.indexes.z.tree.search('1')[0].should.equal(doc1)
-            d.indexes.z.tree.search('2')[0].should.equal(doc2)
-            d.indexes.z.tree.search('3')[0].should.equal(doc3)
+            collection.indexes.z.tree.getNumberOfKeys().should.equal(3)
+            collection.indexes.z.tree.search('1')[0].should.equal(doc1)
+            collection.indexes.z.tree.search('2')[0].should.equal(doc2)
+            collection.indexes.z.tree.search('3')[0].should.equal(doc3)
 
             done()
           })
@@ -2562,35 +2166,37 @@ describe('Database', function () {
             serialize({ _id: 'bbb', z: '2', a: 'world' }) +
             '\n' +
             serialize({ _id: 'ccc', z: '3', a: { today: now } })
-        d.getAllData().length.should.equal(0)
-        d.ensureIndex({ fieldName: 'z' }, function () {
-          d.ensureIndex({ fieldName: 'a' }, function () {
-            d.indexes.a.tree.getNumberOfKeys().should.equal(0)
-            d.indexes.z.tree.getNumberOfKeys().should.equal(0)
+        collection.getAllData().length.should.equal(0)
+        collection.ensureIndex({ fieldName: 'z' }, function () {
+          collection.ensureIndex({ fieldName: 'a' }, function () {
+            collection.indexes.a.tree.getNumberOfKeys().should.equal(0)
+            collection.indexes.z.tree.getNumberOfKeys().should.equal(0)
 
             fs.writeFile(testDb, rawData, 'utf8', function () {
-              d.loadDatabase(function (err) {
-                const doc1 = _.find(d.getAllData(), function (doc) {
+              collection.loadDatabase(function (err) {
+                const doc1 = _.find(collection.getAllData(), function (doc) {
                     return doc.z === '1'
                   }),
-                  doc2 = _.find(d.getAllData(), function (doc) {
+                  doc2 = _.find(collection.getAllData(), function (doc) {
                     return doc.z === '2'
                   }),
-                  doc3 = _.find(d.getAllData(), function (doc) {
+                  doc3 = _.find(collection.getAllData(), function (doc) {
                     return doc.z === '3'
                   })
                 assert.isNull(err)
-                d.getAllData().length.should.equal(3)
+                collection.getAllData().length.should.equal(3)
 
-                d.indexes.z.tree.getNumberOfKeys().should.equal(3)
-                d.indexes.z.tree.search('1')[0].should.equal(doc1)
-                d.indexes.z.tree.search('2')[0].should.equal(doc2)
-                d.indexes.z.tree.search('3')[0].should.equal(doc3)
+                collection.indexes.z.tree.getNumberOfKeys().should.equal(3)
+                collection.indexes.z.tree.search('1')[0].should.equal(doc1)
+                collection.indexes.z.tree.search('2')[0].should.equal(doc2)
+                collection.indexes.z.tree.search('3')[0].should.equal(doc3)
 
-                d.indexes.a.tree.getNumberOfKeys().should.equal(3)
-                d.indexes.a.tree.search(2)[0].should.equal(doc1)
-                d.indexes.a.tree.search('world')[0].should.equal(doc2)
-                d.indexes.a.tree.search({ today: now })[0].should.equal(doc3)
+                collection.indexes.a.tree.getNumberOfKeys().should.equal(3)
+                collection.indexes.a.tree.search(2)[0].should.equal(doc1)
+                collection.indexes.a.tree.search('world')[0].should.equal(doc2)
+                collection.indexes.a.tree
+                  .search({ today: now })[0]
+                  .should.equal(doc3)
 
                 done()
               })
@@ -2607,17 +2213,17 @@ describe('Database', function () {
             serialize({ _id: 'bbb', z: '2', a: 'world' }) +
             '\n' +
             serialize({ _id: 'ccc', z: '1', a: { today: now } })
-        d.getAllData().length.should.equal(0)
+        collection.getAllData().length.should.equal(0)
 
-        d.ensureIndex({ fieldName: 'z', unique: true })
-        d.indexes.z.tree.getNumberOfKeys().should.equal(0)
+        collection.ensureIndex({ fieldName: 'z', unique: true })
+        collection.indexes.z.tree.getNumberOfKeys().should.equal(0)
 
         fs.writeFile(testDb, rawData, 'utf8', function () {
-          d.loadDatabase(function (err) {
+          collection.loadDatabase(function (err) {
             err.errorType.should.equal('uniqueViolated')
             err.key.should.equal('1')
-            d.getAllData().length.should.equal(0)
-            d.indexes.z.tree.getNumberOfKeys().should.equal(0)
+            collection.getAllData().length.should.equal(0)
+            collection.indexes.z.tree.getNumberOfKeys().should.equal(0)
 
             done()
           })
@@ -2625,18 +2231,24 @@ describe('Database', function () {
       })
 
       it('If a unique constraint is not respected, ensureIndex will return an error and not create an index', function (done) {
-        d.insert({ a: 1, b: 4 }, function () {
-          d.insert({ a: 2, b: 45 }, function () {
-            d.insert({ a: 1, b: 3 }, function () {
-              d.ensureIndex({ fieldName: 'b' }, function (err) {
+        collection.insert({ a: 1, b: 4 }, function () {
+          collection.insert({ a: 2, b: 45 }, function () {
+            collection.insert({ a: 1, b: 3 }, function () {
+              collection.ensureIndex({ fieldName: 'b' }, function (err) {
                 assert.isNull(err)
 
-                d.ensureIndex({ fieldName: 'a', unique: true }, function (err) {
-                  err.errorType.should.equal('uniqueViolated')
-                  assert.deepEqual(Object.keys(d.indexes), ['_id', 'b'])
+                collection.ensureIndex(
+                  { fieldName: 'a', unique: true },
+                  function (err) {
+                    err.errorType.should.equal('uniqueViolated')
+                    assert.deepEqual(Object.keys(collection.indexes), [
+                      '_id',
+                      'b',
+                    ])
 
-                  done()
-                })
+                    done()
+                  },
+                )
               })
             })
           })
@@ -2644,16 +2256,16 @@ describe('Database', function () {
       })
 
       it('Can remove an index', function (done) {
-        d.ensureIndex({ fieldName: 'e' }, function (err) {
+        collection.ensureIndex({ fieldName: 'e' }, function (err) {
           assert.isNull(err)
 
-          Object.keys(d.indexes).length.should.equal(2)
-          assert.isNotNull(d.indexes.e)
+          Object.keys(collection.indexes).length.should.equal(2)
+          assert.isNotNull(collection.indexes.e)
 
-          d.removeIndex('e', function (err) {
+          collection.removeIndex('e', function (err) {
             assert.isNull(err)
-            Object.keys(d.indexes).length.should.equal(1)
-            assert.isUndefined(d.indexes.e)
+            Object.keys(collection.indexes).length.should.equal(1)
+            assert.isUndefined(collection.indexes.e)
 
             done()
           })
@@ -2663,16 +2275,16 @@ describe('Database', function () {
 
     describe('Indexing newly inserted documents', function () {
       it('Newly inserted documents are indexed', function (done) {
-        d.ensureIndex({ fieldName: 'z' })
-        d.indexes.z.tree.getNumberOfKeys().should.equal(0)
+        collection.ensureIndex({ fieldName: 'z' })
+        collection.indexes.z.tree.getNumberOfKeys().should.equal(0)
 
-        d.insert({ a: 2, z: 'yes' }, function (err, newDoc) {
-          d.indexes.z.tree.getNumberOfKeys().should.equal(1)
-          assert.deepEqual(d.indexes.z.getMatching('yes'), [newDoc])
+        collection.insert({ a: 2, z: 'yes' }, function (err, newDoc) {
+          collection.indexes.z.tree.getNumberOfKeys().should.equal(1)
+          assert.deepEqual(collection.indexes.z.getMatching('yes'), [newDoc])
 
-          d.insert({ a: 5, z: 'nope' }, function (err, newDoc) {
-            d.indexes.z.tree.getNumberOfKeys().should.equal(2)
-            assert.deepEqual(d.indexes.z.getMatching('nope'), [newDoc])
+          collection.insert({ a: 5, z: 'nope' }, function (err, newDoc) {
+            collection.indexes.z.tree.getNumberOfKeys().should.equal(2)
+            assert.deepEqual(collection.indexes.z.getMatching('nope'), [newDoc])
 
             done()
           })
@@ -2680,38 +2292,53 @@ describe('Database', function () {
       })
 
       it('If multiple indexes are defined, the document is inserted in all of them', function (done) {
-        d.ensureIndex({ fieldName: 'z' })
-        d.ensureIndex({ fieldName: 'ya' })
-        d.indexes.z.tree.getNumberOfKeys().should.equal(0)
+        collection.ensureIndex({ fieldName: 'z' })
+        collection.ensureIndex({ fieldName: 'ya' })
+        collection.indexes.z.tree.getNumberOfKeys().should.equal(0)
 
-        d.insert({ a: 2, z: 'yes', ya: 'indeed' }, function (err, newDoc) {
-          d.indexes.z.tree.getNumberOfKeys().should.equal(1)
-          d.indexes.ya.tree.getNumberOfKeys().should.equal(1)
-          assert.deepEqual(d.indexes.z.getMatching('yes'), [newDoc])
-          assert.deepEqual(d.indexes.ya.getMatching('indeed'), [newDoc])
+        collection.insert(
+          { a: 2, z: 'yes', ya: 'indeed' },
+          function (err, newDoc) {
+            collection.indexes.z.tree.getNumberOfKeys().should.equal(1)
+            collection.indexes.ya.tree.getNumberOfKeys().should.equal(1)
+            assert.deepEqual(collection.indexes.z.getMatching('yes'), [newDoc])
+            assert.deepEqual(collection.indexes.ya.getMatching('indeed'), [
+              newDoc,
+            ])
 
-          d.insert({ a: 5, z: 'nope', ya: 'sure' }, function (err, newDoc2) {
-            d.indexes.z.tree.getNumberOfKeys().should.equal(2)
-            d.indexes.ya.tree.getNumberOfKeys().should.equal(2)
-            assert.deepEqual(d.indexes.z.getMatching('nope'), [newDoc2])
-            assert.deepEqual(d.indexes.ya.getMatching('sure'), [newDoc2])
+            collection.insert(
+              { a: 5, z: 'nope', ya: 'sure' },
+              function (err, newDoc2) {
+                collection.indexes.z.tree.getNumberOfKeys().should.equal(2)
+                collection.indexes.ya.tree.getNumberOfKeys().should.equal(2)
+                assert.deepEqual(collection.indexes.z.getMatching('nope'), [
+                  newDoc2,
+                ])
+                assert.deepEqual(collection.indexes.ya.getMatching('sure'), [
+                  newDoc2,
+                ])
 
-            done()
-          })
-        })
+                done()
+              },
+            )
+          },
+        )
       })
 
       it('Can insert two docs at the same key for a non unique index', function (done) {
-        d.ensureIndex({ fieldName: 'z' })
-        d.indexes.z.tree.getNumberOfKeys().should.equal(0)
+        collection.ensureIndex({ fieldName: 'z' })
+        collection.indexes.z.tree.getNumberOfKeys().should.equal(0)
 
-        d.insert({ a: 2, z: 'yes' }, function (err, newDoc) {
-          d.indexes.z.tree.getNumberOfKeys().should.equal(1)
-          assert.deepEqual(d.indexes.z.getMatching('yes'), [newDoc])
+        collection.insert({ a: 2, z: 'yes' }, function (err, newDoc) {
+          collection.indexes.z.tree.getNumberOfKeys().should.equal(1)
+          assert.deepEqual(collection.indexes.z.getMatching('yes'), [newDoc])
 
-          d.insert({ a: 5, z: 'yes' }, function (err, newDoc2) {
-            d.indexes.z.tree.getNumberOfKeys().should.equal(1)
-            assert.deepEqual(d.indexes.z.getMatching('yes'), [newDoc, newDoc2])
+          collection.insert({ a: 5, z: 'yes' }, function (err, newDoc2) {
+            collection.indexes.z.tree.getNumberOfKeys().should.equal(1)
+            assert.deepEqual(collection.indexes.z.getMatching('yes'), [
+              newDoc,
+              newDoc2,
+            ])
 
             done()
           })
@@ -2719,26 +2346,26 @@ describe('Database', function () {
       })
 
       it('If the index has a unique constraint, an error is thrown if it is violated and the data is not modified', function (done) {
-        d.ensureIndex({ fieldName: 'z', unique: true })
-        d.indexes.z.tree.getNumberOfKeys().should.equal(0)
+        collection.ensureIndex({ fieldName: 'z', unique: true })
+        collection.indexes.z.tree.getNumberOfKeys().should.equal(0)
 
-        d.insert({ a: 2, z: 'yes' }, function (err, newDoc) {
-          d.indexes.z.tree.getNumberOfKeys().should.equal(1)
-          assert.deepEqual(d.indexes.z.getMatching('yes'), [newDoc])
+        collection.insert({ a: 2, z: 'yes' }, function (err, newDoc) {
+          collection.indexes.z.tree.getNumberOfKeys().should.equal(1)
+          assert.deepEqual(collection.indexes.z.getMatching('yes'), [newDoc])
 
-          d.insert({ a: 5, z: 'yes' }, function (err) {
+          collection.insert({ a: 5, z: 'yes' }, function (err) {
             err.errorType.should.equal('uniqueViolated')
             err.key.should.equal('yes')
 
             // Index didn't change
-            d.indexes.z.tree.getNumberOfKeys().should.equal(1)
-            assert.deepEqual(d.indexes.z.getMatching('yes'), [newDoc])
+            collection.indexes.z.tree.getNumberOfKeys().should.equal(1)
+            assert.deepEqual(collection.indexes.z.getMatching('yes'), [newDoc])
 
             // Data didn't change
-            assert.deepEqual(d.getAllData(), [newDoc])
-            d.loadDatabase(function () {
-              d.getAllData().length.should.equal(1)
-              assert.deepEqual(d.getAllData()[0], newDoc)
+            assert.deepEqual(collection.getAllData(), [newDoc])
+            collection.loadDatabase(function () {
+              collection.getAllData().length.should.equal(1)
+              assert.deepEqual(collection.getAllData()[0], newDoc)
 
               done()
             })
@@ -2747,33 +2374,38 @@ describe('Database', function () {
       })
 
       it('If an index has a unique constraint, other indexes cannot be modified when it raises an error', function (done) {
-        d.ensureIndex({ fieldName: 'nonu1' })
-        d.ensureIndex({ fieldName: 'uni', unique: true })
-        d.ensureIndex({ fieldName: 'nonu2' })
+        collection.ensureIndex({ fieldName: 'nonu1' })
+        collection.ensureIndex({ fieldName: 'uni', unique: true })
+        collection.ensureIndex({ fieldName: 'nonu2' })
 
-        d.insert(
+        collection.insert(
           { nonu1: 'yes', nonu2: 'yes2', uni: 'willfail' },
           function (err, newDoc) {
             assert.isNull(err)
-            d.indexes.nonu1.tree.getNumberOfKeys().should.equal(1)
-            d.indexes.uni.tree.getNumberOfKeys().should.equal(1)
-            d.indexes.nonu2.tree.getNumberOfKeys().should.equal(1)
+            collection.indexes.nonu1.tree.getNumberOfKeys().should.equal(1)
+            collection.indexes.uni.tree.getNumberOfKeys().should.equal(1)
+            collection.indexes.nonu2.tree.getNumberOfKeys().should.equal(1)
 
-            d.insert(
+            collection.insert(
               { nonu1: 'no', nonu2: 'no2', uni: 'willfail' },
               function (err) {
                 err.errorType.should.equal('uniqueViolated')
 
                 // No index was modified
-                d.indexes.nonu1.tree.getNumberOfKeys().should.equal(1)
-                d.indexes.uni.tree.getNumberOfKeys().should.equal(1)
-                d.indexes.nonu2.tree.getNumberOfKeys().should.equal(1)
+                collection.indexes.nonu1.tree.getNumberOfKeys().should.equal(1)
+                collection.indexes.uni.tree.getNumberOfKeys().should.equal(1)
+                collection.indexes.nonu2.tree.getNumberOfKeys().should.equal(1)
 
-                assert.deepEqual(d.indexes.nonu1.getMatching('yes'), [newDoc])
-                assert.deepEqual(d.indexes.uni.getMatching('willfail'), [
+                assert.deepEqual(collection.indexes.nonu1.getMatching('yes'), [
                   newDoc,
                 ])
-                assert.deepEqual(d.indexes.nonu2.getMatching('yes2'), [newDoc])
+                assert.deepEqual(
+                  collection.indexes.uni.getMatching('willfail'),
+                  [newDoc],
+                )
+                assert.deepEqual(collection.indexes.nonu2.getMatching('yes2'), [
+                  newDoc,
+                ])
 
                 done()
               },
@@ -2783,23 +2415,29 @@ describe('Database', function () {
       })
 
       it('Unique indexes prevent you from inserting two docs where the field is undefined except if theyre sparse', function (done) {
-        d.ensureIndex({ fieldName: 'zzz', unique: true })
-        d.indexes.zzz.tree.getNumberOfKeys().should.equal(0)
+        collection.ensureIndex({ fieldName: 'zzz', unique: true })
+        collection.indexes.zzz.tree.getNumberOfKeys().should.equal(0)
 
-        d.insert({ a: 2, z: 'yes' }, function (err, newDoc) {
-          d.indexes.zzz.tree.getNumberOfKeys().should.equal(1)
-          assert.deepEqual(d.indexes.zzz.getMatching(undefined), [newDoc])
+        collection.insert({ a: 2, z: 'yes' }, function (err, newDoc) {
+          collection.indexes.zzz.tree.getNumberOfKeys().should.equal(1)
+          assert.deepEqual(collection.indexes.zzz.getMatching(undefined), [
+            newDoc,
+          ])
 
-          d.insert({ a: 5, z: 'other' }, function (err) {
+          collection.insert({ a: 5, z: 'other' }, function (err) {
             err.errorType.should.equal('uniqueViolated')
             assert.isUndefined(err.key)
 
-            d.ensureIndex({ fieldName: 'yyy', unique: true, sparse: true })
+            collection.ensureIndex({
+              fieldName: 'yyy',
+              unique: true,
+              sparse: true,
+            })
 
-            d.insert({ a: 5, z: 'other', zzz: 'set' }, function (err) {
+            collection.insert({ a: 5, z: 'other', zzz: 'set' }, function (err) {
               assert.isNull(err)
-              d.indexes.yyy.getAll().length.should.equal(0) // Nothing indexed
-              d.indexes.zzz.getAll().length.should.equal(2)
+              collection.indexes.yyy.getAll().length.should.equal(0) // Nothing indexed
+              collection.indexes.zzz.getAll().length.should.equal(2)
 
               done()
             })
@@ -2808,12 +2446,12 @@ describe('Database', function () {
       })
 
       it('Insertion still works as before with indexing', function (done) {
-        d.ensureIndex({ fieldName: 'a' })
-        d.ensureIndex({ fieldName: 'b' })
+        collection.ensureIndex({ fieldName: 'a' })
+        collection.ensureIndex({ fieldName: 'b' })
 
-        d.insert({ a: 1, b: 'hello' }, function (err, doc1) {
-          d.insert({ a: 2, b: 'si' }, function (err, doc2) {
-            d.find({}, function (err, docs) {
+        collection.insert({ a: 1, b: 'hello' }, function (err, doc1) {
+          collection.insert({ a: 2, b: 'si' }, function (err, doc2) {
+            collection.find({}, function (err, docs) {
               assert.deepEqual(
                 doc1,
                 _.find(docs, function (d) {
@@ -2834,25 +2472,29 @@ describe('Database', function () {
       })
 
       it('All indexes point to the same data as the main index on _id', function (done) {
-        d.ensureIndex({ fieldName: 'a' })
+        collection.ensureIndex({ fieldName: 'a' })
 
-        d.insert({ a: 1, b: 'hello' }, function (err, doc1) {
-          d.insert({ a: 2, b: 'si' }, function (err, doc2) {
-            d.find({}, function (err, docs) {
+        collection.insert({ a: 1, b: 'hello' }, function (err, doc1) {
+          collection.insert({ a: 2, b: 'si' }, function (err, doc2) {
+            collection.find({}, function (err, docs) {
               docs.length.should.equal(2)
-              d.getAllData().length.should.equal(2)
+              collection.getAllData().length.should.equal(2)
 
-              d.indexes._id.getMatching(doc1._id).length.should.equal(1)
-              d.indexes.a.getMatching(1).length.should.equal(1)
-              d.indexes._id
+              collection.indexes._id
+                .getMatching(doc1._id)
+                .length.should.equal(1)
+              collection.indexes.a.getMatching(1).length.should.equal(1)
+              collection.indexes._id
                 .getMatching(doc1._id)[0]
-                .should.equal(d.indexes.a.getMatching(1)[0])
+                .should.equal(collection.indexes.a.getMatching(1)[0])
 
-              d.indexes._id.getMatching(doc2._id).length.should.equal(1)
-              d.indexes.a.getMatching(2).length.should.equal(1)
-              d.indexes._id
+              collection.indexes._id
+                .getMatching(doc2._id)
+                .length.should.equal(1)
+              collection.indexes.a.getMatching(2).length.should.equal(1)
+              collection.indexes._id
                 .getMatching(doc2._id)[0]
-                .should.equal(d.indexes.a.getMatching(2)[0])
+                .should.equal(collection.indexes.a.getMatching(2)[0])
 
               done()
             })
@@ -2861,23 +2503,25 @@ describe('Database', function () {
       })
 
       it('If a unique constraint is violated, no index is changed, including the main one', function (done) {
-        d.ensureIndex({ fieldName: 'a', unique: true })
+        collection.ensureIndex({ fieldName: 'a', unique: true })
 
-        d.insert({ a: 1, b: 'hello' }, function (err, doc1) {
-          d.insert({ a: 1, b: 'si' }, function (err) {
+        collection.insert({ a: 1, b: 'hello' }, function (err, doc1) {
+          collection.insert({ a: 1, b: 'si' }, function (err) {
             assert.isDefined(err)
 
-            d.find({}, function (err, docs) {
+            collection.find({}, function (err, docs) {
               docs.length.should.equal(1)
-              d.getAllData().length.should.equal(1)
+              collection.getAllData().length.should.equal(1)
 
-              d.indexes._id.getMatching(doc1._id).length.should.equal(1)
-              d.indexes.a.getMatching(1).length.should.equal(1)
-              d.indexes._id
+              collection.indexes._id
+                .getMatching(doc1._id)
+                .length.should.equal(1)
+              collection.indexes.a.getMatching(1).length.should.equal(1)
+              collection.indexes._id
                 .getMatching(doc1._id)[0]
-                .should.equal(d.indexes.a.getMatching(1)[0])
+                .should.equal(collection.indexes.a.getMatching(1)[0])
 
-              d.indexes.a.getMatching(2).length.should.equal(0)
+              collection.indexes.a.getMatching(2).length.should.equal(0)
 
               done()
             })
@@ -2888,16 +2532,16 @@ describe('Database', function () {
 
     describe('Updating indexes upon document update', function () {
       it('Updating docs still works as before with indexing', function (done) {
-        d.ensureIndex({ fieldName: 'a' })
+        collection.ensureIndex({ fieldName: 'a' })
 
-        d.insert({ a: 1, b: 'hello' }, function (err, _doc1) {
-          d.insert({ a: 2, b: 'si' }, function (err, _doc2) {
-            d.update(
+        collection.insert({ a: 1, b: 'hello' }, function (err, _doc1) {
+          collection.insert({ a: 2, b: 'si' }, function (err, _doc2) {
+            collection.update(
               { a: 1 },
               { $set: { a: 456, b: 'no' } },
               {},
               function (err, nr) {
-                const data = d.getAllData(),
+                const data = collection.getAllData(),
                   doc1 = _.find(data, function (doc) {
                     return doc._id === _doc1._id
                   }),
@@ -2911,12 +2555,12 @@ describe('Database', function () {
                 assert.deepEqual(doc1, { a: 456, b: 'no', _id: _doc1._id })
                 assert.deepEqual(doc2, { a: 2, b: 'si', _id: _doc2._id })
 
-                d.update(
+                collection.update(
                   {},
                   { $inc: { a: 10 }, $set: { b: 'same' } },
                   { multi: true },
                   function (err, nr) {
-                    const data = d.getAllData(),
+                    const data = collection.getAllData(),
                       doc1 = _.find(data, function (doc) {
                         return doc._id === _doc1._id
                       }),
@@ -2944,13 +2588,13 @@ describe('Database', function () {
       })
 
       it('Indexes get updated when a document (or multiple documents) is updated', function (done) {
-        d.ensureIndex({ fieldName: 'a' })
-        d.ensureIndex({ fieldName: 'b' })
+        collection.ensureIndex({ fieldName: 'a' })
+        collection.ensureIndex({ fieldName: 'b' })
 
-        d.insert({ a: 1, b: 'hello' }, function (err, doc1) {
-          d.insert({ a: 2, b: 'si' }, function (err, doc2) {
+        collection.insert({ a: 1, b: 'hello' }, function (err, doc1) {
+          collection.insert({ a: 2, b: 'si' }, function (err, doc2) {
             // Simple update
-            d.update(
+            collection.update(
               { a: 1 },
               { $set: { a: 456, b: 'no' } },
               {},
@@ -2958,33 +2602,41 @@ describe('Database', function () {
                 assert.isNull(err)
                 nr.should.equal(1)
 
-                d.indexes.a.tree.getNumberOfKeys().should.equal(2)
-                d.indexes.a.getMatching(456)[0]._id.should.equal(doc1._id)
-                d.indexes.a.getMatching(2)[0]._id.should.equal(doc2._id)
+                collection.indexes.a.tree.getNumberOfKeys().should.equal(2)
+                collection.indexes.a
+                  .getMatching(456)[0]
+                  ._id.should.equal(doc1._id)
+                collection.indexes.a
+                  .getMatching(2)[0]
+                  ._id.should.equal(doc2._id)
 
-                d.indexes.b.tree.getNumberOfKeys().should.equal(2)
-                d.indexes.b.getMatching('no')[0]._id.should.equal(doc1._id)
-                d.indexes.b.getMatching('si')[0]._id.should.equal(doc2._id)
+                collection.indexes.b.tree.getNumberOfKeys().should.equal(2)
+                collection.indexes.b
+                  .getMatching('no')[0]
+                  ._id.should.equal(doc1._id)
+                collection.indexes.b
+                  .getMatching('si')[0]
+                  ._id.should.equal(doc2._id)
 
                 // The same pointers are shared between all indexes
-                d.indexes.a.tree.getNumberOfKeys().should.equal(2)
-                d.indexes.b.tree.getNumberOfKeys().should.equal(2)
-                d.indexes._id.tree.getNumberOfKeys().should.equal(2)
-                d.indexes.a
+                collection.indexes.a.tree.getNumberOfKeys().should.equal(2)
+                collection.indexes.b.tree.getNumberOfKeys().should.equal(2)
+                collection.indexes._id.tree.getNumberOfKeys().should.equal(2)
+                collection.indexes.a
                   .getMatching(456)[0]
-                  .should.equal(d.indexes._id.getMatching(doc1._id)[0])
-                d.indexes.b
+                  .should.equal(collection.indexes._id.getMatching(doc1._id)[0])
+                collection.indexes.b
                   .getMatching('no')[0]
-                  .should.equal(d.indexes._id.getMatching(doc1._id)[0])
-                d.indexes.a
+                  .should.equal(collection.indexes._id.getMatching(doc1._id)[0])
+                collection.indexes.a
                   .getMatching(2)[0]
-                  .should.equal(d.indexes._id.getMatching(doc2._id)[0])
-                d.indexes.b
+                  .should.equal(collection.indexes._id.getMatching(doc2._id)[0])
+                collection.indexes.b
                   .getMatching('si')[0]
-                  .should.equal(d.indexes._id.getMatching(doc2._id)[0])
+                  .should.equal(collection.indexes._id.getMatching(doc2._id)[0])
 
                 // Multi update
-                d.update(
+                collection.update(
                   {},
                   { $inc: { a: 10 }, $set: { b: 'same' } },
                   { multi: true },
@@ -2992,32 +2644,44 @@ describe('Database', function () {
                     assert.isNull(err)
                     nr.should.equal(2)
 
-                    d.indexes.a.tree.getNumberOfKeys().should.equal(2)
-                    d.indexes.a.getMatching(466)[0]._id.should.equal(doc1._id)
-                    d.indexes.a.getMatching(12)[0]._id.should.equal(doc2._id)
+                    collection.indexes.a.tree.getNumberOfKeys().should.equal(2)
+                    collection.indexes.a
+                      .getMatching(466)[0]
+                      ._id.should.equal(doc1._id)
+                    collection.indexes.a
+                      .getMatching(12)[0]
+                      ._id.should.equal(doc2._id)
 
-                    d.indexes.b.tree.getNumberOfKeys().should.equal(1)
-                    d.indexes.b.getMatching('same').length.should.equal(2)
+                    collection.indexes.b.tree.getNumberOfKeys().should.equal(1)
+                    collection.indexes.b
+                      .getMatching('same')
+                      .length.should.equal(2)
                     pluck(
-                      d.indexes.b.getMatching('same'),
+                      collection.indexes.b.getMatching('same'),
                       '_id',
                     ).should.contain(doc1._id)
                     pluck(
-                      d.indexes.b.getMatching('same'),
+                      collection.indexes.b.getMatching('same'),
                       '_id',
                     ).should.contain(doc2._id)
 
                     // The same pointers are shared between all indexes
-                    d.indexes.a.tree.getNumberOfKeys().should.equal(2)
-                    d.indexes.b.tree.getNumberOfKeys().should.equal(1)
-                    d.indexes.b.getAll().length.should.equal(2)
-                    d.indexes._id.tree.getNumberOfKeys().should.equal(2)
-                    d.indexes.a
+                    collection.indexes.a.tree.getNumberOfKeys().should.equal(2)
+                    collection.indexes.b.tree.getNumberOfKeys().should.equal(1)
+                    collection.indexes.b.getAll().length.should.equal(2)
+                    collection.indexes._id.tree
+                      .getNumberOfKeys()
+                      .should.equal(2)
+                    collection.indexes.a
                       .getMatching(466)[0]
-                      .should.equal(d.indexes._id.getMatching(doc1._id)[0])
-                    d.indexes.a
+                      .should.equal(
+                        collection.indexes._id.getMatching(doc1._id)[0],
+                      )
+                    collection.indexes.a
                       .getMatching(12)[0]
-                      .should.equal(d.indexes._id.getMatching(doc2._id)[0])
+                      .should.equal(
+                        collection.indexes._id.getMatching(doc2._id)[0],
+                      )
                     // Can't test the pointers in b as their order is randomized, but it is the same as with a
 
                     done()
@@ -3030,20 +2694,20 @@ describe('Database', function () {
       })
 
       it('If a simple update violates a contraint, all changes are rolled back and an error is thrown', function (done) {
-        d.ensureIndex({ fieldName: 'a', unique: true })
-        d.ensureIndex({ fieldName: 'b', unique: true })
-        d.ensureIndex({ fieldName: 'c', unique: true })
+        collection.ensureIndex({ fieldName: 'a', unique: true })
+        collection.ensureIndex({ fieldName: 'b', unique: true })
+        collection.ensureIndex({ fieldName: 'c', unique: true })
 
-        d.insert({ a: 1, b: 10, c: 100 }, function (err, _doc1) {
-          d.insert({ a: 2, b: 20, c: 200 }, function (err, _doc2) {
-            d.insert({ a: 3, b: 30, c: 300 }, function (err, _doc3) {
+        collection.insert({ a: 1, b: 10, c: 100 }, function (err, _doc1) {
+          collection.insert({ a: 2, b: 20, c: 200 }, function (err, _doc2) {
+            collection.insert({ a: 3, b: 30, c: 300 }, function (err, _doc3) {
               // Will conflict with doc3
-              d.update(
+              collection.update(
                 { a: 2 },
                 { $inc: { a: 10, c: 1000 }, $set: { b: 30 } },
                 {},
                 function (err) {
-                  const data = d.getAllData(),
+                  const data = collection.getAllData(),
                     doc1 = _.find(data, function (doc) {
                       return doc._id === _doc1._id
                     }),
@@ -3077,20 +2741,20 @@ describe('Database', function () {
                   })
 
                   // All indexes left unchanged and pointing to the same docs
-                  d.indexes.a.tree.getNumberOfKeys().should.equal(3)
-                  d.indexes.a.getMatching(1)[0].should.equal(doc1)
-                  d.indexes.a.getMatching(2)[0].should.equal(doc2)
-                  d.indexes.a.getMatching(3)[0].should.equal(doc3)
+                  collection.indexes.a.tree.getNumberOfKeys().should.equal(3)
+                  collection.indexes.a.getMatching(1)[0].should.equal(doc1)
+                  collection.indexes.a.getMatching(2)[0].should.equal(doc2)
+                  collection.indexes.a.getMatching(3)[0].should.equal(doc3)
 
-                  d.indexes.b.tree.getNumberOfKeys().should.equal(3)
-                  d.indexes.b.getMatching(10)[0].should.equal(doc1)
-                  d.indexes.b.getMatching(20)[0].should.equal(doc2)
-                  d.indexes.b.getMatching(30)[0].should.equal(doc3)
+                  collection.indexes.b.tree.getNumberOfKeys().should.equal(3)
+                  collection.indexes.b.getMatching(10)[0].should.equal(doc1)
+                  collection.indexes.b.getMatching(20)[0].should.equal(doc2)
+                  collection.indexes.b.getMatching(30)[0].should.equal(doc3)
 
-                  d.indexes.c.tree.getNumberOfKeys().should.equal(3)
-                  d.indexes.c.getMatching(100)[0].should.equal(doc1)
-                  d.indexes.c.getMatching(200)[0].should.equal(doc2)
-                  d.indexes.c.getMatching(300)[0].should.equal(doc3)
+                  collection.indexes.c.tree.getNumberOfKeys().should.equal(3)
+                  collection.indexes.c.getMatching(100)[0].should.equal(doc1)
+                  collection.indexes.c.getMatching(200)[0].should.equal(doc2)
+                  collection.indexes.c.getMatching(300)[0].should.equal(doc3)
 
                   done()
                 },
@@ -3101,20 +2765,20 @@ describe('Database', function () {
       })
 
       it('If a multi update violates a contraint, all changes are rolled back and an error is thrown', function (done) {
-        d.ensureIndex({ fieldName: 'a', unique: true })
-        d.ensureIndex({ fieldName: 'b', unique: true })
-        d.ensureIndex({ fieldName: 'c', unique: true })
+        collection.ensureIndex({ fieldName: 'a', unique: true })
+        collection.ensureIndex({ fieldName: 'b', unique: true })
+        collection.ensureIndex({ fieldName: 'c', unique: true })
 
-        d.insert({ a: 1, b: 10, c: 100 }, function (err, _doc1) {
-          d.insert({ a: 2, b: 20, c: 200 }, function (err, _doc2) {
-            d.insert({ a: 3, b: 30, c: 300 }, function (err, _doc3) {
+        collection.insert({ a: 1, b: 10, c: 100 }, function (err, _doc1) {
+          collection.insert({ a: 2, b: 20, c: 200 }, function (err, _doc2) {
+            collection.insert({ a: 3, b: 30, c: 300 }, function (err, _doc3) {
               // Will conflict with doc3
-              d.update(
+              collection.update(
                 { a: { $in: [1, 2] } },
                 { $inc: { a: 10, c: 1000 }, $set: { b: 30 } },
                 { multi: true },
                 function (err) {
-                  const data = d.getAllData(),
+                  const data = collection.getAllData(),
                     doc1 = _.find(data, function (doc) {
                       return doc._id === _doc1._id
                     }),
@@ -3148,20 +2812,20 @@ describe('Database', function () {
                   })
 
                   // All indexes left unchanged and pointing to the same docs
-                  d.indexes.a.tree.getNumberOfKeys().should.equal(3)
-                  d.indexes.a.getMatching(1)[0].should.equal(doc1)
-                  d.indexes.a.getMatching(2)[0].should.equal(doc2)
-                  d.indexes.a.getMatching(3)[0].should.equal(doc3)
+                  collection.indexes.a.tree.getNumberOfKeys().should.equal(3)
+                  collection.indexes.a.getMatching(1)[0].should.equal(doc1)
+                  collection.indexes.a.getMatching(2)[0].should.equal(doc2)
+                  collection.indexes.a.getMatching(3)[0].should.equal(doc3)
 
-                  d.indexes.b.tree.getNumberOfKeys().should.equal(3)
-                  d.indexes.b.getMatching(10)[0].should.equal(doc1)
-                  d.indexes.b.getMatching(20)[0].should.equal(doc2)
-                  d.indexes.b.getMatching(30)[0].should.equal(doc3)
+                  collection.indexes.b.tree.getNumberOfKeys().should.equal(3)
+                  collection.indexes.b.getMatching(10)[0].should.equal(doc1)
+                  collection.indexes.b.getMatching(20)[0].should.equal(doc2)
+                  collection.indexes.b.getMatching(30)[0].should.equal(doc3)
 
-                  d.indexes.c.tree.getNumberOfKeys().should.equal(3)
-                  d.indexes.c.getMatching(100)[0].should.equal(doc1)
-                  d.indexes.c.getMatching(200)[0].should.equal(doc2)
-                  d.indexes.c.getMatching(300)[0].should.equal(doc3)
+                  collection.indexes.c.tree.getNumberOfKeys().should.equal(3)
+                  collection.indexes.c.getMatching(100)[0].should.equal(doc1)
+                  collection.indexes.c.getMatching(200)[0].should.equal(doc2)
+                  collection.indexes.c.getMatching(300)[0].should.equal(doc3)
 
                   done()
                 },
@@ -3174,13 +2838,13 @@ describe('Database', function () {
 
     describe('Updating indexes upon document remove', function () {
       it('Removing docs still works as before with indexing', function (done) {
-        d.ensureIndex({ fieldName: 'a' })
+        collection.ensureIndex({ fieldName: 'a' })
 
-        d.insert({ a: 1, b: 'hello' }, function (err, _doc1) {
-          d.insert({ a: 2, b: 'si' }, function (err, _doc2) {
-            d.insert({ a: 3, b: 'coin' }, function (err, _doc3) {
-              d.remove({ a: 1 }, {}, function (err, nr) {
-                const data = d.getAllData(),
+        collection.insert({ a: 1, b: 'hello' }, function (err, _doc1) {
+          collection.insert({ a: 2, b: 'si' }, function (err, _doc2) {
+            collection.insert({ a: 3, b: 'coin' }, function (err, _doc3) {
+              collection.remove({ a: 1 }, {}, function (err, nr) {
+                const data = collection.getAllData(),
                   doc2 = _.find(data, function (doc) {
                     return doc._id === _doc2._id
                   }),
@@ -3194,11 +2858,11 @@ describe('Database', function () {
                 assert.deepEqual(doc2, { a: 2, b: 'si', _id: _doc2._id })
                 assert.deepEqual(doc3, { a: 3, b: 'coin', _id: _doc3._id })
 
-                d.remove(
+                collection.remove(
                   { a: { $in: [2, 3] } },
                   { multi: true },
                   function (err, nr) {
-                    const data = d.getAllData()
+                    const data = collection.getAllData()
                     assert.isNull(err)
                     nr.should.equal(2)
                     data.length.should.equal(0)
@@ -3213,50 +2877,58 @@ describe('Database', function () {
       })
 
       it('Indexes get updated when a document (or multiple documents) is removed', function (done) {
-        d.ensureIndex({ fieldName: 'a' })
-        d.ensureIndex({ fieldName: 'b' })
+        collection.ensureIndex({ fieldName: 'a' })
+        collection.ensureIndex({ fieldName: 'b' })
 
-        d.insert({ a: 1, b: 'hello' }, function () {
-          d.insert({ a: 2, b: 'si' }, function (err, doc2) {
-            d.insert({ a: 3, b: 'coin' }, function (err, doc3) {
+        collection.insert({ a: 1, b: 'hello' }, function () {
+          collection.insert({ a: 2, b: 'si' }, function (err, doc2) {
+            collection.insert({ a: 3, b: 'coin' }, function (err, doc3) {
               // Simple remove
-              d.remove({ a: 1 }, {}, function (err, nr) {
+              collection.remove({ a: 1 }, {}, function (err, nr) {
                 assert.isNull(err)
                 nr.should.equal(1)
 
-                d.indexes.a.tree.getNumberOfKeys().should.equal(2)
-                d.indexes.a.getMatching(2)[0]._id.should.equal(doc2._id)
-                d.indexes.a.getMatching(3)[0]._id.should.equal(doc3._id)
+                collection.indexes.a.tree.getNumberOfKeys().should.equal(2)
+                collection.indexes.a
+                  .getMatching(2)[0]
+                  ._id.should.equal(doc2._id)
+                collection.indexes.a
+                  .getMatching(3)[0]
+                  ._id.should.equal(doc3._id)
 
-                d.indexes.b.tree.getNumberOfKeys().should.equal(2)
-                d.indexes.b.getMatching('si')[0]._id.should.equal(doc2._id)
-                d.indexes.b.getMatching('coin')[0]._id.should.equal(doc3._id)
+                collection.indexes.b.tree.getNumberOfKeys().should.equal(2)
+                collection.indexes.b
+                  .getMatching('si')[0]
+                  ._id.should.equal(doc2._id)
+                collection.indexes.b
+                  .getMatching('coin')[0]
+                  ._id.should.equal(doc3._id)
 
                 // The same pointers are shared between all indexes
-                d.indexes.a.tree.getNumberOfKeys().should.equal(2)
-                d.indexes.b.tree.getNumberOfKeys().should.equal(2)
-                d.indexes._id.tree.getNumberOfKeys().should.equal(2)
-                d.indexes.a
+                collection.indexes.a.tree.getNumberOfKeys().should.equal(2)
+                collection.indexes.b.tree.getNumberOfKeys().should.equal(2)
+                collection.indexes._id.tree.getNumberOfKeys().should.equal(2)
+                collection.indexes.a
                   .getMatching(2)[0]
-                  .should.equal(d.indexes._id.getMatching(doc2._id)[0])
-                d.indexes.b
+                  .should.equal(collection.indexes._id.getMatching(doc2._id)[0])
+                collection.indexes.b
                   .getMatching('si')[0]
-                  .should.equal(d.indexes._id.getMatching(doc2._id)[0])
-                d.indexes.a
+                  .should.equal(collection.indexes._id.getMatching(doc2._id)[0])
+                collection.indexes.a
                   .getMatching(3)[0]
-                  .should.equal(d.indexes._id.getMatching(doc3._id)[0])
-                d.indexes.b
+                  .should.equal(collection.indexes._id.getMatching(doc3._id)[0])
+                collection.indexes.b
                   .getMatching('coin')[0]
-                  .should.equal(d.indexes._id.getMatching(doc3._id)[0])
+                  .should.equal(collection.indexes._id.getMatching(doc3._id)[0])
 
                 // Multi remove
-                d.remove({}, { multi: true }, function (err, nr) {
+                collection.remove({}, { multi: true }, function (err, nr) {
                   assert.isNull(err)
                   nr.should.equal(2)
 
-                  d.indexes.a.tree.getNumberOfKeys().should.equal(0)
-                  d.indexes.b.tree.getNumberOfKeys().should.equal(0)
-                  d.indexes._id.tree.getNumberOfKeys().should.equal(0)
+                  collection.indexes.a.tree.getNumberOfKeys().should.equal(0)
+                  collection.indexes.b.tree.getNumberOfKeys().should.equal(0)
+                  collection.indexes._id.tree.getNumberOfKeys().should.equal(0)
 
                   done()
                 })
@@ -3490,12 +3162,15 @@ describe('Database', function () {
     }) // ==== End of 'Persisting indexes' ====
 
     it('Results of getMatching should never contain duplicates', function (done) {
-      d.ensureIndex({ fieldName: 'bad' })
-      d.insert({ bad: ['a', 'b'] }, function () {
-        d.getCandidates({ bad: { $in: ['a', 'b'] } }, function (err, res) {
-          res.length.should.equal(1)
-          done()
-        })
+      collection.ensureIndex({ fieldName: 'bad' })
+      collection.insert({ bad: ['a', 'b'] }, function () {
+        collection.getCandidates(
+          { bad: { $in: ['a', 'b'] } },
+          function (err, res) {
+            res.length.should.equal(1)
+            done()
+          },
+        )
       })
     })
   }) // ==== End of 'Using indexes' ==== //

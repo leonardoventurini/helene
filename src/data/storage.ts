@@ -7,7 +7,7 @@
  * It's essentially fs, mkdirp and crash safe write and read functions
  */
 
-import fs, { closeSync, fsyncSync, openSync } from 'fs'
+import fs, { closeSync, fsyncSync, openSync, writeFileSync } from 'fs'
 import { appendFile, readFile, rename, unlink, writeFile } from 'fs/promises'
 import mkdirp from 'mkdirp'
 import path from 'path'
@@ -78,7 +78,7 @@ export const Storage = {
       await Storage.flushToStorage(filename)
     }
 
-    await Storage.writeFile(tempFilename, data)
+    writeFileSync(tempFilename, data)
 
     await Storage.flushToStorage(tempFilename)
 
@@ -98,6 +98,7 @@ export const Storage = {
     const tempFilename = filename + '~'
 
     const filenameExists = Storage.exists(filename)
+
     // Write was successful
     if (filenameExists) {
       return null

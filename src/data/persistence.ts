@@ -12,6 +12,7 @@ import { deserialize, serialize } from './serialization'
 import { uid } from './custom-utils'
 import { Storage } from './storage'
 import { Collection } from './collection'
+import { readFileSync } from 'fs'
 
 type Options = {
   db: Collection
@@ -267,7 +268,6 @@ export class Persistence {
   async loadDatabase() {
     this.db.resetIndexes()
 
-    // In-memory only datastore
     if (this.inMemoryOnly) {
       return null
     }
@@ -276,7 +276,7 @@ export class Persistence {
 
     await Storage.ensureDatafileIntegrity(this.filename)
 
-    const rawData = await Storage.readFile(this.filename, 'utf8')
+    const rawData = readFileSync(this.filename, 'utf8')
 
     const treatedData = this.treatRawData(rawData)
 

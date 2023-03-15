@@ -1,5 +1,5 @@
 import { Index } from './indexes'
-import { isArray, noop } from 'lodash'
+import { isArray, isString, noop } from 'lodash'
 import { Persistence } from './persistence'
 import { Cursor } from './cursor'
 import { uid } from './custom-utils'
@@ -16,7 +16,7 @@ type Options = {
   timestampData?: boolean
   inMemoryOnly?: boolean
   autoload?: boolean
-  onload?: (err: Error) => void
+  onload?: (err?: Error) => void
   afterSerialization?: (doc: any) => any
   beforeDeserialization?: (doc: any) => any
   corruptAlertThreshold?: number
@@ -50,17 +50,18 @@ export class Collection extends EventEmitter2 {
    * Event Emitter - Events
    * * compaction.done - Fired whenever a compaction operation was finished
    */
-  constructor(options?: Options) {
+  constructor(_options?: Options | string) {
     super()
 
     let filename
+    let options: Options = {}
 
     // Retrocompatibility with v0.6 and before
-    if (typeof options === 'string') {
-      filename = options
+    if (isString(_options)) {
+      filename = _options
       this.inMemoryOnly = false // Default
     } else {
-      options = options || {}
+      options = _options || {}
       filename = options.filename
       this.inMemoryOnly = options.inMemoryOnly || false
       this.autoload = options.autoload || false
@@ -96,7 +97,14 @@ export class Collection extends EventEmitter2 {
     // Queue a load of the database right away and call the onload handler
     // By default (no onload handler), if there is an error there, no operation will be possible so warn the user by throwing an exception
     if (this.autoload) {
-      this.loadDatabase().then(options.onload ?? noop)
+      this.loadDatabase()
+        .then(() => {
+          this.emit('ready')
+          options?.onload?.()
+        })
+        .catch(err => {
+          options?.onload?.(err)
+        })
     }
   }
 
@@ -118,10 +126,8 @@ export class Collection extends EventEmitter2 {
    * Reset all currently defined indexes
    */
   resetIndexes(newData?) {
-    const self = this
-
-    Object.keys(this.indexes).forEach(function (i) {
-      self.indexes[i].reset(newData)
+    Object.keys(this.indexes).forEach(i => {
+      this.indexes[i].reset(newData)
     })
   }
 
@@ -370,7 +376,7 @@ export class Collection extends EventEmitter2 {
       return docs.length
     })
 
-    return await cursor.exec()
+    return (await cursor.exec()) as unknown as number
   }
 
   /**
@@ -379,7 +385,7 @@ export class Collection extends EventEmitter2 {
    * @param {Object} query MongoDB-style query
    * @param {Object} projection MongoDB-style projection
    */
-  find(query, projection?) {
+  find(query?, projection?) {
     const cursor = new Cursor(this, query, async function (docs) {
       const res = []
 
@@ -400,7 +406,7 @@ export class Collection extends EventEmitter2 {
    * @param {Object} query MongoDB-style query
    * @param {Object} projection MongoDB-style projection
    */
-  async findOne(query, projection) {
+  async findOne(query, projection?) {
     const cursor = new Cursor(this, query, async function (docs) {
       if (docs.length === 1) {
         return deepCopy(docs[0])
@@ -411,7 +417,7 @@ export class Collection extends EventEmitter2 {
 
     cursor.projection(projection).limit(1)
 
-    return await cursor.exec()
+    return (await cursor.exec()) as any
   }
 
   /**
@@ -439,7 +445,7 @@ export class Collection extends EventEmitter2 {
    *
    * @api private Use Datastore.update which has the same signature
    */
-  async update(query, updateQuery, options) {
+  async update(query, updateQuery, options): Promise<any> {
     let numReplaced = 0,
       i
 
@@ -467,7 +473,10 @@ export class Collection extends EventEmitter2 {
 
         const newDoc = await self.insert(toBeInserted)
 
-        return [1, newDoc, true]
+        return {
+          acknowledged: true,
+          insertedIds: [newDoc._id],
+        }
       }
     }
 
@@ -532,7 +541,7 @@ export class Collection extends EventEmitter2 {
     const self = this
     const removedDocs = []
 
-    const multi = options.multi !== undefined ? options.multi : false
+    const multi = Boolean(options?.multi)
 
     const candidates = await this.getCandidates(query, true)
 
