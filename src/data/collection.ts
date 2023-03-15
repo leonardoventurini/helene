@@ -445,17 +445,16 @@ export class Collection extends EventEmitter2 {
    *
    * @api private Use Datastore.update which has the same signature
    */
-  async update(query, updateQuery, options): Promise<any> {
+  async update(query, updateQuery, options?): Promise<any> {
     let numReplaced = 0,
       i
 
-    const self = this
-    const multi = options.multi !== undefined ? options.multi : false
-    const upsert = options.upsert !== undefined ? options.upsert : false
+    const multi = Boolean(options?.multi)
+    const upsert = Boolean(options?.upsert)
 
     // If upsert option is set, check whether we need to insert the doc
     if (upsert) {
-      const cursor = new Cursor(self, query)
+      const cursor = new Cursor(this, query)
       const docs = await cursor.limit(1).exec()
 
       if (docs.length !== 1) {
@@ -471,11 +470,14 @@ export class Collection extends EventEmitter2 {
           toBeInserted = modify(deepCopy(query, true), updateQuery)
         }
 
-        const newDoc = await self.insert(toBeInserted)
+        const newDoc = await this.insert(toBeInserted)
 
         return {
           acknowledged: true,
           insertedIds: [newDoc._id],
+          insertedDocs: [newDoc],
+          insertedCount: 1,
+          upsert: true,
         }
       }
     }
@@ -490,11 +492,11 @@ export class Collection extends EventEmitter2 {
     for (i = 0; i < candidates.length; i += 1) {
       if (match(candidates[i], query) && (multi || numReplaced === 0)) {
         numReplaced += 1
-        if (self.timestampData) {
+        if (this.timestampData) {
           createdAt = candidates[i].createdAt
         }
         modifiedDoc = modify(candidates[i], updateQuery)
-        if (self.timestampData) {
+        if (this.timestampData) {
           modifiedDoc.createdAt = createdAt
           modifiedDoc.updatedAt = new Date()
         }
@@ -506,23 +508,27 @@ export class Collection extends EventEmitter2 {
     }
 
     // Change the docs in memory
-    self.updateIndexes(modifications)
+    this.updateIndexes(modifications)
 
     // Update the datafile
     const updatedDocs = pluck(modifications, 'newDoc')
-    const persistedDocs = await self.persistence.persistNewState(updatedDocs)
 
-    if (!options.returnUpdatedDocs) {
-      return numReplaced
-    } else {
-      let updatedDocsDC = []
-      persistedDocs.forEach(function (doc) {
-        updatedDocsDC.push(deepCopy(doc))
-      })
-      if (!multi) {
-        updatedDocsDC = updatedDocsDC[0]
+    await this.persistence.persistNewState(updatedDocs)
+
+    if (options?.returnUpdatedDocs) {
+      const updatedDocsDC = []
+      updatedDocs.forEach(doc => updatedDocsDC.push(deepCopy(doc)))
+
+      return {
+        acknowledged: true,
+        modifiedCount: numReplaced,
+        updatedDocs: updatedDocsDC,
       }
-      return [numReplaced, updatedDocsDC]
+    } else {
+      return {
+        acknowledged: true,
+        modifiedCount: numReplaced,
+      }
     }
   }
 

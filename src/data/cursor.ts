@@ -143,7 +143,7 @@ export class Cursor {
    * Will return pointers to matched elements (shallow copies), returning full copies is the role of find or findOne
    * This is an internal function, use exec which uses the executor
    */
-  async exec() {
+  async exec(): Promise<any[]> {
     let res = [],
       added = 0,
       skipped = 0,
