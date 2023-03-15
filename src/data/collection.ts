@@ -1,20 +1,22 @@
-import async from 'async'
-import { Executor } from './executor'
 import { Index } from './indexes'
-import _, { isArray, isDate, isObject, noop } from 'lodash'
+import { isArray, isString, noop } from 'lodash'
 import { Persistence } from './persistence'
 import { Cursor } from './cursor'
 import { uid } from './custom-utils'
 import { checkObject, deepCopy, match, modify } from './model'
 import { pluck } from './utils'
 import { EventEmitter2 } from 'eventemitter2'
+import {
+  checkIndexesFromMostToLeast,
+  removeExpiredDocuments,
+} from './_get-candidates'
 
 type Options = {
   filename?: string
   timestampData?: boolean
   inMemoryOnly?: boolean
   autoload?: boolean
-  onload?: (err: Error) => void
+  onload?: (err?: Error) => void
   afterSerialization?: (doc: any) => any
   beforeDeserialization?: (doc: any) => any
   corruptAlertThreshold?: number
@@ -28,7 +30,6 @@ export class Collection extends EventEmitter2 {
   timestampData: boolean
   compareStrings: (a: string, b: string) => number
   persistence: Persistence
-  executor: Executor
   indexes: Record<string, Index>
 
   ttlIndexes: Record<string, any>
@@ -49,17 +50,18 @@ export class Collection extends EventEmitter2 {
    * Event Emitter - Events
    * * compaction.done - Fired whenever a compaction operation was finished
    */
-  constructor(options?: Options) {
+  constructor(_options?: Options | string) {
     super()
 
     let filename
+    let options: Options = {}
 
     // Retrocompatibility with v0.6 and before
-    if (typeof options === 'string') {
-      filename = options
+    if (isString(_options)) {
+      filename = _options
       this.inMemoryOnly = false // Default
     } else {
-      options = options || {}
+      options = _options || {}
       filename = options.filename
       this.inMemoryOnly = options.inMemoryOnly || false
       this.autoload = options.autoload || false
@@ -85,13 +87,6 @@ export class Collection extends EventEmitter2 {
       corruptAlertThreshold: options.corruptAlertThreshold,
     })
 
-    // This new executor is ready if we don't use persistence
-    // If we do, it will only be ready once loadDatabase is called
-    this.executor = new Executor()
-    if (this.inMemoryOnly) {
-      this.executor.ready = true
-    }
-
     // Indexed by field name, dot notation can be used
     // _id is always indexed and since _ids are generated randomly the underlying
     // binary is always well-balanced
@@ -102,29 +97,22 @@ export class Collection extends EventEmitter2 {
     // Queue a load of the database right away and call the onload handler
     // By default (no onload handler), if there is an error there, no operation will be possible so warn the user by throwing an exception
     if (this.autoload) {
-      this.loadDatabase(
-        options.onload ||
-          function (err) {
-            if (err) {
-              throw err
-            }
-          },
-      )
+      this.loadDatabase()
+        .then(() => {
+          this.emit('ready')
+          options?.onload?.()
+        })
+        .catch(err => {
+          options?.onload?.(err)
+        })
     }
   }
 
   /**
    * Load the database from the datafile, and trigger the execution of buffered commands if any
    */
-  loadDatabase(...args) {
-    this.executor.push(
-      {
-        this: this.persistence,
-        fn: this.persistence.loadDatabase,
-        arguments: args,
-      },
-      true,
-    )
+  async loadDatabase() {
+    return this.persistence.loadDatabase()
   }
 
   /**
@@ -138,10 +126,8 @@ export class Collection extends EventEmitter2 {
    * Reset all currently defined indexes
    */
   resetIndexes(newData?) {
-    const self = this
-
-    Object.keys(this.indexes).forEach(function (i) {
-      self.indexes[i].reset(newData)
+    Object.keys(this.indexes).forEach(i => {
+      this.indexes[i].reset(newData)
     })
   }
 
@@ -153,21 +139,20 @@ export class Collection extends EventEmitter2 {
    * @param {Boolean} options.unique
    * @param {Boolean} options.sparse
    * @param {Number} options.expireAfterSeconds - Optional, if set this index becomes a TTL index (only works on Date fields, not arrays of Date)
-   * @param {Function} cb Optional callback, signature: err
+   * @param options
    */
-  ensureIndex(options, cb?) {
+  async ensureIndex(options) {
     let err
-    const callback = cb || noop
 
     options = options || {}
 
     if (!options.fieldName) {
       err = new Error('Cannot create an index without a fieldName')
       err.missingFieldName = true
-      return callback(err)
+      throw err
     }
     if (this.indexes[options.fieldName]) {
-      return callback(null)
+      return null
     }
 
     this.indexes[options.fieldName] = new Index(options)
@@ -179,40 +164,20 @@ export class Collection extends EventEmitter2 {
       this.indexes[options.fieldName].insert(this.getAllData())
     } catch (e) {
       delete this.indexes[options.fieldName]
-      return callback(e)
+      throw e
     }
 
     // We may want to force all options to be persisted including defaults, not just the ones passed the index creation function
-    this.persistence.persistNewState(
-      [{ $$indexCreated: options }],
-      function (err) {
-        if (err) {
-          return callback(err)
-        }
-        return callback(null)
-      },
-    )
+    await this.persistence.persistNewState([{ $$indexCreated: options }])
   }
 
   /**
    * Remove an index
-   * @param {String} fieldName
-   * @param {Function} cb Optional callback, signature: err
    */
-  removeIndex(fieldName, cb) {
-    const callback = cb || noop
-
+  async removeIndex(fieldName: string) {
     delete this.indexes[fieldName]
 
-    this.persistence.persistNewState(
-      [{ $$indexRemoved: fieldName }],
-      function (err) {
-        if (err) {
-          return callback(err)
-        }
-        return callback(null)
-      },
-    )
+    await this.persistence.persistNewState([{ $$indexRemoved: fieldName }])
   }
 
   /**
@@ -291,137 +256,13 @@ export class Collection extends EventEmitter2 {
    *
    * @param {Query} query
    * @param {Boolean} dontExpireStaleDocs Optional, defaults to false, if true don't remove stale docs. Useful for the remove function which shouldn't be impacted by expirations
-   * @param {Function} callback Signature err, candidates
    */
-  getCandidates(query, dontExpireStaleDocs, callback?) {
-    const indexNames = Object.keys(this.indexes),
-      self = this
-    let usableQueryKeys
+  async getCandidates(query, dontExpireStaleDocs = false) {
+    const indexNames = Object.keys(this.indexes)
 
-    if (typeof dontExpireStaleDocs === 'function') {
-      callback = dontExpireStaleDocs
-      dontExpireStaleDocs = false
-    }
+    const docs = await checkIndexesFromMostToLeast.call(this, query, indexNames)
 
-    async.waterfall(
-      [
-        // STEP 1: get candidates list by checking indexes from most to least frequent usecase
-        function (cb) {
-          // For a basic match
-          usableQueryKeys = []
-          Object.keys(query).forEach(function (k) {
-            if (
-              typeof query[k] === 'string' ||
-              typeof query[k] === 'number' ||
-              typeof query[k] === 'boolean' ||
-              isDate(query[k]) ||
-              query[k] === null
-            ) {
-              usableQueryKeys.push(k)
-            }
-          })
-          usableQueryKeys = _.intersection(usableQueryKeys, indexNames)
-          if (usableQueryKeys.length > 0) {
-            return cb(
-              null,
-              self.indexes[usableQueryKeys[0]].getMatching(
-                query[usableQueryKeys[0]],
-              ),
-            )
-          }
-
-          // For $in match
-          usableQueryKeys = []
-          Object.keys(query).forEach(function (k) {
-            if (isObject(query[k]) && '$in' in query[k]) {
-              usableQueryKeys.push(k)
-            }
-          })
-          usableQueryKeys = _.intersection(usableQueryKeys, indexNames)
-          if (usableQueryKeys.length > 0) {
-            return cb(
-              null,
-              self.indexes[usableQueryKeys[0]].getMatching(
-                query[usableQueryKeys[0]].$in,
-              ),
-            )
-          }
-
-          // For a comparison match
-          usableQueryKeys = []
-          Object.keys(query).forEach(function (k) {
-            const item = query[k]
-
-            const modifiers = ['$lt', '$lte', '$gt', '$gte']
-
-            if (isObject(query[k]) && modifiers.some(m => m in item)) {
-              usableQueryKeys.push(k)
-            }
-          })
-          usableQueryKeys = _.intersection(usableQueryKeys, indexNames)
-          if (usableQueryKeys.length > 0) {
-            return cb(
-              null,
-              self.indexes[usableQueryKeys[0]].getBetweenBounds(
-                query[usableQueryKeys[0]],
-              ),
-            )
-          }
-
-          // By default, return all the DB data
-          return cb(null, self.getAllData())
-        },
-        // STEP 2: remove all expired documents
-        function (docs, wcb) {
-          if (dontExpireStaleDocs) {
-            return wcb(null, docs)
-          }
-
-          const expiredDocsIds = [],
-            validDocs = [],
-            ttlIndexesFieldNames = Object.keys(self.ttlIndexes)
-
-          docs.forEach(function (doc) {
-            let valid = true
-            ttlIndexesFieldNames.forEach(function (i) {
-              if (
-                doc[i] !== undefined &&
-                isDate(doc[i]) &&
-                Date.now() > doc[i].getTime() + self.ttlIndexes[i] * 1000
-              ) {
-                valid = false
-              }
-            })
-            if (valid) {
-              validDocs.push(doc)
-            } else {
-              expiredDocsIds.push(doc._id)
-            }
-          })
-
-          async.eachSeries(
-            expiredDocsIds,
-            function (_id, cb) {
-              self._remove({ _id: _id }, {}, function (err) {
-                if (err) {
-                  return wcb(err)
-                }
-                return cb()
-              })
-            },
-            function (err) {
-              return wcb(null, validDocs)
-            },
-          )
-        },
-      ],
-      function (err, res) {
-        if (err) {
-          return callback(err)
-        }
-        return callback(null, res)
-      },
-    )
+    return await removeExpiredDocuments.call(this, docs, dontExpireStaleDocs)
   }
 
   /**
@@ -431,25 +272,16 @@ export class Collection extends EventEmitter2 {
    *
    * @api private Use Datastore.insert which has the same signature
    */
-  _insert(newDoc, insertCallback = noop) {
-    let preparedDoc
+  async insert(newDoc, insertCallback = noop) {
+    const preparedDoc = this.prepareDocumentForInsertion(newDoc)
 
-    try {
-      preparedDoc = this.prepareDocumentForInsertion(newDoc)
-      this._insertInCache(preparedDoc)
-    } catch (e) {
-      return insertCallback(e)
-    }
+    this._insertInCache(preparedDoc)
 
-    this.persistence.persistNewState(
+    await this.persistence.persistNewState(
       isArray(preparedDoc) ? preparedDoc : [preparedDoc],
-      function (err) {
-        if (err) {
-          return insertCallback(err)
-        }
-        return insertCallback(null, deepCopy(preparedDoc))
-      },
     )
+
+    return deepCopy(preparedDoc)
   }
 
   /**
@@ -535,27 +367,16 @@ export class Collection extends EventEmitter2 {
     }
   }
 
-  insert(...args) {
-    this.executor.push({ this: this, fn: this._insert, arguments: args })
-  }
-
   /**
    * Count all documents matching the query
    * @param {Object} query MongoDB-style query
    */
-  count(query, callback) {
-    const cursor = new Cursor(this, query, function (err, docs, callback) {
-      if (err) {
-        return callback(err)
-      }
-      return callback(null, docs.length)
+  async count(query) {
+    const cursor = new Cursor(this, query, async function (docs) {
+      return docs.length
     })
 
-    if (typeof callback === 'function') {
-      cursor.exec(callback)
-    } else {
-      return cursor
-    }
+    return (await cursor.exec()) as unknown as number
   }
 
   /**
@@ -563,84 +384,40 @@ export class Collection extends EventEmitter2 {
    * If no callback is passed, we return the cursor so that user can limit, skip and finally exec
    * @param {Object} query MongoDB-style query
    * @param {Object} projection MongoDB-style projection
-   * @param callback
    */
-  find(query, projection, callback) {
-    switch (arguments.length) {
-      case 1:
-        projection = {}
-        // callback is undefined, will return a cursor
-        break
-      case 2:
-        if (typeof projection === 'function') {
-          callback = projection
-          projection = {}
-        } // If not assume projection is an object and callback undefined
-        break
-    }
-
-    const cursor = new Cursor(this, query, function (err, docs, _callback) {
+  find(query?, projection?) {
+    const cursor = new Cursor(this, query, async function (docs) {
       const res = []
-
-      if (err) {
-        return _callback(err)
-      }
 
       for (let i = 0; i < docs.length; i += 1) {
         res.push(deepCopy(docs[i]))
       }
 
-      return _callback(null, res)
+      return res
     })
 
     cursor.projection(projection)
 
-    if (typeof callback === 'function') {
-      cursor.exec(callback)
-    } else {
-      return cursor
-    }
+    return cursor
   }
 
   /**
    * Find one document matching the query
    * @param {Object} query MongoDB-style query
    * @param {Object} projection MongoDB-style projection
-   * @param callback
    */
-  findOne(query, projection, callback) {
-    switch (arguments.length) {
-      case 1:
-        projection = {}
-        // callback is undefined, will return a cursor
-        break
-      case 2:
-        if (typeof projection === 'function') {
-          callback = projection
-          projection = {}
-        } // If not assume projection is an object and callback undefined
-        break
-    }
-
-    const cursor = new Cursor(this, query, function (err, docs, _callback) {
-      if (err) {
-        return _callback(err)
-      }
-
+  async findOne(query, projection?) {
+    const cursor = new Cursor(this, query, async function (docs) {
       if (docs.length === 1) {
-        return _callback(null, deepCopy(docs[0]))
+        return deepCopy(docs[0])
       } else {
-        return _callback(null, null)
+        return null
       }
     })
 
     cursor.projection(projection).limit(1)
 
-    if (typeof callback === 'function') {
-      cursor.exec(callback)
-    } else {
-      return cursor
-    }
+    return (await cursor.exec()) as any
   }
 
   /**
@@ -668,133 +445,91 @@ export class Collection extends EventEmitter2 {
    *
    * @api private Use Datastore.update which has the same signature
    */
-  _update(query, updateQuery, options, cb) {
+  async update(query, updateQuery, options?): Promise<any> {
     let numReplaced = 0,
       i
 
-    if (typeof options === 'function') {
-      cb = options
-      options = {}
+    const multi = Boolean(options?.multi)
+    const upsert = Boolean(options?.upsert)
+
+    // If upsert option is set, check whether we need to insert the doc
+    if (upsert) {
+      const cursor = new Cursor(this, query)
+      const docs = await cursor.limit(1).exec()
+
+      if (docs.length !== 1) {
+        let toBeInserted
+
+        try {
+          checkObject(updateQuery)
+          // updateQuery is a simple object with no modifier, use it as the document to insert
+          toBeInserted = updateQuery
+        } catch (e) {
+          // updateQuery contains modifiers, use the find query as the base,
+          // strip it from all operators and update it according to updateQuery
+          toBeInserted = modify(deepCopy(query, true), updateQuery)
+        }
+
+        const newDoc = await this.insert(toBeInserted)
+
+        return {
+          acknowledged: true,
+          insertedIds: [newDoc._id],
+          insertedDocs: [newDoc],
+          insertedCount: 1,
+          upsert: true,
+        }
+      }
     }
-    const self = this
-    const callback = cb || noop
-    const multi = options.multi !== undefined ? options.multi : false
-    const upsert = options.upsert !== undefined ? options.upsert : false
 
-    async
-      .waterfall([
-        function (cb) {
-          // If upsert option is set, check whether we need to insert the doc
-          if (!upsert) {
-            return cb()
-          }
+    // Perform the update
+    let modifiedDoc, createdAt
 
-          // Need to use an internal function not tied to the executor to avoid deadlock
-          const cursor = new Cursor(self, query)
-          cursor.limit(1)._exec(function (err, docs) {
-            if (err) {
-              return callback(err)
-            }
-            if (docs.length === 1) {
-              return cb()
-            } else {
-              let toBeInserted
+    const modifications = []
 
-              try {
-                checkObject(updateQuery)
-                // updateQuery is a simple object with no modifier, use it as the document to insert
-                toBeInserted = updateQuery
-              } catch (e) {
-                // updateQuery contains modifiers, use the find query as the base,
-                // strip it from all operators and update it according to updateQuery
-                try {
-                  toBeInserted = modify(deepCopy(query, true), updateQuery)
-                } catch (err) {
-                  return callback(err)
-                }
-              }
+    const candidates = await this.getCandidates(query)
 
-              return self._insert(toBeInserted, function (err, newDoc) {
-                if (err) {
-                  return callback(err)
-                }
-                return callback(null, 1, newDoc, true)
-              })
-            }
-          })
-        },
-        function () {
-          // Perform the update
-          let modifiedDoc, createdAt
+    for (i = 0; i < candidates.length; i += 1) {
+      if (match(candidates[i], query) && (multi || numReplaced === 0)) {
+        numReplaced += 1
+        if (this.timestampData) {
+          createdAt = candidates[i].createdAt
+        }
+        modifiedDoc = modify(candidates[i], updateQuery)
+        if (this.timestampData) {
+          modifiedDoc.createdAt = createdAt
+          modifiedDoc.updatedAt = new Date()
+        }
+        modifications.push({
+          oldDoc: candidates[i],
+          newDoc: modifiedDoc,
+        })
+      }
+    }
 
-          const modifications = []
+    // Change the docs in memory
+    this.updateIndexes(modifications)
 
-          self.getCandidates(query, function (err, candidates) {
-            if (err) {
-              return callback(err)
-            }
+    // Update the datafile
+    const updatedDocs = pluck(modifications, 'newDoc')
 
-            // Preparing update (if an error is thrown here neither the datafile nor
-            // the in-memory indexes are affected)
-            try {
-              for (i = 0; i < candidates.length; i += 1) {
-                if (
-                  match(candidates[i], query) &&
-                  (multi || numReplaced === 0)
-                ) {
-                  numReplaced += 1
-                  if (self.timestampData) {
-                    createdAt = candidates[i].createdAt
-                  }
-                  modifiedDoc = modify(candidates[i], updateQuery)
-                  if (self.timestampData) {
-                    modifiedDoc.createdAt = createdAt
-                    modifiedDoc.updatedAt = new Date()
-                  }
-                  modifications.push({
-                    oldDoc: candidates[i],
-                    newDoc: modifiedDoc,
-                  })
-                }
-              }
-            } catch (err) {
-              return callback(err)
-            }
+    await this.persistence.persistNewState(updatedDocs)
 
-            // Change the docs in memory
-            try {
-              self.updateIndexes(modifications)
-            } catch (err) {
-              return callback(err)
-            }
+    if (options?.returnUpdatedDocs) {
+      const updatedDocsDC = []
+      updatedDocs.forEach(doc => updatedDocsDC.push(deepCopy(doc)))
 
-            // Update the datafile
-            const updatedDocs = pluck(modifications, 'newDoc')
-            self.persistence.persistNewState(updatedDocs, function (err) {
-              if (err) {
-                return callback(err)
-              }
-              if (!options.returnUpdatedDocs) {
-                return callback(null, numReplaced)
-              } else {
-                let updatedDocsDC = []
-                updatedDocs.forEach(function (doc) {
-                  updatedDocsDC.push(deepCopy(doc))
-                })
-                if (!multi) {
-                  updatedDocsDC = updatedDocsDC[0]
-                }
-                return callback(null, numReplaced, updatedDocsDC)
-              }
-            })
-          })
-        },
-      ])
-      .catch(console.error)
-  }
-
-  update(...args) {
-    this.executor.push({ this: this, fn: this._update, arguments: args })
+      return {
+        acknowledged: true,
+        modifiedCount: numReplaced,
+        updatedDocs: updatedDocsDC,
+      }
+    } else {
+      return {
+        acknowledged: true,
+        modifiedCount: numReplaced,
+      }
+    }
   }
 
   /**
@@ -803,50 +538,29 @@ export class Collection extends EventEmitter2 {
    * @param {Object} query
    * @param {Object} options Optional options
    *                 options.multi If true, can update multiple documents (defaults to false)
-   * @param {Function} cb Optional callback, signature: err, numRemoved
    *
    * @api private Use Datastore.remove which has the same signature
    */
-  _remove(query, options, cb) {
+  async remove(query, options?) {
     let numRemoved = 0
 
     const self = this
     const removedDocs = []
 
-    if (typeof options === 'function') {
-      cb = options
-      options = {}
-    }
-    const callback = cb || noop
-    const multi = options.multi !== undefined ? options.multi : false
+    const multi = Boolean(options?.multi)
 
-    this.getCandidates(query, true, function (err, candidates) {
-      if (err) {
-        return callback(err)
+    const candidates = await this.getCandidates(query, true)
+
+    candidates.forEach(function (d) {
+      if (match(d, query) && (multi || numRemoved === 0)) {
+        numRemoved += 1
+        removedDocs.push({ $$deleted: true, _id: d._id })
+        self.removeFromIndexes(d)
       }
-
-      try {
-        candidates.forEach(function (d) {
-          if (match(d, query) && (multi || numRemoved === 0)) {
-            numRemoved += 1
-            removedDocs.push({ $$deleted: true, _id: d._id })
-            self.removeFromIndexes(d)
-          }
-        })
-      } catch (err) {
-        return callback(err)
-      }
-
-      self.persistence.persistNewState(removedDocs, function (err) {
-        if (err) {
-          return callback(err)
-        }
-        return callback(null, numRemoved)
-      })
     })
-  }
 
-  remove(...args) {
-    this.executor.push({ this: this, fn: this._remove, arguments: args })
+    await self.persistence.persistNewState(removedDocs)
+
+    return numRemoved
   }
 }

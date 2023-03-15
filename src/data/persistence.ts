@@ -7,14 +7,12 @@
 
 import path from 'path'
 
-import async from 'async'
-
 import { Index } from './indexes'
 import { deserialize, serialize } from './serialization'
 import { uid } from './custom-utils'
 import { Storage } from './storage'
-import { noop } from 'lodash'
 import { Collection } from './collection'
+import { readFileSync } from 'fs'
 
 type Options = {
   db: Collection
@@ -103,11 +101,8 @@ export class Persistence {
    * Check if a directory exists and create it on the fly if it is not the case
    * cb is optional, signature: err
    */
-  static ensureDirectoryExists(dir, cb) {
-    const callback = cb || noop
-    Storage.mkdirp(dir)
-      .then(result => cb(null, result))
-      .catch(callback)
+  static async ensureDirectoryExists(dir) {
+    return Storage.mkdirp(dir)
   }
 
   /**
@@ -116,19 +111,19 @@ export class Persistence {
    * while the data file is append-only so it may grow larger
    * @param {Function} cb Optional callback, signature: err
    */
-  persistCachedDatabase(cb) {
-    const callback = cb || noop
+  async persistCachedDatabase() {
     const self = this
     let toPersist = ''
 
     if (this.inMemoryOnly) {
-      return callback(null)
+      return null
     }
 
-    this.db.getAllData().forEach(function (doc) {
-      toPersist += self.afterSerialization(serialize(doc)) + '\n'
+    this.db.getAllData().forEach(doc => {
+      toPersist += this.afterSerialization(serialize(doc)) + '\n'
     })
-    Object.keys(this.db.indexes).forEach(function (fieldName) {
+
+    Object.keys(this.db.indexes).forEach(fieldName => {
       if (fieldName != '_id') {
         // The special _id index is managed by datastore.js, the others need to be persisted
         toPersist +=
@@ -136,32 +131,24 @@ export class Persistence {
             serialize({
               $$indexCreated: {
                 fieldName: fieldName,
-                unique: self.db.indexes[fieldName].unique,
-                sparse: self.db.indexes[fieldName].sparse,
+                unique: this.db.indexes[fieldName].unique,
+                sparse: this.db.indexes[fieldName].sparse,
               },
             }),
           ) + '\n'
       }
     })
 
-    Storage.crashSafeWriteFile(this.filename, toPersist, function (err) {
-      if (err) {
-        return callback(err)
-      }
-      self.db.emit('compaction.done')
-      return callback(null)
-    })
+    await Storage.crashSafeWriteFile(this.filename, toPersist)
+
+    this.db.emit('compaction.done')
   }
 
   /**
    * Queue a rewrite of the datafile
    */
-  compactDatafile() {
-    this.db.executor.push({
-      this: this,
-      fn: this.persistCachedDatabase,
-      arguments: [],
-    })
+  async compactDatafile() {
+    return this.persistCachedDatabase()
   }
 
   /**
@@ -175,7 +162,7 @@ export class Persistence {
     this.stopAutocompaction()
 
     this.autocompactionIntervalId = setInterval(function () {
-      self.compactDatafile()
+      self.compactDatafile().catch(console.error)
     }, realInterval)
   }
 
@@ -194,13 +181,12 @@ export class Persistence {
    * @param {Array} newDocs Can be empty if no doc was updated/removed
    * @param {Function} cb Optional, signature: err
    */
-  persistNewState(newDocs, cb) {
+  async persistNewState(newDocs) {
     const self = this
     let toPersist = ''
-    const callback = cb || noop
     // In-memory only datastore
     if (self.inMemoryOnly) {
-      return callback(null)
+      return null
     }
 
     newDocs.forEach(function (doc) {
@@ -208,12 +194,10 @@ export class Persistence {
     })
 
     if (toPersist.length === 0) {
-      return callback(null)
+      return null
     }
 
-    Storage.appendFile(self.filename, toPersist, 'utf8', function (err) {
-      return callback(err)
-    })
+    await Storage.appendFile(self.filename, toPersist, 'utf8')
   }
 
   /**
@@ -281,68 +265,34 @@ export class Persistence {
    * This operation is very quick at startup for a big collection (60ms for ~10k docs)
    * @param {Function} cb Optional callback, signature: err
    */
-  loadDatabase(cb) {
-    const callback = cb || noop,
-      self = this
-    self.db.resetIndexes()
+  async loadDatabase() {
+    this.db.resetIndexes()
 
-    // In-memory only datastore
-    if (self.inMemoryOnly) {
-      return callback(null)
+    if (this.inMemoryOnly) {
+      return null
     }
 
-    async.waterfall(
-      [
-        function (cb) {
-          Persistence.ensureDirectoryExists(
-            path.dirname(self.filename),
-            function () {
-              Storage.ensureDatafileIntegrity(self.filename, function () {
-                Storage.readFile(
-                  self.filename,
-                  'utf8',
-                  function (err, rawData) {
-                    if (err) {
-                      return cb(err)
-                    }
+    await Persistence.ensureDirectoryExists(path.dirname(this.filename))
 
-                    let treatedData
+    await Storage.ensureDatafileIntegrity(this.filename)
 
-                    try {
-                      treatedData = self.treatRawData(rawData)
-                    } catch (e) {
-                      return cb(e)
-                    }
+    const rawData = readFileSync(this.filename, 'utf8')
 
-                    // Recreate all indexes in the datafile
-                    Object.keys(treatedData.indexes).forEach(function (key) {
-                      self.db.indexes[key] = new Index(treatedData.indexes[key])
-                    })
+    const treatedData = this.treatRawData(rawData)
 
-                    // Fill cached database (i.e. all indexes) with data
-                    try {
-                      self.db.resetIndexes(treatedData.data)
-                    } catch (e) {
-                      self.db.resetIndexes() // Rollback any index which didn't fail
-                      return cb(e)
-                    }
+    // Recreate all indexes in the datafile
+    Object.keys(treatedData.indexes).forEach(key => {
+      this.db.indexes[key] = new Index(treatedData.indexes[key])
+    })
 
-                    self.db.persistence.persistCachedDatabase(cb)
-                  },
-                )
-              })
-            },
-          )
-        },
-      ],
-      function (err) {
-        if (err) {
-          return callback(err)
-        }
+    // Fill cached database (i.e. all indexes) with data
+    try {
+      this.db.resetIndexes(treatedData.data)
+    } catch (e) {
+      this.db.resetIndexes() // Rollback any index which didn't fail
+      throw e
+    }
 
-        self.db.executor.processBuffer()
-        return callback(null)
-      },
-    )
+    await this.db.persistence.persistCachedDatabase()
   }
 }

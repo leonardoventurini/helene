@@ -162,7 +162,7 @@ function compareArrays(a, b) {
 export function compareThings(
   a,
   b,
-  _compareStrings?: (a: string, b: string) => -1 | 0 | 1,
+  _compareStrings?: (a: string, b: string) => number,
 ) {
   let comp, i
 
