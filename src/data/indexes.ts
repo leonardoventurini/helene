@@ -257,7 +257,7 @@ export class Index {
   /**
    * Revert an update
    */
-  revertUpdate(oldDoc, newDoc) {
+  revertUpdate(oldDoc, newDoc?) {
     const revert = []
 
     if (!isArray(oldDoc)) {

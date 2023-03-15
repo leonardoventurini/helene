@@ -131,39 +131,26 @@ describe('Model', function () {
       b = serialize(e4)
     })
 
-    it('Can serialize string fields with a new line without breaking the DB', function (done) {
+    it('Can serialize string fields with a new line without breaking the DB', async function () {
       const badString = 'world\r\nearth\nother\rline'
 
       if (fs.existsSync('workspace/test1.db')) {
         fs.unlinkSync('workspace/test1.db')
       }
 
-      fs.existsSync('workspace/test1.db').should.equal(false)
+      assert.strictEqual(fs.existsSync('workspace/test1.db'), false)
       const db1 = new Collection({ filename: 'workspace/test1.db' })
 
-      db1.loadDatabase(function (err) {
-        assert.notExists(err)
+      await db1.loadDatabase()
+      await assert.isFulfilled(db1.insert({ hello: badString }))
 
-        db1.insert({ hello: badString }, function (err) {
-          assert.notExists(err)
+      const db2 = new Collection({ filename: 'workspace/test1.db' })
 
-          const db2 = new Collection({ filename: 'workspace/test1.db' })
-
-          db2.loadDatabase(function (err) {
-            assert.notExists(err)
-
-            db2.find({}, function (err, docs) {
-              assert.notExists(err)
-
-              assert.exists(docs)
-              expect(docs).to.have.lengthOf(1)
-              expect(docs[0]).to.have.property('hello').that.equals(badString)
-
-              done()
-            })
-          })
-        })
-      })
+      await db2.loadDatabase()
+      const docs = await db2.find({}).exec()
+      assert.isArray(docs)
+      assert.lengthOf(docs, 1)
+      assert.propertyVal(docs[0], 'hello', badString)
     })
 
     it('Can accept objects whose keys are numbers', function () {
