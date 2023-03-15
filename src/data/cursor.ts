@@ -143,7 +143,7 @@ export class Cursor {
    * Will return pointers to matched elements (shallow copies), returning full copies is the role of find or findOne
    * This is an internal function, use exec which uses the executor
    */
-  async _exec() {
+  async exec() {
     let res = [],
       added = 0,
       skipped = 0,
@@ -180,10 +180,12 @@ export class Cursor {
 
       // Sorting
       const criteria = []
+
       for (i = 0; i < keys.length; i++) {
         key = keys[i]
         criteria.push({ key: key, direction: self._sort[key] })
       }
+
       res.sort(function (a, b) {
         let criterion, compare, i
         for (i = 0; i < criteria.length; i++) {
@@ -211,12 +213,10 @@ export class Cursor {
 
     res = self.project(res)
 
-    res = await this.execFn(res)
+    if (this.execFn) {
+      res = await this.execFn(res)
+    }
 
     return res
-  }
-
-  async exec() {
-    await this.db.executor.push({ this: this, fn: this._exec, arguments: [] })
   }
 }

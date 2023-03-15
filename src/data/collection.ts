@@ -1,4 +1,3 @@
-import { Executor } from './executor'
 import { Index } from './indexes'
 import { isArray, noop } from 'lodash'
 import { Persistence } from './persistence'
@@ -31,7 +30,6 @@ export class Collection extends EventEmitter2 {
   timestampData: boolean
   compareStrings: (a: string, b: string) => number
   persistence: Persistence
-  executor: Executor
   indexes: Record<string, Index>
 
   ttlIndexes: Record<string, any>
@@ -88,13 +86,6 @@ export class Collection extends EventEmitter2 {
       corruptAlertThreshold: options.corruptAlertThreshold,
     })
 
-    // This new executor is ready if we don't use persistence
-    // If we do, it will only be ready once loadDatabase is called
-    this.executor = new Executor()
-    if (this.inMemoryOnly) {
-      this.executor.ready = true
-    }
-
     // Indexed by field name, dot notation can be used
     // _id is always indexed and since _ids are generated randomly the underlying
     // binary is always well-balanced
@@ -105,29 +96,15 @@ export class Collection extends EventEmitter2 {
     // Queue a load of the database right away and call the onload handler
     // By default (no onload handler), if there is an error there, no operation will be possible so warn the user by throwing an exception
     if (this.autoload) {
-      this.loadDatabase(
-        options.onload ||
-          function (err) {
-            if (err) {
-              throw err
-            }
-          },
-      )
+      this.loadDatabase().then(options.onload ?? noop)
     }
   }
 
   /**
    * Load the database from the datafile, and trigger the execution of buffered commands if any
    */
-  async loadDatabase(...args) {
-    await this.executor.push(
-      {
-        this: this.persistence,
-        fn: this.persistence.loadDatabase,
-        arguments: args,
-      },
-      true,
-    )
+  async loadDatabase() {
+    return this.persistence.loadDatabase()
   }
 
   /**
@@ -289,7 +266,7 @@ export class Collection extends EventEmitter2 {
    *
    * @api private Use Datastore.insert which has the same signature
    */
-  async _insert(newDoc, insertCallback = noop) {
+  async insert(newDoc, insertCallback = noop) {
     const preparedDoc = this.prepareDocumentForInsertion(newDoc)
 
     this._insertInCache(preparedDoc)
@@ -384,10 +361,6 @@ export class Collection extends EventEmitter2 {
     }
   }
 
-  async insert(...args) {
-    await this.executor.push({ this: this, fn: this._insert, arguments: args })
-  }
-
   /**
    * Count all documents matching the query
    * @param {Object} query MongoDB-style query
@@ -406,7 +379,7 @@ export class Collection extends EventEmitter2 {
    * @param {Object} query MongoDB-style query
    * @param {Object} projection MongoDB-style projection
    */
-  async find(query, projection) {
+  find(query, projection?) {
     const cursor = new Cursor(this, query, async function (docs) {
       const res = []
 
@@ -419,7 +392,7 @@ export class Collection extends EventEmitter2 {
 
     cursor.projection(projection)
 
-    return await cursor.exec()
+    return cursor
   }
 
   /**
@@ -466,7 +439,7 @@ export class Collection extends EventEmitter2 {
    *
    * @api private Use Datastore.update which has the same signature
    */
-  async _update(query, updateQuery, options) {
+  async update(query, updateQuery, options) {
     let numReplaced = 0,
       i
 
@@ -477,7 +450,7 @@ export class Collection extends EventEmitter2 {
     // If upsert option is set, check whether we need to insert the doc
     if (upsert) {
       const cursor = new Cursor(self, query)
-      const docs = await cursor.limit(1)._exec()
+      const docs = await cursor.limit(1).exec()
 
       if (docs.length !== 1) {
         let toBeInserted
@@ -492,7 +465,7 @@ export class Collection extends EventEmitter2 {
           toBeInserted = modify(deepCopy(query, true), updateQuery)
         }
 
-        const newDoc = await self._insert(toBeInserted)
+        const newDoc = await self.insert(toBeInserted)
 
         return [1, newDoc, true]
       }
@@ -544,10 +517,6 @@ export class Collection extends EventEmitter2 {
     }
   }
 
-  async update(...args) {
-    await this.executor.push({ this: this, fn: this._update, arguments: args })
-  }
-
   /**
    * Remove all docs matching the query
    * For now very naive implementation (similar to update)
@@ -557,7 +526,7 @@ export class Collection extends EventEmitter2 {
    *
    * @api private Use Datastore.remove which has the same signature
    */
-  async _remove(query, options?) {
+  async remove(query, options?) {
     let numRemoved = 0
 
     const self = this
@@ -578,9 +547,5 @@ export class Collection extends EventEmitter2 {
     await self.persistence.persistNewState(removedDocs)
 
     return numRemoved
-  }
-
-  async remove(...args) {
-    await this.executor.push({ this: this, fn: this._remove, arguments: args })
   }
 }
