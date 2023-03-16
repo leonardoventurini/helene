@@ -6,7 +6,7 @@ import path from 'path'
 
 import _ from 'lodash'
 
-import { Collection } from '../../data/collection'
+import { Collection } from '../../data'
 import { Persistence } from '../../data/persistence'
 import { deserialize, serialize } from '../../data/serialization'
 import {

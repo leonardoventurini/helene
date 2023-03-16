@@ -1,6 +1,6 @@
 import { assert, expect } from 'chai'
 import { deserialize, serialize } from '../../data/serialization'
-import { Collection } from '../../data/collection'
+import { Collection } from '../../data'
 
 import _, { isDate } from 'lodash'
 
