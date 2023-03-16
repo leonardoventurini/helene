@@ -9,16 +9,19 @@ import _ from 'lodash'
 import { Collection } from '../../data/collection'
 import { Persistence } from '../../data/persistence'
 import { deserialize, serialize } from '../../data/serialization'
-import { Storage } from '../../data/storage'
+import {
+  ensureDatafileIntegrity,
+  ensureFileDoesntExist,
+} from '../../data/utils'
 
 const testDb = 'workspace/test.db'
 
 describe('Persistence', function () {
-  let d
+  let d: Collection
 
   beforeEach(async () => {
     d = new Collection({ filename: testDb })
-    assert.strictEqual(d.filename, testDb)
+    assert.strictEqual(d.name, testDb)
     assert.strictEqual(d.inMemoryOnly, false)
 
     await fs.promises.rm(path.dirname(testDb), { recursive: true, force: true })
@@ -190,7 +193,7 @@ describe('Persistence', function () {
     await d.remove({ a: 2 }, {})
 
     // Here, the underlying file is 3 lines long for only one document
-    const data = fs.readFileSync(d.filename, 'utf8').split('\n')
+    const data = fs.readFileSync(d.name, 'utf8').split('\n')
 
     let filledCount = 0
 
@@ -205,7 +208,7 @@ describe('Persistence', function () {
     await d.loadDatabase()
 
     // Now, the file has been compacted and is only 1 line long
-    const data2 = fs.readFileSync(d.filename, 'utf8').split('\n')
+    const data2 = fs.readFileSync(d.name, 'utf8').split('\n')
     let filledCount2 = 0
 
     data2.forEach(item => {
@@ -329,7 +332,7 @@ describe('Persistence', function () {
 
     it('Declaring only one hook will throw an exception to prevent data loss', async function () {
       const hookTestFilename = 'workspace/hookTest.db'
-      await Storage.ensureFileDoesntExist(hookTestFilename)
+      await ensureFileDoesntExist(hookTestFilename)
       fs.writeFileSync(hookTestFilename, 'Some content', 'utf8')
 
       expect(() => {
@@ -358,7 +361,7 @@ describe('Persistence', function () {
     it('Declaring two hooks that are not reverse of one another will cause an exception to prevent data loss', async function () {
       const hookTestFilename = 'workspace/hookTest.db'
 
-      await Storage.ensureFileDoesntExist(hookTestFilename)
+      await ensureFileDoesntExist(hookTestFilename)
 
       fs.writeFileSync(hookTestFilename, 'Some content', 'utf8')
 
@@ -379,7 +382,7 @@ describe('Persistence', function () {
 
     it('A serialization hook can be used to transform data before writing new state to disk', async function () {
       const hookTestFilename = 'workspace/hookTest.db'
-      await Storage.ensureFileDoesntExist(hookTestFilename)
+      await ensureFileDoesntExist(hookTestFilename)
 
       const d = new Collection({
         filename: hookTestFilename,
@@ -451,7 +454,7 @@ describe('Persistence', function () {
     it('Use serialization hook when persisting cached database or compacting', async () => {
       const hookTestFilename = 'workspace/hookTest.db'
 
-      await Storage.ensureFileDoesntExist(hookTestFilename)
+      await ensureFileDoesntExist(hookTestFilename)
 
       const d = new Collection({
         filename: hookTestFilename,
@@ -509,7 +512,7 @@ describe('Persistence', function () {
     it('Deserialization hook is correctly used when loading data', async () => {
       const hookTestFilename = 'workspace/hookTest.db'
 
-      await Storage.ensureFileDoesntExist(hookTestFilename)
+      await ensureFileDoesntExist(hookTestFilename)
 
       const d = new Collection({
         filename: hookTestFilename,
@@ -580,7 +583,7 @@ describe('Persistence', function () {
       assert.equal(fs.existsSync('workspace/it.db'), false)
       assert.equal(fs.existsSync('workspace/it.db~'), false)
 
-      await Storage.ensureDatafileIntegrity(p.filename)
+      await ensureDatafileIntegrity(p.name)
 
       assert.equal(fs.existsSync('workspace/it.db'), true)
       assert.equal(fs.existsSync('workspace/it.db~'), false)
@@ -609,7 +612,7 @@ describe('Persistence', function () {
       fs.existsSync('workspace/it.db').should.equal(true)
       fs.existsSync('workspace/it.db~').should.equal(false)
 
-      await Storage.ensureDatafileIntegrity(p.filename)
+      await ensureDatafileIntegrity(p.name)
 
       fs.existsSync('workspace/it.db').should.equal(true)
       fs.existsSync('workspace/it.db~').should.equal(false)
@@ -637,7 +640,7 @@ describe('Persistence', function () {
       assert.strictEqual(fs.existsSync('workspace/it.db'), false)
       assert.strictEqual(fs.existsSync('workspace/it.db~'), true)
 
-      await Storage.ensureDatafileIntegrity(p.filename)
+      await ensureDatafileIntegrity(p.name)
 
       assert.strictEqual(fs.existsSync('workspace/it.db'), true)
       assert.strictEqual(fs.existsSync('workspace/it.db~'), false)
@@ -668,7 +671,7 @@ describe('Persistence', function () {
       assert.equal(fs.existsSync('workspace/it.db'), true)
       assert.equal(fs.existsSync('workspace/it.db~'), true)
 
-      await Storage.ensureDatafileIntegrity(theDb.persistence.filename)
+      await ensureDatafileIntegrity(theDb.persistence.name)
 
       assert.equal(fs.existsSync('workspace/it.db'), true)
       assert.equal(fs.existsSync('workspace/it.db~'), true)
@@ -785,8 +788,8 @@ describe('Persistence', function () {
     it('Persistence works as expected when everything goes fine', async function () {
       const dbFile = 'workspace/test2.db'
 
-      await Storage.ensureFileDoesntExist(dbFile)
-      await Storage.ensureFileDoesntExist(dbFile + '~')
+      await ensureFileDoesntExist(dbFile)
+      await ensureFileDoesntExist(dbFile + '~')
 
       const theDb = new Collection({ filename: dbFile })
       await theDb.loadDatabase()
@@ -827,7 +830,7 @@ describe('Persistence', function () {
 
   describe('ensureFileDoesntExist', () => {
     it('Doesnt do anything if file already doesnt exist', async () => {
-      await Storage.ensureFileDoesntExist('workspace/nonexisting')
+      await ensureFileDoesntExist('workspace/nonexisting')
       assert.equal(fs.existsSync('workspace/nonexisting'), false)
     })
 
@@ -835,7 +838,7 @@ describe('Persistence', function () {
       fs.writeFileSync('workspace/existing', 'hello world', 'utf8')
       assert.equal(fs.existsSync('workspace/existing'), true)
 
-      await Storage.ensureFileDoesntExist('workspace/existing')
+      await ensureFileDoesntExist('workspace/existing')
       assert.equal(fs.existsSync('workspace/existing'), false)
     })
   })

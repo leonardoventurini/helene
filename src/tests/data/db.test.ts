@@ -3,9 +3,9 @@ import fs from 'fs'
 import _ from 'lodash'
 import path from 'path'
 import { Collection } from '../../data/collection'
-import { Persistence } from '../../data/persistence'
 import { deserialize, serialize } from '../../data/serialization'
 import { pluck } from '../../data/utils'
+import mkdirp from 'mkdirp'
 
 const testDb = 'workspace/test.db',
   reloadTimeUpperBound = 60 // In ms, an upper bound for the reload time used to check createdAt and updatedAt
@@ -15,10 +15,10 @@ describe('Database', function () {
 
   beforeEach(async () => {
     collection = new Collection({ filename: testDb })
-    collection.filename.should.equal(testDb)
+    collection.name.should.equal(testDb)
     collection.inMemoryOnly.should.equal(false)
 
-    await Persistence.ensureDirectoryExists(path.dirname(testDb))
+    await mkdirp(path.dirname(testDb))
 
     fs.existsSync(testDb) && fs.unlinkSync(testDb)
 
@@ -29,15 +29,15 @@ describe('Database', function () {
 
   it('Constructor compatibility with v0.6-', function () {
     let dbef = new Collection('somefile')
-    dbef.filename.should.equal('somefile')
+    dbef.name.should.equal('somefile')
     dbef.inMemoryOnly.should.equal(false)
 
     dbef = new Collection('')
-    assert.isNull(dbef.filename)
+    assert.isNull(dbef.name)
     dbef.inMemoryOnly.should.equal(true)
 
     dbef = new Collection()
-    assert.isNull(dbef.filename)
+    assert.isNull(dbef.name)
     dbef.inMemoryOnly.should.equal(true)
   })
 
@@ -2476,12 +2476,16 @@ describe('Database', function () {
 
       it('Indexes are persisted with their options and recreated even if some db operation happen between loads', async () => {
         const persDb = 'workspace/persistIndexes.db'
+
         let db
 
         if (fs.existsSync(persDb)) {
           fs.writeFileSync(persDb, '', 'utf8')
         }
+
         db = new Collection({ filename: persDb, autoload: true })
+
+        await db.waitFor('ready')
 
         Object.keys(db.indexes).length.should.equal(1)
         Object.keys(db.indexes)[0].should.equal('_id')
@@ -2498,6 +2502,7 @@ describe('Database', function () {
         Object.keys(db.indexes).length.should.equal(2)
         Object.keys(db.indexes)[0].should.equal('_id')
         Object.keys(db.indexes)[1].should.equal('planet')
+
         db.indexes._id.getAll().length.should.equal(2)
         db.indexes.planet.getAll().length.should.equal(2)
         db.indexes.planet.unique.should.equal(true)
@@ -2554,12 +2559,16 @@ describe('Database', function () {
 
       it('Indexes can also be removed and the remove persisted', async function () {
         const persDb = 'workspace/persistIndexes.db'
+
         let db
 
         if (fs.existsSync(persDb)) {
           fs.writeFileSync(persDb, '', 'utf8')
         }
+
         db = new Collection({ filename: persDb, autoload: true })
+
+        await db.waitFor('ready')
 
         Object.keys(db.indexes).length.should.equal(1)
         Object.keys(db.indexes)[0].should.equal('_id')

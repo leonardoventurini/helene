@@ -3,9 +3,9 @@ import fs from 'fs'
 import path from 'path'
 import _ from 'lodash'
 import { Collection } from '../../data/collection'
-import { Persistence } from '../../data/persistence'
 import { Cursor } from '../../data/cursor'
 import { pluck } from '../../data/utils'
+import mkdirp from 'mkdirp'
 
 const testDb = 'workspace/test.db'
 
@@ -15,10 +15,10 @@ describe('Cursor', () => {
   beforeEach(async () => {
     collection = new Collection({ filename: testDb })
 
-    collection.filename.should.equal(testDb)
+    collection.name.should.equal(testDb)
     collection.inMemoryOnly.should.equal(false)
 
-    await Persistence.ensureDirectoryExists(path.dirname(testDb))
+    await mkdirp(path.dirname(testDb))
 
     const exists = fs.existsSync(testDb)
 

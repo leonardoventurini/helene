@@ -6,112 +6,52 @@
  * This version is the Node.js/Node Webkit version
  * It's essentially fs, mkdirp and crash safe write and read functions
  */
-
-import fs, { closeSync, fsyncSync, openSync, writeFileSync } from 'fs'
-import { appendFile, readFile, rename, unlink, writeFile } from 'fs/promises'
+import fs from 'fs'
 import mkdirp from 'mkdirp'
 import path from 'path'
+import { IStorage } from './types'
+import { ensureDatafileIntegrity, flushToStorage } from './utils'
 
-export const Storage = {
-  exists: fs.existsSync,
-  rename,
-  writeFile,
-  unlink,
-  appendFile,
-  readFile,
-  mkdirp,
+export class NodeStorage implements IStorage {
+  async read(name: string) {
+    await mkdirp(path.dirname(name))
 
-  async ensureFileDoesntExist(file) {
-    const exists = Storage.exists(file)
+    await ensureDatafileIntegrity(name)
 
-    if (!exists) {
-      return null
-    }
-
-    await Storage.unlink(file)
-  },
-
-  /**
-   * Flush data in OS buffer to storage if corresponding option is set
-   * @param {String} options.filename
-   * @param {Boolean} options.isDir Optional, defaults to false
-   * If options is a string, it is assumed that the flush of the file (not dir) called options was requested
-   */
-  async flushToStorage(options) {
-    let filename, flags
-    if (typeof options === 'string') {
-      filename = options
-      flags = 'r+'
-    } else {
-      filename = options.filename
-      flags = options.isDir ? 'r' : 'r+'
-    }
-
-    // Windows can't fsync (FlushFileBuffers) directories. We can live with this as it cannot cause 100% dataloss
-    // except in the very rare event of the first time database is loaded and a crash happens
-    if (flags === 'r' && ['win32', 'win64'].includes(process.platform)) {
-      return null
-    }
-
-    const fd = openSync(filename, flags)
-    fsyncSync(fd)
-    closeSync(fd)
-  },
+    return await fs.promises.readFile(name, 'utf8')
+  }
 
   /**
    * Fully write or rewrite the datafile, immune to crashes during the write operation (data will not be lost)
-   * @param {String} filename
-   * @param {String} data
    */
-  async crashSafeWriteFile(filename, data) {
+  async write(name, data) {
     // eslint-disable-next-line @typescript-eslint/no-empty-function
-    const tempFilename = filename + '~'
+    const tempFilename = name + '~'
 
-    await Storage.flushToStorage({
-      filename: path.dirname(filename),
+    await flushToStorage({
+      filename: path.dirname(name),
       isDir: true,
     })
 
-    const exists = Storage.exists(filename)
+    const exists = fs.existsSync(name)
 
     if (exists) {
-      await Storage.flushToStorage(filename)
+      await flushToStorage(name)
     }
 
-    writeFileSync(tempFilename, data)
+    fs.writeFileSync(tempFilename, data)
 
-    await Storage.flushToStorage(tempFilename)
+    await flushToStorage(tempFilename)
 
-    await Storage.rename(tempFilename, filename)
+    await fs.promises.rename(tempFilename, name)
 
-    await Storage.flushToStorage({
-      filename: path.dirname(filename),
+    await flushToStorage({
+      filename: path.dirname(name),
       isDir: true,
     })
-  },
+  }
 
-  /**
-   * Ensure the datafile contains all the data, even if there was a crash during a full file write
-   * @param {String} filename
-   */
-  async ensureDatafileIntegrity(filename) {
-    const tempFilename = filename + '~'
-
-    const filenameExists = Storage.exists(filename)
-
-    // Write was successful
-    if (filenameExists) {
-      return null
-    }
-
-    const oldFilenameExists = Storage.exists(tempFilename)
-
-    // New database
-    if (!oldFilenameExists) {
-      return await Storage.writeFile(filename, '', 'utf8')
-    }
-
-    // Write failed, use old version
-    await Storage.rename(tempFilename, filename)
-  },
+  async append(name, data) {
+    await fs.promises.appendFile(name, data, 'utf8')
+  }
 }

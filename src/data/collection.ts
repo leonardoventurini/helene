@@ -24,7 +24,7 @@ type Options = {
 }
 
 export class Collection extends EventEmitter2 {
-  filename: string | null
+  name: string | null
   inMemoryOnly: boolean
   autoload: boolean
   timestampData: boolean
@@ -34,22 +34,6 @@ export class Collection extends EventEmitter2 {
 
   ttlIndexes: Record<string, any>
 
-  /**
-   * Create a new collection
-   * @param {String} options.filename Optional, datastore will be in-memory only if not provided
-   * @param {Boolean} options.timestampData Optional, defaults to false. If set to true, createdAt and updatedAt will be created and populated automatically (if not specified by user)
-   * @param {Boolean} options.inMemoryOnly Optional, defaults to false
-   * @param {String} options.nodeWebkitAppName Optional, specify the name of your NW app if you want options.filename to be relative to the directory where
-   *                                            Node Webkit stores application data such as cookies and local storage (the best place to store data in my opinion)
-   * @param {Boolean} options.autoload Optional, defaults to false
-   * @param {Function} options.onload Optional, if autoload is used this will be called after the load database with the error object as parameter. If you don't pass it the error will be thrown
-   * @param {Function} options.afterSerialization/options.beforeDeserialization Optional, serialization hooks
-   * @param {Number} options.corruptAlertThreshold Optional, threshold after which an alert is thrown if too much data is corrupt
-   * @param {Function} options.compareStrings Optional, string comparison function that overrides default for sorting
-   *
-   * Event Emitter - Events
-   * * compaction.done - Fired whenever a compaction operation was finished
-   */
   constructor(_options?: Options | string) {
     super()
 
@@ -70,10 +54,10 @@ export class Collection extends EventEmitter2 {
 
     // Determine whether in memory or persistent
     if (!filename || typeof filename !== 'string' || filename.length === 0) {
-      this.filename = null
+      this.name = null
       this.inMemoryOnly = true
     } else {
-      this.filename = filename
+      this.name = filename
     }
 
     // String comparison function
@@ -401,11 +385,6 @@ export class Collection extends EventEmitter2 {
     return cursor
   }
 
-  /**
-   * Find one document matching the query
-   * @param {Object} query MongoDB-style query
-   * @param {Object} projection MongoDB-style projection
-   */
   async findOne(query, projection?) {
     const cursor = new Cursor(this, query, async function (docs) {
       if (docs.length === 1) {
@@ -420,31 +399,6 @@ export class Collection extends EventEmitter2 {
     return (await cursor) as any
   }
 
-  /**
-   * Update all docs matching query
-   * @param {Object} query
-   * @param {Object} updateQuery
-   * @param {Object} options Optional options
-   *                 options.multi If true, can update multiple documents (defaults to false)
-   *                 options.upsert If true, document is inserted if the query doesn't match anything
-   *                 options.returnUpdatedDocs Defaults to false, if true return as third argument the array of updated matched documents (even if no change actually took place)
-   * @param {Function} cb Optional callback, signature: (err, numAffected, affectedDocuments, upsert)
-   *                      If update was an upsert, upsert flag is set to true
-   *                      affectedDocuments can be one of the following:
-   *                        * For an upsert, the upserted document
-   *                        * For an update with returnUpdatedDocs option false, null
-   *                        * For an update with returnUpdatedDocs true and multi false, the updated document
-   *                        * For an update with returnUpdatedDocs true and multi true, the array of updated documents
-   *
-   * WARNING: The API was changed between v1.7.4 and v1.8, for consistency and readability reasons. Prior and including to v1.7.4,
-   *          the callback signature was (err, numAffected, updated) where updated was the updated document in case of an upsert
-   *          or the array of updated documents for an update if the returnUpdatedDocs option was true. That meant that the type of
-   *          affectedDocuments in a non multi update depended on whether there was an upsert or not, leaving only two ways for the
-   *          user to check whether an upsert had occured: checking the type of affectedDocuments or running another find query on
-   *          the whole dataset to check its size. Both options being ugly, the breaking change was necessary.
-   *
-   * @api private Use Datastore.update which has the same signature
-   */
   async update(query, updateQuery, options?): Promise<any> {
     let numReplaced = 0,
       i
@@ -532,15 +486,6 @@ export class Collection extends EventEmitter2 {
     }
   }
 
-  /**
-   * Remove all docs matching the query
-   * For now very naive implementation (similar to update)
-   * @param {Object} query
-   * @param {Object} options Optional options
-   *                 options.multi If true, can update multiple documents (defaults to false)
-   *
-   * @api private Use Datastore.remove which has the same signature
-   */
   async remove(query, options?) {
     let numRemoved = 0
 
