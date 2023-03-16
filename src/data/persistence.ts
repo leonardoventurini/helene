@@ -8,8 +8,9 @@
 import { Index } from './indexes'
 import { deserialize, serialize } from './serialization'
 import { uid } from './custom-utils'
-import { Collection } from './collection'
+import { Collection, CollectionEvent } from './collection'
 import { IStorage } from './types'
+import { defer } from 'lodash'
 
 type Options = {
   db: Collection
@@ -123,6 +124,11 @@ export class Persistence {
   async persistNewState(newDocs) {
     const self = this
     let toPersist = ''
+
+    defer(() => {
+      this.db.emit(CollectionEvent.UPDATED, newDocs)
+    })
+
     // In-memory only datastore
     if (self.inMemoryOnly) {
       return null
@@ -153,7 +159,7 @@ export class Persistence {
 
     Object.keys(this.db.indexes).forEach(fieldName => {
       if (fieldName != '_id') {
-        // The special _id index is managed by datastore.js, the others need to be persisted
+        // The special _id index is managed by Collection, the others need to be persisted
         toPersist +=
           self.afterSerialization(
             serialize({
@@ -169,7 +175,7 @@ export class Persistence {
 
     await this.storage.write(this.name, toPersist)
 
-    this.db.emit('compaction.done')
+    this.db.emit(CollectionEvent.COMPACTED)
   }
 
   /**
@@ -184,13 +190,13 @@ export class Persistence {
    * @param {Number} interval in milliseconds, with an enforced minimum of 5 seconds
    */
   setAutocompactionInterval(interval) {
-    const self = this,
-      minInterval = 5000,
-      realInterval = Math.max(interval || 0, minInterval)
+    const minInterval = 5000
+    const realInterval = Math.max(interval || 0, minInterval)
+
     this.stopAutocompaction()
 
-    this.autocompactionIntervalId = setInterval(function () {
-      self.compactDatafile().catch(console.error)
+    this.autocompactionIntervalId = setInterval(() => {
+      this.compactDatafile().catch(console.error)
     }, realInterval)
   }
 

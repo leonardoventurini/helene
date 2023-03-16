@@ -1,5 +1,5 @@
 import { Index } from './indexes'
-import { isArray, isString, noop } from 'lodash'
+import { isArray, isNumber, isString } from 'lodash'
 import { Persistence } from './persistence'
 import { Cursor } from './cursor'
 import { uid } from './custom-utils'
@@ -12,9 +12,11 @@ import {
 } from './_get-candidates'
 import { IStorage } from './types'
 
-export const CollectionEvents = {
+export const CollectionEvent = {
   READY: 'ready',
+  UPDATED: 'updated',
   ERROR: 'error',
+  COMPACTED: 'compacted',
 }
 
 type Options = {
@@ -27,6 +29,11 @@ type Options = {
   corruptAlertThreshold?: number
   compareStrings?: (a: string, b: string) => number
   storage?: IStorage
+
+  /**
+   * The interval (in milliseconds) at which the datafile will be compacted. Minimum value is 5000 (5 seconds). Default is 60000 (1 minute).
+   */
+  compactionInterval?: number
 }
 
 export class Collection extends EventEmitter2 {
@@ -50,6 +57,7 @@ export class Collection extends EventEmitter2 {
     onload,
     afterSerialization,
     beforeDeserialization,
+    compactionInterval = 60000,
   }: Options = {}) {
     super()
 
@@ -82,6 +90,10 @@ export class Collection extends EventEmitter2 {
       corruptAlertThreshold,
     })
 
+    if (isNumber(compactionInterval) && compactionInterval > 0) {
+      this.persistence.setAutocompactionInterval(compactionInterval)
+    }
+
     if (storage) {
       this.persistence.storage = storage
     }
@@ -101,14 +113,14 @@ export class Collection extends EventEmitter2 {
           onload?.()
         })
         .catch(err => {
-          this.emit(CollectionEvents.ERROR, err)
+          this.emit(CollectionEvent.ERROR, err)
           onload?.(err)
         })
         .finally(() => {
-          this.emit(CollectionEvents.READY)
+          this.emit(CollectionEvent.READY)
         })
     } else {
-      this.emit(CollectionEvents.READY)
+      this.emit(CollectionEvent.READY)
     }
   }
 
@@ -269,14 +281,7 @@ export class Collection extends EventEmitter2 {
     return await removeExpiredDocuments.call(this, docs, dontExpireStaleDocs)
   }
 
-  /**
-   * Insert a new document
-   * @param newDoc
-   * @param {Function} insertCallback Optional callback, signature: err, insertedDoc
-   *
-   * @api private Use Datastore.insert which has the same signature
-   */
-  async insert(newDoc, insertCallback = noop) {
+  async insert(newDoc) {
     const preparedDoc = this.prepareDocumentForInsertion(newDoc)
 
     this._insertInCache(preparedDoc)
@@ -539,11 +544,11 @@ export class Collection extends EventEmitter2 {
 export async function createCollection(options: Options) {
   const collection = new Collection(options)
 
-  collection.on(CollectionEvents.ERROR, err => {
+  collection.on(CollectionEvent.ERROR, err => {
     throw err
   })
 
-  await collection.waitFor(CollectionEvents.READY)
+  await collection.waitFor(CollectionEvent.READY)
 
   return collection
 }

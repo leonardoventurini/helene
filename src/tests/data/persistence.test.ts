@@ -6,7 +6,7 @@ import path from 'path'
 
 import _ from 'lodash'
 
-import { Collection, createCollection } from '../../data'
+import { Collection, CollectionEvent, createCollection } from '../../data'
 import { Persistence } from '../../data/persistence'
 import { deserialize, serialize } from '../../data/serialization'
 import {
@@ -325,7 +325,7 @@ describe('Persistence', function () {
   it('Can listen to compaction events', async () => {
     d.persistence.compactDatafile().catch(console.error)
 
-    await d.waitFor('compaction.done')
+    await d.waitFor(CollectionEvent.COMPACTED)
   })
 
   describe('Serialization hooks', function () {
