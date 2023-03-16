@@ -23,6 +23,10 @@ export class BrowserStorage implements IStorage {
   async append(name, data) {
     const existingData = localStorage.getItem(name)
 
-    localStorage.setItem(name, existingData + data)
+    if (existingData) {
+      localStorage.setItem(name, existingData + data)
+    } else {
+      localStorage.setItem(name, data)
+    }
   }
 }
