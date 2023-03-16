@@ -244,7 +244,7 @@ describe('Persistence', function () {
     await d.loadDatabase()
     await d.insert({ a: 1 })
     await d.insert({ a: 2 })
-    const data = await d.find({}).exec()
+    const data = await d.find({})
     const doc1 = data.find(doc => doc.a === 1)
     const doc2 = data.find(doc => doc.a === 2)
     assert.equal(data.length, 2)
@@ -254,7 +254,7 @@ describe('Persistence', function () {
     await fs.promises.unlink(testDb)
 
     await d.loadDatabase()
-    const allData = await d.find({}).exec()
+    const allData = await d.find({})
     assert.equal(allData.length, 0)
   })
 
@@ -540,7 +540,7 @@ describe('Persistence', function () {
 
       await d2.loadDatabase()
 
-      const docs = await d2.find({}).exec()
+      const docs = await d2.find({})
 
       assert.strictEqual(docs.length, 1)
       assert.strictEqual(docs[0].hello, 'earth')
@@ -678,7 +678,7 @@ describe('Persistence', function () {
       )
 
       await theDb.loadDatabase()
-      const docs = await theDb.find({}).exec()
+      const docs = await theDb.find({})
 
       assert.equal(docs.length, 1)
       assert.equal(docs[0].hello, 'world')
@@ -688,7 +688,7 @@ describe('Persistence', function () {
 
     it('persistCachedDatabase should update the contents of the datafile and leave a clean state', async function () {
       await d.insert({ hello: 'world' })
-      const docs = await d.find({}).exec()
+      const docs = await d.find({})
       assert.strictEqual(docs.length, 1)
 
       if (fs.existsSync(testDb)) {
@@ -712,7 +712,7 @@ describe('Persistence', function () {
 
     it('After a persistCachedDatabase, there should be no temp or old filename', async function () {
       await d.insert({ hello: 'world' })
-      const docs = await d.find({}).exec()
+      const docs = await d.find({})
       assert.strictEqual(docs.length, 1)
 
       if (fs.existsSync(testDb)) {
@@ -743,7 +743,7 @@ describe('Persistence', function () {
 
     it('persistCachedDatabase should update the contents of the datafile and leave a clean state even if there is a temp datafile', async () => {
       await d.insert({ hello: 'world' })
-      const docs = await d.find({}).exec()
+      const docs = await d.find({})
       assert.strictEqual(docs.length, 1)
 
       if (fs.existsSync(testDb)) {
@@ -791,20 +791,20 @@ describe('Persistence', function () {
       const theDb = new Collection({ filename: dbFile })
       await theDb.loadDatabase()
 
-      let docs = await theDb.find({}).exec()
+      let docs = await theDb.find({})
       assert.isEmpty(docs)
 
       const doc1 = await theDb.insert({ a: 'hello' })
       const doc2 = await theDb.insert({ a: 'world' })
 
-      docs = await theDb.find({}).exec()
+      docs = await theDb.find({})
       assert.lengthOf(docs, 2)
       assert.equal(_.find(docs, { _id: doc1._id }).a, 'hello')
       assert.equal(_.find(docs, { _id: doc2._id }).a, 'world')
 
       await theDb.loadDatabase()
 
-      docs = await theDb.find({}).exec()
+      docs = await theDb.find({})
       assert.lengthOf(docs, 2)
       assert.equal(_.find(docs, { _id: doc1._id }).a, 'hello')
       assert.equal(_.find(docs, { _id: doc2._id }).a, 'world')
@@ -815,7 +815,7 @@ describe('Persistence', function () {
       const theDb2 = new Collection({ filename: dbFile })
       await theDb2.loadDatabase()
 
-      docs = await theDb2.find({}).exec()
+      docs = await theDb2.find({})
       assert.lengthOf(docs, 2)
       assert.equal(_.find(docs, { _id: doc1._id }).a, 'hello')
       assert.equal(_.find(docs, { _id: doc2._id }).a, 'world')

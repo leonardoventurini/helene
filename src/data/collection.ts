@@ -376,7 +376,7 @@ export class Collection extends EventEmitter2 {
       return docs.length
     })
 
-    return (await cursor.exec()) as unknown as number
+    return (await cursor) as unknown as number
   }
 
   /**
@@ -417,7 +417,7 @@ export class Collection extends EventEmitter2 {
 
     cursor.projection(projection).limit(1)
 
-    return (await cursor.exec()) as any
+    return (await cursor) as any
   }
 
   /**
@@ -455,7 +455,7 @@ export class Collection extends EventEmitter2 {
     // If upsert option is set, check whether we need to insert the doc
     if (upsert) {
       const cursor = new Cursor(this, query)
-      const docs = await cursor.limit(1).exec()
+      const docs = await cursor.limit(1)
 
       if (docs.length !== 1) {
         let toBeInserted

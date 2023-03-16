@@ -55,7 +55,7 @@ describe('Database', function () {
 
       await db.waitFor('ready')
 
-      const docs = await db.find({}).exec()
+      const docs = await db.find({})
 
       docs.length.should.equal(2)
     })
@@ -82,19 +82,19 @@ describe('Database', function () {
         onload: onload,
       })
 
-      await db.find({}).exec()
+      await db.find({})
     })
   })
 
   describe('Insert', function () {
     it('Able to insert a document in the database, setting an _id if none provided, and retrieve it even after a reload', async () => {
-      let docs = await collection.find({}).exec()
+      let docs = await collection.find({})
       docs.length.should.equal(0)
 
       await collection.insert({ somedata: 'ok' })
 
       // The data was correctly updated
-      docs = await collection.find({}).exec()
+      docs = await collection.find({})
       docs.length.should.equal(1)
       Object.keys(docs[0]).length.should.equal(2)
       docs[0].somedata.should.equal('ok')
@@ -102,7 +102,7 @@ describe('Database', function () {
 
       // After a reload the data has been correctly persisted
       await collection.loadDatabase()
-      docs = await collection.find({}).exec()
+      docs = await collection.find({})
       docs.length.should.equal(1)
       Object.keys(docs[0]).length.should.equal(2)
       docs[0].somedata.should.equal('ok')
@@ -110,14 +110,14 @@ describe('Database', function () {
     })
 
     it('Can insert multiple documents in the database', async function () {
-      const docs = await collection.find({}).exec()
+      const docs = await collection.find({})
       docs.length.should.equal(0)
 
       await collection.insert({ somedata: 'ok' })
       await collection.insert({ somedata: 'another' })
       await collection.insert({ somedata: 'again' })
 
-      const newDocs = await collection.find({}).exec()
+      const newDocs = await collection.find({})
       newDocs.length.should.equal(3)
       pluck(newDocs, 'somedata').should.contain('ok')
       pluck(newDocs, 'somedata').should.contain('another')
@@ -153,7 +153,7 @@ describe('Database', function () {
       doc.a.should.equal('another thing')
 
       // Re-fetching with find should yield the persisted value
-      const docs = await collection.find({}).exec()
+      const docs = await collection.find({})
       docs[0].a.should.equal('something')
     })
 
@@ -188,7 +188,7 @@ describe('Database', function () {
 
       await collection.remove({}, { multi: true })
       await collection.insert(docs)
-      const foundDocs = await collection.find({}).exec()
+      const foundDocs = await collection.find({})
 
       foundDocs.length.should.equal(2)
       _.find(foundDocs, function (doc) {
@@ -227,7 +227,7 @@ describe('Database', function () {
       } catch (err) {
         err.errorType.should.equal('uniqueViolated')
 
-        const docs = await collection.find().exec()
+        const docs = await collection.find()
 
         // Datafile only contains index definition
         const datafileContents = deserialize(fs.readFileSync(testDb, 'utf8'))
@@ -250,7 +250,7 @@ describe('Database', function () {
 
       await collection.waitFor('ready')
 
-      let docs = await collection.find({}).exec()
+      let docs = await collection.find({})
       docs.length.should.equal(0)
 
       const insertedDoc = await collection.insert(newDoc)
@@ -269,7 +269,7 @@ describe('Database', function () {
       insertedDoc.bloup = 'another'
       Object.keys(insertedDoc).length.should.equal(5)
 
-      docs = await collection.find({}).exec()
+      docs = await collection.find({})
       docs.length.should.equal(1)
       assert.deepEqual(newDoc, { hello: 'world' })
       assert.deepEqual(
@@ -284,7 +284,7 @@ describe('Database', function () {
 
       await collection.loadDatabase()
 
-      docs = await collection.find({}).exec()
+      docs = await collection.find({})
       docs.length.should.equal(1)
       assert.deepEqual(newDoc, { hello: 'world' })
       assert.deepEqual(
@@ -304,7 +304,7 @@ describe('Database', function () {
       assert.isUndefined(insertedDoc.createdAt)
       assert.isUndefined(insertedDoc.updatedAt)
 
-      const docs = await collection.find({}).exec()
+      const docs = await collection.find({})
       docs.length.should.equal(1)
       assert.deepEqual(docs[0], insertedDoc)
     })
@@ -331,12 +331,12 @@ describe('Database', function () {
         reloadTimeUpperBound,
       ) // Created
 
-      const docs = await collection.find({}).exec()
+      const docs = await collection.find({})
       assert.deepEqual(insertedDoc, docs[0])
 
       await collection.loadDatabase()
 
-      const reloadedDocs = await collection.find({}).exec()
+      const reloadedDocs = await collection.find({})
       assert.deepEqual(insertedDoc, reloadedDocs[0])
     })
 
@@ -361,12 +361,12 @@ describe('Database', function () {
         reloadTimeUpperBound,
       ) // Created
 
-      const docs = await collection.find({}).exec()
+      const docs = await collection.find({})
       assert.deepEqual(insertedDoc, docs[0])
 
       await collection.loadDatabase()
 
-      const updatedDocs = await collection.find({}).exec()
+      const updatedDocs = await collection.find({})
       assert.deepEqual(insertedDoc, updatedDocs[0])
     })
 
@@ -516,18 +516,18 @@ describe('Database', function () {
 
       await new Promise(resolve => setTimeout(resolve, 100))
 
-      let docs = await collection.find({}).exec()
+      let docs = await collection.find({})
       docs.length.should.equal(3)
 
       await new Promise(resolve => setTimeout(resolve, 101))
 
-      docs = await collection.find({}).exec()
+      docs = await collection.find({})
       docs.length.should.equal(1)
       docs[0].hello.should.equal('world3')
 
       await new Promise(resolve => setTimeout(resolve, 101))
 
-      docs = await collection.find({}).exec()
+      docs = await collection.find({})
       docs.length.should.equal(0)
     })
 
@@ -545,12 +545,12 @@ describe('Database', function () {
 
       await new Promise(resolve => setTimeout(resolve, 100))
 
-      let docs = await collection.find().exec()
+      let docs = await collection.find()
       docs.length.should.equal(3)
 
       await new Promise(resolve => setTimeout(resolve, 101))
 
-      docs = await collection.find().exec()
+      docs = await collection.find()
       docs.length.should.equal(2)
       docs[0].hello.should.not.equal('world1')
       docs[1].hello.should.not.equal('world1')
@@ -563,7 +563,7 @@ describe('Database', function () {
       await collection.insert({ somedata: 'another', plus: 'additional data' })
       await collection.insert({ somedata: 'again' })
 
-      const docs = await collection.find({}).exec()
+      const docs = await collection.find({})
       docs.length.should.equal(3)
       pluck(docs, 'somedata').should.contain('ok')
       pluck(docs, 'somedata').should.contain('another')
@@ -579,12 +579,12 @@ describe('Database', function () {
       await collection.insert({ somedata: 'again' })
 
       // Test with query that will return docs
-      let docs = await collection.find({ somedata: 'again' }).exec()
+      let docs = await collection.find({ somedata: 'again' })
       docs.length.should.equal(2)
       pluck(docs, 'somedata').should.not.contain('ok')
 
       // Test with query that doesn't match anything
-      docs = await collection.find({ somedata: 'nope' }).exec()
+      docs = await collection.find({ somedata: 'nope' })
       docs.length.should.equal(0)
     })
 
@@ -647,17 +647,17 @@ describe('Database', function () {
       })
       const doc3 = await collection.insert({ fruits: ['banana'] })
 
-      let docs = await collection.find({ fruits: 'pear' }).exec()
+      let docs = await collection.find({ fruits: 'pear' })
       docs.length.should.equal(2)
       pluck(docs, '_id').should.contain(doc1._id)
       pluck(docs, '_id').should.contain(doc2._id)
 
-      docs = await collection.find({ fruits: 'banana' }).exec()
+      docs = await collection.find({ fruits: 'banana' })
       docs.length.should.equal(2)
       pluck(docs, '_id').should.contain(doc1._id)
       pluck(docs, '_id').should.contain(doc3._id)
 
-      docs = await collection.find({ fruits: 'doesntexist' }).exec()
+      docs = await collection.find({ fruits: 'doesntexist' })
       docs.length.should.equal(0)
     })
 
@@ -667,7 +667,7 @@ describe('Database', function () {
       let err = null
 
       try {
-        docs = await collection.find({ $or: { hello: 'world' } }).exec()
+        docs = await collection.find({ $or: { hello: 'world' } })
       } catch (error) {
         err = error
       }
@@ -689,7 +689,7 @@ describe('Database', function () {
       doc.hello = 'changed'
       doc = await collection.findOne({ a: 2 })
       doc.hello.should.equal('world')
-      const docs = await collection.find({ a: 2 }).exec()
+      const docs = await collection.find({ a: 2 })
       docs[0].hello = 'changed'
       doc = await collection.findOne({ a: 2 })
       doc.hello.should.equal('world')
@@ -699,18 +699,18 @@ describe('Database', function () {
       await collection.insert({ a: 2, hello: 'world' })
       await collection.insert({ a: 24, hello: 'earth' })
 
-      let docs = await collection.find({ a: 2 }, { a: 0, _id: 0 }).exec()
+      let docs = await collection.find({ a: 2 }, { a: 0, _id: 0 })
       docs.length.should.equal(1)
       assert.deepEqual(docs[0], { hello: 'world' })
 
-      docs = await collection.find({ a: 2 }, { a: 0, _id: 0 }).exec()
+      docs = await collection.find({ a: 2 }, { a: 0, _id: 0 })
       docs.length.should.equal(1)
       assert.deepEqual(docs[0], { hello: 'world' })
 
       // Can't use both modes at once if not _id
       let err
       try {
-        await collection.find({ a: 2 }, { a: 0, hello: 1 }).exec()
+        await collection.find({ a: 2 }, { a: 0, hello: 1 })
       } catch (e) {
         err = e
       }
@@ -718,7 +718,7 @@ describe('Database', function () {
 
       err = null
       try {
-        await collection.find({ a: 2 }, { a: 0, hello: 1 }).exec()
+        await collection.find({ a: 2 }, { a: 0, hello: 1 })
       } catch (e) {
         err = e
       }
@@ -759,7 +759,7 @@ describe('Database', function () {
       await collection.insert({ somedata: 'again' })
 
       // Test with query that will return docs
-      const docs = await collection.find({ somedata: 'again' }).exec()
+      const docs = await collection.find({ somedata: 'again' })
       let count = await collection.count({ somedata: 'again' })
       count.should.equal(docs.length)
 
@@ -773,13 +773,13 @@ describe('Database', function () {
       await collection.insert({ fruits: ['coconut', 'orange', 'pear'] })
       await collection.insert({ fruits: ['banana'] })
 
-      let docs = await collection.find({ fruits: 'pear' }).exec()
+      let docs = await collection.find({ fruits: 'pear' })
       assert.equal(docs.length, 2)
 
-      docs = await collection.find({ fruits: 'banana' }).exec()
+      docs = await collection.find({ fruits: 'banana' })
       assert.equal(docs.length, 2)
 
-      docs = await collection.find({ fruits: 'doesntexist' }).exec()
+      docs = await collection.find({ fruits: 'doesntexist' })
       assert.equal(docs.length, 0)
     })
 
@@ -805,7 +805,7 @@ describe('Database', function () {
 
       n.modifiedCount.should.equal(0)
 
-      const docs = await collection.find({}).exec()
+      const docs = await collection.find({})
 
       const doc1 = _.find(docs, function (d) {
         return d.somedata === 'ok'
@@ -869,7 +869,7 @@ describe('Database', function () {
         {},
       )
 
-      const docs = await collection.find({ _id: insertedDoc._id }).exec()
+      const docs = await collection.find({ _id: insertedDoc._id })
 
       docs.length.should.equal(1)
       Object.keys(docs[0]).length.should.equal(4)
@@ -885,7 +885,7 @@ describe('Database', function () {
       let id1, id2, id3
 
       async function testPostUpdateState() {
-        const docs = await collection.find({}).exec()
+        const docs = await collection.find({})
 
         const doc1 = _.find(docs, function (d) {
             return d._id === id1
@@ -948,7 +948,7 @@ describe('Database', function () {
 
       // Test DB state after update and reload
       async function testPostUpdateState() {
-        const docs = await collection.find({}).exec()
+        const docs = await collection.find({})
 
         const doc1 = _.find(docs, d => d._id === id1),
           doc2 = _.find(docs, d => d._id === id2),
@@ -1001,7 +1001,7 @@ describe('Database', function () {
         )
 
         nr.modifiedCount.should.equal(0)
-        const docs = await collection.find({}).exec()
+        const docs = await collection.find({})
         docs.length.should.equal(0)
 
         // test that upsert inserts
@@ -1018,13 +1018,13 @@ describe('Database', function () {
         newDoc.something.should.equal('created ok')
 
         assert.isDefined(newDoc._id)
-        const docs2 = await collection.find({}).exec()
+        const docs2 = await collection.find({})
         docs2.length.should.equal(1)
         docs2[0].something.should.equal('created ok')
 
         // Modifying the returned upserted document doesn't modify the database
         newDoc.newField = true
-        const docs3 = await collection.find({}).exec()
+        const docs3 = await collection.find({})
         assert.isUndefined(docs3[0].newField)
       })
 
@@ -1035,7 +1035,7 @@ describe('Database', function () {
           { hello: 'world', bloup: 'blap' },
           { upsert: true },
         )
-        const docs = await collection.find({}).exec()
+        const docs = await collection.find({})
         docs.length.should.equal(1)
         const doc = docs[0]
         Object.keys(doc).length.should.equal(3)
@@ -1050,7 +1050,7 @@ describe('Database', function () {
           { upsert: true },
         )
 
-        const docs = await collection.find({ hello: 'world' }).exec()
+        const docs = await collection.find({ hello: 'world' })
         docs.length.should.equal(1)
         const doc = docs[0]
         Object.keys(doc).length.should.equal(3)
@@ -1065,7 +1065,7 @@ describe('Database', function () {
           { upsert: true },
         )
 
-        const docs = await collection.find({ hello: 'world' }).exec()
+        const docs = await collection.find({ hello: 'world' })
         docs.length.should.equal(1)
 
         const doc = docs[0]
@@ -1149,7 +1149,7 @@ describe('Database', function () {
       newDoc.hello.should.equal('world')
       assert.isDefined(newDoc._id)
 
-      const docs = await collection.find({}).exec()
+      const docs = await collection.find({})
 
       docs.length.should.equal(1)
       Object.keys(docs[0]).length.should.equal(3)
@@ -1185,13 +1185,13 @@ describe('Database', function () {
 
     it('If an error is thrown by a modifier, the database state is not changed', async function () {
       const newDoc = await collection.insert({ hello: 'world' })
-      let docs = await collection.find({}).exec()
+      let docs = await collection.find({})
       assert.deepEqual(docs, [{ _id: newDoc._id, hello: 'world' }])
 
       await assert.isRejected(collection.update({}, { $inc: { hello: 4 } }, {}))
 
       // Check that the database state is unchanged
-      docs = await collection.find({}).exec()
+      docs = await collection.find({})
       assert.deepEqual(docs, [{ _id: newDoc._id, hello: 'world' }])
     })
 
@@ -1201,7 +1201,7 @@ describe('Database', function () {
         collection.update({ a: 2 }, { a: 2, _id: 'nope' }, {}),
       )
 
-      let docs = await collection.find({}).exec()
+      let docs = await collection.find({})
       docs.length.should.equal(1)
       Object.keys(docs[0]).length.should.equal(2)
       docs[0].a.should.equal(2)
@@ -1211,7 +1211,7 @@ describe('Database', function () {
         collection.update({ a: 2 }, { $set: { _id: 'nope' } }, {}),
       )
 
-      docs = await collection.find({}).exec()
+      docs = await collection.find({})
       docs.length.should.equal(1)
       Object.keys(docs[0]).length.should.equal(2)
       docs[0].a.should.equal(2)
@@ -1224,7 +1224,7 @@ describe('Database', function () {
 
       await collection.update({ a: 2 }, { $set: { hello: 'changed' } }, {})
 
-      let docs = await collection.find({}).exec()
+      let docs = await collection.find({})
 
       docs.sort(function (a, b) {
         return a.a - b.a
@@ -1244,7 +1244,7 @@ describe('Database', function () {
 
       await collection.loadDatabase()
 
-      docs = await collection.find({}).exec()
+      docs = await collection.find({})
 
       docs.sort(function (a, b) {
         return a.a - b.a
@@ -1274,7 +1274,7 @@ describe('Database', function () {
         { multi: true },
       )
 
-      const docs = await collection.find({}).sort({ a: 1 }).exec()
+      const docs = await collection.find({}).sort({ a: 1 })
 
       docs.length.should.equal(3)
       _.isEqual(docs[0], {
@@ -1296,7 +1296,7 @@ describe('Database', function () {
       // Even after a reload the database state hasn't changed
       await collection.loadDatabase()
 
-      const reloadedDocs = await collection.find({}).sort({ a: 1 }).exec()
+      const reloadedDocs = await collection.find({}).sort({ a: 1 })
 
       reloadedDocs.length.should.equal(3)
       _.isEqual(reloadedDocs[0], {
@@ -1325,7 +1325,7 @@ describe('Database', function () {
 
       assert.strictEqual(nr.modifiedCount, 1)
 
-      const docs = await collection.find({}).exec()
+      const docs = await collection.find({})
 
       const d1 = _.find(docs, doc => doc._id === doc1._id)
 
@@ -1551,7 +1551,7 @@ describe('Database', function () {
         assert.strictEqual(upsertResult.insertedDocs[0].b, 21)
         assert.strictEqual(upsertResult.upsert, true)
 
-        const docs = await collection.find({}).exec()
+        const docs = await collection.find({})
         assert.strictEqual(docs.length, 3)
       })
     })
@@ -1563,7 +1563,7 @@ describe('Database', function () {
 
       // Test DB status
       const testPostUpdateState = async () => {
-        const docs = await collection.find({}).exec()
+        const docs = await collection.find({})
 
         docs.length.should.equal(1)
 
@@ -1599,13 +1599,13 @@ describe('Database', function () {
       await collection.insert({ planet: 'Mars' })
       await collection.insert({ planet: 'Saturn' })
 
-      const docs = await collection.find({}).exec()
+      const docs = await collection.find({})
       assert.equal(docs.length, 3)
 
       const toRemove = ['Mars', 'Saturn']
       await Promise.all(toRemove.map(planet => collection.remove({ planet })))
 
-      const newDocs = await collection.find({}).exec()
+      const newDocs = await collection.find({})
       assert.equal(newDocs.length, 1)
     })
 
@@ -1623,7 +1623,7 @@ describe('Database', function () {
 
       await assert.isFulfilled(collection.remove({ a: 2 }, {}))
 
-      const docs = await collection.find({}).exec()
+      const docs = await collection.find({})
       docs.sort((a, b) => a.a - b.a)
       docs.length.should.equal(2)
 
@@ -1645,7 +1645,7 @@ describe('Database', function () {
       // Even after a reload the database state hasn't changed
       await assert.isFulfilled(collection.loadDatabase())
 
-      const reloadedDocs = await collection.find({}).exec()
+      const reloadedDocs = await collection.find({})
       reloadedDocs.sort((a, b) => a.a - b.a)
       reloadedDocs.length.should.equal(2)
 
@@ -1674,12 +1674,12 @@ describe('Database', function () {
 
       await collection.remove({ a: { $in: [1, 3] } }, { multi: true })
 
-      const docs = await collection.find({}).exec()
+      const docs = await collection.find({})
       assert.strictEqual(docs.length, 1)
       assert.deepStrictEqual(docs[0], { _id: doc2._id, a: 2, hello: 'earth' })
 
       await collection.loadDatabase()
-      const reloadedDocs = await collection.find({}).exec()
+      const reloadedDocs = await collection.find({})
       assert.strictEqual(reloadedDocs.length, 1)
       assert.deepStrictEqual(reloadedDocs[0], {
         _id: doc2._id,
@@ -1696,7 +1696,7 @@ describe('Database', function () {
       const nr = await collection.remove({ a: 2 })
       assert.equal(nr, 1)
 
-      const docs = await collection.find({}).exec()
+      const docs = await collection.find({})
       const d1 = _.find(docs, doc => doc._id === doc1._id)
       const d2 = _.find(docs, doc => doc._id === doc2._id)
       const d3 = _.find(docs, doc => doc._id === doc3._id)
@@ -1755,7 +1755,7 @@ describe('Database', function () {
         await collection.insert({ planet: 'Earth' })
         await collection.insert({ planet: 'Mars' })
 
-        const docs = await collection.find({}).exec()
+        const docs = await collection.find({})
         assert.strictEqual(docs.length, 2)
 
         await collection.ensureIndex({ fieldName: 'planet' })
@@ -1814,7 +1814,7 @@ describe('Database', function () {
           .should.equal(collection.indexes._id.getMatching(newDoc2._id)[0])
 
         // The data in the z index is correct
-        const docs = await collection.find({}).exec()
+        const docs = await collection.find({})
         const doc0 = _.find(docs, function (doc) {
           return doc._id === 'aaa'
         })
@@ -2096,7 +2096,7 @@ describe('Database', function () {
         const doc1 = await collection.insert({ a: 1, b: 'hello' })
         const doc2 = await collection.insert({ a: 2, b: 'si' })
 
-        const docs = await collection.find({}).exec()
+        const docs = await collection.find({})
 
         assert.deepEqual(
           doc1,
@@ -2118,7 +2118,7 @@ describe('Database', function () {
         const doc1 = await collection.insert({ a: 1, b: 'hello' })
         const doc2 = await collection.insert({ a: 2, b: 'si' })
 
-        const docs = await collection.find({}).exec()
+        const docs = await collection.find({})
         assert.equal(docs.length, 2)
         assert.equal(collection.getAllData().length, 2)
 
@@ -2143,7 +2143,7 @@ describe('Database', function () {
         const doc1 = await collection.insert({ a: 1, b: 'hello' })
         await assert.isRejected(collection.insert({ a: 1, b: 'si' }))
 
-        const docs = await collection.find({}).exec()
+        const docs = await collection.find({})
         docs.length.should.equal(1)
         collection.getAllData().length.should.equal(1)
 
@@ -2208,11 +2208,11 @@ describe('Database', function () {
         nr = await collection.count({ a: 2 })
         assert.equal(nr, 1)
 
-        let matchingDocs = await collection.find({ a: 456 }).exec()
+        let matchingDocs = await collection.find({ a: 456 })
         let matchingDoc = matchingDocs[0]
         assert.equal(matchingDoc._id, doc1._id)
 
-        matchingDocs = await collection.find({ a: 2 }).exec()
+        matchingDocs = await collection.find({ a: 2 })
         matchingDoc = matchingDocs[0]
         assert.equal(matchingDoc._id, doc2._id)
 
@@ -2229,7 +2229,7 @@ describe('Database', function () {
         nr = await collection.count({ a: 12 })
         assert.equal(nr, 1)
 
-        matchingDocs = await collection.find({ b: 'same' }).exec()
+        matchingDocs = await collection.find({ b: 'same' })
         assert.equal(matchingDocs.length, 2)
         assert(matchingDocs.some(doc => doc._id === doc1._id))
         assert(matchingDocs.some(doc => doc._id === doc2._id))

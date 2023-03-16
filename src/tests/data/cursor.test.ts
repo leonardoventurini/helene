@@ -43,7 +43,7 @@ describe('Cursor', () => {
     it('Without query, an empty query or a simple query and no skip or limit', async () => {
       let cursor = new Cursor(collection)
 
-      let docs = await cursor.exec()
+      let docs = await cursor
 
       docs.length.should.equal(5)
 
@@ -59,7 +59,7 @@ describe('Cursor', () => {
 
       cursor = new Cursor(collection, {})
 
-      docs = await cursor.exec()
+      docs = await cursor
 
       docs.length.should.equal(5)
 
@@ -71,7 +71,7 @@ describe('Cursor', () => {
 
       cursor = new Cursor(collection, { age: { $gt: 23 } })
 
-      docs = await cursor.exec()
+      docs = await cursor
 
       docs.length.should.equal(3)
 
@@ -83,27 +83,27 @@ describe('Cursor', () => {
     it('With an empty collection', async () => {
       await collection.remove({}, { multi: true })
       const cursor = new Cursor(collection)
-      const docs = await cursor.exec()
+      const docs = await cursor
       docs.length.should.equal(0)
     })
 
     it('With a limit', async () => {
       const cursor = new Cursor(collection)
       cursor.limit(3)
-      const docs = await cursor.exec()
+      const docs = await cursor
       docs.length.should.equal(3)
     })
 
     it('With a skip', async () => {
       const cursor = new Cursor(collection)
-      const docs = await cursor.skip(2).exec()
+      const docs = await cursor.skip(2)
       docs.length.should.equal(3)
     })
 
     it('With a limit and a skip and method chaining', async () => {
       const cursor = new Cursor(collection)
       cursor.limit(4).skip(3) // Only way to know that the right number of results was skipped is if limit + skip > number of results
-      const docs = await cursor.exec()
+      const docs = await cursor
 
       docs.length.should.equal(2)
     })
@@ -124,7 +124,7 @@ describe('Cursor', () => {
 
       const cursor = new Cursor(collection, {})
       cursor.sort({ age: 1 })
-      let docs = await cursor.exec()
+      let docs = await cursor
 
       // Results are in ascending order
       for (i = 0; i < docs.length - 1; i += 1) {
@@ -132,7 +132,7 @@ describe('Cursor', () => {
       }
 
       cursor.sort({ age: -1 })
-      docs = await cursor.exec()
+      docs = await cursor
 
       // Results are in descending order
       for (i = 0; i < docs.length - 1; i += 1) {
@@ -153,7 +153,7 @@ describe('Cursor', () => {
       await db.insert({ name: 'charlie' })
       await db.insert({ name: 'zulu' })
 
-      let docs = await db.find({}).sort({ name: 1 }).exec()
+      let docs = await db.find({}).sort({ name: 1 })
 
       pluck(docs, 'name')[0].should.equal('zulu')
       pluck(docs, 'name')[1].should.equal('alpha')
@@ -161,7 +161,7 @@ describe('Cursor', () => {
 
       delete db.compareStrings
 
-      docs = await db.find({}).sort({ name: 1 }).exec()
+      docs = await db.find({}).sort({ name: 1 })
 
       pluck(docs, 'name')[0].should.equal('alpha')
       pluck(docs, 'name')[1].should.equal('charlie')
@@ -174,21 +174,21 @@ describe('Cursor', () => {
       const cursor = new Cursor(collection)
       cursor.sort({ age: 1 })
 
-      const docs = await cursor.exec()
+      const docs = await cursor
 
       docs.length.should.equal(0)
     })
 
     it('Ability to chain sorting and exec', async function () {
       const cursor1 = new Cursor(collection)
-      const docs1 = await cursor1.sort({ age: 1 }).exec()
+      const docs1 = await cursor1.sort({ age: 1 })
       // Results are in ascending order
       for (let i = 0; i < docs1.length - 1; i += 1) {
         assert(docs1[i].age < docs1[i + 1].age)
       }
 
       const cursor2 = new Cursor(collection)
-      const docs2 = await cursor2.sort({ age: -1 }).exec()
+      const docs2 = await cursor2.sort({ age: -1 })
       // Results are in descending order
       for (let i = 0; i < docs2.length - 1; i += 1) {
         assert(docs2[i].age > docs2[i + 1].age)
@@ -199,14 +199,14 @@ describe('Cursor', () => {
       let i
 
       const cursor1 = new Cursor(collection)
-      const docs1 = await cursor1.sort({ age: 1 }).limit(3).exec()
+      const docs1 = await cursor1.sort({ age: 1 }).limit(3)
       docs1.length.should.equal(3)
       docs1[0].age.should.equal(5)
       docs1[1].age.should.equal(23)
       docs1[2].age.should.equal(52)
 
       const cursor2 = new Cursor(collection)
-      const docs2 = await cursor2.sort({ age: -1 }).limit(2).exec()
+      const docs2 = await cursor2.sort({ age: -1 }).limit(2)
       docs2.length.should.equal(2)
       docs2[0].age.should.equal(89)
       docs2[1].age.should.equal(57)
@@ -214,7 +214,7 @@ describe('Cursor', () => {
 
     it('Using a limit higher than total number of docs shouldnt cause an error', async () => {
       const cursor = new Cursor(collection)
-      const docs = await cursor.sort({ age: 1 }).limit(7).exec()
+      const docs = await cursor.sort({ age: 1 }).limit(7)
 
       docs.length.should.equal(5)
       docs[0].age.should.equal(5)
@@ -226,19 +226,19 @@ describe('Cursor', () => {
 
     it('Using limit and skip with sort', async () => {
       const cursor1 = new Cursor(collection)
-      const result1 = await cursor1.sort({ age: 1 }).limit(1).skip(2).exec()
+      const result1 = await cursor1.sort({ age: 1 }).limit(1).skip(2)
       result1.length.should.equal(1)
       result1[0].age.should.equal(52)
 
       const cursor2 = new Cursor(collection)
-      const result2 = await cursor2.sort({ age: 1 }).limit(3).skip(1).exec()
+      const result2 = await cursor2.sort({ age: 1 }).limit(3).skip(1)
       result2.length.should.equal(3)
       result2[0].age.should.equal(23)
       result2[1].age.should.equal(52)
       result2[2].age.should.equal(57)
 
       const cursor3 = new Cursor(collection)
-      const result3 = await cursor3.sort({ age: -1 }).limit(2).skip(2).exec()
+      const result3 = await cursor3.sort({ age: -1 }).limit(2).skip(2)
       result3.length.should.equal(2)
       result3[0].age.should.equal(52)
       result3[1].age.should.equal(23)
@@ -246,7 +246,7 @@ describe('Cursor', () => {
 
     it('Using too big a limit and a skip with sort', async () => {
       const cursor = new Cursor(collection)
-      const docs = await cursor.sort({ age: 1 }).limit(8).skip(2).exec()
+      const docs = await cursor.sort({ age: 1 }).limit(8).skip(2)
 
       docs.length.should.equal(3)
       docs[0].age.should.equal(52)
@@ -260,16 +260,16 @@ describe('Cursor', () => {
       const cursor3 = new Cursor(collection)
       const cursor4 = new Cursor(collection)
 
-      const docs1 = await cursor1.sort({ age: 1 }).skip(5).exec()
+      const docs1 = await cursor1.sort({ age: 1 }).skip(5)
       docs1.length.should.equal(0)
 
-      const docs2 = await cursor2.sort({ age: 1 }).skip(7).exec()
+      const docs2 = await cursor2.sort({ age: 1 }).skip(7)
       docs2.length.should.equal(0)
 
-      const docs3 = await cursor3.sort({ age: 1 }).limit(3).skip(7).exec()
+      const docs3 = await cursor3.sort({ age: 1 }).limit(3).skip(7)
       docs3.length.should.equal(0)
 
-      const docs4 = await cursor4.sort({ age: 1 }).limit(6).skip(7).exec()
+      const docs4 = await cursor4.sort({ age: 1 }).limit(6).skip(7)
       docs4.length.should.equal(0)
     })
 
@@ -280,14 +280,14 @@ describe('Cursor', () => {
       await collection.insert({ name: 'sue' })
 
       const cursor1 = new Cursor(collection, {})
-      const docs1 = await cursor1.sort({ name: 1 }).exec()
+      const docs1 = await cursor1.sort({ name: 1 })
       docs1.length.should.equal(3)
       docs1[0].name.should.equal('jakeb')
       docs1[1].name.should.equal('jako')
       docs1[2].name.should.equal('sue')
 
       const cursor2 = new Cursor(collection, {})
-      const docs2 = await cursor2.sort({ name: -1 }).exec()
+      const docs2 = await cursor2.sort({ name: -1 })
       docs2.length.should.equal(3)
       docs2[0].name.should.equal('sue')
       docs2[1].name.should.equal('jako')
@@ -308,13 +308,13 @@ describe('Cursor', () => {
       })
 
       const cursor = new Cursor(collection, {})
-      let docs = await cursor.sort({ 'event.recorded': 1 }).exec()
+      let docs = await cursor.sort({ 'event.recorded': 1 })
       docs.length.should.equal(3)
       docs[0]._id.should.equal(doc3._id)
       docs[1]._id.should.equal(doc1._id)
       docs[2]._id.should.equal(doc2._id)
 
-      docs = await cursor.sort({ 'event.recorded': -1 }).exec()
+      docs = await cursor.sort({ 'event.recorded': -1 })
       docs.length.should.equal(3)
       docs[0]._id.should.equal(doc2._id)
       docs[1]._id.should.equal(doc1._id)
@@ -329,7 +329,7 @@ describe('Cursor', () => {
       await collection.insert({ name: 'henry', other: 4 })
 
       let cursor = new Cursor(collection, {})
-      let docs = await cursor.sort({ other: 1 }).exec()
+      let docs = await cursor.sort({ other: 1 })
       docs.length.should.equal(4)
       docs[0].name.should.equal('sue')
       assert.isUndefined(docs[0].other)
@@ -343,7 +343,7 @@ describe('Cursor', () => {
       cursor = new Cursor(collection, {
         name: { $in: ['suzy', 'jakeb', 'jako'] },
       })
-      docs = await cursor.sort({ other: -1 }).exec()
+      docs = await cursor.sort({ other: -1 })
       docs.length.should.equal(2)
       docs[0].name.should.equal('jakeb')
       docs[0].other.should.equal(3)
@@ -361,13 +361,13 @@ describe('Cursor', () => {
       ])
 
       let cursor = new Cursor(collection, {})
-      let docs = await cursor.sort({ other: 1 }).exec()
+      let docs = await cursor.sort({ other: 1 })
       docs.length.should.equal(3)
 
       cursor = new Cursor(collection, {
         name: { $in: ['sue', 'jakeb', 'jakob'] },
       })
-      docs = await cursor.sort({ other: -1 }).exec()
+      docs = await cursor.sort({ other: -1 })
       docs.length.should.equal(2)
     })
 
@@ -379,9 +379,7 @@ describe('Cursor', () => {
       await collection.insert({ name: 'zoe', age: 23, nid: 4 })
       await collection.insert({ name: 'jako', age: 35, nid: 5 })
 
-      let docs = await new Cursor(collection, {})
-        .sort({ name: 1, age: -1 })
-        .exec()
+      let docs = await new Cursor(collection, {}).sort({ name: 1, age: -1 })
 
       docs.length.should.equal(5)
       docs[0].nid.should.equal(2)
@@ -390,7 +388,7 @@ describe('Cursor', () => {
       docs[3].nid.should.equal(3)
       docs[4].nid.should.equal(4)
 
-      docs = await new Cursor(collection, {}).sort({ name: 1, age: 1 }).exec()
+      docs = await new Cursor(collection, {}).sort({ name: 1, age: 1 })
       docs.length.should.equal(5)
       docs[0].nid.should.equal(2)
       docs[1].nid.should.equal(5)
@@ -398,7 +396,7 @@ describe('Cursor', () => {
       docs[3].nid.should.equal(3)
       docs[4].nid.should.equal(4)
 
-      docs = await new Cursor(collection, {}).sort({ age: 1, name: 1 }).exec()
+      docs = await new Cursor(collection, {}).sort({ age: 1, name: 1 })
       docs.length.should.equal(5)
       docs[0].nid.should.equal(3)
       docs[1].nid.should.equal(4)
@@ -406,7 +404,7 @@ describe('Cursor', () => {
       docs[3].nid.should.equal(2)
       docs[4].nid.should.equal(1)
 
-      docs = await new Cursor(collection, {}).sort({ age: 1, name: -1 }).exec()
+      docs = await new Cursor(collection, {}).sort({ age: 1, name: -1 })
       docs.length.should.equal(5)
       docs[0].nid.should.equal(3)
       docs[1].nid.should.equal(4)
@@ -439,7 +437,7 @@ describe('Cursor', () => {
       }
 
       const cursor = new Cursor(collection, {})
-      const docs = await cursor.sort({ company: 1, cost: 1 }).exec()
+      const docs = await cursor.sort({ company: 1, cost: 1 })
       docs.length.should.equal(60)
 
       for (let i = 0; i < docs.length; i++) {
@@ -477,7 +475,7 @@ describe('Cursor', () => {
     it('Takes all results if no projection or empty object given', async function () {
       const cursor = new Cursor(collection, {})
       cursor.sort({ age: 1 }) // For easier finding
-      let docs = await cursor.exec()
+      let docs = await cursor
       docs.length.should.equal(5)
       assert.deepEqual(docs[0], doc0)
       assert.deepEqual(docs[1], doc3)
@@ -486,7 +484,7 @@ describe('Cursor', () => {
       assert.deepEqual(docs[4], doc4)
 
       cursor.projection({})
-      docs = await cursor.exec()
+      docs = await cursor
       docs.length.should.equal(5)
       assert.deepEqual(docs[0], doc0)
       assert.deepEqual(docs[1], doc3)
@@ -499,7 +497,7 @@ describe('Cursor', () => {
       const cursor = new Cursor(collection, {})
       cursor.sort({ age: 1 }) // For easier finding
       cursor.projection({ age: 1, name: 1 })
-      let docs = await cursor.exec()
+      let docs = await cursor
 
       docs.length.should.equal(5)
 
@@ -511,7 +509,7 @@ describe('Cursor', () => {
       assert.deepEqual(docs[4], { age: 89, _id: doc4._id }) // No problems if one field to take doesn't exist
 
       cursor.projection({ age: 1, name: 1, _id: 0 })
-      docs = await cursor.exec()
+      docs = await cursor
       docs.length.should.equal(5)
       assert.deepEqual(docs[0], { age: 5, name: 'Jo' })
       assert.deepEqual(docs[1], { age: 23, name: 'LM' })
@@ -525,7 +523,7 @@ describe('Cursor', () => {
       cursor.sort({ age: 1 }) // For easier finding
       cursor.projection({ age: 0, name: 0 })
 
-      let docs = await cursor.exec()
+      let docs = await cursor
       docs.length.should.equal(5)
 
       // Takes the _id by default
@@ -549,7 +547,7 @@ describe('Cursor', () => {
 
       cursor.projection({ age: 0, name: 0, _id: 0 })
 
-      docs = await cursor.exec()
+      docs = await cursor
       docs.length.should.equal(5)
       assert.deepEqual(docs[0], {
         planet: 'B',
@@ -573,7 +571,7 @@ describe('Cursor', () => {
       let docs = null
 
       try {
-        docs = await cursor.exec()
+        docs = await cursor
       } catch (e) {
         err = e
       }
@@ -583,7 +581,7 @@ describe('Cursor', () => {
 
       cursor.projection({ age: 1, _id: 0 })
 
-      docs = await cursor.exec()
+      docs = await cursor
 
       assert.deepEqual(docs[0], { age: 5 })
       assert.deepEqual(docs[1], { age: 23 })
@@ -593,7 +591,7 @@ describe('Cursor', () => {
 
       cursor.projection({ age: 0, toys: 0, planet: 0, _id: 1 })
 
-      docs = await cursor.exec()
+      docs = await cursor
 
       assert.deepEqual(docs[0], { name: 'Jo', _id: doc0._id })
       assert.deepEqual(docs[1], { name: 'LM', _id: doc3._id })
@@ -606,7 +604,7 @@ describe('Cursor', () => {
       const cursor = new Cursor(collection, {})
       cursor.sort({ age: 1 }) // For easier finding
       cursor.projection({ name: 0, planet: 0, 'toys.bebe': 0, _id: 0 })
-      const docs = await cursor.exec()
+      const docs = await cursor
       assert.deepEqual(docs[0], { age: 5, toys: { ballon: 'much' } })
       assert.deepEqual(docs[1], { age: 23 })
       assert.deepEqual(docs[2], { age: 52, toys: {} })
@@ -618,7 +616,7 @@ describe('Cursor', () => {
       const cursor = new Cursor(collection, {})
       cursor.sort({ age: 1 }) // For easier finding
       cursor.projection({ name: 1, 'toys.ballon': 1, _id: 0 })
-      const docs = await cursor.exec()
+      const docs = await cursor
 
       assert.deepEqual(docs[0], { name: 'Jo', toys: { ballon: 'much' } })
       assert.deepEqual(docs[1], { name: 'LM' })

@@ -12,7 +12,7 @@ export type Query = {
 
 export type ExecFn = (data: any) => Promise<any>
 
-export class Cursor {
+export class Cursor implements PromiseLike<any[]> {
   db: Collection
 
   query: Query
@@ -218,5 +218,18 @@ export class Cursor {
     }
 
     return res
+  }
+
+  then<TResult1 = any[], TResult2 = never>(
+    onfulfilled?:
+      | ((value: any[]) => PromiseLike<TResult1> | TResult1)
+      | undefined
+      | null,
+    onrejected?:
+      | ((reason: any) => PromiseLike<TResult2> | TResult2)
+      | undefined
+      | null,
+  ): PromiseLike<TResult1 | TResult2> {
+    return this.exec().then(onfulfilled, onrejected)
   }
 }

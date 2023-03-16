@@ -147,7 +147,7 @@ describe('Model', function () {
       const db2 = new Collection({ filename: 'workspace/test1.db' })
 
       await db2.loadDatabase()
-      const docs = await db2.find({}).exec()
+      const docs = await db2.find({})
       assert.isArray(docs)
       assert.lengthOf(docs, 1)
       assert.propertyVal(docs[0], 'hello', badString)
