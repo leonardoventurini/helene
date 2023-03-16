@@ -141,7 +141,7 @@ describe('Model', function () {
 
       assert.strictEqual(fs.existsSync('workspace/test1.db'), false)
       const db1 = new Collection({
-        filename: 'workspace/test1.db',
+        name: 'workspace/test1.db',
         storage: new NodeStorage(),
       })
 
@@ -149,7 +149,7 @@ describe('Model', function () {
       await assert.isFulfilled(db1.insert({ hello: badString }))
 
       const db2 = new Collection({
-        filename: 'workspace/test1.db',
+        name: 'workspace/test1.db',
         storage: new NodeStorage(),
       })
 

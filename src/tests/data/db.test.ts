@@ -2,7 +2,7 @@ import { assert, expect } from 'chai'
 import fs from 'fs'
 import _ from 'lodash'
 import path from 'path'
-import { Collection } from '../../data'
+import { Collection, createCollection } from '../../data'
 import { deserialize, serialize } from '../../data/serialization'
 import { pluck } from '../../data/utils'
 import mkdirp from 'mkdirp'
@@ -16,7 +16,7 @@ describe('Database', function () {
 
   beforeEach(async () => {
     collection = new Collection({
-      filename: testDb,
+      name: testDb,
       storage: new NodeStorage(),
     })
     collection.name.should.equal(testDb)
@@ -31,20 +31,6 @@ describe('Database', function () {
     collection.getAllData().length.should.equal(0)
   })
 
-  it('Constructor compatibility with v0.6-', function () {
-    let dbef = new Collection('somefile')
-    dbef.name.should.equal('somefile')
-    dbef.inMemoryOnly.should.equal(false)
-
-    dbef = new Collection('')
-    assert.isNull(dbef.name)
-    dbef.inMemoryOnly.should.equal(true)
-
-    dbef = new Collection()
-    assert.isNull(dbef.name)
-    dbef.inMemoryOnly.should.equal(true)
-  })
-
   describe('Autoloading', function () {
     it('Can autoload a database and query it right away', async function () {
       const fileStr =
@@ -55,13 +41,11 @@ describe('Database', function () {
       const autoDb = 'workspace/auto.db'
       fs.writeFileSync(autoDb, fileStr, 'utf8')
 
-      const db = new Collection({
-        filename: autoDb,
+      const db = await createCollection({
+        name: autoDb,
         autoload: true,
         storage: new NodeStorage(),
       })
-
-      await db.waitFor('ready')
 
       const docs = await db.find({})
 
@@ -85,7 +69,7 @@ describe('Database', function () {
       }
 
       const db = new Collection({
-        filename: autoDb,
+        name: autoDb,
         autoload: true,
         onload: onload,
       })
@@ -250,14 +234,13 @@ describe('Database', function () {
     it('If timestampData option is set, a createdAt field is added and persisted', async function () {
       const newDoc = { hello: 'world' }
       const beginning = Date.now()
-      collection = new Collection({
-        filename: testDb,
-        timestampData: true,
+
+      collection = await createCollection({
+        name: testDb,
+        timestamps: true,
         autoload: true,
         storage: new NodeStorage(),
       })
-
-      await collection.waitFor('ready')
 
       let docs = await collection.find({})
       docs.length.should.equal(0)
@@ -321,14 +304,13 @@ describe('Database', function () {
     it("If timestampData is set but createdAt is specified by user, don't change it", async function () {
       const newDoc = { hello: 'world', createdAt: new Date(234) }
       const beginning = Date.now()
-      collection = new Collection({
-        filename: testDb,
-        timestampData: true,
+
+      collection = await createCollection({
+        name: testDb,
+        timestamps: true,
         autoload: true,
         storage: new NodeStorage(),
       })
-
-      await collection.waitFor('ready')
 
       const insertedDoc = await collection.insert(newDoc)
 
@@ -354,14 +336,12 @@ describe('Database', function () {
       const newDoc = { hello: 'world', updatedAt: new Date(234) },
         beginning = Date.now()
 
-      collection = new Collection({
-        filename: testDb,
-        timestampData: true,
+      collection = await createCollection({
+        name: testDb,
+        timestamps: true,
         autoload: true,
         storage: new NodeStorage(),
       })
-
-      await collection.waitFor('ready')
 
       const insertedDoc = await collection.insert(newDoc)
 
@@ -504,9 +484,7 @@ describe('Database', function () {
       assert.isNull(datafileContents.match(/world/))
 
       // New datastore on same datafile is empty
-      const d2 = new Collection({ filename: testDb, autoload: true })
-
-      await d2.waitFor('ready')
+      const d2 = await createCollection({ name: testDb, autoload: true })
 
       doc = await d2.findOne({})
 
@@ -847,13 +825,11 @@ describe('Database', function () {
     it('If timestampData option is set, update the updatedAt field', async function () {
       const beginning = Date.now()
 
-      collection = new Collection({
-        filename: testDb,
+      const collection = await createCollection({
+        name: testDb,
         autoload: true,
-        timestampData: true,
+        timestamps: true,
       })
-
-      await collection.waitFor('ready')
 
       const insertedDoc = await collection.insert({ hello: 'world' })
 
@@ -1466,7 +1442,7 @@ describe('Database', function () {
     })
 
     it('createdAt property is unchanged and updatedAt correct after an update, even a complete document replacement', async () => {
-      const d2 = new Collection({ timestampData: true })
+      const d2 = new Collection({ timestamps: true })
       await d2.insert({ a: 1 })
       const doc = await d2.findOne({ a: 1 })
       const createdAt = doc.createdAt.getTime()
@@ -2443,13 +2419,11 @@ describe('Database', function () {
           fs.writeFileSync(persDb, '', 'utf8')
         }
 
-        let db = new Collection({
-          filename: persDb,
+        let db = await createCollection({
+          name: persDb,
           autoload: true,
           storage: new NodeStorage(),
         })
-
-        await db.waitFor('ready')
 
         assert.strictEqual(Object.keys(db.indexes).length, 1)
         assert.strictEqual(Object.keys(db.indexes)[0], '_id')
@@ -2467,7 +2441,7 @@ describe('Database', function () {
         assert.strictEqual(db.indexes.planet.fieldName, 'planet')
 
         // After a reload the indexes are recreated
-        db = new Collection({ filename: persDb, storage: new NodeStorage() })
+        db = new Collection({ name: persDb, storage: new NodeStorage() })
         await db.loadDatabase()
 
         assert.strictEqual(Object.keys(db.indexes).length, 2)
@@ -2478,7 +2452,7 @@ describe('Database', function () {
         assert.strictEqual(db.indexes.planet.fieldName, 'planet')
 
         // After another reload the indexes are still there (i.e. they are preserved during autocompaction)
-        db = new Collection({ filename: persDb, storage: new NodeStorage() })
+        db = new Collection({ name: persDb, storage: new NodeStorage() })
         await db.loadDatabase()
 
         assert.strictEqual(Object.keys(db.indexes).length, 2)
@@ -2498,13 +2472,11 @@ describe('Database', function () {
           fs.writeFileSync(persDb, '', 'utf8')
         }
 
-        db = new Collection({
-          filename: persDb,
+        db = await createCollection({
+          name: persDb,
           autoload: true,
           storage: new NodeStorage(),
         })
-
-        await db.waitFor('ready')
 
         Object.keys(db.indexes).length.should.equal(1)
         Object.keys(db.indexes)[0].should.equal('_id')
@@ -2530,7 +2502,7 @@ describe('Database', function () {
         await db.insert({ planet: 'Jupiter' })
 
         // After a reload the indexes are recreated
-        db = new Collection({ filename: persDb, storage: new NodeStorage() })
+        db = new Collection({ name: persDb, storage: new NodeStorage() })
         await db.loadDatabase()
 
         Object.keys(db.indexes).length.should.equal(2)
@@ -2560,7 +2532,7 @@ describe('Database', function () {
         db.indexes.bloup.sparse.should.equal(true)
 
         // After another reload the indexes are still there (i.e. they are preserved during autocompaction)
-        db = new Collection({ filename: persDb, storage: new NodeStorage() })
+        db = new Collection({ name: persDb, storage: new NodeStorage() })
         await db.loadDatabase()
 
         Object.keys(db.indexes).length.should.equal(3)
@@ -2585,13 +2557,11 @@ describe('Database', function () {
           fs.writeFileSync(persDb, '', 'utf8')
         }
 
-        db = new Collection({
-          filename: persDb,
+        db = await createCollection({
+          name: persDb,
           autoload: true,
           storage: new NodeStorage(),
         })
-
-        await db.waitFor('ready')
 
         Object.keys(db.indexes).length.should.equal(1)
         Object.keys(db.indexes)[0].should.equal('_id')
@@ -2611,7 +2581,7 @@ describe('Database', function () {
         db.indexes.planet.fieldName.should.equal('planet')
 
         // After a reload the indexes are recreated
-        db = new Collection({ filename: persDb, storage: new NodeStorage() })
+        db = new Collection({ name: persDb, storage: new NodeStorage() })
 
         await db.loadDatabase()
 
@@ -2632,7 +2602,7 @@ describe('Database', function () {
         db.indexes._id.getAll().length.should.equal(2)
 
         // After a reload indexes are preserved
-        db = new Collection({ filename: persDb, storage: new NodeStorage() })
+        db = new Collection({ name: persDb, storage: new NodeStorage() })
 
         await db.loadDatabase()
 
@@ -2642,7 +2612,7 @@ describe('Database', function () {
         db.indexes._id.getAll().length.should.equal(2)
 
         // After another reload the indexes are still there (i.e. they are preserved during autocompaction)
-        db = new Collection({ filename: persDb, storage: new NodeStorage() })
+        db = new Collection({ name: persDb, storage: new NodeStorage() })
         await db.loadDatabase()
 
         Object.keys(db.indexes).length.should.equal(2)

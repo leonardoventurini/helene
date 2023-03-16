@@ -14,7 +14,7 @@ describe('Cursor', () => {
 
   beforeEach(async () => {
     collection = new Collection({
-      filename: testDb,
+      name: testDb,
       storage: new NodeStorage(),
     })
 

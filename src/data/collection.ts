@@ -12,9 +12,14 @@ import {
 } from './_get-candidates'
 import { IStorage } from './types'
 
+export const CollectionEvents = {
+  READY: 'ready',
+  ERROR: 'error',
+}
+
 type Options = {
-  filename?: string
-  timestampData?: boolean
+  name?: string
+  timestamps?: boolean
   autoload?: boolean
   onload?: (err?: Error) => void
   afterSerialization?: (doc: any) => any
@@ -35,45 +40,50 @@ export class Collection extends EventEmitter2 {
 
   ttlIndexes: Record<string, any>
 
-  constructor(_options?: Options | string) {
+  constructor({
+    name,
+    storage,
+    autoload = false,
+    timestamps = false,
+    compareStrings,
+    corruptAlertThreshold,
+    onload,
+    afterSerialization,
+    beforeDeserialization,
+  }: Options = {}) {
     super()
 
-    let filename
-    let options: Options = {}
+    this.autoload = autoload
+    this.timestampData = timestamps
 
-    // Retrocompatibility with v0.6 and before
-    if (isString(_options)) {
-      filename = _options
-      this.inMemoryOnly = false // Default
-    } else {
-      options = _options || {}
-      filename = options.filename
-      this.inMemoryOnly = !options?.storage
-      this.autoload = options.autoload || false
-      this.timestampData = options.timestampData || false
-    }
+    // If no name or no storage strategy then the database will be in memory only
+    this.inMemoryOnly = false
 
     // Determine whether in memory or persistent
-    if (!filename || typeof filename !== 'string' || filename.length === 0) {
+    if (isString(name) && name.length > 0) {
+      this.name = name
+    } else {
       this.name = null
       this.inMemoryOnly = true
-    } else {
-      this.name = filename
+    }
+
+    if (!storage) {
+      this.inMemoryOnly = true
     }
 
     // String comparison function
-    this.compareStrings = options.compareStrings
+    this.compareStrings = compareStrings
 
     // Persistence handling
     this.persistence = new Persistence({
       db: this,
-      afterSerialization: options.afterSerialization,
-      beforeDeserialization: options.beforeDeserialization,
-      corruptAlertThreshold: options.corruptAlertThreshold,
+      afterSerialization,
+      beforeDeserialization,
+      corruptAlertThreshold,
     })
 
-    if (options.storage) {
-      this.persistence.storage = options.storage
+    if (storage) {
+      this.persistence.storage = storage
     }
 
     // Indexed by field name, dot notation can be used
@@ -88,12 +98,17 @@ export class Collection extends EventEmitter2 {
     if (this.autoload) {
       this.loadDatabase()
         .then(() => {
-          this.emit('ready')
-          options?.onload?.()
+          onload?.()
         })
         .catch(err => {
-          options?.onload?.(err)
+          this.emit(CollectionEvents.ERROR, err)
+          onload?.(err)
         })
+        .finally(() => {
+          this.emit(CollectionEvents.READY)
+        })
+    } else {
+      this.emit(CollectionEvents.READY)
     }
   }
 
@@ -305,12 +320,15 @@ export class Collection extends EventEmitter2 {
         preparedDoc._id = this.createNewId()
       }
       const now = new Date()
+
       if (this.timestampData && preparedDoc.createdAt === undefined) {
         preparedDoc.createdAt = now
       }
+
       if (this.timestampData && preparedDoc.updatedAt === undefined) {
         preparedDoc.updatedAt = now
       }
+
       checkObject(preparedDoc)
     }
 
@@ -513,4 +531,19 @@ export class Collection extends EventEmitter2 {
 
     return numRemoved
   }
+}
+
+/**
+ * Creates a new collection and waits until it is ready.
+ */
+export async function createCollection(options: Options) {
+  const collection = new Collection(options)
+
+  collection.on(CollectionEvents.ERROR, err => {
+    throw err
+  })
+
+  await collection.waitFor(CollectionEvents.READY)
+
+  return collection
 }
