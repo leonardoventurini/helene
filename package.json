@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch",
-    "clean": "rm -rf client react server utils index.* tsconfig.tsbuildinfo",
+    "clean": "rm -rf client react server data utils index.* tsconfig.tsbuildinfo",
     "test": "nodemon --watch 'src/**/*' -e ts,tsx --exec 'yarn test:mocha'",
     "test:mocha": "NODE_ENV=test mocha -r ts-node/register/transpile-only 'src/**/*.test.*' --extension ts,tsx --file 'src/tests/utils/setup-tests.ts' --exit"
   },

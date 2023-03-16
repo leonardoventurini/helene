@@ -9,9 +9,7 @@ import { Index } from './indexes'
 import { deserialize, serialize } from './serialization'
 import { uid } from './custom-utils'
 import { Collection } from './collection'
-import { Environment } from '../utils'
 import { IStorage } from './types'
-import { NodeStorage } from './storage'
 
 type Options = {
   db: Collection
@@ -36,12 +34,6 @@ export class Persistence {
 
   constructor(options?: Options) {
     let i, j, randomString
-
-    if (Environment.isNode) {
-      this.storage = new NodeStorage()
-    } else {
-      this.storage = new NodeStorage()
-    }
 
     this.db = options.db
     this.inMemoryOnly = this.db.inMemoryOnly

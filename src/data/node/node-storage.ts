@@ -9,7 +9,7 @@
 import fs from 'fs'
 import mkdirp from 'mkdirp'
 import path from 'path'
-import { IStorage } from './types'
+import { IStorage } from '../types'
 import { ensureDatafileIntegrity, flushToStorage } from './utils'
 
 export class NodeStorage implements IStorage {

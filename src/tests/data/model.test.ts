@@ -15,6 +15,7 @@ import {
   match,
   modify,
 } from '../../data/model'
+import { NodeStorage } from '../../data/node'
 
 describe('Model', function () {
   describe('Serialization, deserialization', function () {
@@ -139,12 +140,18 @@ describe('Model', function () {
       }
 
       assert.strictEqual(fs.existsSync('workspace/test1.db'), false)
-      const db1 = new Collection({ filename: 'workspace/test1.db' })
+      const db1 = new Collection({
+        filename: 'workspace/test1.db',
+        storage: new NodeStorage(),
+      })
 
       await db1.loadDatabase()
       await assert.isFulfilled(db1.insert({ hello: badString }))
 
-      const db2 = new Collection({ filename: 'workspace/test1.db' })
+      const db2 = new Collection({
+        filename: 'workspace/test1.db',
+        storage: new NodeStorage(),
+      })
 
       await db2.loadDatabase()
       const docs = await db2.find({})

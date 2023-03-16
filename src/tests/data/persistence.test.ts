@@ -12,7 +12,8 @@ import { deserialize, serialize } from '../../data/serialization'
 import {
   ensureDatafileIntegrity,
   ensureFileDoesntExist,
-} from '../../data/utils'
+} from '../../data/node/utils'
+import { NodeStorage } from '../../data/node'
 
 const testDb = 'workspace/test.db'
 
@@ -20,7 +21,7 @@ describe('Persistence', function () {
   let d: Collection
 
   beforeEach(async () => {
-    d = new Collection({ filename: testDb })
+    d = new Collection({ filename: testDb, storage: new NodeStorage() })
     assert.strictEqual(d.name, testDb)
     assert.strictEqual(d.inMemoryOnly, false)
 
@@ -298,13 +299,17 @@ describe('Persistence', function () {
     fs.writeFileSync(corruptTestFilename, fakeData, 'utf8')
 
     // Default corruptAlertThreshold
-    d = new Collection({ filename: corruptTestFilename })
+    d = new Collection({
+      filename: corruptTestFilename,
+      storage: new NodeStorage(),
+    })
     await assert.isRejected(d.loadDatabase())
 
     fs.writeFileSync(corruptTestFilename, fakeData, 'utf8')
     d = new Collection({
       filename: corruptTestFilename,
       corruptAlertThreshold: 1,
+      storage: new NodeStorage(),
     })
     await d.loadDatabase()
 
@@ -312,6 +317,7 @@ describe('Persistence', function () {
     d = new Collection({
       filename: corruptTestFilename,
       corruptAlertThreshold: 0,
+      storage: new NodeStorage(),
     })
     await assert.isRejected(d.loadDatabase())
   })
@@ -389,6 +395,7 @@ describe('Persistence', function () {
         autoload: true,
         afterSerialization: as,
         beforeDeserialization: bd,
+        storage: new NodeStorage(),
       })
 
       await d.waitFor('ready')
@@ -461,6 +468,7 @@ describe('Persistence', function () {
         autoload: true,
         afterSerialization: as,
         beforeDeserialization: bd,
+        storage: new NodeStorage(),
       })
 
       await d.waitFor('ready')
@@ -519,6 +527,7 @@ describe('Persistence', function () {
         autoload: true,
         afterSerialization: as,
         beforeDeserialization: bd,
+        storage: new NodeStorage(),
       })
 
       await d.waitFor('ready')
@@ -539,6 +548,7 @@ describe('Persistence', function () {
         filename: hookTestFilename,
         afterSerialization: as,
         beforeDeserialization: bd,
+        storage: new NodeStorage(),
       })
 
       await d2.loadDatabase()
@@ -556,20 +566,23 @@ describe('Persistence', function () {
 
   describe('Prevent dataloss when persisting data', () => {
     it('Creating a datastore with in memory as true and a bad filename wont cause an error', () => {
-      new Collection({ filename: 'workspace/bad.db~', inMemoryOnly: true })
+      new Collection({ filename: 'workspace/bad.db~' })
     })
 
     it('Creating a persistent datastore with a bad filename will cause an error', () => {
       expect(() => {
-        new Collection({ filename: 'workspace/bad.db~' })
+        new Collection({
+          filename: 'workspace/bad.db~',
+          storage: new NodeStorage(),
+        })
       }).to.throw()
     })
 
     it('If no file exists, ensureDatafileIntegrity creates an empty datafile', async function () {
       const p = new Persistence({
         db: new Collection({
-          inMemoryOnly: false,
           filename: 'workspace/it.db',
+          storage: new NodeStorage(),
         }),
       })
 
@@ -594,8 +607,8 @@ describe('Persistence', function () {
     it('If only datafile exists, ensureDatafileIntegrity will use it', async function () {
       const p = new Persistence({
         db: new Collection({
-          inMemoryOnly: false,
           filename: 'workspace/it.db',
+          storage: new NodeStorage(),
         }),
       })
 
@@ -623,8 +636,8 @@ describe('Persistence', function () {
     it('If temp datafile exists and datafile doesnt, ensureDatafileIntegrity will use it (cannot happen except upon first use)', async function () {
       const p = new Persistence({
         db: new Collection({
-          inMemoryOnly: false,
           filename: 'workspace/it.db',
+          storage: new NodeStorage(),
         }),
       })
 
@@ -652,7 +665,10 @@ describe('Persistence', function () {
     })
 
     it('If both temp and current datafiles exist, ensureDatafileIntegrity will use the datafile, as it means that the write of the temp file failed', async function () {
-      const theDb = new Collection({ filename: 'workspace/it.db' })
+      const theDb = new Collection({
+        filename: 'workspace/it.db',
+        storage: new NodeStorage(),
+      })
 
       if (fs.existsSync('workspace/it.db')) {
         fs.unlinkSync('workspace/it.db')
@@ -774,7 +790,10 @@ describe('Persistence', function () {
         fs.unlinkSync(dbFile + '~')
       }
 
-      const theDb = new Collection({ filename: dbFile })
+      const theDb = new Collection({
+        filename: dbFile,
+        storage: new NodeStorage(),
+      })
       await theDb.loadDatabase()
 
       const contents = fs.readFileSync(dbFile, 'utf8')
@@ -791,7 +810,11 @@ describe('Persistence', function () {
       await ensureFileDoesntExist(dbFile)
       await ensureFileDoesntExist(dbFile + '~')
 
-      const theDb = new Collection({ filename: dbFile })
+      const theDb = new Collection({
+        filename: dbFile,
+        storage: new NodeStorage(),
+      })
+
       await theDb.loadDatabase()
 
       let docs = await theDb.find({})
@@ -815,10 +838,14 @@ describe('Persistence', function () {
       assert.isTrue(fs.existsSync(dbFile))
       assert.isFalse(fs.existsSync(dbFile + '~'))
 
-      const theDb2 = new Collection({ filename: dbFile })
+      const theDb2 = new Collection({
+        filename: dbFile,
+        storage: new NodeStorage(),
+      })
       await theDb2.loadDatabase()
 
       docs = await theDb2.find({})
+
       assert.lengthOf(docs, 2)
       assert.equal(_.find(docs, { _id: doc1._id }).a, 'hello')
       assert.equal(_.find(docs, { _id: doc2._id }).a, 'world')

@@ -2,10 +2,11 @@ import { assert } from 'chai'
 import fs from 'fs'
 import path from 'path'
 import _ from 'lodash'
-import { Collection } from '../../data/collection'
+import { Collection } from '../../data'
 import { Cursor } from '../../data/cursor'
-import { pluck } from '../../data/utils'
 import mkdirp from 'mkdirp'
+import { pluck } from '../../data/utils'
+import { NodeStorage } from '../../data/node'
 
 const testDb = 'workspace/test.db'
 
@@ -13,7 +14,10 @@ describe('Cursor', () => {
   let collection: Collection
 
   beforeEach(async () => {
-    collection = new Collection({ filename: testDb })
+    collection = new Collection({
+      filename: testDb,
+      storage: new NodeStorage(),
+    })
 
     collection.name.should.equal(testDb)
     collection.inMemoryOnly.should.equal(false)
@@ -142,7 +146,6 @@ describe('Cursor', () => {
 
     it('Sorting strings with custom string comparison function', async () => {
       const db = new Collection({
-        inMemoryOnly: true,
         autoload: true,
         compareStrings: function (a, b) {
           return a.length - b.length

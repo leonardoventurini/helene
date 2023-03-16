@@ -10,17 +10,18 @@ import {
   checkIndexesFromMostToLeast,
   removeExpiredDocuments,
 } from './_get-candidates'
+import { IStorage } from './types'
 
 type Options = {
   filename?: string
   timestampData?: boolean
-  inMemoryOnly?: boolean
   autoload?: boolean
   onload?: (err?: Error) => void
   afterSerialization?: (doc: any) => any
   beforeDeserialization?: (doc: any) => any
   corruptAlertThreshold?: number
   compareStrings?: (a: string, b: string) => number
+  storage?: IStorage
 }
 
 export class Collection extends EventEmitter2 {
@@ -47,7 +48,7 @@ export class Collection extends EventEmitter2 {
     } else {
       options = _options || {}
       filename = options.filename
-      this.inMemoryOnly = options.inMemoryOnly || false
+      this.inMemoryOnly = !options?.storage
       this.autoload = options.autoload || false
       this.timestampData = options.timestampData || false
     }
@@ -70,6 +71,10 @@ export class Collection extends EventEmitter2 {
       beforeDeserialization: options.beforeDeserialization,
       corruptAlertThreshold: options.corruptAlertThreshold,
     })
+
+    if (options.storage) {
+      this.persistence.storage = options.storage
+    }
 
     // Indexed by field name, dot notation can be used
     // _id is always indexed and since _ids are generated randomly the underlying
