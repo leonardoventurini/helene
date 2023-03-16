@@ -1,4 +1,4 @@
-import { AVLTree as BinarySearchTree } from 'binary-search-tree'
+import { AVLTree } from './binary-search-tree/avl-tree'
 import { compareThings, getDotValue } from './model'
 import _, { isArray, isDate } from 'lodash'
 
@@ -48,7 +48,7 @@ export class Index {
     checkValueEquality: typeof checkValueEquality
   }
 
-  tree: BinarySearchTree<any, any>
+  tree: AVLTree
 
   /**
    * Create a new index
@@ -78,7 +78,7 @@ export class Index {
    *                                                 If an error is thrown during insertion, the index is not modified
    */
   reset(newData?) {
-    this.tree = new BinarySearchTree(this.treeOptions)
+    this.tree = new AVLTree(this.treeOptions)
 
     if (newData) {
       this.insert(newData)
