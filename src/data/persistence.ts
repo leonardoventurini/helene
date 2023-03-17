@@ -214,7 +214,7 @@ export class Persistence {
    * machine understandable collection
    */
   treatRawData(rawData) {
-    const data = rawData.split('\n'),
+    const data = rawData?.split('\n') || [],
       dataById = {},
       tdata = [],
       indexes: Record<string, any> = {}

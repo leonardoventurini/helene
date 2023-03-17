@@ -407,7 +407,7 @@ export class Collection extends EventEmitter2 {
    * @param {Object} query MongoDB-style query
    * @param {Object} projection MongoDB-style projection
    */
-  find(query?, projection?) {
+  async find(query?, projection?) {
     const cursor = new Cursor(this, query, async function (docs) {
       const res = []
 
@@ -418,7 +418,7 @@ export class Collection extends EventEmitter2 {
       return res
     })
 
-    cursor.projection(projection)
+    await cursor.projection(projection)
 
     return cursor
   }
