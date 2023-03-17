@@ -1,5 +1,5 @@
 import { Index } from './indexes'
-import { isArray, isNumber, isString } from 'lodash'
+import { defer, isArray, isNumber, isString } from 'lodash'
 import { Persistence } from './persistence'
 import { Cursor } from './cursor'
 import { uid } from './custom-utils'
@@ -46,6 +46,8 @@ export class Collection extends EventEmitter2 {
   indexes: Record<string, Index>
 
   ttlIndexes: Record<string, any>
+
+  ready = false
 
   constructor({
     name,
@@ -113,15 +115,23 @@ export class Collection extends EventEmitter2 {
           onload?.()
         })
         .catch(err => {
-          this.emit(CollectionEvent.ERROR, err)
           onload?.(err)
+          this.deferEmit(CollectionEvent.ERROR, err)
         })
         .finally(() => {
-          this.emit(CollectionEvent.READY)
+          this.ready = true
+          this.deferEmit(CollectionEvent.READY)
         })
     } else {
-      this.emit(CollectionEvent.READY)
+      this.ready = true
+      this.deferEmit(CollectionEvent.READY)
     }
+  }
+
+  deferEmit(event: string, ...args: any[]) {
+    defer(() => {
+      this.emit(event, ...args)
+    })
   }
 
   /**
@@ -547,6 +557,10 @@ export async function createCollection(options: Options) {
   collection.on(CollectionEvent.ERROR, err => {
     throw err
   })
+
+  if (collection.ready) {
+    return collection
+  }
 
   await collection.waitFor(CollectionEvent.READY)
 
