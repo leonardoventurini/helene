@@ -16,7 +16,7 @@ export const ClientProvider = ({
 }>) => {
   const client = useCreation(
     () => clientInstance ?? new Client(clientOptions),
-    [clientOptions],
+    [],
   )
 
   return (
