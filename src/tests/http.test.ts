@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { Errors } from '../utils/errors'
+import { Errors } from '../utils'
 import { TestUtility } from './utils/test-utility'
 import path from 'path'
 import request from 'supertest'
@@ -68,7 +68,7 @@ describe('HTTP', async () => {
         expect(this).to.have.property('isAuthenticated').that.is.true
         expect(this)
           .to.have.property('context')
-          .that.eql({ token: 'test', user: { _id: 'id' } })
+          .that.eql({ token: 'test', user: { _id: 'id' }, initialized: true })
 
         return true
       },

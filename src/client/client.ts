@@ -46,6 +46,7 @@ export type ClientOptions = {
   debug?: boolean
   allowedContextKeys?: string[]
   meta?: Record<string, any>
+  fastInit?: boolean
 }
 
 export type CallOptions = {
@@ -85,6 +86,7 @@ export class Client extends ClientChannel {
     debug: false,
     allowedContextKeys: [],
     meta: {},
+    fastInit: false,
   }
 
   constructor(options: ClientOptions = {}) {
@@ -106,6 +108,9 @@ export class Client extends ClientChannel {
 
     this.on(ClientEvents.OPEN, this.init)
     this.on(ClientEvents.ERROR, console.error)
+    this.on(ClientEvents.CLOSE, () => {
+      this.ready = false
+    })
 
     this.debugger('Client Created', this.uuid)
 
@@ -153,7 +158,7 @@ export class Client extends ClientChannel {
 
     this.emit(ClientEvents.CONTEXT_CHANGED)
 
-    if (reinitialize) await this.init()
+    if (reinitialize) await this.init(true)
   }
 
   async updateContext(context, reinitialize = true) {
@@ -190,12 +195,10 @@ export class Client extends ClientChannel {
     return this.clientSocket.close()
   }
 
-  async init() {
+  async init(reinit = false) {
     this.debugger('Init Client', this.uuid)
 
     await this.loadContext()
-
-    this.ready = false
 
     this.emit(ClientEvents.INITIALIZING)
 
@@ -206,6 +209,14 @@ export class Client extends ClientChannel {
     const context = this.options.allowedContextKeys.length
       ? pick(this.context ?? {}, this.options.allowedContextKeys)
       : {}
+
+    // If the client is already initialized and the token is valid, we can postpone
+    // this so the user can start using the client right away.
+    if (this.options.fastInit && !reinit && token && this.context.initialized) {
+      this.ready = true
+      this.authenticated = true
+      this.emit(ClientEvents.INITIALIZED, this.context)
+    }
 
     const result = await this.call(Methods.RPC_INIT, {
       token,
@@ -219,7 +230,7 @@ export class Client extends ClientChannel {
     this.authenticated = Boolean(result)
 
     if (result) {
-      await this.updateContext(result, false)
+      await this.updateContext({ ...result, initialized: true }, false)
     } else {
       this.clearContext()
     }

@@ -1,11 +1,10 @@
 import React, { PropsWithChildren } from 'react'
-import { Client, ClientOptions } from '../../client/client'
+import { Client, ClientOptions } from '../../client'
+import { useCreation } from 'ahooks'
 
 export const ClientContext = React.createContext(undefined)
 
 ClientContext.displayName = 'HeleneClientContext'
-
-let client = null
 
 export const ClientProvider = ({
   clientInstance = null,
@@ -15,15 +14,14 @@ export const ClientProvider = ({
   clientOptions?: ClientOptions
   clientInstance?: Client
 }>) => {
-  if (!clientInstance && !client) {
-    client = new Client(clientOptions)
-  }
-
-  const instance = clientInstance ?? client
+  const client = useCreation(
+    () => clientInstance ?? new Client(clientOptions),
+    [clientOptions],
+  )
 
   return (
-    <ClientContext.Provider value={instance}>
-      {instance ? children : null}
+    <ClientContext.Provider value={client}>
+      {client ? children : null}
     </ClientContext.Provider>
   )
 }
