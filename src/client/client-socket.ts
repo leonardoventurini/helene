@@ -1,13 +1,16 @@
 import IsomorphicWebSocket from 'isomorphic-ws'
 import { Client, WebSocketOptions } from './client'
-import {
-  ClientEvents,
-  HELENE_WS_PATH,
-  WebSocketEvents,
-} from '../utils/constants'
+import { ClientEvents, HELENE_WS_PATH, sleep, WebSocketEvents } from '../utils'
 import { Presentation } from '../utils/presentation'
-import { WebSocketMessageOptions } from '../server/transports/websocket-transport'
+import { WebSocketMessageOptions } from '../server'
 import retry from 'retry'
+
+export const WebSocketState = {
+  CONNECTING: 0,
+  OPEN: 1,
+  CLOSING: 2,
+  CLOSED: 3,
+}
 
 export class ClientSocket {
   client: Client
@@ -45,7 +48,15 @@ export class ClientSocket {
       this.connect().catch(error => console.error('Auto Connect Error', error))
   }
 
-  private handleOpen = () => {
+  get readyState(): number {
+    return this.socket?.readyState
+  }
+
+  private handleOpen = async () => {
+    if (this.readyState === WebSocketState.CONNECTING) {
+      await sleep(100)
+    }
+
     this.client.emit(ClientEvents.OPEN)
     this.connecting = false
     this.ready = true

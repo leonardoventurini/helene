@@ -1,8 +1,7 @@
-import { WebSocketMessageOptions } from '../server/transports/websocket-transport'
+import { MethodParams, WebSocketMessageOptions } from '../server'
 import { PromiseQueue } from './promise-queue'
-import { ClientSocket } from './client-socket'
+import { ClientSocket, WebSocketState } from './client-socket'
 import { Presentation } from '../utils/presentation'
-import { MethodParams } from '../server/method'
 import {
   isEmpty,
   isFunction,
@@ -13,14 +12,19 @@ import {
   merge,
   pick,
 } from 'lodash'
-import { ClientEvents, Methods, NO_CHANNEL } from '../utils/constants'
+import {
+  AnyFunction,
+  ClientEvents,
+  Environment,
+  Errors,
+  Methods,
+  NO_CHANNEL,
+  sleep,
+} from '../utils'
 import { ClientHttp } from './client-http'
 import { ClientChannel } from './client-channel'
-import { Errors } from '../utils/errors'
 import qs from 'query-string'
-import { Environment } from '../utils/environment'
 import { EJSON } from 'ejson2'
-import { AnyFunction } from '../utils/types'
 import Timeout = NodeJS.Timeout
 
 export type ErrorHandler = (error: Presentation.ErrorPayload) => any
@@ -178,6 +182,8 @@ export class Client extends ClientChannel {
   }
 
   async connect() {
+    if (this.clientSocket.ready) return null
+
     await this.clientSocket.connect()
 
     return await this.isReady()
@@ -216,6 +222,11 @@ export class Client extends ClientChannel {
       this.ready = true
       this.authenticated = true
       this.emit(ClientEvents.INITIALIZED, this.context)
+    }
+
+    // Wait a bit until the socket is ready
+    if (this.clientSocket.readyState === WebSocketState.CONNECTING) {
+      await sleep(100)
     }
 
     const result = await this.call(Methods.RPC_INIT, {
@@ -273,6 +284,10 @@ export class Client extends ClientChannel {
     for (const [name, channel] of this.channels) {
       await channel.resubscribe()
     }
+  }
+
+  async disconnect() {
+    return await this.close()
   }
 
   /**

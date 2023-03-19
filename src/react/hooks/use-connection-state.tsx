@@ -1,25 +1,39 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useClient } from './use-client'
-import { ClientEvents } from '../../utils/constants'
+import { ClientEvents } from '../../utils'
 
-export const useConnectionState = () => {
+export const useConnectionState = ({
+  reconnectOnVisibilityChange = false,
+} = {}) => {
   const client = useClient()
+
+  const intervalRef = useRef(null)
 
   const [isOffline, setOffline] = useState(true)
   const [isOnline, setOnline] = useState(false)
   const [isConnecting, setConnecting] = useState(false)
 
-  const updateConnectionState = useCallback(() => {
-    setOffline(client.isOffline)
-    setOnline(client.isOnline)
-    setConnecting(client.isConnecting)
-  }, [client])
-
   useEffect(() => {
     if (!client) return
 
-    setOffline(client.isOffline)
-    setOnline(client.isOnline)
+    const updateConnectionState = () => {
+      setOffline(client.isOffline)
+      setOnline(client.isOnline)
+      setConnecting(client.isConnecting)
+    }
+
+    updateConnectionState()
+
+    intervalRef.current = setInterval(updateConnectionState, 1000)
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        client.connect().catch(console.error)
+      }
+    }
+
+    if (reconnectOnVisibilityChange)
+      document.addEventListener('visibilitychange', handleVisibilityChange)
 
     client.on(ClientEvents.INITIALIZED, updateConnectionState)
     client.on(ClientEvents.OPEN, updateConnectionState)
@@ -27,10 +41,15 @@ export const useConnectionState = () => {
     client.on(ClientEvents.CONNECTING, updateConnectionState)
 
     return () => {
+      if (reconnectOnVisibilityChange)
+        document.removeEventListener('visibilitychange', handleVisibilityChange)
+
       client.off(ClientEvents.INITIALIZED, updateConnectionState)
       client.off(ClientEvents.OPEN, updateConnectionState)
       client.off(ClientEvents.CLOSE, updateConnectionState)
       client.off(ClientEvents.CONNECTING, updateConnectionState)
+
+      clearInterval(intervalRef.current)
     }
   }, [client])
 
