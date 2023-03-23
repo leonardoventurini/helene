@@ -25,7 +25,7 @@ export function useAuth() {
 
   useCombinedThrottle({
     observables: [logout$, initialized$, contextChanged$],
-    throttle: 100,
+    throttle: 16,
     callback: updateState,
   })
 

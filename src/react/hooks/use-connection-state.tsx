@@ -30,7 +30,7 @@ export const useConnectionState = ({
 
   useCombinedThrottle({
     observables: [initialized$, open$, close$, connecting$],
-    throttle: 100,
+    throttle: 16,
     callback: updateConnectionState,
   })
 
