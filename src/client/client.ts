@@ -105,13 +105,20 @@ export class Client extends ClientChannel {
 
     this.options = merge(this.options, options)
 
-    this.clientSocket = new ClientSocket(this, this.options.ws)
     this.clientHttp = new ClientHttp(this)
     this.queue = new PromiseQueue()
 
     this.channels.set(NO_CHANNEL, this)
 
-    this.loadContext().catch(console.error)
+    /**
+     * The client should only ever be ready when the context is loaded,
+     * scheduling the client socket construction for after the context
+     * is first loaded does the trick as the init event is only emitted after
+     * the ClientSocket is built.
+     */
+    this.loadContext().then(() => {
+      this.clientSocket = new ClientSocket(this, this.options.ws)
+    })
 
     this.on(ClientEvents.OPEN, this.init)
     this.on(ClientEvents.ERROR, console.error)
