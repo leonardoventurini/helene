@@ -1,8 +1,8 @@
-import { NO_CHANNEL } from '../../utils/constants'
+import { NO_CHANNEL } from '../../utils'
 import { useChannel } from './use-channel'
 import { EMPTY, fromEvent } from 'rxjs'
 import { useSubscribe } from './use-subscribe'
-import { useMemo } from 'react'
+import { useCreation } from 'ahooks'
 
 export function useEventObservable(
   event: string,
@@ -17,5 +17,12 @@ export function useEventObservable(
 
   const ch = useChannel(channel)
 
-  return useMemo(() => (ch ? fromEvent(ch, event) : EMPTY), [ch, event])
+  return useRawEventObservable(ch, event)
+}
+
+export function useRawEventObservable(emitter: any, event: string) {
+  return useCreation(
+    () => (emitter ? fromEvent(emitter, event) : EMPTY),
+    [emitter, event],
+  )
 }

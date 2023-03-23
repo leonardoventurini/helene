@@ -3,9 +3,17 @@ import { expect } from 'chai'
 import { render, screen, waitFor } from '@testing-library/react'
 import { renderHook } from '@testing-library/react-hooks'
 import { TestUtility } from './utils/test-utility'
-import { useConnectionState, useEvent, useMethod } from '../react/hooks'
+import {
+  useCombinedDebounce,
+  useConnectionState,
+  useEvent,
+  useMethod,
+  useRawEventObservable,
+} from '../react'
 import sinon from 'sinon'
 import { omit } from 'lodash'
+import { EventEmitter2 } from 'eventemitter2'
+import { sleep } from '../utils'
 
 describe('React Hooks', () => {
   const test = new TestUtility()
@@ -255,6 +263,48 @@ describe('React Hooks', () => {
 
       await waitFor(() => {
         expect(values).to.be.deep.equal([42])
+      })
+    })
+  })
+
+  describe('useCombinedDebounce', () => {
+    it('should fire event after debounce', async () => {
+      const values = []
+
+      const emitter1 = new EventEmitter2()
+      const emitter2 = new EventEmitter2()
+
+      await test.client.isReady()
+
+      const { wrapper } = test
+
+      renderHook(
+        ({ event }: any) => {
+          const $event1 = useRawEventObservable(emitter1, 'test')
+          const $event2 = useRawEventObservable(emitter2, 'test')
+
+          useCombinedDebounce({
+            observables: [$event1, $event2],
+            debounce: 100,
+            callback() {
+              values.push(42)
+            },
+          })
+        },
+        { wrapper, initialProps: { event: 'set:value' } },
+      )
+
+      emitter1.emit('test', 42)
+      emitter2.emit('test', 42)
+
+      await sleep(200)
+
+      emitter2.emit('test', 42)
+      emitter2.emit('test', 42)
+      emitter2.emit('test', 42)
+
+      await waitFor(() => {
+        expect(values).to.be.deep.equal([42, 42])
       })
     })
   })

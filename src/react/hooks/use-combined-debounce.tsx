@@ -1,5 +1,6 @@
-import { concat, debounceTime, Observable } from 'rxjs'
+import { debounceTime, merge, Observable } from 'rxjs'
 import { useEffect } from 'react'
+import { useCreation } from 'ahooks'
 
 export function useCombinedDebounce({
   observables,
@@ -13,13 +14,16 @@ export function useCombinedDebounce({
    */
   callback: (...args: any[]) => void
 }) {
-  useEffect(() => {
-    const events$ = concat(...observables).pipe(debounceTime(debounce))
+  const events$ = useCreation(
+    () => merge(...observables).pipe(debounceTime(debounce)),
+    [debounce, ...observables],
+  )
 
+  useEffect(() => {
     const subscription = events$.subscribe(callback)
 
     return () => {
       subscription.unsubscribe()
     }
-  }, [callback, ...observables])
+  }, [callback, events$])
 }

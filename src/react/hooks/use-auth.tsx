@@ -4,7 +4,7 @@ import { useClient } from './use-client'
 
 export function useAuth() {
   const client = useClient()
-  const [ready, setReady] = useState(false)
+  const [ready, setReady] = useState(client.ready)
   const [authenticated, setAuthenticated] = useState(client.authenticated)
   const [context, setContext] = useState(client.context)
 

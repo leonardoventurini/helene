@@ -148,6 +148,8 @@ export class ClientSocket {
 
     this.closedGracefully = false
 
+    if (this.socket) this.socket.close(1000, 'Reconnecting...')
+
     return new Promise((resolve, reject) => {
       this.socket = new IsomorphicWebSocket(
         `${this.uri}?uuid=${this.client.uuid}`,
