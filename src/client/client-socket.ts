@@ -46,6 +46,12 @@ export class ClientSocket {
 
     if (this.options.autoConnect)
       this.connect().catch(error => console.error('Auto Connect Error', error))
+    else {
+      setTimeout(() => {
+        this.client.ready = true
+        this.client.emit(ClientEvents.INITIALIZED)
+      }, 0)
+    }
   }
 
   get readyState(): number {

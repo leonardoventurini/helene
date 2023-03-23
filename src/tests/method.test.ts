@@ -230,4 +230,17 @@ describe('Methods', function () {
 
     await expect(call()).to.be.rejectedWith(Errors.RATE_LIMIT_EXCEEDED)
   })
+
+  it('in case we return undefined in a method we should ', async () => {
+    const client = await test.createClient({
+      port: test.server.port,
+      ws: { autoConnect: false },
+    })
+
+    test.server.addMethod('test:method', async () => undefined)
+
+    const result = await client.call('test:method')
+
+    expect(result).to.equal(undefined)
+  })
 })

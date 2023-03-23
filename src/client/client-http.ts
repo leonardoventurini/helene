@@ -45,21 +45,24 @@ export class ClientHttp {
         }),
       })
 
-      let result = await data.text()
-
-      try {
-        result = EJSON.parse(result)
-      } catch {
-        throw new Error(`${data.status} ${data.statusText}: ${result}`)
+      if (data.status !== 200) {
+        return reject(
+          new Error(
+            `${data.status} ${data.statusText}: ${JSON.stringify(
+              await data.text(),
+            )}`,
+          ),
+        )
       }
 
-      if (
-        result instanceof Object &&
-        result.type === Presentation.PayloadType.ERROR
-      )
-        return reject(result)
+      let response = await data.text()
 
-      if (resolve) resolve(result)
+      response = Presentation.decode(response)
+
+      if (response.type === Presentation.PayloadType.ERROR)
+        return reject(response)
+
+      if (resolve) resolve(response.result)
     } catch (error) {
       return reject(error)
     }

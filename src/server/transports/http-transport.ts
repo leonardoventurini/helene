@@ -184,33 +184,45 @@ export class HttpTransport {
 
       const result = await method.exec(payload.params, clientNode)
 
-      res.send(EJSON.stringify(result))
+      res.send(
+        Presentation.Outbound.result({
+          uuid: payload.uuid,
+          method: payload.method,
+          result,
+        }),
+      )
     } catch (error) {
       console.error(error)
 
       if (payload.void) return
 
       if (error instanceof PublicError) {
-        return Presentation.Outbound.error({
-          message: error.message,
-          stack: error.stack,
-          ...uuid,
-        })
+        return res.send(
+          Presentation.Outbound.error({
+            message: error.message,
+            stack: error.stack,
+            ...uuid,
+          }),
+        )
       }
 
       if (error instanceof SchemaValidationError) {
-        return Presentation.Outbound.error({
-          message: error.message,
-          errors: error.errors,
-          ...uuid,
-        })
+        return res.send(
+          Presentation.Outbound.error({
+            message: error.message,
+            errors: error.errors,
+            ...uuid,
+          }),
+        )
       }
 
-      return Presentation.Outbound.error({
-        message: Errors.INTERNAL_ERROR,
-        stack: error.stack,
-        ...uuid,
-      })
+      return res.send(
+        Presentation.Outbound.error({
+          message: Errors.INTERNAL_ERROR,
+          stack: error.stack,
+          ...uuid,
+        }),
+      )
     }
   }
 
