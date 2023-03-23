@@ -7,3 +7,7 @@ yarn-error.log
 .eslintrc.js
 .mocharc.yaml
 test
+tsconfig.tsbuildinfo
+.github
+.envrc
+workspace
