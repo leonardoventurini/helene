@@ -25,6 +25,7 @@ import { ClientHttp } from './client-http'
 import { ClientChannel } from './client-channel'
 import qs from 'query-string'
 import { EJSON } from 'ejson2'
+import { Collection, CollectionOptions, createCollection } from '../data'
 import Timeout = NodeJS.Timeout
 
 export type ErrorHandler = (error: Presentation.ErrorPayload) => any
@@ -82,6 +83,8 @@ export class Client extends ClientChannel {
 
   authenticated = false
   _events: AnyFunction[]
+
+  collections: Map<string, Collection> = new Map()
 
   options: ClientOptions = {
     host: 'localhost',
@@ -484,5 +487,15 @@ export class Client extends ClientChannel {
         timestamp: Date.now(),
       })
     })
+  }
+
+  /**
+   * Creates a new collection and stores it into the `this.collections` map.
+   * Useful for contextualizing collections to a specific client.
+   */
+  async createCollection(options: CollectionOptions) {
+    const collection = await createCollection(options)
+    this.collections.set(options.name, collection)
+    return collection
   }
 }

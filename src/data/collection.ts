@@ -19,7 +19,7 @@ export const CollectionEvent = {
   COMPACTED: 'compacted',
 }
 
-type Options = {
+export type CollectionOptions = {
   name?: string
   timestamps?: boolean
   autoload?: boolean
@@ -60,7 +60,7 @@ export class Collection extends EventEmitter2 {
     afterSerialization,
     beforeDeserialization,
     compactionInterval = 60000,
-  }: Options = {}) {
+  }: CollectionOptions = {}) {
     super()
 
     this.autoload = autoload
@@ -551,7 +551,7 @@ export class Collection extends EventEmitter2 {
 /**
  * Creates a new collection and waits until it is ready.
  */
-export async function createCollection(options: Options) {
+export async function createCollection(options: CollectionOptions) {
   const collection = new Collection(options)
 
   collection.on(CollectionEvent.ERROR, err => {

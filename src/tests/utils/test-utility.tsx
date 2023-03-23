@@ -1,7 +1,7 @@
 import React from 'react'
-import { Server, ServerOptions } from '../../server/server'
-import { ClientEvents, NO_CHANNEL, ServerEvents } from '../../utils/constants'
-import { Client, ClientOptions } from '../../client/client'
+import { Server, ServerOptions } from '../../server'
+import { ClientEvents, NO_CHANNEL, ServerEvents } from '../../utils'
+import { Client, ClientOptions } from '../../client'
 import { ClientProvider } from '../../react'
 import { SingletonHooksContainer } from 'react-singleton-hook'
 

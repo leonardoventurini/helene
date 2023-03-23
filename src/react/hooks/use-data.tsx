@@ -6,7 +6,6 @@ import { v5 as uuidv5 } from 'uuid'
 import { BrowserStorage } from '../../data/browser'
 import { useFind } from './use-find'
 import { ClientEvents } from '../../utils'
-import { createCollection } from '../../data'
 
 const browserStorage = new BrowserStorage()
 
@@ -88,7 +87,7 @@ export function useData({
   )
 
   useAsyncEffect(async () => {
-    const collection = await createCollection({
+    const collection = await client.createCollection({
       name: `collection:${uuidv5(method, uuidv5.URL)}`,
       storage: browserStorage,
       timestamps: true,
