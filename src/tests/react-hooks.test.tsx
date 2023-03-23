@@ -66,24 +66,25 @@ describe('React Hooks', () => {
 
       await test.client.close()
 
-      test.client.connect().catch(console.error)
+      // The updates are debounced at 100ms
+      await sleep(110)
 
-      await waitFor(() => {
-        expect(result.current).to.be.deep.equal({
-          isOnline: false,
-          isOffline: true,
-          isConnecting: true,
-        })
+      expect(result.current).to.be.deep.equal({
+        isOnline: false,
+        isOffline: true,
+        isConnecting: false,
       })
+
+      await test.client.connect()
 
       await test.client.isReady()
 
-      await waitFor(() => {
-        expect(result.current).to.be.deep.equal({
-          isOnline: true,
-          isOffline: false,
-          isConnecting: false,
-        })
+      await sleep(110)
+
+      expect(result.current).to.be.deep.equal({
+        isOnline: true,
+        isOffline: false,
+        isConnecting: false,
       })
     })
   })

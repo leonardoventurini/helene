@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useClient } from './use-client'
 import { ClientEvents } from '../../utils'
+import { useRawEventObservable } from './use-event-observable'
+import { useCombinedDebounce } from './use-combined-debounce'
 
 export const useConnectionState = ({
   reconnectOnVisibilityChange = false,
@@ -13,14 +15,27 @@ export const useConnectionState = ({
   const [isOnline, setOnline] = useState(false)
   const [isConnecting, setConnecting] = useState(false)
 
+  const visibility$ = useRawEventObservable(document, 'visibilitychange')
+
+  const initialized$ = useRawEventObservable(client, ClientEvents.INITIALIZED)
+  const open$ = useRawEventObservable(client, ClientEvents.OPEN)
+  const close$ = useRawEventObservable(client, ClientEvents.CLOSE)
+  const connecting$ = useRawEventObservable(client, ClientEvents.CONNECTING)
+
+  const updateConnectionState = useCallback(() => {
+    setOffline(client.isOffline)
+    setOnline(client.isOnline)
+    setConnecting(client.isConnecting)
+  }, [client])
+
+  useCombinedDebounce({
+    observables: [initialized$, open$, close$, connecting$],
+    debounce: 100,
+    callback: updateConnectionState,
+  })
+
   useEffect(() => {
     if (!client) return
-
-    const updateConnectionState = () => {
-      setOffline(client.isOffline)
-      setOnline(client.isOnline)
-      setConnecting(client.isConnecting)
-    }
 
     updateConnectionState()
 
@@ -32,22 +47,13 @@ export const useConnectionState = ({
       }
     }
 
-    if (reconnectOnVisibilityChange)
-      document.addEventListener('visibilitychange', handleVisibilityChange)
+    let subscription = null
 
-    client.on(ClientEvents.INITIALIZED, updateConnectionState)
-    client.on(ClientEvents.OPEN, updateConnectionState)
-    client.on(ClientEvents.CLOSE, updateConnectionState)
-    client.on(ClientEvents.CONNECTING, updateConnectionState)
+    if (reconnectOnVisibilityChange)
+      subscription = visibility$.subscribe(handleVisibilityChange)
 
     return () => {
-      if (reconnectOnVisibilityChange)
-        document.removeEventListener('visibilitychange', handleVisibilityChange)
-
-      client.off(ClientEvents.INITIALIZED, updateConnectionState)
-      client.off(ClientEvents.OPEN, updateConnectionState)
-      client.off(ClientEvents.CLOSE, updateConnectionState)
-      client.off(ClientEvents.CONNECTING, updateConnectionState)
+      subscription?.unsubscribe?.()
 
       clearInterval(intervalRef.current)
     }
