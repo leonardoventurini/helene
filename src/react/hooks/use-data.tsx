@@ -1,5 +1,5 @@
 import { useAsyncEffect, useCreation, useDebounceFn } from 'ahooks'
-import { useClient, useCombinedDebounce, useRawEventObservable } from './index'
+import { useClient, useCombinedThrottle, useRawEventObservable } from './index'
 import { useCallback, useState } from 'react'
 import { set } from 'lodash'
 import { v5 as uuidv5 } from 'uuid'
@@ -107,9 +107,9 @@ export function useData({
     ClientEvents.CONTEXT_CHANGED,
   )
 
-  useCombinedDebounce({
+  useCombinedThrottle({
     observables: [initialized$, contextChanged$],
-    debounce: 500,
+    throttle: 500,
     callback: useCallback(() => {
       refresh.run()
     }, [refresh.run]),

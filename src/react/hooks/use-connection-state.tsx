@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useClient } from './use-client'
 import { ClientEvents } from '../../utils'
 import { useRawEventObservable } from './use-event-observable'
-import { useCombinedDebounce } from './use-combined-debounce'
+import { useCombinedThrottle } from './use-combined-throttle'
 
 export const useConnectionState = ({
   reconnectOnVisibilityChange = false,
@@ -28,9 +28,9 @@ export const useConnectionState = ({
     setConnecting(client.isConnecting)
   }, [client])
 
-  useCombinedDebounce({
+  useCombinedThrottle({
     observables: [initialized$, open$, close$, connecting$],
-    debounce: 100,
+    throttle: 100,
     callback: updateConnectionState,
   })
 

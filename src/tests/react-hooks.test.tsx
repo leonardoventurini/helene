@@ -4,6 +4,7 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { renderHook } from '@testing-library/react-hooks'
 import { TestUtility } from './utils/test-utility'
 import {
+  useAuth,
   useCombinedDebounce,
   useConnectionState,
   useEvent,
@@ -22,6 +23,49 @@ describe('React Hooks', () => {
     render(<span role='message'>Hello World</span>)
 
     expect(screen.queryByRole('message').textContent).to.equal('Hello World')
+  })
+
+  describe('useAuth', () => {
+    beforeEach(() => {
+      test.server.setAuth({
+        async logIn({ email, password }) {
+          if (email === '123' && password === '123') {
+            return {
+              token: 'foo',
+            }
+          }
+        },
+        async auth({ token }) {
+          return token ? { user: { _id: '456' } } : undefined
+        },
+      })
+    })
+
+    it('should return the auth state', async () => {
+      const { wrapper } = test
+
+      const { result } = renderHook(() => useAuth(), { wrapper })
+
+      expect(result.current).to.containSubset({
+        authenticated: false,
+        context: {},
+        loading: false,
+      })
+
+      await test.client.login({ email: '123', password: '123' })
+
+      await sleep(100)
+
+      expect(omit(result.current, 'client')).to.containSubset({
+        authenticated: true,
+        context: {
+          token: 'foo',
+          initialized: true,
+        },
+        loading: false,
+        ready: true,
+      })
+    })
   })
 
   describe('useConnectionState', () => {
