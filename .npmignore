@@ -11,3 +11,4 @@ tsconfig.tsbuildinfo
 .github
 .envrc
 workspace
+assets

@@ -4,19 +4,18 @@
 ![GitHub watchers](https://img.shields.io/github/watchers/leonardoventurini/helene?style=social)
 ![GitHub Repo stars](https://img.shields.io/github/stars/leonardoventurini/helene?style=social)
 
-<div style="text-align: center">
-<h1>Helene <sup>Beta</sup></h1>
-</div>
+![Helene](https://raw.githubusercontent.com/leonardoventurini/helene/main/assets/ocean-sphere-header.jpg)
 
-This package enables simple bidirectional real-time communication through WebSockets.
+# tldr
 
-The goal of this package is to simplify the development of powerful applications through the use of an event driven architecture.
+Get ready to build your next application with Helene. Faster, easier, and more powerful.
 
-It is loosely based on Meteor methods and other RPC-like libraries.
+This package enables powerful bidirectional real-time communication through WebSockets using methods and events.
 
-Simple, easy.
+It supports authentication, channels, data persistence, middleware, React hooks and more.
 
-> Please note that this is a `beta` version. The API is not stable and may change in the future.
+Works Node to Node and Node to Browser.
+
 
 <hr/>
 
@@ -29,7 +28,7 @@ Simple, easy.
 - [Methods](#methods)
 - [Events](#events)
 - [Channels](#channels)
-- [Data <sup>New</sup>](#data)
+- [Data](#data)
 - [React](#issues)
   - [Provider](#provider)
   - [useClient Hook](#useclient-hook)
@@ -246,9 +245,6 @@ The main Helene Data unit, intuitively, is the `Collection`:
 
 ```ts
 import {
-  createCollection
-} from 'helene/data'
-import {
   BrowserStorage
 } from 'helene/data/browser'
 import {
@@ -256,16 +252,16 @@ import {
 } from 'helene/data/node'
 
 // Memory Collection
-const memoryCollection = await createCollection({ name: 'logs' })
+const memoryCollection = await Helene.createCollection({ name: 'logs' })
 
 // With Browser Storage (Local Storage)
-const browserCollection = await createCollection({
+const browserCollection = await Helene.createCollection({
   name: 'logs',
   storage: new BrowserStorage()
 })
 
 // With Node Storage (File System)
-const nodeCollection = await createCollection({
+const nodeCollection = await Helene.createCollection({
   name: 'logs',
   storage: new NodeStorage()
 })
