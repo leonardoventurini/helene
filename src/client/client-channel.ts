@@ -31,7 +31,10 @@ export class ClientChannel extends EventEmitter2 {
     const events = Helpers.ensureArray(event)
 
     if (isEmpty(events)) return {}
-    if (!this.client.clientSocket.ready) return {}
+
+    const connected = await this.client.isConnected()
+
+    if (!connected) return {}
 
     const result = await this.client.call(
       Methods.RPC_ON,

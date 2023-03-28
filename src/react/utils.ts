@@ -5,6 +5,10 @@ import { isEmpty } from 'lodash'
 const SAFE_INTERVAL = 1000 / 60
 
 export function fromEvent(target, event: string) {
+  if (!target) {
+    return EMPTY
+  }
+
   return new Observable(observer => {
     const listener = value => {
       observer.next(value)

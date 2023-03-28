@@ -39,6 +39,7 @@ export enum ClientEvents {
   DEBUGGER = 'debugger',
   DISCONNECT = 'disconnect',
   CONNECTING = 'connecting',
+  CONNECTED = 'connected',
 }
 
 export enum RedisListeners {

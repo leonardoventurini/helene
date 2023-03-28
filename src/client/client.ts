@@ -472,6 +472,23 @@ export class Client extends ClientChannel {
     })
   }
 
+  isConnected() {
+    return new Promise(resolve => {
+      const onConnected = () => {
+        resolve(true)
+      }
+
+      if (this.clientSocket?.ready) return resolve(true)
+
+      this.once(ClientEvents.CONNECTED, onConnected)
+
+      setTimeout(() => {
+        this.off(ClientEvents.CONNECTED, onConnected)
+        resolve(false)
+      }, 2000)
+    })
+  }
+
   async attachDevTools() {
     const generateId = () => (Date.now() + Math.random()).toString(36)
 
