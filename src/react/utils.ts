@@ -1,26 +1,8 @@
-import { EMPTY, merge, Observable, throttleTime } from 'rxjs'
+import { EMPTY, fromEvent, merge, throttleTime } from 'rxjs'
 import { EventEmitter2 } from 'eventemitter2'
 import { isEmpty } from 'lodash'
 
 const SAFE_INTERVAL = 1000 / 60
-
-export function fromEvent(target, event: string) {
-  if (!target) {
-    return EMPTY
-  }
-
-  return new Observable(observer => {
-    const listener = value => {
-      observer.next(value)
-    }
-
-    target.on(event, listener)
-
-    return () => {
-      target.off(event, listener)
-    }
-  })
-}
 
 export function fromEvents(target, events: string[]) {
   return !isEmpty(events) || !target

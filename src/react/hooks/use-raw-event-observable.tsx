@@ -1,9 +1,9 @@
-import { EMPTY } from 'rxjs'
+import { EMPTY, fromEvent } from 'rxjs'
 import { useCreation } from 'ahooks'
 import { useChannel } from './use-channel'
 import { useSubscribe } from './use-subscribe'
 import { NO_CHANNEL } from '../../utils'
-import { fromEvent, fromEvents } from '../utils'
+import { fromEvents } from '../utils'
 
 export function useRawEventObservable(emitter: any, event: string) {
   return useCreation(
