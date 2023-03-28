@@ -1,16 +1,22 @@
 import { useAsyncEffect, useCreation, useDebounceFn } from 'ahooks'
-import { useClient, useCombinedThrottle, useRawEventObservable } from './index'
+import {
+  useClient,
+  useCombinedThrottle,
+  useRawEventObservable,
+  useRemoteEvent,
+} from './index'
 import { useCallback, useState } from 'react'
 import { set } from 'lodash'
 import { v5 as uuidv5 } from 'uuid'
 import { BrowserStorage } from '../../data/browser'
 import { useFind } from './use-find'
-import { ClientEvents } from '../../utils'
+import { ClientEvents, HeleneEvents } from '../../utils'
 
 const browserStorage = new BrowserStorage()
 
 type Props = {
   method: string
+  channel?: string
   params?: any
   filter?: Record<string, any>
   sort?: Record<string, 1 | -1>
@@ -21,6 +27,7 @@ type Props = {
 
 export function useData({
   method,
+  channel,
   params,
   filter,
   sort,
@@ -84,7 +91,7 @@ export function useData({
 
       setLoading(false)
     },
-    { wait: 100, leading: false },
+    { wait: 100, leading: false, trailing: true },
   )
 
   useAsyncEffect(async () => {
@@ -115,6 +122,17 @@ export function useData({
       refresh.run()
     }, [refresh.run]),
   })
+
+  useRemoteEvent(
+    {
+      event: HeleneEvents.METHOD_REFRESH,
+      channel,
+    },
+    (refreshMethod: string) => {
+      if (refreshMethod === method) refresh.run()
+    },
+    [refresh.run],
+  )
 
   result.collection = collection
   result.data = data
