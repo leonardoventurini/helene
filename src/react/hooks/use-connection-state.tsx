@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useClient } from './use-client'
 import { ClientEvents } from '../../utils'
-import { useRawEventObservable } from './use-event-observable'
+import { useRawEventObservable } from './use-raw-event-observable'
 import { useCombinedThrottle } from './use-combined-throttle'
 
 export const useConnectionState = ({

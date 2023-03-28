@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ClientEvents } from '../../utils'
 import { useClient } from './use-client'
-import { useRawEventObservable } from './use-event-observable'
+import { useRawEventObservable } from './use-raw-event-observable'
 import { useCombinedThrottle } from './use-combined-throttle'
 
 export function useAuth() {

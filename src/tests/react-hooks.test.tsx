@@ -8,8 +8,10 @@ import {
   useCombinedDebounce,
   useConnectionState,
   useEvent,
+  useLocalEvent,
   useMethod,
   useRawEventObservable,
+  useRemoteEvent,
 } from '../react'
 import sinon from 'sinon'
 import { omit } from 'lodash'
@@ -228,8 +230,8 @@ describe('React Hooks', () => {
 
       const { result, rerender } = renderHook(
         ({ event }: any) =>
-          useEvent(
-            { event, subscribe: true },
+          useRemoteEvent(
+            { event },
             val => {
               value = val
             },
@@ -282,7 +284,7 @@ describe('React Hooks', () => {
 
       const { result, rerender } = renderHook(
         ({ event }: any) =>
-          useEvent(
+          useLocalEvent(
             { event },
             val => {
               values.push(val)

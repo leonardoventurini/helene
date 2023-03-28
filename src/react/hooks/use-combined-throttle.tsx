@@ -1,6 +1,7 @@
-import { merge, Observable, throttleTime } from 'rxjs'
+import { Observable } from 'rxjs'
 import { useEffect } from 'react'
 import { useCreation } from 'ahooks'
+import { mergeThrottle } from '../utils'
 
 export function useCombinedThrottle({
   observables,
@@ -15,11 +16,7 @@ export function useCombinedThrottle({
   callback: (...args: any[]) => void
 }) {
   const events$ = useCreation(
-    () =>
-      merge(...observables).pipe(
-        // Always needs to update the state on the trailing edge for updated values
-        throttleTime(throttle, undefined, { trailing: true }),
-      ),
+    () => mergeThrottle(...observables),
     [throttle, ...observables],
   )
 

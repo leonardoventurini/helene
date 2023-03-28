@@ -10,7 +10,6 @@ type UseSubscribeParams = {
   setup?: (ch: ClientChannel) => void
   teardown?: (ch: ClientChannel) => void
   deps?: any[]
-  subscribe?: boolean
 }
 
 export function useSubscribe({
@@ -18,13 +17,12 @@ export function useSubscribe({
   channel = NO_CHANNEL,
   setup,
   teardown,
-  subscribe = false,
   deps: _deps = [],
 }: UseSubscribeParams) {
   const client = useClient()
   const [ready, setReady] = useState(false)
 
-  const deps = [channel, event, subscribe, setup, teardown].concat(_deps)
+  const deps = [channel, event, setup, teardown].concat(_deps)
 
   useEffect(() => {
     if (!event) return
@@ -36,17 +34,13 @@ export function useSubscribe({
 
     setup?.(ch)
 
-    if (subscribe) {
-      ch.subscribe(event)
-        .then(result => {
-          if (isString(result[event]))
-            throw new Error(`[${event}] ${result[event]}`)
-          setReady(true)
-        })
-        .catch(console.error)
-    } else {
-      setReady(true)
-    }
+    ch.subscribe(event)
+      .then(result => {
+        if (isString(result[event]))
+          throw new Error(`[${event}] ${result[event]}`)
+        setReady(true)
+      })
+      .catch(console.error)
 
     return () => {
       teardown?.(ch)
@@ -55,10 +49,9 @@ export function useSubscribe({
 
   useEffect(
     () => () => {
-      if (subscribe)
-        client.channel(channel)?.unsubscribe(event).catch(console.error)
+      client.channel(channel)?.unsubscribe(event).catch(console.error)
     },
-    [event, channel, subscribe],
+    [event, channel],
   )
 
   return ready

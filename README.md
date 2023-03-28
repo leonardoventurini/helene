@@ -379,17 +379,27 @@ This hook allows you to tap into the authentication state and context
 const { authenticated, context, client, loading, ready } = useAuth()
 ```
 
-### useEvent Hook
+### useLocalEvent Hook
 
 ```jsx
-useEvent(
-  { event, channel, subscribe: true },
+useLocalEvent(
+  { event, channel },
   value => console.log(value),
   [],
 )
 ```
 
-> This hook can be used both locally and subscribed to a server event.
+### useRemoteEvent Hook
+
+This hook will automatically subscribe to the event on the server.
+
+```jsx
+useRemoteEvent(
+  { event, channel },
+  value => console.log(value),
+  [],
+)
+```
 
 ### useConnectionState Hook
 

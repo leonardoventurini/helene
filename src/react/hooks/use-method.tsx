@@ -3,7 +3,7 @@ import { useClient } from './use-client'
 import { ClientEvents, HeleneEvents, NO_CHANNEL } from '../../utils/constants'
 import { isFunction, noop } from 'lodash'
 import { useDebouncedCallback } from 'use-debounce'
-import { useEvent } from './use-event'
+import { useLocalEvent, useRemoteEvent } from './use-event'
 import { useCircuitBreaker } from './use-circuit-breaker'
 import { useMethodRefresh } from './use-method-refresh'
 import { useCaller } from './use-caller'
@@ -115,7 +115,7 @@ export const useMethod = ({
     [debounced, debouncedRefresh, refresh],
   )
 
-  useEvent(
+  useLocalEvent(
     {
       event: ClientEvents.INITIALIZING,
     },
@@ -127,7 +127,7 @@ export const useMethod = ({
     [authenticated],
   )
 
-  useEvent(
+  useLocalEvent(
     {
       event: ClientEvents.INITIALIZED,
     },
@@ -139,7 +139,7 @@ export const useMethod = ({
     [refreshCallback, authenticated],
   )
 
-  useEvent(
+  useLocalEvent(
     {
       event: ClientEvents.LOGOUT,
     },
@@ -158,15 +158,12 @@ export const useMethod = ({
     if (!lazy) refreshCallback()
   }, [client, method, params, debounced])
 
-  useEvent({ event, channel, subscribe: true }, refreshCallback, [
-    refreshCallback,
-  ])
+  useLocalEvent({ event, channel }, refreshCallback, [refreshCallback])
 
-  useEvent(
+  useRemoteEvent(
     {
       event: HeleneEvents.METHOD_REFRESH,
       channel,
-      subscribe: true,
     },
     (refreshMethod: string) => {
       if (refreshMethod === method) {

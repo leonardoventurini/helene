@@ -1,21 +1,49 @@
-import { useCallback } from 'react'
-import { NO_CHANNEL } from '../../utils/constants'
+import { useCallback, useEffect, useState } from 'react'
+import { NO_CHANNEL } from '../../utils'
 import { useSubscribe } from './use-subscribe'
+import { useClient } from './use-client'
+import { useCreation } from 'ahooks'
+import { EMPTY } from 'rxjs'
+import { isString } from 'lodash'
+import { fromEventThrottled } from '../utils'
 
 export type UseEventParams = {
   event: string
   channel?: string
-  subscribe?: boolean
-  active?: boolean
 }
 
-export function useEvent(
-  {
-    event,
-    channel = NO_CHANNEL,
-    subscribe = false,
-    active = true,
-  }: UseEventParams,
+export function useLocalEvent(
+  { event, channel = NO_CHANNEL }: UseEventParams,
+  fn: (...args: any[]) => void,
+  deps: any[] = [],
+) {
+  const [ready, setReady] = useState(false)
+  const _callback = useCallback(fn, deps)
+
+  const client = useClient()
+
+  const _channel = useCreation(() => {
+    return channel && isString(channel) ? client.channel(channel) : client
+  }, [channel])
+
+  const event$ = useCreation(() => {
+    return _channel ? fromEventThrottled(_channel, event) : EMPTY
+  }, [event, _channel])
+
+  useEffect(() => {
+    const _sub = event$.subscribe(_callback)
+    setReady(true)
+
+    return () => {
+      _sub.unsubscribe()
+      setReady(false)
+    }
+  }, [event$])
+
+  return ready
+}
+export function useRemoteEvent(
+  { event, channel = NO_CHANNEL }: UseEventParams,
   fn: (...args: any[]) => void,
   deps: any[] = [],
 ) {
@@ -36,7 +64,18 @@ export function useEvent(
       },
       [event, refreshCallback],
     ),
-    subscribe,
     deps: [refreshCallback],
   })
+}
+
+export function useEvent(
+  { event, channel = NO_CHANNEL }: UseEventParams,
+  fn: (...args: any[]) => void,
+  deps: any[] = [],
+) {
+  console.log(
+    'The `useEvent` hook is deprecated use `useLocalEvent` or `useRemoteEvent` instead.',
+    new Error().stack,
+  )
+  return useLocalEvent({ event, channel }, fn, deps)
 }
