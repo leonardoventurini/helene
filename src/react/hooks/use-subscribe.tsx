@@ -10,6 +10,7 @@ type UseSubscribeParams = {
   setup?: (ch: ClientChannel) => void
   teardown?: (ch: ClientChannel) => void
   deps?: any[]
+  active?: boolean
 }
 
 export function useSubscribe({
@@ -18,6 +19,7 @@ export function useSubscribe({
   setup,
   teardown,
   deps: _deps = [],
+  active = true,
 }: UseSubscribeParams) {
   const client = useClient()
   const [ready, setReady] = useState(false)
@@ -27,6 +29,7 @@ export function useSubscribe({
   useEffect(() => {
     if (!event) return
     if (!channel) return
+    if (!active) return
 
     setReady(false)
 

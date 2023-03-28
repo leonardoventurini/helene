@@ -10,6 +10,7 @@ import {
   useEvent,
   useLocalEvent,
   useMethod,
+  useMultipleRawEventsObservable,
   useRawEventObservable,
   useRemoteEvent,
 } from '../react'
@@ -17,6 +18,7 @@ import sinon from 'sinon'
 import { omit } from 'lodash'
 import { EventEmitter2 } from 'eventemitter2'
 import { sleep } from '../utils'
+import { useObserverSubscribe } from '../react/hooks/use-observer-subscribe'
 
 describe('React Hooks', () => {
   const test = new TestUtility()
@@ -352,6 +354,47 @@ describe('React Hooks', () => {
 
       await waitFor(() => {
         expect(values).to.be.deep.equal([42, 42])
+      })
+    })
+  })
+
+  describe('useMultipleRawEventsObservable', () => {
+    it('should listen to multiple events', async () => {
+      const values = []
+
+      const emitter = new EventEmitter2()
+
+      await test.client.isReady()
+
+      const { wrapper } = test
+
+      const { result } = renderHook(
+        () => {
+          const observable = useMultipleRawEventsObservable(emitter, [
+            'test1',
+            'test2',
+            'test3',
+          ])
+
+          return useObserverSubscribe(
+            observable,
+            val => {
+              values.push(val)
+            },
+            [values],
+          )
+        },
+        { wrapper },
+      )
+
+      await waitFor(() => expect(result.current).to.not.be.undefined)
+
+      emitter.emit('test1', 42)
+      emitter.emit('test2', 42)
+      emitter.emit('test3', 42)
+
+      await waitFor(() => {
+        expect(values).to.be.deep.equal([42, 42, 42])
       })
     })
   })

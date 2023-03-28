@@ -10,6 +10,7 @@ import { fromEventThrottled } from '../utils'
 export type UseEventParams = {
   event: string
   channel?: string
+  active?: boolean
 }
 
 export function useLocalEvent(
@@ -43,7 +44,7 @@ export function useLocalEvent(
   return ready
 }
 export function useRemoteEvent(
-  { event, channel = NO_CHANNEL }: UseEventParams,
+  { event, channel = NO_CHANNEL, active = true }: UseEventParams,
   fn: (...args: any[]) => void,
   deps: any[] = [],
 ) {
@@ -65,6 +66,7 @@ export function useRemoteEvent(
       [event, refreshCallback],
     ),
     deps: [refreshCallback],
+    active,
   })
 }
 
@@ -73,9 +75,5 @@ export function useEvent(
   fn: (...args: any[]) => void,
   deps: any[] = [],
 ) {
-  console.log(
-    'The `useEvent` hook is deprecated use `useLocalEvent` or `useRemoteEvent` instead.',
-    new Error().stack,
-  )
   return useLocalEvent({ event, channel }, fn, deps)
 }
