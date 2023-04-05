@@ -40,6 +40,7 @@ export const useMethodRefresh = ({
           successful = true
         })
         .catch(e => {
+          console.error(e)
           setError(e)
           setResult(undefined)
         })

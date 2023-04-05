@@ -349,7 +349,7 @@ export class Client extends ClientChannel {
 
       const payload = { uuid, method, params }
 
-      if (http || (!this.clientSocket.ready && httpFallback)) {
+      if (http || (!this.clientSocket?.ready && httpFallback)) {
         return this.clientHttp.request(payload, resolve, reject)
       }
 
