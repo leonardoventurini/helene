@@ -100,12 +100,18 @@ export class ClientNode extends EventEmitter2 {
   }
 
   /**
-   * It is already encoded as string once it reaches here.
-   *
    * @warning There is an `event` property already in the super class.
    */
-  sendEvent(payload: string, opts?: WebSocketMessageOptions) {
-    this.socket?.send(payload, opts)
+  sendEvent(event: string, params?: any, opts?: WebSocketMessageOptions) {
+    return this.send(
+      {
+        uuid: Presentation.uuid(),
+        type: Presentation.PayloadType.EVENT,
+        event,
+        params,
+      },
+      opts,
+    )
   }
 
   error(
