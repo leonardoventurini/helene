@@ -48,9 +48,6 @@ describe('Methods', function () {
     expect(error).to.have.property('stack').that.is.a('string')
   })
 
-  /**
-   * @flaky
-   */
   it('should make a void method call', async () => {
     let called = false
 
@@ -73,7 +70,6 @@ describe('Methods', function () {
     test.server.addMethod(
       'test:method:middleware',
       function (_params) {
-        console.log(params)
         params = _params
       },
       {

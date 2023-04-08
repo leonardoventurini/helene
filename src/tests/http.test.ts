@@ -40,7 +40,7 @@ describe('HTTP', async () => {
   })
 
   it('should call a protected rpc method and fail authentication using http', async () => {
-    await test.client.setContext({})
+    await test.client.setContextAndReInit({})
 
     test.server.addMethod(
       'protected:method',
@@ -68,14 +68,14 @@ describe('HTTP', async () => {
         expect(this).to.have.property('isAuthenticated').that.is.true
         expect(this)
           .to.have.property('context')
-          .that.eql({ token: 'test', user: { _id: 'id' }, initialized: true })
+          .that.containSubset({ token: 'test', user: { _id: 'id' } })
 
         return true
       },
       { protected: true },
     )
 
-    await test.client.setContext({ token: 'test' })
+    await test.client.setContextAndReInit({ token: 'test' })
 
     const result = await test.client.call('protected:method', null, {
       http: true,

@@ -65,7 +65,7 @@ describe('Auth', async () => {
       { protected: true },
     )
 
-    await test.client.setContext({ token: 'test' })
+    await test.client.setContextAndReInit({ token: 'test' })
 
     const result = await test.client.call('protected:method')
 

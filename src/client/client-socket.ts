@@ -1,9 +1,8 @@
-import IsomorphicWebSocket from 'isomorphic-ws'
 import { Client, WebSocketOptions } from './client'
 import { ClientEvents, HELENE_WS_PATH, sleep, WebSocketEvents } from '../utils'
 import { Presentation } from '../utils/presentation'
 import { WebSocketMessageOptions } from '../server'
-import retry from 'retry'
+import { connectWithBackoff, GenericWebSocket } from './websocket'
 
 export const WebSocketState = {
   CONNECTING: 0,
@@ -14,7 +13,7 @@ export const WebSocketState = {
 
 export class ClientSocket {
   client: Client
-  socket: IsomorphicWebSocket
+  socket: GenericWebSocket
 
   protocol: string
   uri: string
@@ -33,6 +32,8 @@ export class ClientSocket {
 
   constructor(client: Client, options: WebSocketOptions = {}) {
     this.client = client
+
+    this.client.on(ClientEvents.WEBSOCKET_CONNECTED, this.handleOpen.bind(this))
 
     Object.assign(this.options, options ?? {})
 
@@ -55,21 +56,10 @@ export class ClientSocket {
   }
 
   get readyState(): number {
-    return this.socket?.readyState
+    return this.socket.readyState
   }
 
-  private handleOpen = async () => {
-    if (this.readyState === WebSocketState.CONNECTING) {
-      await sleep(100)
-    }
-
-    this.client.emit(ClientEvents.OPEN)
-    this.connecting = false
-    this.ready = true
-    this.reconnecting = false
-  }
-
-  private handleMessage = ({ data, type, target }) => {
+  public handleMessage = ({ data, type, target }) => {
     const payload = Presentation.decode(data)
 
     this.client.emit(ClientEvents.INBOUND_MESSAGE, data)
@@ -86,30 +76,6 @@ export class ClientSocket {
     this.client.emit(ClientEvents.ERROR, error)
   }
 
-  private reconnect() {
-    if (!this.options.reconnect) return
-    if (this.reconnecting) return
-
-    this.reconnecting = true
-
-    const operation = retry.operation({
-      retries: this.options.reconnectRetries,
-      factor: 1.5,
-      minTimeout: 1000,
-      maxTimeout: 60 * 1000,
-      randomize: true,
-    })
-
-    operation.attempt(currentAttempt => {
-      console.log('[Helene] Reconnecting...', currentAttempt)
-      this.connect().catch(error => {
-        if (operation.retry(error)) return
-
-        console.error('[Helene] Reconnect Failed', operation.mainError())
-      })
-    })
-  }
-
   /**
    * This runs if the connection is interrupted or if the server fails to establish a new connection.
    */
@@ -124,10 +90,6 @@ export class ClientSocket {
     this.socket = undefined
 
     if (code === 1000) return
-
-    if (this.closedGracefully) return
-
-    this.reconnect()
   }
 
   public close(code?: number, data?: string) {
@@ -148,31 +110,43 @@ export class ClientSocket {
     this.socket.send(payload, opts)
   }
 
-  public async connect(): Promise<void> {
+  async connect() {
     this.connecting = true
     this.client.emit(ClientEvents.CONNECTING)
 
-    this.closedGracefully = false
+    await connectWithBackoff(
+      `${this.uri}?uuid=${this.client.uuid}`,
+      this.client,
+      this.options.reconnect,
+    )
+  }
 
-    if (this.socket) this.socket.close(1000, 'Reconnecting...')
+  async handleOpen(ws: GenericWebSocket): Promise<void> {
+    this.socket = ws
 
-    return new Promise((resolve, reject) => {
-      this.socket = new IsomorphicWebSocket(
-        `${this.uri}?uuid=${this.client.uuid}`,
-      )
+    if (ws.readyState === WebSocketState.CONNECTING) {
+      await sleep(10)
 
-      this.socket.addEventListener(WebSocketEvents.OPEN, () => {
-        this.handleOpen()
-        resolve()
-      })
+      return this.handleOpen(ws)
+    }
 
-      this.socket.addEventListener(WebSocketEvents.ERROR, error => {
-        this.handleError(error)
-        reject(error)
-      })
+    this.socket.addEventListener(
+      WebSocketEvents.ERROR,
+      this.handleError.bind(this),
+    )
+    this.socket.addEventListener(
+      WebSocketEvents.MESSAGE,
+      this.handleMessage.bind(this),
+    )
+    this.socket.addEventListener(
+      WebSocketEvents.CLOSE,
+      this.handleClose.bind(this),
+    )
 
-      this.socket.addEventListener(WebSocketEvents.MESSAGE, this.handleMessage)
-      this.socket.addEventListener(WebSocketEvents.CLOSE, this.handleClose)
-    })
+    this.connecting = false
+    this.ready = true
+    this.reconnecting = false
+
+    this.client.emit(ClientEvents.OPEN)
   }
 }

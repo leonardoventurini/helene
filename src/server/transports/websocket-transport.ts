@@ -46,6 +46,7 @@ export class WebSocketTransport {
       (request, socket, head) => {
         // Allows other upgrade requests to work alongside Helene, e.g. NextJS HMR.
         if (!request.url.startsWith(this.options.path)) return
+        if (!this.server.acceptConnections) return socket.destroy()
 
         this.wss.handleUpgrade(request, socket, head, socket => {
           this.wss.emit(WebSocketEvents.CONNECTION, socket, request)

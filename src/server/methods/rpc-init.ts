@@ -1,6 +1,6 @@
 import { Method } from '../method'
 import { pick } from 'lodash'
-import { ServerEvents } from '../../utils/constants'
+import { ServerEvents } from '../../utils'
 
 export const rpcInit = server =>
   new Method(
@@ -10,6 +10,7 @@ export const rpcInit = server =>
 
       if (server.auth instanceof Function) {
         const caller = server.auth.call(this, context)
+
         const result = caller instanceof Promise ? await caller : caller
 
         this.authenticated = Boolean(result)

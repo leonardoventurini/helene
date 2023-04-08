@@ -11,6 +11,7 @@ import {
   useLocalEvent,
   useMethod,
   useMultipleRawEventsObservable,
+  useObserverSubscribe,
   useRawEventObservable,
   useRemoteEvent,
 } from '../react'
@@ -18,7 +19,6 @@ import sinon from 'sinon'
 import { omit } from 'lodash'
 import { EventEmitter2 } from 'eventemitter2'
 import { sleep } from '../utils'
-import { useObserverSubscribe } from '../react/hooks/use-observer-subscribe'
 
 describe('React Hooks', () => {
   const test = new TestUtility()
@@ -168,7 +168,7 @@ describe('React Hooks', () => {
       })
 
       await waitFor(() => {
-        expect(result.current).to.containSubset({
+        expect(omit(result.current, 'client')).to.containSubset({
           result: 1,
           loading: false,
         })
@@ -177,7 +177,7 @@ describe('React Hooks', () => {
       test.server.refresh('count')
 
       await waitFor(() => {
-        expect(result.current).to.containSubset({
+        expect(omit(result.current, 'client')).to.containSubset({
           result: 2,
           loading: false,
         })

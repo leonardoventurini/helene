@@ -1,6 +1,6 @@
 import { MethodParams, WebSocketMessageOptions } from '../server'
 import { PromiseQueue } from './promise-queue'
-import { ClientSocket, WebSocketState } from './client-socket'
+import { ClientSocket } from './client-socket'
 import { Presentation } from '../utils/presentation'
 import {
   isEmpty,
@@ -19,7 +19,6 @@ import {
   Errors,
   Methods,
   NO_CHANNEL,
-  sleep,
 } from '../utils'
 import { ClientHttp } from './client-http'
 import { ClientChannel } from './client-channel'
@@ -116,11 +115,11 @@ export class Client extends ClientChannel {
      * is first loaded does the trick as the init event is only emitted after
      * the ClientSocket is built.
      */
-    this.loadContext().then(() => {
-      this.clientSocket = new ClientSocket(this, this.options.ws)
-    })
+    this.loadContext()
 
-    this.on(ClientEvents.OPEN, this.init)
+    this.clientSocket = new ClientSocket(this, this.options.ws)
+
+    this.on(ClientEvents.WEBSOCKET_CONNECTED, this.init)
     this.on(ClientEvents.ERROR, console.error)
     this.on(ClientEvents.CLOSE, () => {
       this.ready = false
@@ -156,14 +155,14 @@ export class Client extends ClientChannel {
     if (this.options.debug) console.debug(...args)
   }
 
-  async loadContext() {
+  loadContext() {
     if (typeof localStorage === 'undefined') return
     const context = localStorage.getItem('context')
     if (!context) return
-    await this.updateContext(EJSON.parse(context), false)
+    this.updateContext(EJSON.parse(context))
   }
 
-  async setContext(context: Record<string, any>, reinitialize = true) {
+  setContext(context: Record<string, any>) {
     this.context = context
 
     if (typeof localStorage !== 'undefined') {
@@ -171,14 +170,18 @@ export class Client extends ClientChannel {
     }
 
     this.emit(ClientEvents.CONTEXT_CHANGED)
-
-    if (reinitialize) await this.init(true)
   }
 
-  async updateContext(context, reinitialize = true) {
+  async setContextAndReInit(context: Record<string, any>) {
+    this.setContext(context)
+
+    await this.init(true)
+  }
+
+  updateContext(context) {
     const newContext = merge({}, this.context, context)
 
-    await this.setContext(newContext, reinitialize)
+    this.setContext(newContext)
   }
 
   clearContext() {
@@ -212,9 +215,7 @@ export class Client extends ClientChannel {
   }
 
   async init(reinit = false) {
-    this.debugger('Init Client', this.uuid)
-
-    await this.loadContext()
+    this.loadContext()
 
     this.emit(ClientEvents.INITIALIZING)
 
@@ -234,11 +235,6 @@ export class Client extends ClientChannel {
       this.emit(ClientEvents.INITIALIZED, this.context)
     }
 
-    // Wait a bit until the socket is ready
-    if (this.clientSocket.readyState === WebSocketState.CONNECTING) {
-      await sleep(100)
-    }
-
     const result = await this.call(Methods.RPC_INIT, {
       token,
       meta: this.options.meta,
@@ -251,7 +247,7 @@ export class Client extends ClientChannel {
     this.authenticated = Boolean(result)
 
     if (result) {
-      await this.updateContext({ ...result, initialized: true }, false)
+      this.updateContext({ ...result, initialized: true })
     } else {
       this.clearContext()
     }
@@ -259,8 +255,6 @@ export class Client extends ClientChannel {
     await this.resubscribeAllChannels()
 
     this.ready = true
-
-    this.debugger('Authentication Changed', result)
 
     clearInterval(this.keepAliveInterval)
 
@@ -279,7 +273,7 @@ export class Client extends ClientChannel {
     }
 
     if (isPlainObject(response)) {
-      await this.setContext(response)
+      await this.setContextAndReInit(response)
     }
   }
 
@@ -342,8 +336,6 @@ export class Client extends ClientChannel {
     params?: MethodParams,
     { timeout = 20000, ws, http, httpFallback = true }: CallOptions = {},
   ): Promise<any> {
-    this.debugger(`Calling ${method}`, params)
-
     return new Promise((resolve, reject) => {
       const uuid = Presentation.uuid()
 

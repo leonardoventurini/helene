@@ -66,6 +66,8 @@ export class Server extends ServerChannel {
   channels: Map<string, ServerChannel> = new Map()
   events: Map<string, Event> = new Map()
 
+  acceptConnections = true
+
   ready = false
 
   shouldAllowChannelSubscribe: ChannelChecker = async () => true
