@@ -1,9 +1,21 @@
 import backoff from 'backoff'
-import { BackoffEvent, ClientEvents, sleep, WebSocketEvent } from '../utils'
+import {
+  BackoffEvent,
+  ClientEvents,
+  Environment,
+  sleep,
+  WebSocketEvent,
+} from '../utils'
 import { Client } from './client'
 import IsomorphicWebSocket from 'isomorphic-ws'
 
 export type GenericWebSocket = IsomorphicWebSocket
+
+export const isDocumentHidden = () => {
+  return Boolean(
+    !Environment.isNode && typeof document !== 'undefined' && document.hidden,
+  )
+}
 
 export function connectWebSocket(url: string): Promise<GenericWebSocket> {
   return new Promise((resolve, reject) => {
@@ -58,11 +70,7 @@ export async function connectWithRetry(
 
 connectWithRetry._timeout = 5000
 
-export async function connectWithBackoff(
-  url: string,
-  client: Client,
-  reconnect = true,
-) {
+export async function connectWithBackoff(url: string, client: Client) {
   let ws = null
 
   const _backoff = backoff.exponential({
@@ -93,17 +101,20 @@ export async function connectWithBackoff(
 
       _backoff.reset()
 
-      ws.on(WebSocketEvent.CLOSE, event => {
-        if (!reconnect) return
+      ws.on(WebSocketEvent.CLOSE, code => {
+        if (code === 1000) return
+        if (!client.clientSocket.options.reconnect) return
         if (client.clientSocket.closedGracefully) return
-        _backoff.backoff(event)
+        if (isDocumentHidden()) return
+
+        _backoff.backoff(code)
       })
     } catch (error) {
       _backoff.backoff(error)
     }
   }
 
-  _backoff.failAfter(connectWithBackoff._failAfter)
+  _backoff.failAfter(client.clientSocket.options.reconnectRetries)
 
   _backoff.on(BackoffEvent.READY, async (number, delay) => {
     client.emit(ClientEvents.WEBSOCKET_BACKOFF_READY, number, delay)
@@ -128,5 +139,4 @@ export async function connectWithBackoff(
   await connect()
 }
 
-connectWithBackoff._failAfter = 10
 connectWithBackoff._maxDelay = 60000

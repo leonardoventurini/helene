@@ -119,7 +119,6 @@ export class Client extends ClientChannel {
 
     this.clientSocket = new ClientSocket(this, this.options.ws)
 
-    this.on(ClientEvents.WEBSOCKET_CONNECTED, this.init)
     this.on(ClientEvents.ERROR, console.error)
     this.on(ClientEvents.CLOSE, () => {
       this.ready = false
@@ -175,7 +174,7 @@ export class Client extends ClientChannel {
   async setContextAndReInit(context: Record<string, any>) {
     this.setContext(context)
 
-    await this.init(true)
+    await this.init()
   }
 
   updateContext(context) {
@@ -202,7 +201,7 @@ export class Client extends ClientChannel {
     return await this.isReady()
   }
 
-  async close() {
+  async close(force = false) {
     if (!this.ready) return null
 
     this.ready = false
@@ -211,10 +210,10 @@ export class Client extends ClientChannel {
 
     clearTimeout(this.keepAliveInterval)
 
-    return this.clientSocket.close()
+    return this.clientSocket.close(force)
   }
 
-  async init(reinit = false) {
+  async init() {
     this.loadContext()
 
     this.emit(ClientEvents.INITIALIZING)
@@ -229,7 +228,7 @@ export class Client extends ClientChannel {
 
     // If the client is already initialized and the token is valid, we can postpone
     // this so the user can start using the client right away.
-    if (this.options.fastInit && !reinit && token && this.context.initialized) {
+    if (this.options.fastInit && this.context.initialized) {
       this.ready = true
       this.authenticated = true
       this.emit(ClientEvents.INITIALIZED, this.context)

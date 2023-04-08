@@ -46,7 +46,11 @@ export class ClientSocket {
     }
 
     if (this.options.autoConnect)
-      this.connect().catch(error => console.error('Auto Connect Error', error))
+      setTimeout(() => {
+        this.connect().catch(error =>
+          console.error('Auto Connect Error', error),
+        )
+      }, 0)
     else {
       setTimeout(() => {
         this.client.ready = true
@@ -88,16 +92,19 @@ export class ClientSocket {
     this.connecting = false
     this.ready = false
     this.socket = undefined
-
-    if (code === 1000) return
   }
 
-  public close(code?: number, data?: string) {
+  public close(force = false) {
     return new Promise<void>(resolve => {
       if (!this.socket) resolve()
 
-      this.closedGracefully = true
-      this.socket.close(code ?? 1000, data)
+      if (force) {
+        this.socket.close()
+      } else {
+        this.closedGracefully = true
+        this.socket.close(1000, 'Closed Gracefully')
+      }
+
       this.client.once(ClientEvents.CLOSE, resolve)
     })
   }
@@ -117,7 +124,6 @@ export class ClientSocket {
     await connectWithBackoff(
       `${this.uri}?uuid=${this.client.uuid}`,
       this.client,
-      this.options.reconnect,
     )
   }
 
@@ -147,6 +153,6 @@ export class ClientSocket {
     this.ready = true
     this.reconnecting = false
 
-    this.client.emit(ClientEvents.OPEN)
+    await this.client.init()
   }
 }

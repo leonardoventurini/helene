@@ -26,7 +26,9 @@ export class TestUtility {
         redis,
       })
 
-      this.client = await this.createClient({ debug })
+      this.client = await this.createClient({
+        debug,
+      })
     })
 
     afterEach(async () => {
@@ -73,10 +75,15 @@ export class TestUtility {
       const client = new Client({
         host: opts?.host ?? this.host,
         port: opts?.port ?? this.port,
+
+        ...opts,
+
         ws: {
           reconnect: false,
+          reconnectRetries: 3,
+
+          ...opts?.ws,
         },
-        ...opts,
       })
 
       after(async () => {
