@@ -101,7 +101,8 @@ export async function connectWithBackoff(url: string, client: Client) {
 
       _backoff.reset()
 
-      ws.on(WebSocketEvent.CLOSE, code => {
+      // The browser does not support `on`. Use `addEventListener` instead.
+      ws.addEventListener(WebSocketEvent.CLOSE, code => {
         if (code === 1000) return
         if (!client.clientSocket.options.reconnect) return
         if (client.clientSocket.closedGracefully) return
