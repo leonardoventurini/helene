@@ -1,4 +1,3 @@
-import backoff from 'backoff'
 import {
   BackoffEvent,
   ClientEvents,
@@ -8,6 +7,7 @@ import {
 } from '../utils'
 import { Client } from './client'
 import IsomorphicWebSocket from 'isomorphic-ws'
+import { exponential } from '../utils/backoff'
 
 export type GenericWebSocket = IsomorphicWebSocket
 
@@ -73,7 +73,7 @@ connectWithRetry._timeout = 5000
 export async function connectWithBackoff(url: string, client: Client) {
   let ws = null
 
-  const _backoff = backoff.exponential({
+  const _backoff = exponential({
     randomisationFactor: 1,
     initialDelay: 64,
     maxDelay: connectWithBackoff._maxDelay,
