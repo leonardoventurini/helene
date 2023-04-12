@@ -94,16 +94,18 @@ export class HttpTransport {
     )
   }
 
-  async getServerContext(req: Request, context) {
-    if (!context) {
-      const token = req.headers.authorization.replace('Bearer ', '')
+  async getServerContext(req: Request, context: any = {}) {
+    const token = (req.headers[TOKEN_HEADER_KEY] as string)?.replace(
+      'Bearer ',
+      '',
+    )
 
-      if (token)
-        context = { token: req.headers.authorization.replace('Bearer ', '') }
+    if (token) {
+      context.token = token
     }
 
     if (this.server.auth instanceof Function) {
-      let result = this.server.auth.call(req, context)
+      let result = this.server.auth.call(req, context ?? {})
 
       result = result instanceof Promise ? await result : result
 
@@ -227,9 +229,7 @@ export class HttpTransport {
   }
 
   async authMiddleware(req, res, next) {
-    const serverContext = await this.getServerContext(req, {
-      token: req.headers[TOKEN_HEADER_KEY],
-    })
+    const serverContext = await this.getServerContext(req)
 
     if (serverContext === false) {
       res.status(403)

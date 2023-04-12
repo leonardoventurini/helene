@@ -4,17 +4,31 @@
 ![GitHub watchers](https://img.shields.io/github/watchers/leonardoventurini/helene?style=social)
 ![GitHub Repo stars](https://img.shields.io/github/stars/leonardoventurini/helene?style=social)
 
-![Helene](https://raw.githubusercontent.com/leonardoventurini/helene/main/assets/ocean-sphere-header.jpg)
+<div style='text-align: center'>
+  <img src="https://raw.githubusercontent.com/leonardoventurini/helene/main/assets/ocean-sphere-header.jpg" width='50%' alt='Helene'>
+</div>
 
-# tldr
+# Introduction
 
-Get ready to build your next application with Helene. Faster, easier, and more powerful.
+Get ready to build your next application with Helene. 
+
+Faster, easier, and more powerful.
+
+Great for fast prototypes, small projects, and large applications.
+
+Powerful and flexible, use your favorite tools with it.
 
 This package enables powerful bidirectional real-time communication through WebSockets using methods and events.
 
 It supports authentication, channels, data persistence, middleware, React hooks and more.
 
-Works Node to Node and Node to Browser.
+Send events to a specific user, a group of users, or all users.
+
+Authorize events to specific users or groups.
+
+The client is isomorphic and can be used in the browser or in Node.
+
+Has a suggestion? [Open an issue](https://github.com/leonardoventurini/helene/issues/new)!
 
 
 <hr/>
@@ -52,8 +66,6 @@ or:
 ```
 yarn add helene
 ```
-
-This library has `peerDependencies` listings for `react` and `react-dom` version `18`.
 
 ## Server
 
