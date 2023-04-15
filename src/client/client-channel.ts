@@ -1,8 +1,7 @@
 import { EventEmitter2 } from 'eventemitter2'
 import { Client } from './client'
 import { isEmpty, isString } from 'lodash'
-import { Helpers } from '../utils/helpers'
-import { Methods } from '../utils/constants'
+import { Helpers, Methods } from '../utils'
 
 export class ClientChannel extends EventEmitter2 {
   client: Client
@@ -30,7 +29,7 @@ export class ClientChannel extends EventEmitter2 {
 
     if (isEmpty(events)) return {}
 
-    const connected = await this.client.isConnected()
+    const connected = this.client.isConnected()
 
     if (!connected) return {}
 
@@ -68,8 +67,7 @@ export class ClientChannel extends EventEmitter2 {
   }
 
   async resubscribe() {
-    this.client.debugger('Resubscribing to:', this.name, this.events)
-    await this.subscribe(Array.from(this.events))
+    return this.subscribe(Array.from(this.events))
   }
 
   /**

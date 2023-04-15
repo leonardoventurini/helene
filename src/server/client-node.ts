@@ -18,7 +18,7 @@ export class ClientNode extends EventEmitter2 {
   _id: string
   isAuthenticated = false
   meta: Record<string, any> = {}
-  context: ClientNodeContext
+  context: ClientNodeContext = {}
   userId: ObjectId | string | null = null
   socket?: WebSocket = {} as WebSocket
   req?: Request = {} as Request

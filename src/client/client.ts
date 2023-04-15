@@ -229,19 +229,21 @@ export class Client extends ClientChannel {
       ? pick(this.context ?? {}, this.options.allowedContextKeys)
       : {}
 
-    // If the client is already initialized and the token is valid, we can postpone
-    // this so the user can start using the client right away.
-    if (this.options.fastInit && this.context.initialized) {
-      this.ready = true
-      this.authenticated = true
-      this.emit(ClientEvents.INITIALIZED, this.context)
-    }
+    // By this time the user can call methods using HTTP with optimistic auth
+    this.ready = true
+    this.authenticated = !!token
 
-    const result = await this.call(Methods.RPC_INIT, {
-      token,
-      meta: this.options.meta,
-      ...context,
-    })
+    const result = await this.call(
+      Methods.RPC_INIT,
+      {
+        token,
+        meta: this.options.meta,
+        ...context,
+      },
+      {
+        httpFallback: false,
+      },
+    )
 
     /**
      * It needs to validate the token first as it can be invalid,
@@ -254,9 +256,9 @@ export class Client extends ClientChannel {
       this.clearContext()
     }
 
-    await this.resubscribeAllChannels()
+    this.initialized = true
 
-    this.ready = true
+    await this.resubscribeAllChannels()
 
     clearInterval(this.keepAliveInterval)
 
@@ -265,8 +267,6 @@ export class Client extends ClientChannel {
     }, 20000)
 
     this.emit(ClientEvents.INITIALIZED, result)
-
-    this.initialized = true
   }
 
   async login(params: WebSocketRequestParams, opts?: CallOptions) {
@@ -289,7 +289,7 @@ export class Client extends ClientChannel {
   }
 
   async resubscribeAllChannels() {
-    for (const [name, channel] of this.channels) {
+    for (const [, channel] of this.channels) {
       await channel.resubscribe()
     }
   }
@@ -473,20 +473,7 @@ export class Client extends ClientChannel {
   }
 
   isConnected() {
-    return new Promise(resolve => {
-      const onConnected = () => {
-        resolve(true)
-      }
-
-      if (this.clientSocket?.ready) return resolve(true)
-
-      this.once(ClientEvents.CONNECTED, onConnected)
-
-      setTimeout(() => {
-        this.off(ClientEvents.CONNECTED, onConnected)
-        resolve(false)
-      }, 2000)
-    })
+    return this.initialized && this.clientSocket?.ready
   }
 
   async attachDevTools() {

@@ -90,7 +90,9 @@ export class TestUtility {
         await client?.close()
       })
 
-      client.once(ClientEvents.INITIALIZED, () => resolve(client))
+      client.once(ClientEvents.INITIALIZED, () => {
+        resolve(client)
+      })
 
       client.once(ClientEvents.WEBSOCKET_BACKOFF_FAIL, () =>
         reject(new Error('WebSocket Backoff Failed')),

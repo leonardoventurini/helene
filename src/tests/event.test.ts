@@ -73,7 +73,7 @@ describe('Events', function () {
     const client = await test.createClient()
 
     test.server.addEvent('protected:event', {
-      shouldSubscribe: () => false,
+      shouldSubscribe: async () => false,
     })
 
     const result = await client.subscribe('protected:event')
@@ -95,7 +95,7 @@ describe('Events', function () {
     }
 
     test.server.addEvent('open:event', {
-      shouldSubscribe(client, event, channel) {
+      async shouldSubscribe(client, event, channel) {
         params = { client, event, channel }
 
         return true

@@ -196,7 +196,7 @@ export class HttpTransport {
     } catch (error) {
       console.error(error)
 
-      if (payload.void) return
+      if (payload?.void) return
 
       if (error instanceof PublicError) {
         return res.send(
