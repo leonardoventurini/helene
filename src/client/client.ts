@@ -79,6 +79,7 @@ export class Client extends ClientChannel {
   keepAliveInterval: Timeout = null
 
   ready = false
+  initialized = false
 
   authenticated = false
   _events: AnyFunction[]
@@ -214,6 +215,8 @@ export class Client extends ClientChannel {
   }
 
   async init() {
+    this.initialized = false
+
     this.loadContext()
 
     this.emit(ClientEvents.INITIALIZING)
@@ -262,6 +265,8 @@ export class Client extends ClientChannel {
     }, 20000)
 
     this.emit(ClientEvents.INITIALIZED, result)
+
+    this.initialized = true
   }
 
   async login(params: WebSocketRequestParams, opts?: CallOptions) {
@@ -340,7 +345,11 @@ export class Client extends ClientChannel {
 
       const payload = { uuid, method, params }
 
-      if (http || (!this.clientSocket?.ready && httpFallback)) {
+      // It should call the method via HTTP if the socket is not ready or the initialization did not occur yet.
+      if (
+        http ||
+        (!(this.clientSocket?.ready && this.initialized) && httpFallback)
+      ) {
         return this.clientHttp.request(payload, resolve, reject)
       }
 
