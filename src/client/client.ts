@@ -50,7 +50,6 @@ export type ClientOptions = {
   debug?: boolean
   allowedContextKeys?: string[]
   meta?: Record<string, any>
-  fastInit?: boolean
 }
 
 export type CallOptions = {
@@ -93,7 +92,6 @@ export class Client extends ClientChannel {
     debug: false,
     allowedContextKeys: [],
     meta: {},
-    fastInit: false,
   }
 
   constructor(options: ClientOptions = {}) {
