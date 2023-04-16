@@ -27,7 +27,7 @@ Faster, easier, and more powerful.
 
 Great for fast prototypes, small projects, and large applications.
 
-Powerful and flexible, use your favorite tools with it.
+Powerful and flexible, **use your favorite tools with it**.
 
 This package enables powerful bidirectional real-time communication through WebSockets using methods and events.
 
