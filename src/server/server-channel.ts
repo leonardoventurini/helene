@@ -19,6 +19,9 @@ export class ServerChannel extends EventEmitter2 {
 
   constructor(channelName: string) {
     super()
+
+    this.setMaxListeners(1024)
+
     this.channelName = channelName
 
     this.onAny((event, value) => {

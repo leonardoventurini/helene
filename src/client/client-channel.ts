@@ -16,7 +16,7 @@ export class ClientChannel extends EventEmitter2 {
 
     this.name = name
 
-    this.setMaxListeners(1000)
+    this.setMaxListeners(128)
   }
 
   setClient(client: Client) {
