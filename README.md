@@ -4,9 +4,20 @@
 ![GitHub watchers](https://img.shields.io/github/watchers/leonardoventurini/helene?style=social)
 ![GitHub Repo stars](https://img.shields.io/github/stars/leonardoventurini/helene?style=social)
 
-<div style='text-align: center'>
-  <img src="https://raw.githubusercontent.com/leonardoventurini/helene/main/assets/ocean-sphere-header.jpg" width='50%' alt='Helene'>
+<div align="center">
+	<br>
+	<div>
+		<img src="https://raw.githubusercontent.com/leonardoventurini/helene/main/assets/ocean-sphere-header.jpg" width='60%' alt='Helene'>
+	</div>
+	<br>
+	<br>
+  <p>
+    Delightful Real-time Apps for Node.js
+  </p>
+  <br>
+	<br>
 </div>
+
 
 # Introduction
 
