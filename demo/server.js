@@ -75,3 +75,5 @@ async function start() {
     }, 100)
   })
 }
+
+start().catch(console.error)
