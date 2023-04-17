@@ -4,9 +4,11 @@ const { readFileSync } = require('fs')
 const { Server, ServerEvents } = require('helene')
 const sirv = require('sirv')
 
-const port = process.env.PORT || 5001
+const port = process.env.PORT || 3000
 
+console.log({ port })
 console.log(process.env.NODE_OPTIONS)
+console.log(process.env.PORT)
 
 async function start() {
   const server = new Server({
@@ -73,5 +75,3 @@ async function start() {
     }, 100)
   })
 }
-
-start().catch(console.error)

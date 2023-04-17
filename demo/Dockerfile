@@ -2,7 +2,7 @@ FROM node:18
 WORKDIR /app
 COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile
-COPY . .
+COPY --chown=node:node . .
 ARG PORT=3000
 ENV PORT=$PORT
 EXPOSE $PORT
