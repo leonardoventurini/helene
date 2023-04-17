@@ -5,7 +5,6 @@ import { ServerChannel } from './server-channel'
 
 export type EventOptions = {
   protected?: boolean
-  ns?: string
 
   /**
    * Only allow user to subscribe to this event on his own channel. Automatically makes the event protected.
