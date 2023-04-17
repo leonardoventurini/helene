@@ -2,6 +2,7 @@ const { createServer: createViteServer } = require('vite')
 const { resolve } = require('path')
 const { readFileSync } = require('fs')
 const { Server, ServerEvents } = require('helene')
+const sirv = require('sirv')
 
 const port = process.env.PORT || 5001
 
@@ -17,26 +18,38 @@ async function start() {
 
   const app = server.express
 
-  const vite = await createViteServer({
-    server: { middlewareMode: true },
-  })
+  if (process.env.NODE_ENV === 'production') {
+    Helene.express.use(
+      sirv(resolve(process.cwd(), `./src/dist`), {
+        gzip: true,
+        single: true,
+        setHeaders: res => {
+          res.setHeader('Cache-Control', 'no-store, max-age=0')
+        },
+      }),
+    )
+  } else {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+    })
 
-  app.use(vite.middlewares)
+    app.use(vite.middlewares)
 
-  const indexHtmlPath = resolve(__dirname, 'src/index.html')
-  const indexHtmlContent = readFileSync(indexHtmlPath, 'utf-8')
+    const indexHtmlPath = resolve(__dirname, 'src/index.html')
+    const indexHtmlContent = readFileSync(indexHtmlPath, 'utf-8')
 
-  app.use('*', async (req, res) => {
-    const url = req.originalUrl
-    try {
-      const template = await vite.transformIndexHtml(url, indexHtmlContent)
-      res.status(200).set({ 'Content-Type': 'text/html' }).end(template)
-    } catch (e) {
-      vite.ssrFixStacktrace(e)
-      console.error(e.stack)
-      res.status(500).end(e.message)
-    }
-  })
+    app.use('*', async (req, res) => {
+      const url = req.originalUrl
+      try {
+        const template = await vite.transformIndexHtml(url, indexHtmlContent)
+        res.status(200).set({ 'Content-Type': 'text/html' }).end(template)
+      } catch (e) {
+        vite.ssrFixStacktrace(e)
+        console.error(e.stack)
+        res.status(500).end(e.message)
+      }
+    })
+  }
 
   await server.isReady()
 

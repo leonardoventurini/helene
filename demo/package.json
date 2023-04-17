@@ -10,9 +10,8 @@
     "node": "18.16.0"
   },
   "scripts": {
-    "dev": "node server.js",
-    "build": "vite build",
-    "serve": "vite preview"
+    "serve": "node server.js",
+    "build": "vite build"
   },
   "dependencies": {
     "@vitejs/plugin-react-swc": "^3.3.0",
