@@ -39,7 +39,7 @@ Authorize events to specific users or groups.
 
 The client is isomorphic and can be used in the browser or in Node.
 
-Has a suggestion? [Open an issue](https://github.com/leonardoventurini/helene/issues/new)!
+Have a problem or suggestion? [Open an issue](https://github.com/leonardoventurini/helene/issues/new)!
 
 
 <hr/>
@@ -88,7 +88,7 @@ new Server({
   port: 80,
   redis: {
     // We use redis to propagate events to all containers in a cluster
-    // This is the default value, you can omit this option and simplify pass `true`
+    // This is the default value, you can omit this option and simply pass `true`
     url: 'redis://localhost:6379',
   },
 })
@@ -192,12 +192,33 @@ server.addMethod('helene:rocks',
 You can use a [Yup](https://www.npmjs.com/package/yup) schema to validate your method parameters:
 
 ```js
-server.addMethod('validated:method', {
+server.addMethod('validated:method', () => {}, {
   schema: object({ foo: string().required() }),
 })
 ```
 
 The client method call will be rejected if the params fail to meet the schema requirements.
+
+### Protected Methods
+
+You can protect methods so that only authenticated users can call them:
+
+```js
+server.addMethod('protected:method', function () {
+  // By using a normal function you can access the `this` context which includes a powerful
+  // ClientNode instance that you can use to access the `socket`, `req` or `res` of a request.
+  //
+  // It also allows you to do more advanced things specific to the client that called the method.
+  //
+  // It is also available in the `auth()` function so you can store more information in the 
+  // connection after authentication, etc.
+  
+  console.log(this.userId)
+  console.log(this.context)
+}, { protected: true })
+```
+
+You can use `middlewares` to add more logic to the protected methods like permissions and so on.
 
 ## Events
 
