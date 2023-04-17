@@ -53,6 +53,8 @@ async function start() {
 
   await server.isReady()
 
+  console.log(`Server is running on port ${port}`)
+
   Helene.addMethod('connection.count', function () {
     return this.server.allClients.size
   })
