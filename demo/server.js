@@ -66,13 +66,13 @@ async function start() {
   Helene.on(ServerEvents.CONNECTION, () => {
     setTimeout(() => {
       Helene.refresh('connection.count')
-    }, 100)
+    }, 1000) // Account for latency
   })
 
   Helene.on(ServerEvents.DISCONNECTION, () => {
     setTimeout(() => {
       Helene.refresh('connection.count')
-    }, 100)
+    }, 1000) // Account for latency
   })
 }
 
