@@ -6,6 +6,8 @@ const sirv = require('sirv')
 
 const port = process.env.PORT || 5001
 
+console.log(process.env.NODE_OPTIONS)
+
 async function start() {
   const server = new Server({
     port,
