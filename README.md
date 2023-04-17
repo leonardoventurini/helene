@@ -447,6 +447,10 @@ useRemoteEvent(
 
 ### useMethod Hook
 
+This hook can be used to load data from the server and refresh it when needed. 
+
+In the future we will add support for Live Queries and other more precise techniques.
+
 ```jsx
 const { result, loading, refresh } = useMethod({
   method: 'hello',
