@@ -445,6 +445,14 @@ useRemoteEvent(
 )
 ```
 
+### useMethod Hook
+
+```jsx
+const { result, loading } = useMethod({
+  method: 'hello',
+})
+```
+
 ### useConnectionState Hook
 
 ```jsx
