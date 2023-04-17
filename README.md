@@ -448,9 +448,16 @@ useRemoteEvent(
 ### useMethod Hook
 
 ```jsx
-const { result, loading } = useMethod({
+const { result, loading, refresh } = useMethod({
   method: 'hello',
 })
+
+// Refresh the method in the client programmatically
+refresh()
+
+// Refresh the method in the server programmatically
+
+Helene.refresh('hello')
 ```
 
 ### useConnectionState Hook
