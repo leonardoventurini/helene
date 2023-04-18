@@ -4,9 +4,7 @@ import { ClientEvents } from '../../utils'
 import { useRawEventObservable } from './use-raw-event-observable'
 import { useCombinedThrottle } from './use-combined-throttle'
 
-export const useConnectionState = ({
-  reconnectOnVisibilityChange = false,
-} = {}) => {
+export const useConnectionState = () => {
   const client = useClient()
 
   const intervalRef = useRef(null)
@@ -14,8 +12,6 @@ export const useConnectionState = ({
   const [isOffline, setOffline] = useState(true)
   const [isOnline, setOnline] = useState(false)
   const [isConnecting, setConnecting] = useState(false)
-
-  const visibility$ = useRawEventObservable(document, 'visibilitychange')
 
   const initialized$ = useRawEventObservable(client, ClientEvents.INITIALIZED)
   const open$ = useRawEventObservable(client, ClientEvents.OPEN)
@@ -41,20 +37,7 @@ export const useConnectionState = ({
 
     intervalRef.current = setInterval(updateConnectionState, 1000)
 
-    function handleVisibilityChange() {
-      if (document.visibilityState === 'visible') {
-        client.connect().catch(console.error)
-      }
-    }
-
-    let subscription = null
-
-    if (reconnectOnVisibilityChange)
-      subscription = visibility$.subscribe(handleVisibilityChange)
-
     return () => {
-      subscription?.unsubscribe?.()
-
       clearInterval(intervalRef.current)
     }
   }, [client])
