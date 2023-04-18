@@ -119,6 +119,7 @@ export class ClientSocket {
 
   async connect() {
     this.connecting = true
+    this.closedGracefully = false
     this.client.emit(ClientEvents.CONNECTING)
 
     await connectWithBackoff(
