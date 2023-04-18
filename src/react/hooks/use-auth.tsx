@@ -45,6 +45,9 @@ export function useAuth() {
     authenticated,
     client,
     context,
+    /**
+     * @deprecated This does not make much sense anymore as the client can fall back to HTTP calls very early.
+     */
     loading: !ready,
     ready,
     setContext,
