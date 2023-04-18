@@ -12,7 +12,6 @@ export type MethodParams = any
 export type MethodFunction = (this: ClientNode, params?: MethodParams) => any
 
 export interface MethodOptions {
-  ns?: string
   cache?: boolean
   maxAge?: number
   protected?: boolean

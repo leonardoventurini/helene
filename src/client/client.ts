@@ -11,6 +11,7 @@ import {
   last,
   merge,
   pick,
+  throttle,
 } from 'lodash'
 import {
   AnyFunction,
@@ -50,6 +51,7 @@ export type ClientOptions = {
   debug?: boolean
   allowedContextKeys?: string[]
   meta?: Record<string, any>
+  idlenessTimeout?: number
 }
 
 export type CallOptions = {
@@ -94,6 +96,8 @@ export class Client extends ClientChannel {
     meta: {},
   }
 
+  idleTimeout: Timeout = null
+
   constructor(options: ClientOptions = {}) {
     super(NO_CHANNEL)
 
@@ -135,6 +139,8 @@ export class Client extends ClientChannel {
         this.debugger('DevTools attached')
       })
     }
+
+    this.setupBrowserIdlenessCheck()
   }
 
   get isConnecting() {
@@ -147,6 +153,43 @@ export class Client extends ClientChannel {
 
   get isOnline() {
     return !!this.clientSocket?.ready
+  }
+
+  startIdleTimeout() {
+    this.idleTimeout = setTimeout(() => {
+      this.close()
+        .then(() => {
+          console.log('Helene: Disconnected due to inactivity')
+        })
+        .catch(console.error)
+    }, this.options.idlenessTimeout)
+  }
+
+  stopIdleTimeout() {
+    if (this.idleTimeout) {
+      clearTimeout(this.idleTimeout)
+    }
+  }
+
+  resetIdleTimer() {
+    this.connect().catch(console.error)
+    this.stopIdleTimeout()
+    this.startIdleTimeout()
+  }
+
+  setupBrowserIdlenessCheck() {
+    if (!Environment.isBrowser) return
+    if (!this.options.idlenessTimeout) return
+
+    const reset = throttle(this.resetIdleTimer.bind(this), 100)
+
+    window.addEventListener('mousemove', reset, false)
+    window.addEventListener('mousedown', reset, false)
+    window.addEventListener('keydown', reset, false)
+    window.addEventListener('scroll', reset, false)
+    window.addEventListener('touchstart', reset, false)
+
+    document.addEventListener('visibilitychange', reset, false)
   }
 
   debugger(...args) {
@@ -193,7 +236,7 @@ export class Client extends ClientChannel {
   }
 
   async connect() {
-    if (this.clientSocket.ready) return null
+    if (this.clientSocket.ready) return
 
     await this.clientSocket.connect()
 
