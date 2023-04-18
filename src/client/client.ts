@@ -181,7 +181,12 @@ export class Client extends ClientChannel {
     if (!Environment.isBrowser) return
     if (!this.options.idlenessTimeout) return
 
-    const reset = throttle(this.resetIdleTimer.bind(this), 100)
+    if (this.options.idlenessTimeout < 1000) {
+      console.warn('Helene: idlenessTimeout must not be less than 1000ms')
+      return
+    }
+
+    const reset = throttle(this.resetIdleTimer.bind(this), 500)
 
     window.addEventListener('mousemove', reset, false)
     window.addEventListener('mousedown', reset, false)
@@ -237,6 +242,7 @@ export class Client extends ClientChannel {
 
   async connect() {
     if (this.clientSocket.ready) return
+    if (this.isConnecting) return
 
     await this.clientSocket.connect()
 

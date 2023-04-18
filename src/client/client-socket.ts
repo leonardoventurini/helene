@@ -47,9 +47,9 @@ export class ClientSocket {
 
     if (this.options.autoConnect)
       setTimeout(() => {
-        this.connect().catch(error =>
-          console.error('Auto Connect Error', error),
-        )
+        this.client
+          .connect()
+          .catch(error => console.error('Auto Connect Error', error))
       }, 0)
     else {
       setTimeout(() => {
