@@ -194,7 +194,7 @@ export class Client extends ClientChannel {
     window.addEventListener('scroll', reset, false)
     window.addEventListener('touchstart', reset, false)
 
-    document.addEventListener('visibilitychange', reset, false)
+    document.addEventListener('visibilitychange', reset)
   }
 
   debugger(...args) {
