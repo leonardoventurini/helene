@@ -193,6 +193,8 @@ export class Client extends ClientChannel {
     window.addEventListener('keydown', reset, false)
     window.addEventListener('scroll', reset, false)
     window.addEventListener('touchstart', reset, false)
+    window.addEventListener('pageshow', reset, false)
+    window.addEventListener('pagehide', reset, false)
 
     document.addEventListener('visibilitychange', reset)
   }
