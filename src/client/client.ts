@@ -120,6 +120,11 @@ export class Client extends ClientChannel {
      */
     this.loadContext()
 
+    // By this time the user can call methods using HTTP with optimistic auth
+    // @todo We can remove this flag in the future I think.
+    this.ready = true
+    this.authenticated = !!this.context.token
+
     this.clientSocket = new ClientSocket(this, this.options.ws)
 
     this.on(ClientEvents.ERROR, console.error)
@@ -277,10 +282,6 @@ export class Client extends ClientChannel {
     const context = this.options.allowedContextKeys.length
       ? pick(this.context ?? {}, this.options.allowedContextKeys)
       : {}
-
-    // By this time the user can call methods using HTTP with optimistic auth
-    this.ready = true
-    this.authenticated = !!token
 
     const result = await this.call(
       Methods.RPC_INIT,

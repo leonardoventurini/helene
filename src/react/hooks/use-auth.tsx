@@ -6,9 +6,9 @@ import { useCombinedThrottle } from './use-combined-throttle'
 
 export function useAuth() {
   const client = useClient()
-  const [ready, setReady] = useState(client.ready)
-  const [authenticated, setAuthenticated] = useState(client.authenticated)
-  const [context, setContext] = useState(client.context)
+  const [ready, setReady] = useState(() => client.ready)
+  const [authenticated, setAuthenticated] = useState(() => client.authenticated)
+  const [context, setContext] = useState(() => client.context)
 
   const logout$ = useRawEventObservable(client, ClientEvents.LOGOUT)
   const initialized$ = useRawEventObservable(client, ClientEvents.INITIALIZED)
@@ -25,7 +25,7 @@ export function useAuth() {
 
   useCombinedThrottle({
     observables: [logout$, initialized$, contextChanged$],
-    throttle: 16,
+    throttle: 1,
     callback: updateState,
   })
 
