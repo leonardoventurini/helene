@@ -20,10 +20,13 @@ export function useFind({ collection, filter, sort, projection }: Options) {
 
     onUpdated().catch(console.error)
 
-    collection.on(CollectionEvent.UPDATED, onUpdated)
+    collection.on([CollectionEvent.UPDATED, CollectionEvent.READY], onUpdated)
 
     return () => {
-      collection.off(CollectionEvent.UPDATED, onUpdated)
+      collection.off(
+        [CollectionEvent.UPDATED, CollectionEvent.READY],
+        onUpdated,
+      )
     }
   }, [
     collection,

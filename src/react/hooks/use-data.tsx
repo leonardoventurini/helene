@@ -6,11 +6,12 @@ import {
   useRemoteEvent,
 } from './index'
 import { useCallback, useState } from 'react'
-import { set } from 'lodash'
+import { isEmpty, set } from 'lodash'
 import { v5 as uuidv5 } from 'uuid'
 import { BrowserStorage } from '../../data/browser'
 import { useFind } from './use-find'
 import { ClientEvents, HeleneEvents } from '../../utils'
+import { Collection } from '../../data'
 
 const browserStorage = new BrowserStorage()
 
@@ -35,7 +36,21 @@ export function useData({
   selectiveSync = false,
   authenticated = false,
 }: Props) {
-  const [collection, setCollection] = useState(null)
+  const name = useCreation(
+    () => `collection:${uuidv5(method, uuidv5.URL)}`,
+    [method],
+  )
+
+  const [collection, setCollection] = useState(
+    () =>
+      new Collection({
+        name,
+        storage: browserStorage,
+        timestamps: true,
+        autoload: true,
+      }),
+  )
+
   const [loading, setLoading] = useState(true)
 
   const client = useClient()
@@ -60,9 +75,7 @@ export function useData({
 
       const count = await collection.count({})
 
-      if (!data.length) {
-        setLoading(true)
-      }
+      setLoading(true)
 
       let response
 
@@ -95,16 +108,18 @@ export function useData({
   )
 
   useAsyncEffect(async () => {
-    const collection = await client.createCollection({
-      name: `collection:${uuidv5(method, uuidv5.URL)}`,
+    if (collection.name === name) return
+
+    const _collection = new Collection({
+      name,
       storage: browserStorage,
       timestamps: true,
       autoload: true,
     })
 
-    set(window, `collections.${method}`, collection)
+    set(window, `collections.${method}`, _collection)
 
-    setCollection(collection)
+    setCollection(_collection)
 
     await refresh.run()
   }, [method])
@@ -136,7 +151,7 @@ export function useData({
 
   result.collection = collection
   result.data = data
-  result.loading = loading
+  result.loading = isEmpty(data) && loading
   result.client = client
   result.refresh = refresh.run
 
