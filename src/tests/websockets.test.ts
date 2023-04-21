@@ -11,12 +11,10 @@ describe('WebSockets', function () {
     await test.client.close()
 
     expect(test.client.clientSocket.ready).to.be.false
-    expect(test.client.ready).to.be.false
 
     await test.client.connect()
 
     expect(test.client.clientSocket.ready).to.be.true
-    expect(test.client.ready).to.be.true
   })
 
   it('should attempt to reconnect, fail, and then succeed to connect manually', async () => {
@@ -29,7 +27,6 @@ describe('WebSockets', function () {
     await test.client.close(true)
 
     expect(test.client.clientSocket.ready).to.be.false
-    expect(test.client.ready).to.be.false
 
     await test.client.waitFor(ClientEvents.WEBSOCKET_BACKOFF_FAIL)
 
@@ -38,7 +35,6 @@ describe('WebSockets', function () {
     await test.client.connect()
 
     expect(test.client.clientSocket.ready).to.be.true
-    expect(test.client.ready).to.be.true
   })
 
   it('should attempt connection 4x and use the backoff strategy for maximum reliability', async () => {

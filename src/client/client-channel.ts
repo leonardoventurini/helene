@@ -29,7 +29,7 @@ export class ClientChannel extends EventEmitter2 {
 
     if (isEmpty(events)) return {}
 
-    let connected = this.client.isConnected()
+    let connected = this.client.connected
 
     if (!connected) {
       try {

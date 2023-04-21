@@ -79,7 +79,6 @@ export class Client extends ClientChannel {
   timeouts: Set<Timeout> = new Set()
   keepAliveInterval: Timeout = null
 
-  ready = false
   initialized = false
 
   authenticated = false
@@ -120,17 +119,11 @@ export class Client extends ClientChannel {
      */
     this.loadContext()
 
-    // By this time the user can call methods using HTTP with optimistic auth
-    // @todo We can remove this flag in the future I think.
-    this.ready = true
     this.authenticated = !!this.context.token
 
     this.clientSocket = new ClientSocket(this, this.options.ws)
 
     this.on(ClientEvents.ERROR, console.error)
-    this.on(ClientEvents.CLOSE, () => {
-      this.ready = false
-    })
 
     this.debugger('Client Created', this.uuid)
 
@@ -253,13 +246,11 @@ export class Client extends ClientChannel {
 
     await this.clientSocket.connect()
 
-    return await this.isReady()
+    return await this.isConnected()
   }
 
   async close(force = false) {
-    if (!this.ready) return null
-
-    this.ready = false
+    if (!this.connected) return null
 
     this.timeouts.forEach(timeout => clearTimeout(timeout))
 
@@ -514,15 +505,15 @@ export class Client extends ClientChannel {
     return channel
   }
 
-  isReady() {
+  isConnected() {
     return new Promise(resolve => {
-      if (this.ready) return resolve(true)
+      if (this.connected) return resolve(true)
 
       this.once(ClientEvents.INITIALIZED, () => resolve(true))
     })
   }
 
-  isConnected() {
+  get connected() {
     return this.initialized && this.clientSocket?.ready
   }
 

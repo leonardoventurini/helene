@@ -67,7 +67,6 @@ export function useData({
   const refresh = useDebounceFn(
     async () => {
       if (!collection) return
-      if (!client.ready) return
       if (authenticated && !client.authenticated) {
         setLoading(false)
         return

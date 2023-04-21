@@ -53,7 +53,6 @@ describe('React Hooks', () => {
       expect(result.current).to.containSubset({
         authenticated: false,
         context: {},
-        loading: false,
       })
 
       await test.client.login({ email: '123', password: '123' })
@@ -66,8 +65,6 @@ describe('React Hooks', () => {
           token: 'foo',
           initialized: true,
         },
-        loading: false,
-        ready: true,
       })
     })
   })
@@ -125,7 +122,7 @@ describe('React Hooks', () => {
 
       await test.client.connect()
 
-      await test.client.isReady()
+      await test.client.isConnected()
 
       await sleep(110)
 
@@ -222,7 +219,7 @@ describe('React Hooks', () => {
 
       let value = 0
 
-      await test.client.isReady()
+      await test.client.isConnected()
 
       const unsub = sinon.fake.returns(Promise.resolve())
 
@@ -280,7 +277,7 @@ describe('React Hooks', () => {
     it('should use local event', async () => {
       const values = []
 
-      await test.client.isReady()
+      await test.client.isConnected()
 
       const { wrapper } = test
 
@@ -323,7 +320,7 @@ describe('React Hooks', () => {
       const emitter1 = new EventEmitter2()
       const emitter2 = new EventEmitter2()
 
-      await test.client.isReady()
+      await test.client.isConnected()
 
       const { wrapper } = test
 
@@ -364,7 +361,7 @@ describe('React Hooks', () => {
 
       const emitter = new EventEmitter2()
 
-      await test.client.isReady()
+      await test.client.isConnected()
 
       const { wrapper } = test
 

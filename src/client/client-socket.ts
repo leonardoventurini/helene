@@ -53,7 +53,6 @@ export class ClientSocket {
       }, 0)
     else {
       setTimeout(() => {
-        this.client.ready = true
         this.client.emit(ClientEvents.INITIALIZED)
       }, 0)
     }

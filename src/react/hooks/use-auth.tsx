@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { ClientEvents } from '../../utils'
 import { useClient } from './use-client'
 import { useRawEventObservable } from './use-raw-event-observable'
@@ -6,7 +6,6 @@ import { useCombinedThrottle } from './use-combined-throttle'
 
 export function useAuth() {
   const client = useClient()
-  const [ready, setReady] = useState(() => client.ready)
   const [authenticated, setAuthenticated] = useState(() => client.authenticated)
   const [context, setContext] = useState(() => client.context)
 
@@ -18,7 +17,6 @@ export function useAuth() {
   )
 
   const updateState = useCallback(() => {
-    setReady(client.ready)
     setAuthenticated(client.authenticated)
     setContext(client.context)
   }, [client])
@@ -29,27 +27,10 @@ export function useAuth() {
     callback: updateState,
   })
 
-  useEffect(() => {
-    const unready = () => setReady(false)
-
-    updateState()
-
-    client.on(ClientEvents.INITIALIZING, unready)
-
-    return () => {
-      client.off(ClientEvents.INITIALIZING, unready)
-    }
-  }, [client])
-
   return {
     authenticated,
     client,
     context,
-    /**
-     * @deprecated This does not make much sense anymore as the client can fall back to HTTP calls very early.
-     */
-    loading: !ready,
-    ready,
     setContext,
   }
 }
