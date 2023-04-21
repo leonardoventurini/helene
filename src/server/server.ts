@@ -243,3 +243,7 @@ export class Server extends ServerChannel {
     return channel
   }
 }
+
+export function createServer(options?: ServerOptions) {
+  return new Server(options)
+}
