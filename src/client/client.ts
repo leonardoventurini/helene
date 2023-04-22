@@ -150,7 +150,7 @@ export class Client extends ClientChannel {
 
       this.keepAliveTimeout = setTimeout(
         async () => {
-          await this.close()
+          await this.close(true)
           this.emit(HeleneEvents.KEEP_ALIVE_DISCONNECT)
         },
         // 2x the keep alive interval as a safety net.
