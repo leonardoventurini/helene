@@ -18,6 +18,7 @@ import {
   ClientEvents,
   Environment,
   Errors,
+  HeleneEvents,
   Methods,
   NO_CHANNEL,
 } from '../utils'
@@ -77,7 +78,6 @@ export class Client extends ClientChannel {
   channels: Map<string, ClientChannel> = new Map()
 
   timeouts: Set<Timeout> = new Set()
-  keepAliveInterval: Timeout = null
 
   initialized = false
 
@@ -95,7 +95,11 @@ export class Client extends ClientChannel {
     meta: {},
   }
 
+  keepAliveTimeout: Timeout = null
+
   idleTimeout: Timeout = null
+
+  static KEEP_ALIVE_INTERVAL = 10000
 
   constructor(options: ClientOptions = {}) {
     super(NO_CHANNEL)
@@ -139,6 +143,22 @@ export class Client extends ClientChannel {
     }
 
     this.setupBrowserIdlenessCheck()
+
+    // If the server stops sending the keep alive event we should disconnect.
+    this.client.on(HeleneEvents.KEEP_ALIVE, () => {
+      clearTimeout(this.keepAliveTimeout)
+
+      this.keepAliveTimeout = setTimeout(
+        async () => {
+          await this.close()
+          this.emit(HeleneEvents.KEEP_ALIVE_DISCONNECT)
+        },
+        // 2x the keep alive interval as a safety net.
+        Client.KEEP_ALIVE_INTERVAL * 2,
+      )
+
+      return this.client.call(Methods.KEEP_ALIVE)
+    })
   }
 
   get isConnecting() {
@@ -254,8 +274,6 @@ export class Client extends ClientChannel {
 
     this.timeouts.forEach(timeout => clearTimeout(timeout))
 
-    clearTimeout(this.keepAliveInterval)
-
     return this.clientSocket.close(force)
   }
 
@@ -300,12 +318,6 @@ export class Client extends ClientChannel {
     this.initialized = true
 
     await this.resubscribeAllChannels()
-
-    clearInterval(this.keepAliveInterval)
-
-    this.keepAliveInterval = setInterval(() => {
-      this.call(Methods.KEEP_ALIVE).catch(console.error)
-    }, 20000)
 
     this.emit(ClientEvents.INITIALIZED, result)
   }

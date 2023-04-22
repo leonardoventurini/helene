@@ -1,8 +1,10 @@
 import { describe, it } from 'mocha'
 import { expect } from 'chai'
-import { ClientEvents } from '../utils'
+import { ClientEvents, HeleneEvents, sleep } from '../utils'
 import { connectWithRetry } from '../client/websocket'
 import { TestUtility } from './utils/test-utility'
+import { ClientNode } from '../server'
+import { Client } from '../client'
 
 describe('WebSockets', function () {
   const test = new TestUtility()
@@ -63,5 +65,64 @@ describe('WebSockets', function () {
 
     expect(attemptCount).to.be.equal(16)
     expect(backoffCount).to.be.equal(3)
+  }).timeout(10000)
+
+  it('should detect disconnection using keep alive on the server', async () => {
+    await test.client.close()
+
+    ClientNode.KEEP_ALIVE_INTERVAL = 10
+
+    const client = await test.createClient()
+
+    const clientNode = test.server.allClients.get(client.uuid)
+
+    expect(clientNode).to.exist
+
+    let keepAliveCount = 0
+
+    client.on(HeleneEvents.KEEP_ALIVE, () => {
+      keepAliveCount++
+    })
+
+    await sleep(100)
+
+    expect(client.connected).to.be.true
+
+    expect(keepAliveCount).to.be.within(9, 11)
+
+    client.removeAllListeners(HeleneEvents.KEEP_ALIVE)
+
+    await clientNode.waitFor(HeleneEvents.KEEP_ALIVE_DISCONNECT, 100)
+
+    await client.waitFor(ClientEvents.WEBSOCKET_CLOSED, 100)
+
+    expect(client.connected).to.be.false
+  }).timeout(10000)
+
+  it('should detect disconnection using keep alive on the client', async () => {
+    await test.client.close()
+
+    ClientNode.KEEP_ALIVE_INTERVAL = 10
+    Client.KEEP_ALIVE_INTERVAL = 10
+
+    const client = await test.createClient()
+
+    let keepAliveCount = 0
+
+    client.on(HeleneEvents.KEEP_ALIVE, () => {
+      keepAliveCount++
+    })
+
+    await sleep(100)
+
+    expect(client.connected).to.be.true
+
+    expect(keepAliveCount).to.be.within(9, 11)
+
+    ClientNode.ENABLE_KEEP_ALIVE = false
+
+    await client.waitFor(HeleneEvents.KEEP_ALIVE_DISCONNECT, 100)
+
+    expect(client.connected).to.be.false
   }).timeout(10000)
 })

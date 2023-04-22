@@ -84,6 +84,7 @@ export class ClientSocket {
    */
   private handleClose = ({ code, reason }) => {
     this.client.emit(ClientEvents.CLOSE)
+    this.client.emit(ClientEvents.WEBSOCKET_CLOSED)
 
     if (this.ready)
       setTimeout(() => this.client.emit(ClientEvents.CLOSE, code, reason), 0)

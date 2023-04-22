@@ -10,7 +10,7 @@ import { RateLimiter } from 'limiter'
 import { RateLimit, Server } from './server'
 import { ObjectId } from 'bson'
 import { EventEmitter2 } from 'eventemitter2'
-import { ServerEvents } from '../utils'
+import { HeleneEvents, ServerEvents } from '../utils'
 
 export type ClientNodeContext = Record<string, any>
 
@@ -29,6 +29,11 @@ export class ClientNode extends EventEmitter2 {
   headers: Record<string, string> = {}
   remoteAddress: string | string[]
   userAgent: string
+  keepAliveInterval: NodeJS.Timeout
+  terminationTimeout: NodeJS.Timeout
+
+  static KEEP_ALIVE_INTERVAL = 10000
+  static ENABLE_KEEP_ALIVE = true
 
   constructor(
     server: Server,
@@ -56,6 +61,26 @@ export class ClientNode extends EventEmitter2 {
               interval: limit.interval,
             },
       )
+    }
+
+    if (socket) {
+      this.keepAliveInterval = setInterval(() => {
+        if (
+          ClientNode.ENABLE_KEEP_ALIVE &&
+          socket.readyState === WebSocket.OPEN
+        ) {
+          this.sendEvent(HeleneEvents.KEEP_ALIVE)
+
+          this.terminationTimeout = setTimeout(() => {
+            clearInterval(this.keepAliveInterval)
+
+            if (socket.readyState === WebSocket.OPEN) {
+              socket.terminate()
+              this.emit(HeleneEvents.KEEP_ALIVE_DISCONNECT)
+            }
+          }, ClientNode.KEEP_ALIVE_INTERVAL / 2)
+        }
+      }, ClientNode.KEEP_ALIVE_INTERVAL)
     }
   }
 
