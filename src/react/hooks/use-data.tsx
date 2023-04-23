@@ -107,18 +107,18 @@ export function useData({
   )
 
   useAsyncEffect(async () => {
-    if (collection.name === name) return
+    if (collection.name !== name) {
+      const _collection = new Collection({
+        name,
+        storage: browserStorage,
+        timestamps: true,
+        autoload: true,
+      })
 
-    const _collection = new Collection({
-      name,
-      storage: browserStorage,
-      timestamps: true,
-      autoload: true,
-    })
+      set(window, `collections.${method}`, _collection)
 
-    set(window, `collections.${method}`, _collection)
-
-    setCollection(_collection)
+      setCollection(_collection)
+    }
 
     await refresh.run()
   }, [method])
