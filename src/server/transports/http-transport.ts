@@ -76,6 +76,7 @@ export class HttpTransport {
     })
 
     this.authMiddleware = this.authMiddleware.bind(this)
+    this.contextMiddleware = this.contextMiddleware.bind(this)
   }
 
   setCORS(origins: string[]) {
@@ -152,34 +153,24 @@ export class HttpTransport {
         )
       }
 
-      if (method.isProtected) {
-        const serverContext = await this.getServerContext(
-          clientNode,
-          transport.context,
+      const serverContext = await this.getServerContext(
+        clientNode,
+        transport.context,
+      )
+
+      clientNode.authenticated = Boolean(serverContext)
+      clientNode.setContext(serverContext)
+
+      if (method.isProtected && !clientNode.authenticated) {
+        return res.json(
+          Presentation.Outbound.error(
+            {
+              message: Errors.METHOD_FORBIDDEN,
+              method: payload.method,
+            },
+            true,
+          ),
         )
-
-        if (serverContext === false) {
-          return res.json(
-            Presentation.Outbound.error(
-              {
-                message: Errors.METHOD_FORBIDDEN,
-                method: payload.method,
-              },
-              true,
-            ),
-          )
-        }
-
-        clientNode.authenticated = Boolean(serverContext)
-        clientNode.setContext(serverContext)
-
-        if (!serverContext?.user || !serverContext?.user?._id) {
-          throw new Error(
-            'The auth function must return a user object with a valid "_id" property',
-          )
-        }
-
-        clientNode.userId = serverContext.user._id
       }
 
       uuid = payload?.uuid ? { uuid: payload.uuid } : null
@@ -226,6 +217,14 @@ export class HttpTransport {
         }),
       )
     }
+  }
+
+  async contextMiddleware(req, res, next) {
+    const clientNode = new ClientNode(this.server, null, req, res)
+
+    req.context = await this.getServerContext(clientNode)
+
+    next()
   }
 
   async authMiddleware(req, res, next) {
