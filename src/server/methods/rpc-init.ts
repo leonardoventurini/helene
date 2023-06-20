@@ -14,20 +14,9 @@ export const rpcInit = server =>
         const result = caller instanceof Promise ? await caller : caller
 
         this.authenticated = Boolean(result)
+        this.setContext(result)
 
         if (!this.authenticated) return false
-
-        this.context = this.authenticated
-          ? Object.assign({}, result, this.context)
-          : {}
-
-        if (!result?.user || !result?.user?._id) {
-          throw new Error(
-            'The auth function must return a user object with a valid "_id" property',
-          )
-        }
-
-        this.userId = this.context.user._id
 
         server.emit(ServerEvents.AUTHENTICATION, this)
 

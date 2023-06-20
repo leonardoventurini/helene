@@ -108,6 +108,21 @@ export class ClientNode extends EventEmitter2 {
 
   setContext(context: ClientNodeContext) {
     this.context = this.authenticated ? context : {}
+
+    this.setUserId()
+  }
+
+  // The user ID is used for authorizing the user's channel.
+  setUserId() {
+    if (!this.authenticated) return
+
+    if (!this.context?.user || !this.context?.user?._id) {
+      throw new Error(
+        'The auth function must return a user object with a valid "_id" property',
+      )
+    }
+
+    this.userId = this.context.user._id
   }
 
   send(payload: Presentation.Payload | string, opts?: WebSocketMessageOptions) {
