@@ -6,16 +6,31 @@ type Options = {
   filter?: Record<string, any>
   sort?: Record<string, 1 | -1>
   projection?: Record<string, 0 | 1>
+  limit?: number
+  skip?: number
 }
 
-export function useFind({ collection, filter, sort, projection }: Options) {
+export function useFind({
+  collection,
+  filter,
+  sort,
+  projection,
+  limit,
+  skip,
+}: Options) {
   const [data, setData] = useState([])
 
   useEffect(() => {
     if (!collection) return
 
     async function onUpdated() {
-      setData(await collection.find(filter, projection).sort(sort))
+      setData(
+        await collection
+          .find(filter, projection)
+          .sort(sort)
+          .limit(limit)
+          .skip(skip),
+      )
     }
 
     onUpdated().catch(console.error)
