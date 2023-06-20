@@ -69,7 +69,7 @@ describe('HTTP', async () => {
         expect(this)
           .to.have.property('context')
           .that.containSubset({ token: 'test', user: { _id: 'id' } })
-
+        expect(this).to.have.property('userId').that.is.equal('id')
         return true
       },
       { protected: true },
