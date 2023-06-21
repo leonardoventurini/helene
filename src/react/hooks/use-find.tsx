@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Collection, CollectionEvent } from '../../data'
 
-type Options = {
+export type FindHookOptions = {
   collection: Collection
   filter?: Record<string, any>
   sort?: Record<string, 1 | -1>
@@ -17,7 +17,7 @@ export function useFind({
   projection,
   limit,
   skip,
-}: Options) {
+}: FindHookOptions) {
   const [data, setData] = useState([])
 
   useEffect(() => {
