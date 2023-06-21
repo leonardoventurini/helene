@@ -3,6 +3,7 @@ import { ClientEvents } from '../../utils'
 import { useClient } from './use-client'
 import { useRawEventObservable } from './use-raw-event-observable'
 import { useCombinedThrottle } from './use-combined-throttle'
+import { useObject } from './use-object'
 
 export function useAuth() {
   const client = useClient()
@@ -27,10 +28,9 @@ export function useAuth() {
     callback: updateState,
   })
 
-  return {
-    authenticated,
+  return useObject({
     client,
+    authenticated,
     context,
-    setContext,
-  }
+  })
 }
