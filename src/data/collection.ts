@@ -19,6 +19,17 @@ export const CollectionEvent = {
   COMPACTED: 'compacted',
 }
 
+export type HookFunction = <T = any>(doc: any) => Promise<void>
+export type TransformerHookFunction = <T = any>(doc: T) => Promise<T>
+export type UpdateHookFunction = <T = any>(
+  newDoc: T,
+  oldDoc: T,
+) => Promise<void>
+export type UpdateTransformerHookFunction = <T = any>(
+  newDoc: T,
+  oldDoc: T,
+) => Promise<T>
+
 export type CollectionOptions = {
   name?: string
   timestamps?: boolean
@@ -34,6 +45,15 @@ export type CollectionOptions = {
    * The interval (in milliseconds) at which the datafile will be compacted. Minimum value is 5000 (5 seconds). Default is 60000 (1 minute).
    */
   compactionInterval?: number
+
+  beforeInsert?: TransformerHookFunction
+  afterInsert?: HookFunction
+
+  beforeUpdate?: UpdateTransformerHookFunction
+  afterUpdate?: UpdateHookFunction
+
+  beforeRemove?: HookFunction
+  afterRemove?: HookFunction
 }
 
 export class Collection extends EventEmitter2 {
@@ -49,6 +69,15 @@ export class Collection extends EventEmitter2 {
 
   ready = false
 
+  beforeInsert: TransformerHookFunction
+  afterInsert: HookFunction
+
+  beforeUpdate: UpdateTransformerHookFunction
+  afterUpdate: UpdateHookFunction
+
+  beforeRemove: TransformerHookFunction
+  afterRemove: HookFunction
+
   constructor({
     name,
     storage,
@@ -60,6 +89,15 @@ export class Collection extends EventEmitter2 {
     afterSerialization,
     beforeDeserialization,
     compactionInterval = 60000,
+
+    beforeInsert = doc => Promise.resolve(doc),
+    afterInsert = () => void 0,
+
+    beforeUpdate = doc => Promise.resolve(doc),
+    afterUpdate = () => void 0,
+
+    beforeRemove = doc => Promise.resolve(doc),
+    afterRemove = () => void 0,
   }: CollectionOptions = {}) {
     super()
 
@@ -126,6 +164,15 @@ export class Collection extends EventEmitter2 {
       this.ready = true
       this.deferEmit(CollectionEvent.READY)
     }
+
+    this.beforeInsert = beforeInsert.bind(this)
+    this.afterInsert = afterInsert.bind(this)
+
+    this.beforeUpdate = beforeUpdate.bind(this)
+    this.afterUpdate = afterUpdate.bind(this)
+
+    this.beforeRemove = beforeRemove.bind(this)
+    this.afterRemove = afterRemove.bind(this)
   }
 
   deferEmit(event: string, ...args: any[]) {
@@ -292,13 +339,15 @@ export class Collection extends EventEmitter2 {
   }
 
   async insert(newDoc) {
-    const preparedDoc = this.prepareDocumentForInsertion(newDoc)
+    const preparedDoc = await this.prepareDocumentForInsertion(newDoc)
 
     this._insertInCache(preparedDoc)
 
-    await this.persistence.persistNewState(
-      isArray(preparedDoc) ? preparedDoc : [preparedDoc],
-    )
+    const docs = isArray(preparedDoc) ? preparedDoc : [preparedDoc]
+
+    await this.persistence.persistNewState(docs)
+
+    await Promise.all(docs.map(doc => this.afterInsert(doc)))
 
     return deepCopy(preparedDoc)
   }
@@ -320,20 +369,21 @@ export class Collection extends EventEmitter2 {
    * Meaning adds _id and timestamps if necessary on a copy of newDoc to avoid any side effect on user input
    * @api private
    */
-  prepareDocumentForInsertion(newDoc) {
+  async prepareDocumentForInsertion(newDoc) {
     let preparedDoc
-    const self = this
 
     if (isArray(newDoc)) {
-      preparedDoc = []
-      newDoc.forEach(function (doc) {
-        preparedDoc.push(self.prepareDocumentForInsertion(doc))
-      })
+      preparedDoc = await Promise.all(
+        newDoc.map(doc => this.prepareDocumentForInsertion(doc)),
+      )
     } else {
       preparedDoc = deepCopy(newDoc)
+      preparedDoc = await this.beforeInsert(preparedDoc)
+
       if (preparedDoc._id === undefined) {
         preparedDoc._id = this.createNewId()
       }
+
       const now = new Date()
 
       if (this.timestampData && preparedDoc.createdAt === undefined) {
@@ -444,7 +494,7 @@ export class Collection extends EventEmitter2 {
     const multi = Boolean(options?.multi)
     const upsert = Boolean(options?.upsert)
 
-    // If upsert option is set, check whether we need to insert the doc
+    // If an upsert option is set, check whether we need to insert the doc
     if (upsert) {
       const cursor = new Cursor(this, query)
       const docs = await cursor.limit(1)
@@ -484,14 +534,22 @@ export class Collection extends EventEmitter2 {
     for (i = 0; i < candidates.length; i += 1) {
       if (match(candidates[i], query) && (multi || numReplaced === 0)) {
         numReplaced += 1
+
         if (this.timestampData) {
           createdAt = candidates[i].createdAt
         }
+
         modifiedDoc = modify(candidates[i], updateQuery)
+
+        modifiedDoc = await this.beforeUpdate(modifiedDoc, candidates[i])
+
         if (this.timestampData) {
           modifiedDoc.createdAt = createdAt
           modifiedDoc.updatedAt = new Date()
         }
+
+        await this.afterUpdate(modifiedDoc, candidates[i])
+
         modifications.push({
           oldDoc: candidates[i],
           newDoc: modifiedDoc,
@@ -534,15 +592,18 @@ export class Collection extends EventEmitter2 {
 
     const candidates = await this.getCandidates(query, true)
 
-    candidates.forEach(function (d) {
-      if (match(d, query) && (multi || numRemoved === 0)) {
+    for (const candidate of candidates) {
+      if (match(candidate, query) && (multi || numRemoved === 0)) {
+        await this.beforeRemove(candidate)
         numRemoved += 1
-        removedDocs.push({ $$deleted: true, _id: d._id })
-        self.removeFromIndexes(d)
+        removedDocs.push({ $$deleted: true, _id: candidate._id })
+        self.removeFromIndexes(candidate)
       }
-    })
+    }
 
     await self.persistence.persistNewState(removedDocs)
+
+    await Promise.all(candidates.map(doc => self.afterRemove(doc)))
 
     return numRemoved
   }

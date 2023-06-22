@@ -439,9 +439,9 @@ describe('Database', function () {
 
     it('Can use indexes for comparison matches', async function () {
       await collection.ensureIndex({ fieldName: 'tf' })
-      const doc1 = await collection.insert({ tf: 4 })
+      await collection.insert({ tf: 4 })
       const doc2 = await collection.insert({ tf: 6 })
-      const doc3 = await collection.insert({ tf: 4, an: 'other' })
+      await collection.insert({ tf: 4, an: 'other' })
       const doc4 = await collection.insert({ tf: 9 })
       const data = await collection.getCandidates({
         r: 6,
@@ -2334,7 +2334,7 @@ describe('Database', function () {
       it('Removing docs still works as before with indexing', async function () {
         await collection.ensureIndex({ fieldName: 'a' })
 
-        const doc1 = await collection.insert({ a: 1, b: 'hello' })
+        await collection.insert({ a: 1, b: 'hello' })
         const doc2 = await collection.insert({ a: 2, b: 'si' })
         const doc3 = await collection.insert({ a: 3, b: 'coin' })
 
@@ -2364,7 +2364,7 @@ describe('Database', function () {
         await collection.ensureIndex({ fieldName: 'a' })
         await collection.ensureIndex({ fieldName: 'b' })
 
-        const doc1 = await collection.insert({ a: 1, b: 'hello' })
+        await collection.insert({ a: 1, b: 'hello' })
         const doc2 = await collection.insert({ a: 2, b: 'si' })
         const doc3 = await collection.insert({ a: 3, b: 'coin' })
 
@@ -2629,6 +2629,113 @@ describe('Database', function () {
       const res = await collection.getCandidates({ bad: { $in: ['a', 'b'] } })
 
       assert.strictEqual(res.length, 1)
+    })
+  })
+
+  describe('Hooks', () => {
+    it('should call beforeInsert', async () => {
+      let called = null
+
+      const collection = await createCollection({
+        beforeInsert: async doc => {
+          called = doc
+
+          Object.assign(doc, { modified: true })
+
+          return doc
+        },
+      })
+
+      const doc = await collection.insert({ hello: 'world' })
+
+      expect(doc).to.deep.equal({ ...doc, modified: true })
+    })
+
+    it('should call afterInsert', async () => {
+      let called = null
+
+      const collection = await createCollection({
+        afterInsert: async doc => {
+          called = doc
+        },
+      })
+
+      const doc = await collection.insert({ hello: 'world' })
+      expect(called).to.deep.equal(doc)
+    })
+
+    it('should call beforeUpdate', async () => {
+      let called1 = null
+      let called2 = null
+
+      const collection = await createCollection({
+        beforeUpdate: async (newDoc, oldDoc) => {
+          called1 = newDoc
+          called2 = oldDoc
+
+          Object.assign(newDoc, { modified: true })
+
+          return newDoc
+        },
+      })
+
+      const oldDoc = await collection.insert({ hello: 'world' })
+      await collection.update({ hello: 'world' }, { hello: 'mars' })
+
+      const newestDoc = await collection.findOne({ hello: 'mars' })
+
+      expect(called1).to.deep.equal(newestDoc)
+      expect(called2).to.deep.equal(oldDoc)
+    })
+
+    it('should call afterUpdate', async () => {
+      let called1 = null
+      let called2 = null
+
+      const collection = await createCollection({
+        afterUpdate: async (newDoc, oldDoc) => {
+          called1 = newDoc
+          called2 = oldDoc
+        },
+      })
+
+      const doc = await collection.insert({ hello: 'world' })
+      await collection.update({ hello: 'world' }, { hello: 'mars' })
+
+      expect(called1).to.deep.equal({ ...doc, hello: 'mars' })
+      expect(called2).to.deep.equal(doc)
+    })
+
+    it('should call beforeRemove', async () => {
+      let called = false
+
+      const collection = await createCollection({
+        beforeRemove: async doc => {
+          called = doc
+          return doc
+        },
+      })
+
+      const doc = await collection.insert({ hello: 'world' })
+      await collection.remove({ hello: 'world' })
+
+      expect(called).to.deep.equal(doc)
+    })
+
+    it('should call afterRemove', async () => {
+      let called = false
+
+      const collection = await createCollection({
+        afterRemove: async doc => {
+          called = doc
+        },
+      })
+
+      const doc = await collection.insert({ hello: 'world' })
+
+      await collection.remove({ hello: 'world' })
+
+      expect(called).to.deep.equal(doc)
     })
   })
 })
