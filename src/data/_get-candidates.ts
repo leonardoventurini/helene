@@ -1,9 +1,9 @@
-// STEP 1: get candidates list by checking indexes from most to least frequent usecase
 import _, { isDate, isObject } from 'lodash'
 
 export async function checkIndexesFromMostToLeast(query, indexNames) {
   // For a basic match
   let usableQueryKeys = []
+
   Object.keys(query).forEach(function (k) {
     if (
       typeof query[k] === 'string' ||
@@ -15,6 +15,7 @@ export async function checkIndexesFromMostToLeast(query, indexNames) {
       usableQueryKeys.push(k)
     }
   })
+
   usableQueryKeys = _.intersection(usableQueryKeys, indexNames)
 
   if (usableQueryKeys.length > 0) {

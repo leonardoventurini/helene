@@ -3,5 +3,9 @@ import { Collection, CollectionOptions } from '../../data'
 import { useObject } from './use-object'
 
 export function useCollection(options: CollectionOptions = {}) {
-  return useCreation(() => new Collection(options), [useObject(options)])
+  const stableOptions = useObject(options)
+
+  return useCreation(() => {
+    return new Collection(options)
+  }, [stableOptions])
 }

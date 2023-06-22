@@ -349,7 +349,7 @@ export class Collection extends EventEmitter2 {
 
     await Promise.all(docs.map(doc => this.afterInsert(doc)))
 
-    return deepCopy(preparedDoc)
+    return preparedDoc
   }
 
   /**
@@ -468,9 +468,7 @@ export class Collection extends EventEmitter2 {
       return res
     })
 
-    cursor.projection(projection)
-
-    return cursor
+    return cursor.projection(projection)
   }
 
   async findOne(query, projection?) {

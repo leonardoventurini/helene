@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Collection, CollectionEvent } from '../../data'
+import { useObject } from './use-object'
 
 export type FindHookOptions = {
   collection: Collection
@@ -24,13 +25,13 @@ export function useFind({
     if (!collection) return
 
     async function onUpdated() {
-      setData(
-        await collection
-          .find(filter, projection)
-          .sort(sort)
-          .limit(limit)
-          .skip(skip),
-      )
+      const result = await collection
+        .find(filter, projection)
+        .sort(sort)
+        .limit(limit)
+        .skip(skip)
+
+      setData(result)
     }
 
     onUpdated().catch(console.error)
@@ -42,12 +43,7 @@ export function useFind({
       collection.off(CollectionEvent.READY, onUpdated)
       collection.off(CollectionEvent.UPDATED, onUpdated)
     }
-  }, [
-    collection,
-    JSON.stringify(filter),
-    JSON.stringify(projection),
-    JSON.stringify(sort),
-  ])
+  }, [collection, useObject(filter), useObject(projection), useObject(sort)])
 
   return data
 }

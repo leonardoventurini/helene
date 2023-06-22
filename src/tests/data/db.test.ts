@@ -2651,6 +2651,37 @@ describe('Database', function () {
       expect(doc).to.deep.equal({ ...doc, modified: true })
     })
 
+    it('should call beforeInsert for multiple documents', async () => {
+      let called = null
+
+      const collection = await createCollection({
+        beforeInsert: async doc => {
+          called = doc
+
+          Object.assign(doc, { modified: true })
+
+          return doc
+        },
+      })
+
+      const doc = await collection.insert([
+        { hello: 'world' },
+        { hello: 'mars' },
+      ])
+
+      const fetch = await collection.find({}).sort({ hello: -1 })
+
+      expect(fetch).to.deep.equal([
+        { ...doc[0], modified: true },
+        { ...doc[1], modified: true },
+      ])
+
+      expect(doc).to.deep.equal([
+        { ...doc[0], modified: true },
+        { ...doc[1], modified: true },
+      ])
+    })
+
     it('should call afterInsert', async () => {
       let called = null
 
@@ -2669,7 +2700,7 @@ describe('Database', function () {
       let called2 = null
 
       const collection = await createCollection({
-        beforeUpdate: async (newDoc, oldDoc) => {
+        async beforeUpdate(newDoc, oldDoc) {
           called1 = newDoc
           called2 = oldDoc
 
@@ -2679,13 +2710,16 @@ describe('Database', function () {
         },
       })
 
-      const oldDoc = await collection.insert({ hello: 'world' })
+      const oldDoc = await collection.insert([
+        { hello: 'world' },
+        { hello: 'pluto' },
+      ])
       await collection.update({ hello: 'world' }, { hello: 'mars' })
 
       const newestDoc = await collection.findOne({ hello: 'mars' })
 
       expect(called1).to.deep.equal(newestDoc)
-      expect(called2).to.deep.equal(oldDoc)
+      expect(called2).to.deep.equal(oldDoc[0])
     })
 
     it('should call afterUpdate', async () => {

@@ -7,7 +7,7 @@ import { isArray, isPlainObject } from 'lodash'
  * The property values should still not change unnecessarily.
  */
 export function useObject(obj: Record<string, any>) {
-  const previousEntries = useRef([])
+  const previousEntries = useRef(null)
 
   const entries = useCreation(
     () => (isPlainObject(obj) ? Object.entries(obj) : []),
@@ -52,6 +52,12 @@ export function useObject(obj: Record<string, any>) {
   }
 
   useEffect(() => {
+    // Nothing can change on the first run, so we just initialize the previous entries
+    if (previousEntries.current === null) {
+      previousEntries.current = entries
+      return
+    }
+
     if (entries.length !== previousEntries.current.length) {
       update()
       return
