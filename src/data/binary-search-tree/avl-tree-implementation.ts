@@ -1,7 +1,7 @@
 import { BinarySearchTree } from './bst'
 import { defaultCheckValueEquality, defaultCompareKeysFunction } from './utils'
 
-export class _AVLTree extends BinarySearchTree {
+export class AVLTreeImplementation extends BinarySearchTree {
   left: any
   right: any
   parent: any
@@ -412,56 +412,5 @@ export class _AVLTree extends BinarySearchTree {
     }
 
     return this.rebalanceAlongPath(deletePath)
-  }
-}
-
-export class AVLTree {
-  tree: _AVLTree
-
-  constructor(options?) {
-    this.tree = new _AVLTree(options)
-  }
-  checkIsAVLT() {
-    this.tree.checkIsAVLT()
-  }
-
-  insert(key, value?) {
-    const newTree = this.tree.insert(key, value)
-
-    // If newTree is undefined, that means its structure was not modified
-    if (newTree) {
-      this.tree = newTree
-    }
-  }
-
-  delete(key, value?) {
-    const newTree = this.tree.delete(key, value)
-
-    // If newTree is undefined, that means its structure was not modified
-    if (newTree) {
-      this.tree = newTree
-    }
-  }
-
-  getNumberOfKeys() {
-    return this.tree.getNumberOfKeys()
-  }
-
-  search(key) {
-    return this.tree.search(key)
-  }
-
-  betweenBounds(...args) {
-    // @ts-ignore
-    return this.tree.betweenBounds(...args)
-  }
-
-  prettyPrint(...args) {
-    // @ts-ignore
-    return this.tree.prettyPrint(...args)
-  }
-
-  executeOnEveryNode(fn) {
-    return this.tree.executeOnEveryNode(fn)
   }
 }

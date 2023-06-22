@@ -1,21 +1,22 @@
 /* eslint-disable @typescript-eslint/no-extra-semi,no-prototype-builtins */
 import { assert } from 'chai'
 import _ from 'lodash'
-import { _AVLTree, AVLTree } from '../../../data/binary-search-tree/avl-tree'
+import { AVLTreeImplementation } from '../../../data/binary-search-tree/avl-tree-implementation'
+import { AVLTreeInterface } from '../../../data/binary-search-tree/avl-tree-interface'
 import { getRandomArray } from '../../../data/binary-search-tree/utils'
 
 describe('AVL tree', function () {
   describe('Sanity checks', function () {
     it('Checking that all nodes heights are correct', function () {
-      const avlt = new _AVLTree({ key: 10 }),
-        l = new _AVLTree({ key: 5 }),
-        r = new _AVLTree({ key: 15 }),
-        ll = new _AVLTree({ key: 3 }),
-        lr = new _AVLTree({ key: 8 }),
-        rl = new _AVLTree({ key: 13 }),
-        rr = new _AVLTree({ key: 18 }),
-        lrl = new _AVLTree({ key: 7 }),
-        lrll = new _AVLTree({ key: 6 })
+      const avlt = new AVLTreeImplementation({ key: 10 }),
+        l = new AVLTreeImplementation({ key: 5 }),
+        r = new AVLTreeImplementation({ key: 15 }),
+        ll = new AVLTreeImplementation({ key: 3 }),
+        lr = new AVLTreeImplementation({ key: 8 }),
+        rl = new AVLTreeImplementation({ key: 13 }),
+        rr = new AVLTreeImplementation({ key: 18 }),
+        lrl = new AVLTreeImplementation({ key: 7 }),
+        lrll = new AVLTreeImplementation({ key: 6 })
       // With a balanced tree
       avlt.left = l
       avlt.right = r
@@ -103,15 +104,15 @@ describe('AVL tree', function () {
     })
 
     it('Calculate the balance factor', function () {
-      const avlt = new _AVLTree({ key: 10 }),
-        l = new _AVLTree({ key: 5 }),
-        r = new _AVLTree({ key: 15 }),
-        ll = new _AVLTree({ key: 3 }),
-        lr = new _AVLTree({ key: 8 }),
-        rl = new _AVLTree({ key: 13 }),
-        rr = new _AVLTree({ key: 18 }),
-        lrl = new _AVLTree({ key: 7 }),
-        lrll = new _AVLTree({ key: 6 })
+      const avlt = new AVLTreeImplementation({ key: 10 }),
+        l = new AVLTreeImplementation({ key: 5 }),
+        r = new AVLTreeImplementation({ key: 15 }),
+        ll = new AVLTreeImplementation({ key: 3 }),
+        lr = new AVLTreeImplementation({ key: 8 }),
+        rl = new AVLTreeImplementation({ key: 13 }),
+        rr = new AVLTreeImplementation({ key: 18 }),
+        lrl = new AVLTreeImplementation({ key: 7 }),
+        lrll = new AVLTreeImplementation({ key: 6 })
       // With a balanced tree
       avlt.left = l
       avlt.right = r
@@ -147,13 +148,13 @@ describe('AVL tree', function () {
     })
 
     it('Can check that a tree is balanced', function () {
-      const avlt = new _AVLTree({ key: 10 }),
-        l = new _AVLTree({ key: 5 }),
-        r = new _AVLTree({ key: 15 }),
-        ll = new _AVLTree({ key: 3 }),
-        lr = new _AVLTree({ key: 8 }),
-        rl = new _AVLTree({ key: 13 }),
-        rr = new _AVLTree({ key: 18 })
+      const avlt = new AVLTreeImplementation({ key: 10 }),
+        l = new AVLTreeImplementation({ key: 5 }),
+        r = new AVLTreeImplementation({ key: 15 }),
+        ll = new AVLTreeImplementation({ key: 3 }),
+        lr = new AVLTreeImplementation({ key: 8 }),
+        rl = new AVLTreeImplementation({ key: 13 }),
+        rr = new AVLTreeImplementation({ key: 18 })
 
       avlt.left = l
       avlt.right = r
@@ -208,14 +209,14 @@ describe('AVL tree', function () {
 
   describe('Insertion', function () {
     it('The root has a height of 1', function () {
-      const avlt = new AVLTree()
+      const avlt = new AVLTreeInterface()
 
       avlt.insert(10, 'root')
       avlt.tree.height.should.equal(1)
     })
 
     it('Insert at the root if its the first insertion', function () {
-      const avlt = new AVLTree()
+      const avlt = new AVLTreeInterface()
 
       avlt.insert(10, 'some data')
 
@@ -227,7 +228,7 @@ describe('AVL tree', function () {
     })
 
     it('If uniqueness constraint not enforced, we can insert different data for same key', function () {
-      const avlt = new AVLTree()
+      const avlt = new AVLTreeInterface()
 
       avlt.insert(10, 'some data')
       avlt.insert(3, 'hello')
@@ -244,7 +245,7 @@ describe('AVL tree', function () {
     })
 
     it('If uniqueness constraint is enforced, we cannot insert different data for same key', function () {
-      const avlt = new AVLTree({ unique: true })
+      const avlt = new AVLTreeInterface({ unique: true })
 
       avlt.insert(10, 'some data')
       avlt.insert(3, 'hello')
@@ -271,7 +272,7 @@ describe('AVL tree', function () {
     })
 
     it('Can insert 0 or the empty string', function () {
-      let avlt = new AVLTree()
+      let avlt = new AVLTreeInterface()
 
       avlt.insert(0, 'some data')
 
@@ -279,7 +280,7 @@ describe('AVL tree', function () {
       avlt.tree.key.should.equal(0)
       _.isEqual(avlt.tree.data, ['some data']).should.equal(true)
 
-      avlt = new AVLTree()
+      avlt = new AVLTreeInterface()
 
       avlt.insert('', 'some other data')
 
@@ -289,9 +290,9 @@ describe('AVL tree', function () {
     })
 
     it('Auto-balancing insertions', function () {
-      const avlt = new AVLTree(),
-        avlt2 = new AVLTree(),
-        avlt3 = new AVLTree()
+      const avlt = new AVLTreeInterface(),
+        avlt2 = new AVLTreeInterface(),
+        avlt3 = new AVLTreeInterface()
       // Balancing insertions on the left
       avlt.tree.getNumberOfKeys().should.equal(0)
       avlt.insert(18)
@@ -366,7 +367,7 @@ describe('AVL tree', function () {
     })
 
     it('Can insert a lot of keys and still get an AVLT (sanity check)', function () {
-      const avlt = new AVLTree({ unique: true })
+      const avlt = new AVLTreeInterface({ unique: true })
 
       getRandomArray(1000).forEach(function (n) {
         avlt.insert(n, 'some data')
@@ -377,7 +378,7 @@ describe('AVL tree', function () {
 
   describe('Search', function () {
     it('Can find data in an AVLT', function () {
-      const avlt = new AVLTree()
+      const avlt = new AVLTreeInterface()
       let i
 
       getRandomArray(100).forEach(function (n) {
@@ -392,7 +393,7 @@ describe('AVL tree', function () {
     })
 
     it('If no data can be found, return an empty array', function () {
-      const avlt = new AVLTree()
+      const avlt = new AVLTreeInterface()
 
       getRandomArray(100).forEach(function (n) {
         if (n !== 63) {
@@ -409,7 +410,7 @@ describe('AVL tree', function () {
     })
 
     it('Can search for data between two bounds', function () {
-      const avlt = new AVLTree()
+      const avlt = new AVLTreeInterface()
 
       ;[10, 5, 15, 3, 8, 13, 18].forEach(function (k) {
         avlt.insert(k, 'data ' + k)
@@ -428,7 +429,7 @@ describe('AVL tree', function () {
     })
 
     it('Bounded search can handle cases where query contains both $lt and $lte, or both $gt and $gte', function () {
-      const avlt = new AVLTree()
+      const avlt = new AVLTreeInterface()
 
       ;[10, 5, 15, 3, 8, 13, 18].forEach(function (k) {
         avlt.insert(k, 'data ' + k)
@@ -470,7 +471,7 @@ describe('AVL tree', function () {
     })
 
     it('Bounded search can work when one or both boundaries are missing', function () {
-      const avlt = new AVLTree()
+      const avlt = new AVLTreeInterface()
 
       ;[10, 5, 15, 3, 8, 13, 18].forEach(function (k) {
         avlt.insert(k, 'data ' + k)
@@ -491,8 +492,8 @@ describe('AVL tree', function () {
 
   describe('Deletion', function () {
     it('Deletion does nothing on an empty tree', function () {
-      const avlt = new AVLTree(),
-        avltu = new AVLTree({ unique: true })
+      const avlt = new AVLTreeInterface(),
+        avltu = new AVLTreeInterface({ unique: true })
 
       avlt.getNumberOfKeys().should.equal(0)
       avltu.getNumberOfKeys().should.equal(0)
@@ -511,7 +512,7 @@ describe('AVL tree', function () {
     })
 
     it('Deleting a non-existent key doesnt have any effect', function () {
-      const avlt = new AVLTree()
+      const avlt = new AVLTreeInterface()
 
       ;[10, 5, 3, 8, 15, 12, 37].forEach(function (k) {
         avlt.insert(k, 'some ' + k)
@@ -562,7 +563,7 @@ describe('AVL tree', function () {
     })
 
     it('Able to delete the root if it is also a leaf', function () {
-      const avlt = new AVLTree()
+      const avlt = new AVLTreeInterface()
 
       avlt.insert(10, 'hello')
       avlt.tree.key.should.equal(10)
@@ -581,7 +582,7 @@ describe('AVL tree', function () {
       // This will create an AVL tree with leaves 3, 8, 12, 37
       // (do a pretty print to see this)
       function recreateavlt() {
-        avlt = new AVLTree()
+        avlt = new AVLTreeInterface()
         ;[10, 5, 3, 8, 15, 12, 37].forEach(function (k) {
           avlt.insert(k, 'some ' + k)
         })
@@ -652,7 +653,7 @@ describe('AVL tree', function () {
       let avlt
 
       // Root has only one child, on the left
-      avlt = new AVLTree()
+      avlt = new AVLTreeInterface()
       ;[10, 5].forEach(function (k) {
         avlt.insert(k, 'some ' + k)
       })
@@ -664,7 +665,7 @@ describe('AVL tree', function () {
       avlt.search(10).length.should.equal(0)
 
       // Root has only one child, on the right
-      avlt = new AVLTree()
+      avlt = new AVLTreeInterface()
       ;[10, 15].forEach(function (k) {
         avlt.insert(k, 'some ' + k)
       })
@@ -677,7 +678,7 @@ describe('AVL tree', function () {
     })
 
     it('Able to delete non root nodes that have only one child', function () {
-      let avlt = new AVLTree()
+      let avlt = new AVLTreeInterface()
 
       const firstSet = [10, 5, 15, 3, 1, 4, 20],
         secondSet = [10, 5, 15, 3, 1, 4, 20, 17, 25]
@@ -719,7 +720,7 @@ describe('AVL tree', function () {
       checkRemoved(firstSet, [3, 4, 10, 15])
 
       // Second set: some rebalancing necessary
-      avlt = new AVLTree()
+      avlt = new AVLTreeInterface()
       secondSet.forEach(function (k) {
         avlt.insert(k, 'some ' + k)
       })
@@ -734,7 +735,7 @@ describe('AVL tree', function () {
     })
 
     it('Can delete the root if it has 2 children', function () {
-      let avlt = new AVLTree()
+      let avlt = new AVLTreeInterface()
 
       // No rebalancing needed
       ;[10, 5, 15, 3, 8, 12, 37].forEach(function (k) {
@@ -750,7 +751,7 @@ describe('AVL tree', function () {
       avlt.search(10).length.should.equal(0)
 
       // Rebalancing needed
-      avlt = new AVLTree()
+      avlt = new AVLTreeInterface()
       ;[10, 5, 15, 8, 12, 37, 42].forEach(function (k) {
         avlt.insert(k, 'some ' + k)
       })
@@ -768,7 +769,7 @@ describe('AVL tree', function () {
       let avlt
 
       // On the left
-      avlt = new AVLTree()
+      avlt = new AVLTreeInterface()
       ;[10, 5, 15, 3, 8, 12, 20, 1, 4, 6, 9, 11, 13, 19, 42, 3.5].forEach(
         function (k) {
           avlt.insert(k, 'some ' + k)
@@ -786,7 +787,7 @@ describe('AVL tree', function () {
       avlt.search(5).length.should.equal(0)
 
       // On the right
-      avlt = new AVLTree()
+      avlt = new AVLTreeInterface()
       ;[10, 5, 15, 3, 8, 12, 20, 1, 4, 6, 9, 11, 13, 19, 42, 12.5].forEach(
         function (k) {
           avlt.insert(k, 'some ' + k)
@@ -805,7 +806,7 @@ describe('AVL tree', function () {
     })
 
     it('If no value is provided, it will delete the entire node even if there are multiple pieces of data', function () {
-      const avlt = new AVLTree()
+      const avlt = new AVLTreeInterface()
 
       avlt.insert(10, 'yes')
       avlt.insert(5, 'hello')
@@ -823,7 +824,7 @@ describe('AVL tree', function () {
     })
 
     it('Can remove only one value from an array', function () {
-      const avlt = new AVLTree()
+      const avlt = new AVLTreeInterface()
 
       avlt.insert(10, 'yes')
       avlt.insert(5, 'hello')
@@ -841,7 +842,7 @@ describe('AVL tree', function () {
     })
 
     it('Removes nothing if value doesnt match', function () {
-      const avlt = new AVLTree()
+      const avlt = new AVLTreeInterface()
 
       avlt.insert(10, 'yes')
       avlt.insert(5, 'hello')
@@ -859,7 +860,7 @@ describe('AVL tree', function () {
     })
 
     it('If value provided but node contains only one value, remove entire node', function () {
-      const avlt = new AVLTree()
+      const avlt = new AVLTreeInterface()
 
       avlt.insert(10, 'yes')
       avlt.insert(5, 'hello')
@@ -877,7 +878,7 @@ describe('AVL tree', function () {
     })
 
     it('Can remove the root from a tree with height 2 when the root has two children (special case)', function () {
-      const avlt = new AVLTree()
+      const avlt = new AVLTreeInterface()
 
       avlt.insert(10, 'maybe')
       avlt.insert(5, 'no')
@@ -892,7 +893,7 @@ describe('AVL tree', function () {
     })
 
     it('Can remove the root from a tree with height 3 when the root has two children (special case where the two children themselves have children)', function () {
-      const avlt = new AVLTree()
+      const avlt = new AVLTreeInterface()
 
       avlt.insert(10, 'maybe')
       avlt.insert(5, 'no')
@@ -909,7 +910,7 @@ describe('AVL tree', function () {
     })
 
     it('Removing falsy values does not delete the entire key', function () {
-      const avlt = new AVLTree()
+      const avlt = new AVLTreeInterface()
 
       avlt.insert(10, 2)
       avlt.insert(10, 1)
@@ -949,7 +950,7 @@ describe('AVL tree', function () {
       }
     }
 
-    const avlt = new AVLTree({ compareKeys: compareKeys })
+    const avlt = new AVLTreeInterface({ compareKeys: compareKeys })
 
     avlt.insert(2, undefined)
     avlt.checkIsAVLT()
@@ -1028,7 +1029,7 @@ describe('AVL tree', function () {
       }
     }
 
-    const avlt = new AVLTree({ compareKeys: compareKeys })
+    const avlt = new AVLTreeInterface({ compareKeys: compareKeys })
 
     avlt.insert(2, null)
     avlt.checkIsAVLT()
@@ -1086,7 +1087,7 @@ describe('AVL tree', function () {
 
   describe('Execute on every node (=tree traversal)', function () {
     it('Can execute a function on every node', function () {
-      const avlt = new AVLTree(),
+      const avlt = new AVLTreeInterface(),
         keys = []
       let executed = 0
       avlt.insert(10, 'yes')
@@ -1113,7 +1114,7 @@ describe('AVL tree', function () {
   // By their nature, BSTs can be hard to test (many possible cases, bug at one operation whose
   // effect begins to be felt only after several operations etc.)
   describe('Randomized test (takes much longer than the rest of the test suite)', function () {
-    const avlt = new AVLTree(),
+    const avlt = new AVLTreeInterface(),
       data = {}
 
     // Check a avlt against a simple key => [data] object
