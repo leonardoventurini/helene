@@ -349,7 +349,7 @@ export class Collection extends EventEmitter2 {
 
     await Promise.all(docs.map(doc => this.afterInsert(doc)))
 
-    return preparedDoc
+    return deepCopy(preparedDoc)
   }
 
   /**
