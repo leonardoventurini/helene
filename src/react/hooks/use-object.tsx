@@ -1,5 +1,6 @@
 import { useCreation } from 'ahooks'
 import { useEffect, useRef, useState } from 'react'
+import { isArray, isPlainObject } from 'lodash'
 
 /**
  * The following implementation does not break if the number of properties changes.
@@ -8,8 +9,47 @@ import { useEffect, useRef, useState } from 'react'
 export function useObject(obj: Record<string, any>) {
   const previousEntries = useRef([])
 
-  const entries = useCreation(() => Object.entries(obj), [obj])
+  const entries = useCreation(
+    () => (isPlainObject(obj) ? Object.entries(obj) : []),
+    [obj],
+  )
+
   const [timestamp, setTimestamp] = useState(Date.now())
+
+  function recursiveCompare(previous, currentObject) {
+    for (const [key, value] of previous) {
+      if (isArray(value)) {
+        if (value.length !== currentObject[key]?.length) {
+          return true
+        }
+
+        if (recursiveCompare(Object.entries(value), currentObject?.[key])) {
+          return true
+        }
+
+        continue
+      }
+
+      if (isPlainObject(value)) {
+        const previousEntries = Object.entries(value)
+        const currentEntries = Object.entries(currentObject?.[key] ?? {})
+
+        if (currentEntries.length !== previousEntries.length) {
+          return true
+        }
+
+        if (recursiveCompare(previousEntries, currentObject?.[key])) {
+          return true
+        }
+
+        continue
+      }
+
+      if (currentObject?.[key] !== value) {
+        return true
+      }
+    }
+  }
 
   useEffect(() => {
     if (entries.length !== previousEntries.current.length) {
@@ -17,15 +57,14 @@ export function useObject(obj: Record<string, any>) {
       return
     }
 
-    for (const [key, value] of previousEntries.current) {
-      if (obj[key] !== value) {
-        update()
-        return
-      }
+    if (recursiveCompare(previousEntries.current, obj)) {
+      update()
+      return
     }
 
     function update() {
-      setTimestamp(Date.now())
+      const now = Date.now()
+      setTimestamp(now)
       previousEntries.current = entries
     }
   }, [entries])
