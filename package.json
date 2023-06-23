@@ -1,6 +1,6 @@
 {
   "name": "helene",
-  "version": "1.1.33",
+  "version": "1.1.34",
   "description": "Delightful Real-time Apps for Node.js",
   "browser": "index.browser.js",
   "main": "index.js",
