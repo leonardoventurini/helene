@@ -6,15 +6,15 @@
     "esModuleInterop": true,
     "incremental": true,
     "jsx": "react",
-    "module": "CommonJS",
-    "moduleResolution": "Node",
+    "module": "commonjs",
+    "moduleResolution": "node",
     "noImplicitAny": false,
     "noUnusedLocals": false,
     "outDir": ".",
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "sourceMap": true,
-    "target": "ES2021",
+    "target": "es2021",
   },
   "include": [
     "./src/**/*"

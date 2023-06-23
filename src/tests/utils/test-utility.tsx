@@ -1,9 +1,9 @@
+// @ts-ignore
 import React from 'react'
 import { Server, ServerOptions } from '../../server'
 import { ClientEvents, NO_CHANNEL, ServerEvents } from '../../utils'
 import { Client, ClientOptions } from '../../client'
 import { ClientProvider } from '../../react'
-import { SingletonHooksContainer } from 'react-singleton-hook'
 
 export class TestUtility {
   server: Server
@@ -126,12 +126,7 @@ export class TestUtility {
     const client = this.client
 
     return function wrapper({ children }) {
-      return (
-        <ClientProvider clientInstance={client}>
-          <SingletonHooksContainer />
-          {children}
-        </ClientProvider>
-      )
+      return <ClientProvider clientInstance={client}>{children}</ClientProvider>
     }
   }
 }

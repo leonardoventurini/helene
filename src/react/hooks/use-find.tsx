@@ -2,23 +2,14 @@ import { useEffect, useState } from 'react'
 import { Collection, CollectionEvent } from '../../data'
 import { useObject } from './use-object'
 
-export type FindHookOptions = {
-  collection: Collection
-  filter?: Record<string, any>
-  sort?: Record<string, 1 | -1>
-  projection?: Record<string, 0 | 1>
-  limit?: number
-  skip?: number
-}
-
-export function useFind({
-  collection,
-  filter,
-  sort,
-  projection,
-  limit,
-  skip,
-}: FindHookOptions) {
+export function useFind(
+  collection: Collection,
+  filter: Record<string, any>,
+  sort?: Record<string, 1 | -1>,
+  projection?: Record<string, 0 | 1>,
+  limit?: number,
+  skip?: number,
+) {
   const [data, setData] = useState([])
 
   useEffect(() => {
@@ -43,7 +34,14 @@ export function useFind({
       collection.off(CollectionEvent.READY, onUpdated)
       collection.off(CollectionEvent.UPDATED, onUpdated)
     }
-  }, [collection, useObject(filter), useObject(projection), useObject(sort)])
+  }, [
+    collection,
+    limit,
+    skip,
+    useObject(filter),
+    useObject(projection),
+    useObject(sort),
+  ])
 
   return data
 }

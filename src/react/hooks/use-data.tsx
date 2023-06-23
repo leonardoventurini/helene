@@ -1,6 +1,7 @@
 import { useAsyncEffect, useCreation, useDebounceFn } from 'ahooks'
 import {
   useClient,
+  useCollection,
   useCombinedThrottle,
   useRawEventObservable,
   useRemoteEvent,
@@ -11,7 +12,6 @@ import { v5 as uuidv5 } from 'uuid'
 import { BrowserStorage } from '../../data/browser'
 import { useFind } from './use-find'
 import { ClientEvents, HeleneEvents } from '../../utils'
-import { Collection } from '../../data'
 
 const browserStorage = new BrowserStorage()
 
@@ -41,15 +41,12 @@ export function useData({
     [method],
   )
 
-  const [collection, setCollection] = useState(
-    () =>
-      new Collection({
-        name,
-        storage: browserStorage,
-        timestamps: true,
-        autoload: true,
-      }),
-  )
+  const collection = useCollection({
+    name,
+    storage: browserStorage,
+    timestamps: true,
+    autoload: true,
+  })
 
   const [loading, setLoading] = useState(true)
 
@@ -57,12 +54,7 @@ export function useData({
 
   const result: any = useCreation(() => ({}), [])
 
-  const data = useFind({
-    collection,
-    filter,
-    sort,
-    projection,
-  })
+  const data = useFind(collection, filter, sort, projection)
 
   const refresh = useDebounceFn(
     async () => {
@@ -107,21 +99,10 @@ export function useData({
   )
 
   useAsyncEffect(async () => {
-    if (collection.name !== name) {
-      const _collection = new Collection({
-        name,
-        storage: browserStorage,
-        timestamps: true,
-        autoload: true,
-      })
-
-      set(window, `collections.${method}`, _collection)
-
-      setCollection(_collection)
-    }
+    set(window, `collections.${method}`, collection)
 
     await refresh.run()
-  }, [method])
+  }, [collection])
 
   const initialized$ = useRawEventObservable(client, ClientEvents.INITIALIZED)
   const contextChanged$ = useRawEventObservable(

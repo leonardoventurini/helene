@@ -1,7 +1,7 @@
+// @ts-ignore
 import React from 'react'
 import { expect } from 'chai'
-import { render, screen, waitFor } from '@testing-library/react'
-import { renderHook } from '@testing-library/react-hooks'
+import { render, renderHook, screen, waitFor } from '@testing-library/react'
 import { TestUtility } from './utils/test-utility'
 import {
   useAuth,
@@ -11,6 +11,7 @@ import {
   useLocalEvent,
   useMethod,
   useMultipleRawEventsObservable,
+  useObject,
   useObserverSubscribe,
   useRawEventObservable,
   useRemoteEvent,
@@ -392,6 +393,119 @@ describe('React Hooks', () => {
 
       await waitFor(() => {
         expect(values).to.be.deep.equal([42, 42, 42])
+      })
+    })
+  })
+
+  describe('useObject', () => {
+    it('should keep the same reference', async () => {
+      const { wrapper } = test
+
+      const { result, rerender } = renderHook(
+        ({ c }) => {
+          return useObject({
+            a: 1,
+            b: 2,
+            c,
+          })
+        },
+
+        // @ts-ignore
+        { wrapper, initialProps: { c: 3 } },
+      )
+
+      const capture1 = result.current
+
+      rerender({ c: 3 })
+      rerender({ c: 3 })
+      rerender({ c: 3 })
+
+      const capture2 = result.current
+
+      await waitFor(() => {
+        expect(capture1).to.equal(capture2)
+      })
+
+      rerender({ c: 4 })
+
+      const capture3 = result.current
+
+      await waitFor(() => {
+        expect(capture1).to.not.equal(capture3)
+      })
+    })
+
+    it('should keep the same reference with child objects', async () => {
+      const { wrapper } = test
+
+      const { result, rerender } = renderHook(
+        ({ c }) => {
+          return useObject({
+            a: 1,
+            b: 2,
+            c,
+          })
+        },
+
+        // @ts-ignore
+        { wrapper, initialProps: { c: { d: 1 } } },
+      )
+
+      const capture1 = result.current
+
+      rerender({ c: { d: 1 } })
+      rerender({ c: { d: 1 } })
+      rerender({ c: { d: 1 } })
+
+      const capture2 = result.current
+
+      await waitFor(() => {
+        expect(capture1).to.equal(capture2)
+      })
+
+      rerender({ c: { d: 2 } })
+
+      const capture3 = result.current
+
+      await waitFor(() => {
+        expect(capture3).to.not.equal(capture1)
+      })
+    })
+
+    it('should keep the same reference with child array', async () => {
+      const { wrapper } = test
+
+      const { result, rerender } = renderHook(
+        ({ c }) => {
+          return useObject({
+            a: 1,
+            b: 2,
+            c,
+          })
+        },
+
+        // @ts-ignore
+        { wrapper, initialProps: { c: [1, 2, 3] } },
+      )
+
+      const capture1 = result.current
+
+      rerender({ c: [1, 2, 3] })
+      rerender({ c: [1, 2, 3] })
+      rerender({ c: [1, 2, 3] })
+
+      const capture2 = result.current
+
+      await waitFor(() => {
+        expect(capture1).to.equal(capture2)
+      })
+
+      rerender({ c: [1, 2] })
+
+      const capture3 = result.current
+
+      await waitFor(() => {
+        expect(capture1).to.not.equal(capture3)
       })
     })
   })
