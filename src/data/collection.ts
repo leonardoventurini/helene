@@ -173,6 +173,8 @@ export class Collection extends EventEmitter2 {
 
     this.beforeRemove = beforeRemove.bind(this)
     this.afterRemove = afterRemove.bind(this)
+
+    this.setMaxListeners(100)
   }
 
   deferEmit(event: string, ...args: any[]) {
