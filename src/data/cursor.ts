@@ -220,6 +220,18 @@ export class Cursor implements PromiseLike<any[]> {
     return res
   }
 
+  async map(fn) {
+    const res = await this.exec()
+
+    const ret = []
+
+    for (const item of res) {
+      ret.push(await fn(item))
+    }
+
+    return ret
+  }
+
   then<TResult1 = any[], TResult2 = never>(
     onfulfilled?:
       | ((value: any[]) => PromiseLike<TResult1> | TResult1)

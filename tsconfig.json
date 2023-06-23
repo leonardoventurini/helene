@@ -11,15 +11,14 @@
     "noImplicitAny": false,
     "noUnusedLocals": false,
     "outDir": ".",
-    "resolveJsonModule": true,
     "skipLibCheck": true,
     "sourceMap": true,
-    "target": "es2021",
+    "target": "es2021"
   },
   "include": [
     "./src/**/*"
   ],
   "exclude": [
     "./src/tests/**/*"
-  ],
+  ]
 }

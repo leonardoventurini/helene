@@ -1,7 +1,7 @@
 import { assert } from 'chai'
-import fs from 'fs'
-import path from 'path'
-import _ from 'lodash'
+import * as fs from 'fs'
+import * as path from 'path'
+import { filter } from 'lodash'
 import { Collection, Cursor } from '../../data'
 import mkdirp from 'mkdirp'
 import { pluck } from '../../data/utils'
@@ -43,6 +43,15 @@ describe('Cursor', () => {
       await collection.insert({ age: 89 })
     })
 
+    it('should map results', async () => {
+      const double = await collection
+        .find({})
+        .sort({ age: 1 })
+        .map(doc => doc.age * 2)
+
+      double.should.deep.equal([10, 46, 104, 114, 178])
+    })
+
     it('Without query, an empty query or a simple query and no skip or limit', async () => {
       let cursor = new Cursor(collection)
 
@@ -50,15 +59,15 @@ describe('Cursor', () => {
 
       docs.length.should.equal(5)
 
-      _.filter(docs, doc => doc.age === 5)[0].age.should.equal(5)
+      filter(docs, doc => doc.age === 5)[0].age.should.equal(5)
 
-      _.filter(docs, doc => doc.age === 57)[0].age.should.equal(57)
+      filter(docs, doc => doc.age === 57)[0].age.should.equal(57)
 
-      _.filter(docs, doc => doc.age === 52)[0].age.should.equal(52)
+      filter(docs, doc => doc.age === 52)[0].age.should.equal(52)
 
-      _.filter(docs, doc => doc.age === 23)[0].age.should.equal(23)
+      filter(docs, doc => doc.age === 23)[0].age.should.equal(23)
 
-      _.filter(docs, doc => doc.age === 89)[0].age.should.equal(89)
+      filter(docs, doc => doc.age === 89)[0].age.should.equal(89)
 
       cursor = new Cursor(collection, {})
 
@@ -66,11 +75,11 @@ describe('Cursor', () => {
 
       docs.length.should.equal(5)
 
-      _.filter(docs, doc => doc.age === 5)[0].age.should.equal(5)
-      _.filter(docs, doc => doc.age === 57)[0].age.should.equal(57)
-      _.filter(docs, doc => doc.age === 52)[0].age.should.equal(52)
-      _.filter(docs, doc => doc.age === 23)[0].age.should.equal(23)
-      _.filter(docs, doc => doc.age === 89)[0].age.should.equal(89)
+      filter(docs, doc => doc.age === 5)[0].age.should.equal(5)
+      filter(docs, doc => doc.age === 57)[0].age.should.equal(57)
+      filter(docs, doc => doc.age === 52)[0].age.should.equal(52)
+      filter(docs, doc => doc.age === 23)[0].age.should.equal(23)
+      filter(docs, doc => doc.age === 89)[0].age.should.equal(89)
 
       cursor = new Cursor(collection, { age: { $gt: 23 } })
 
@@ -78,9 +87,9 @@ describe('Cursor', () => {
 
       docs.length.should.equal(3)
 
-      _.filter(docs, doc => doc.age === 57)[0].age.should.equal(57)
-      _.filter(docs, doc => doc.age === 52)[0].age.should.equal(52)
-      _.filter(docs, doc => doc.age === 89)[0].age.should.equal(89)
+      filter(docs, doc => doc.age === 57)[0].age.should.equal(57)
+      filter(docs, doc => doc.age === 52)[0].age.should.equal(52)
+      filter(docs, doc => doc.age === 89)[0].age.should.equal(89)
     })
 
     it('With an empty collection', async () => {
