@@ -20,6 +20,7 @@ export class ClientNode extends EventEmitter2 {
   meta: Record<string, any> = {}
   context: ClientNodeContext = {}
   userId: ObjectId | string | null = null
+  user: Record<string, any> = null
   socket?: WebSocket = {} as WebSocket
   req?: Request = {} as Request
   res?: Response = {} as Response
@@ -116,13 +117,16 @@ export class ClientNode extends EventEmitter2 {
   setUserId() {
     if (!this.authenticated) return
 
-    if (!this.context?.user || !this.context?.user?._id) {
+    const userId = this.context?.user?._id
+
+    if (!isString(userId) && !ObjectId.isValid(userId)) {
       throw new Error(
         'The auth function must return a user object with a valid "_id" property',
       )
     }
 
     this.userId = this.context.user._id
+    this.user = this.context.user
   }
 
   send(payload: Presentation.Payload | string, opts?: WebSocketMessageOptions) {
