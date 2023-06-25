@@ -1,9 +1,16 @@
-const react = require('@vitejs/plugin-react-swc')
+import react from '@vitejs/plugin-react-swc'
+import mdx from '@mdx-js/rollup'
+import rehypeHighlight from 'rehype-highlight'
 
-module.exports = {
+export default {
   root: './src',
   server: {
     middlewareMode: true,
   },
-  plugins: [react()],
+  plugins: [
+    mdx({
+      rehypePlugins: [rehypeHighlight],
+    }),
+    react(),
+  ],
 }

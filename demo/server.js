@@ -1,14 +1,18 @@
-const { createServer: createViteServer } = require('vite')
-const { resolve } = require('path')
-const { readFileSync } = require('fs')
-const { Server, ServerEvents } = require('helene')
-const sirv = require('sirv')
+import { createServer as createViteServer } from 'vite'
+import { dirname, resolve } from 'path'
+import { readFileSync } from 'fs'
+import { Server, ServerEvents } from 'helene'
+import sirv from 'sirv'
+import { fileURLToPath } from 'url'
 
 const port = process.env.PORT || 3000
 
 console.log({ port })
 console.log(process.env.NODE_OPTIONS)
 console.log(process.env.PORT)
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
 async function start() {
   const server = new Server({
