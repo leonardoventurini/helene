@@ -10,6 +10,12 @@ export function Sidebar() {
         <Link to='/intro'>Intro</Link>
       </li>
       <li>
+        <Link to='/server'>Server</Link>
+      </li>
+      <li>
+        <Link to='/client'>Client</Link>
+      </li>
+      <li>
         <Link to='/methods'>Methods</Link>
         <ul>
           <li>
@@ -43,6 +49,9 @@ export function Sidebar() {
       </li>
       <li>
         <Link to='/data'>Data</Link>
+      </li>
+      <li>
+        <Link to='/react'>React</Link>
       </li>
     </ul>
   )
