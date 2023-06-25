@@ -3,7 +3,7 @@ import { compareThings, getDotValue, match, modify } from './model'
 /**
  * Manage access to data, be it to find, update or remove it
  */
-import _ from 'lodash'
+import { isEmpty, omit } from 'lodash'
 import { Collection } from './collection'
 
 export type Query = {
@@ -80,60 +80,59 @@ export class Cursor implements PromiseLike<any[]> {
    * Apply the projection
    */
   project(candidates) {
-    const res = [],
-      self = this
-
+    const res = []
     let action
 
-    if (
-      this._projection === undefined ||
-      Object.keys(this._projection).length === 0
-    ) {
+    if (isEmpty(this._projection)) {
       return candidates
     }
 
     const keepId = this._projection._id !== 0
 
-    this._projection = _.omit(this._projection, '_id')
+    this._projection = omit(this._projection, '_id')
 
     // Check for consistency
     const keys = Object.keys(this._projection)
 
-    keys.forEach(function (k) {
-      if (action !== undefined && self._projection[k] !== action) {
+    for (const k of keys) {
+      if (action !== undefined && this._projection[k] !== action) {
         throw new Error("Can't both keep and omit fields except for _id")
       }
-      action = self._projection[k]
-    })
+      action = this._projection[k]
+    }
 
     // Do the actual projection
-    candidates.forEach(function (candidate) {
+    for (const candidate of candidates) {
       let toPush
+
       if (action === 1) {
         // pick-type projection
         toPush = { $set: {} }
-        keys.forEach(function (k) {
-          toPush.$set[k] = getDotValue(candidate, k)
-          if (toPush.$set[k] === undefined) {
-            delete toPush.$set[k]
+        for (const k of keys) {
+          const value = getDotValue(candidate, k)
+
+          if (value !== undefined) {
+            toPush.$set[k] = value
           }
-        })
+        }
         toPush = modify({}, toPush)
       } else {
         // omit-type projection
         toPush = { $unset: {} }
-        keys.forEach(function (k) {
+        for (const k of keys) {
           toPush.$unset[k] = true
-        })
+        }
         toPush = modify(candidate, toPush)
       }
+
       if (keepId) {
         toPush._id = candidate._id
       } else {
         delete toPush._id
       }
+
       res.push(toPush)
-    })
+    }
 
     return res
   }

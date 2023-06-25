@@ -10,7 +10,7 @@ import { deserialize, serialize } from './serialization'
 import { uid } from './custom-utils'
 import { Collection, CollectionEvent } from './collection'
 import { IStorage } from './types'
-import { defer } from 'lodash'
+import { defer, throttle } from 'lodash'
 
 type Options = {
   db: Collection
@@ -118,6 +118,14 @@ export class Persistence {
     await this.persistCachedDatabase()
   }
 
+  throttleEmitUpdate = throttle(
+    docs => {
+      this.db.emit(CollectionEvent.UPDATED, docs)
+    },
+    1000 / 30,
+    { leading: true, trailing: true },
+  )
+
   /**
    * This is the entry-point.
    */
@@ -126,7 +134,7 @@ export class Persistence {
     let toPersist = ''
 
     defer(() => {
-      this.db.emit(CollectionEvent.UPDATED, newDocs)
+      this.throttleEmitUpdate(newDocs)
     })
 
     // In-memory only datastore

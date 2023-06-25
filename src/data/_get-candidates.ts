@@ -1,63 +1,55 @@
-import _, { isDate, isObject } from 'lodash'
+import { isDate, isObject } from 'lodash'
 
 export async function checkIndexesFromMostToLeast(query, indexNames) {
-  // For a basic match
-  let usableQueryKeys = []
+  const queryKeys = Object.keys(query)
+  const indexSet = new Set(indexNames)
 
-  Object.keys(query).forEach(function (k) {
+  const usableQueryKeys = {
+    basic: [],
+    inMatch: [],
+    comparison: [],
+  }
+
+  queryKeys.forEach(k => {
+    const value = query[k]
+
     if (
-      typeof query[k] === 'string' ||
-      typeof query[k] === 'number' ||
-      typeof query[k] === 'boolean' ||
-      isDate(query[k]) ||
-      query[k] === null
+      typeof value === 'string' ||
+      typeof value === 'number' ||
+      typeof value === 'boolean' ||
+      isDate(value) ||
+      value === null
     ) {
-      usableQueryKeys.push(k)
+      if (indexSet.has(k)) usableQueryKeys.basic.push(k)
+    } else if (isObject(value)) {
+      if ('$in' in value && indexSet.has(k)) usableQueryKeys.inMatch.push(k)
+      if (
+        ['$lt', '$lte', '$gt', '$gte'].some(m => m in value) &&
+        indexSet.has(k)
+      ) {
+        usableQueryKeys.comparison.push(k)
+      }
     }
   })
 
-  usableQueryKeys = _.intersection(usableQueryKeys, indexNames)
-
-  if (usableQueryKeys.length > 0) {
-    return this.indexes[usableQueryKeys[0]].getMatching(
-      query[usableQueryKeys[0]],
+  // Basic match
+  if (usableQueryKeys.basic.length > 0) {
+    return this.indexes[usableQueryKeys.basic[0]].getMatching(
+      query[usableQueryKeys.basic[0]],
     )
   }
 
-  // For $in match
-  usableQueryKeys = []
-  Object.keys(query).forEach(function (k) {
-    if (isObject(query[k]) && '$in' in query[k]) {
-      usableQueryKeys.push(k)
-    }
-  })
-
-  usableQueryKeys = _.intersection(usableQueryKeys, indexNames)
-
-  if (usableQueryKeys.length > 0) {
-    return this.indexes[usableQueryKeys[0]].getMatching(
-      query[usableQueryKeys[0]].$in,
+  // $in match
+  if (usableQueryKeys.inMatch.length > 0) {
+    return this.indexes[usableQueryKeys.inMatch[0]].getMatching(
+      query[usableQueryKeys.inMatch[0]].$in,
     )
   }
 
-  // For a comparison match
-  usableQueryKeys = []
-
-  Object.keys(query).forEach(function (k) {
-    const item = query[k]
-
-    const modifiers = ['$lt', '$lte', '$gt', '$gte']
-
-    if (isObject(query[k]) && modifiers.some(m => m in item)) {
-      usableQueryKeys.push(k)
-    }
-  })
-
-  usableQueryKeys = _.intersection(usableQueryKeys, indexNames)
-
-  if (usableQueryKeys.length > 0) {
-    return this.indexes[usableQueryKeys[0]].getBetweenBounds(
-      query[usableQueryKeys[0]],
+  // Comparison match
+  if (usableQueryKeys.comparison.length > 0) {
+    return this.indexes[usableQueryKeys.comparison[0]].getBetweenBounds(
+      query[usableQueryKeys.comparison[0]],
     )
   }
 
@@ -70,9 +62,9 @@ export async function removeExpiredDocuments(docs, dontExpireStaleDocs) {
     return docs
   }
 
-  const expiredDocsIds = [],
-    validDocs = [],
-    ttlIndexesFieldNames = Object.keys(this.ttlIndexes)
+  const expiredDocsIds = []
+  const validDocs = []
+  const ttlIndexesFieldNames = Object.keys(this.ttlIndexes)
 
   docs.forEach(doc => {
     let valid = true
