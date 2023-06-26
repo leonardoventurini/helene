@@ -1,17 +1,107 @@
 import {
-  Counter
-} from '../components/counter.jsx'
+  ConnectedNodes
+} from '../components/connected-nodes.jsx'
 
-This text is written in Markdown.
+# Introduction
 
-MDX allows Rich React components to be used directly in Markdown:
+Helene is an event-driven **real-time framework** for **Node.js** and **React**.
 
-<Counter/>
+Great for fast prototypes, small projects, and large applications.
+
+It's **easy to use** and **easy to scale**. If you have more than a single server instance, you can use Redis to allow communication between them.
+
+Instead of setting up and calling REST endpoints or GraphQL schemas, you can call methods declared in a simple syntax.
+You still can do that if you want to as Helene exposes the underlying Express instance.
+
+Helene methods work via WebSockets and automatically revert to HTTP in its absence.
+
+It supports authentication, channels, data manipulation and persistence, middlewares, React hooks and more.
+
+Send events to a specific user, a group of users, or all users.
+
+Authorize events to specific users or groups.
+
+The client is isomorphic and can be used in the browser or in Node.js, with or without React.
+
+Have a problem or suggestion?
+[Open an issue](https://github.com/leonardoventurini/helene/issues/new)
+
+## Installation
+
+```shell
+npm install helene
+```
+
+```shell
+yarn add helene
+```
+
+## Example
+
+
+
+<ConnectedNodes/>
+
+If you open a new tab you will notice this updates in real-time. This can be done as easily as:
 
 ```jsx
-import {
-  Counter
-} from './counter';
+// connected-nodes.jsx
 
-<Counter />
+import { useMethod } from 'helene/react'
+
+export function ConnectedNodes() {
+  const { result: connections } = useMethod({
+    method: 'connection.count',
+    defaultValue: 0,
+  })
+
+  return (
+    <div className='stats bg-base-200 shadow-lg'>
+      <div className='stat'>
+        <div className='stat-title'>Nodes Connected</div>
+        <div className='stat-value'>
+          {connections.toLocaleString()}
+        </div>
+        <div className='stat-desc'>Number of clients connected right now</div>
+      </div>
+    </div>
+  )
+}
 ```
+
+```jsx
+// server.js
+
+import { Server, ServerEvents } from 'helene'
+
+new Server({
+  port: 3000,
+  host: 'localhost',
+})
+
+// A simple method that returns the number of connected clients
+// This will only work if you have a single server instance
+// You could setup Redis and use a shared counter or something similar
+
+Helene.addMethod('connection.count', function () {
+  return this.server.allClients.size
+})
+
+// Refresh the method every time a client connects or disconnects
+// Just a trivial example, you could use a channel and events for fine-grained control
+// The `refresh` method is scoped to the main channel by default, it will update the method for all clients in it
+
+Helene.on(ServerEvents.CONNECTION, () => {
+  setTimeout(() => {
+    Helene.refresh('connection.count')
+  }, 1000) // Account for latency
+})
+
+Helene.on(ServerEvents.DISCONNECTION, () => {
+  setTimeout(() => {
+    Helene.refresh('connection.count')
+  }, 1000)
+})
+```
+
+This is just a simple example, you can do much more with Helene.

@@ -4,10 +4,7 @@ export function Sidebar() {
   return (
     <ul className='menu w-56'>
       <li>
-        <Link to='/'>Home</Link>
-      </li>
-      <li>
-        <Link to='/intro'>Intro</Link>
+        <Link to='/'>Introduction</Link>
       </li>
       <li>
         <Link to='/server'>Server</Link>
