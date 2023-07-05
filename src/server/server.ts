@@ -203,7 +203,7 @@ export class Server extends ServerChannel {
 
   createDefaultMethods() {
     Object.entries(DefaultMethods).forEach(([key, value]) =>
-      this.methods.set(key, value(this)),
+      this.methods.set(key, value(this, key)),
     )
   }
 
@@ -221,7 +221,7 @@ export class Server extends ServerChannel {
   }
 
   addMethod(method: string, fn: MethodFunction, opts?: MethodOptions) {
-    this.methods.set(method, new Method(fn, opts))
+    this.methods.set(method, new Method(this, method, fn, opts))
   }
 
   channel(name: string | object = NO_CHANNEL) {

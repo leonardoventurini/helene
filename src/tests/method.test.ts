@@ -1,10 +1,10 @@
 import { expect } from 'chai'
 import { TestUtility } from './utils/test-utility'
-import { Errors, PublicError } from '../utils'
+import { Errors, PublicError, ServerEvents, sleep } from '../utils'
 import { Presentation } from '../utils/presentation'
 import { ClientNode, HeleneAsyncLocalStorage } from '../server'
 import * as yup from 'yup'
-import superstruct from 'superstruct'
+import * as superstruct from 'superstruct'
 import { range } from 'lodash'
 
 describe('Methods', function () {
@@ -238,5 +238,23 @@ describe('Methods', function () {
     const result = await client.call('test:method')
 
     expect(result).to.equal(undefined)
+  })
+
+  it('should fire an event after a method call', async () => {
+    test.server.addMethod('test:method', async () => {
+      await sleep(100)
+
+      return 42
+    })
+
+    test.client.call('test:method', { a: 1, b: 2 })
+
+    const [result] = await test.server.waitFor(ServerEvents.METHOD_EXECUTION)
+
+    expect(result).to.be.an('object')
+    expect(result.method).to.equal('test:method')
+    expect(result.time).to.be.greaterThan(100)
+    expect(result.params).to.deep.equal({ a: 1, b: 2 })
+    expect(result.result).to.equal(42)
   })
 })

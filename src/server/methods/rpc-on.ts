@@ -2,8 +2,10 @@ import { Method } from '../method'
 import { isEmpty } from 'lodash'
 import { NO_CHANNEL } from '../../utils'
 
-export const rpcOn = server =>
+export const rpcOn = (server, method) =>
   new Method(
+    server,
+    method,
     async function ({ events, channel = NO_CHANNEL }) {
       if (isEmpty(events)) return {}
 

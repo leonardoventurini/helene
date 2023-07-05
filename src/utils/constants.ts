@@ -25,6 +25,7 @@ export enum ServerEvents {
   ERROR = 'error',
   REDIS_CONNECT = 'redis:connect',
   READY = 'ready',
+  METHOD_EXECUTION = 'method:execution',
 }
 
 export enum ClientEvents {

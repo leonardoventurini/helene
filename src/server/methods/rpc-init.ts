@@ -2,8 +2,10 @@ import { Method } from '../method'
 import { pick } from 'lodash'
 import { ServerEvents } from '../../utils'
 
-export const rpcInit = server =>
+export const rpcInit = (server, method) =>
   new Method(
+    server,
+    method,
     async function ({ meta, ...context }) {
       this.meta = meta
       this.context = context

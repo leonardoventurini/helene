@@ -1,8 +1,10 @@
 import { Method } from '../method'
 import { ServerEvents } from '../../utils'
 
-export const rpcLogout = server =>
+export const rpcLogout = (server, method) =>
   new Method(
+    server,
+    method,
     async function () {
       this.context = null
       this.authenticated = false

@@ -1,9 +1,10 @@
-import { NO_CHANNEL } from '../../utils/constants'
+import { Errors, NO_CHANNEL } from '../../utils'
 import { Method } from '../method'
-import { Errors } from '../../utils/errors'
 
-export const rpcOff = server =>
+export const rpcOff = (server, method) =>
   new Method(
+    server,
+    method,
     function ({ events, channel = NO_CHANNEL }) {
       return events.reduce((acc, eventName) => {
         const ch = server.channel(channel)

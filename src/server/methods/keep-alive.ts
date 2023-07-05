@@ -1,8 +1,10 @@
 import { Method } from '../method'
 import { HeleneEvents } from '../../utils'
 
-export const keepAlive = () =>
+export const keepAlive = (server, method) =>
   new Method(
+    server,
+    method,
     function () {
       clearTimeout(this.terminationTimeout)
 

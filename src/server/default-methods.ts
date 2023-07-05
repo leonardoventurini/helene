@@ -10,7 +10,7 @@ import {
 } from './methods'
 import { Methods } from '../utils'
 
-type MethodBuilder = (server: Server) => Method
+type MethodBuilder = (server: Server, name: string) => Method
 
 export const DefaultMethods: {
   [key: string]: MethodBuilder

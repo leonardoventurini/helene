@@ -3,14 +3,25 @@ import { ClientNode } from './client-node'
 import { Presentation } from '../utils/presentation'
 import { HeleneAsyncLocalStorage } from './helene-async-local-storage'
 import { isEmpty } from 'lodash'
-import { AnyFunction, Errors, intercept, SchemaValidationError } from '../utils'
+import {
+  AnyFunction,
+  Errors,
+  intercept,
+  SchemaValidationError,
+  ServerEvents,
+} from '../utils'
 import { AnyObjectSchema, ObjectSchema } from 'yup'
 import { EJSON } from 'ejson2'
 import { create, Struct } from 'superstruct'
+import perf_hooks from 'perf_hooks'
+import { Server } from './server'
 
 export type MethodParams = any
 export type MethodFunction = (this: ClientNode, params?: MethodParams) => any
 
+/**
+ * @todo Add support for timeout monitoring.
+ */
 export interface MethodOptions {
   cache?: boolean
   maxAge?: number
@@ -29,10 +40,19 @@ export class Method {
   isProtected: boolean
   middleware: AnyFunction[]
   schema: AnyObjectSchema | Struct = null
+  name: string
+  server: Server
 
-  constructor(fn: MethodFunction, opts: MethodOptions) {
+  constructor(
+    server: Server,
+    name: string,
+    fn: MethodFunction,
+    opts: MethodOptions,
+  ) {
     const { cache, maxAge = 60000, schema } = opts ?? {}
 
+    this.server = server
+    this.name = name
     this.uuid = Presentation.uuid()
     this.isProtected = opts?.protected
     this.middleware = opts?.middleware
@@ -63,6 +83,8 @@ export class Method {
   }
 
   async exec(params: MethodParams, node?: ClientNode) {
+    const start = perf_hooks.performance.now()
+
     let cleanParams = params
 
     if (this.schema) {
@@ -82,11 +104,22 @@ export class Method {
       }
     }
 
-    const result = await this.runMiddleware(cleanParams, node)
+    let result = await this.runMiddleware(cleanParams, node)
 
-    return HeleneAsyncLocalStorage.run(
+    result = await HeleneAsyncLocalStorage.run(
       { executionId: Presentation.uuid(), context: node.context },
       async () => this.fn.call(node, result),
     )
+
+    const end = perf_hooks.performance.now()
+
+    this.server.emit(ServerEvents.METHOD_EXECUTION, {
+      method: this.name,
+      time: end - start,
+      params: cleanParams,
+      result,
+    })
+
+    return result
   }
 }
