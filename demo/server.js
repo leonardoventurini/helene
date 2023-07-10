@@ -7,10 +7,6 @@ import { fileURLToPath } from 'url'
 
 const port = process.env.PORT || 3000
 
-console.log({ port })
-console.log(process.env.NODE_OPTIONS)
-console.log(process.env.PORT)
-
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
@@ -61,7 +57,7 @@ async function start() {
 
   await server.isReady()
 
-  console.log(`Server is running on port ${port}`)
+  console.log(`http://localhost:${port}`)
 
   Helene.addMethod('connection.count', function () {
     return this.server.allClients.size
