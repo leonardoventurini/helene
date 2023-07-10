@@ -1,4 +1,3 @@
-import { createServer as createViteServer } from 'vite'
 import { dirname, resolve } from 'path'
 import { readFileSync } from 'fs'
 import { createServer, ServerEvents } from 'helene'
@@ -33,6 +32,8 @@ async function start() {
       }),
     )
   } else {
+    const { createServer: createViteServer } = await import('vite')
+
     const vite = await createViteServer({
       server: {
         middlewareMode: true,

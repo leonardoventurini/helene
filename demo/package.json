@@ -11,8 +11,9 @@
   },
   "scripts": {
     "dev": "nodemon --watch src/server src/server/server.js",
-    "serve": "node src/server/server.js",
-    "build": "vite build"
+    "bundle:client": "vite build",
+    "bundle:server": "ncc build src/server/server.js --out src/server-dist --minify --source-map",
+    "serve": "node src/server-dist/index.js"
   },
   "type": "module",
   "dependencies": {
@@ -39,6 +40,7 @@
     "vite-plugin-svgr": "^3.2.0"
   },
   "devDependencies": {
+    "@vercel/ncc": "^0.36.1",
     "nodemon": "^3.0.1"
   }
 }
