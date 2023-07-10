@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url'
 import svgr from 'vite-plugin-svgr'
 
 export default {
-  root: './src',
+  root: './src/client',
   server: {
     middlewareMode: true,
   },

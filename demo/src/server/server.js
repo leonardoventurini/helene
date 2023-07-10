@@ -1,7 +1,7 @@
 import { createServer as createViteServer } from 'vite'
 import { dirname, resolve } from 'path'
 import { readFileSync } from 'fs'
-import { Server, ServerEvents } from 'helene'
+import { createServer, ServerEvents } from 'helene'
 import sirv from 'sirv'
 import { fileURLToPath } from 'url'
 
@@ -11,7 +11,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 async function start() {
-  const server = new Server({
+  const server = createServer({
     port,
     host: 'localhost',
     rateLimit: {
@@ -23,8 +23,8 @@ async function start() {
   const app = server.express
 
   if (process.env.NODE_ENV === 'production') {
-    Helene.express.use(
-      sirv(resolve(process.cwd(), `./src/dist`), {
+    app.use(
+      sirv(resolve(process.cwd(), `./src/client/dist`), {
         gzip: true,
         single: true,
         setHeaders: res => {
@@ -34,18 +34,24 @@ async function start() {
     )
   } else {
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+      },
     })
 
     app.use(vite.middlewares)
 
-    const indexHtmlPath = resolve(__dirname, 'src/index.html')
+    const indexHtmlPath = resolve(__dirname, '../client/index.html')
     const indexHtmlContent = readFileSync(indexHtmlPath, 'utf-8')
 
     app.use('*', async (req, res) => {
       const url = req.originalUrl
+
       try {
-        const template = await vite.transformIndexHtml(url, indexHtmlContent)
+        const template = await vite.transformIndexHtml(
+          url,
+          indexHtmlContent.toString(),
+        )
         res.status(200).set({ 'Content-Type': 'text/html' }).end(template)
       } catch (e) {
         vite.ssrFixStacktrace(e)

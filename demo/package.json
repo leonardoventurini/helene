@@ -10,7 +10,8 @@
     "node": "20.3.1"
   },
   "scripts": {
-    "serve": "node server.js",
+    "dev": "nodemon --watch src/server src/server/server.js",
+    "serve": "node src/server/server.js",
     "build": "vite build"
   },
   "type": "module",
@@ -33,5 +34,8 @@
     "tailwindcss": "^3.3.2",
     "vite": "^4.3.9",
     "vite-plugin-svgr": "^3.2.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
   }
 }
