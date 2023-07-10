@@ -1,4 +1,24 @@
 import { ReactComponent as Logo } from '../assets/logo.svg'
+import { useTheme } from '../hooks/use-theme.jsx'
+import { MoonStar, Sun } from 'lucide-react'
+
+export function ThemeButton() {
+  const theme = useTheme()
+
+  return (
+    <button onClick={theme.toggle} className='flex items-center gap-1.5'>
+      {theme.isDark ? (
+        <>
+          <MoonStar className='h-4 w-4' /> Dark
+        </>
+      ) : (
+        <>
+          <Sun className='h-4 w-4' /> Light
+        </>
+      )}
+    </button>
+  )
+}
 
 export function Navbar() {
   return (
@@ -9,7 +29,7 @@ export function Navbar() {
         </a>
       </div>
       <div className='flex-none'>
-        <ul className='menu menu-horizontal px-1'>
+        <ul className='menu menu-horizontal gap-2 px-1'>
           <li>
             <a>Link</a>
           </li>
@@ -25,6 +45,9 @@ export function Navbar() {
                 </li>
               </ul>
             </details>
+          </li>
+          <li>
+            <ThemeButton />
           </li>
         </ul>
       </div>
