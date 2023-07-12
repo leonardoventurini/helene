@@ -1,3 +1,18 @@
+<!--@@joggrdoc@@-->
+<!-- @joggr:version(v1):end -->
+<!-- @joggr:warning:start -->
+<!-- 
+  _   _   _    __        __     _      ____    _   _   ___   _   _    ____     _   _   _ 
+ | | | | | |   \ \      / /    / \    |  _ \  | \ | | |_ _| | \ | |  / ___|   | | | | | |
+ | | | | | |    \ \ /\ / /    / _ \   | |_) | |  \| |  | |  |  \| | | |  _    | | | | | |
+ |_| |_| |_|     \ V  V /    / ___ \  |  _ <  | |\  |  | |  | |\  | | |_| |   |_| |_| |_|
+ (_) (_) (_)      \_/\_/    /_/   \_\ |_| \_\ |_| \_| |___| |_| \_|  \____|   (_) (_) (_)
+                                                              
+This document is managed by Joggr. Editing this document could break Joggr's core features, i.e. our 
+ability to auto-maintain this document. Please use the Joggr editor to edit this document 
+(link at bottom of the page).
+-->
+<!-- @joggr:warning:end -->
 ![Tests](https://github.com/leonardoventurini/helene/actions/workflows/test.yml/badge.svg)
 ![npm](https://img.shields.io/npm/v/helene?style=flat-square)
 ![GitHub](https://img.shields.io/github/license/leonardoventurini/helene?style=flat-square)
@@ -481,3 +496,10 @@ useDepsChange(deps, { name: 'Hello World'})
 ## License
 
 [MIT](LICENSE)
+
+<!-- @joggr:editLink(c536dc61-a0fe-41e1-9f73-5fa96d950cb9):start -->
+---
+<a href="https://app.joggr.io/app/documents/c536dc61-a0fe-41e1-9f73-5fa96d950cb9/edit" alt="Edit doc on Joggr">
+  <img src="https://storage.googleapis.com/joggr-public-assets/github/badges/edit-document-badge.svg" />
+</a>
+<!-- @joggr:editLink(c536dc61-a0fe-41e1-9f73-5fa96d950cb9):end -->
