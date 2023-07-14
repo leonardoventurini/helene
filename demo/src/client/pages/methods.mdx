@@ -1,0 +1,66 @@
+## Methods
+
+First, you need to register a method:
+
+```js
+server.addMethod('helene:rocks', async () => 42)
+```
+
+Then you can call it from the client:
+
+```js
+const result = await client.call('helene:rocks') // 42
+```
+
+### Middleware
+
+You can also use middleware functions which can be reused:
+
+```js
+server.addMethod('helene:rocks',
+  async (...args) => ({ hello: true, ...args }), 
+  { 
+    middleware: [
+      // You can also throw something in here to block execution.
+      function(params) { return { world: true }}
+    ]
+  }
+)
+
+// { hello: true, world: true }
+```
+
+> If the middleware return primitives then the resulting primitive of each function will be passed down the next one until the main function receives the latest one as argument.
+
+### Method Schema Validation
+
+You can use a [Yup](https://www.npmjs.com/package/yup) schema to validate your method parameters:
+
+```js
+server.addMethod('validated:method', () => {}, {
+  schema: object({ foo: string().required() }),
+})
+```
+
+The client method call will be rejected if the params fail to meet the schema requirements.
+
+### Protected Methods
+
+You can protect methods so that only authenticated users can call them:
+
+```js
+server.addMethod('protected:method', function () {
+  // By using a normal function you can access the `this` context which includes a powerful
+  // ClientNode instance that you can use to access the `socket`, `req` or `res` of a request.
+  //
+  // It also allows you to do more advanced things specific to the client that called the method.
+  //
+  // It is also available in the `auth()` function so you can store more information in the 
+  // connection after authentication, etc.
+  
+  console.log(this.userId)
+  console.log(this.context)
+}, { protected: true })
+```
+
+You can use `middlewares` to add more logic to the protected methods like permissions and so on.

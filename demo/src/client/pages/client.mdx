@@ -1,0 +1,14 @@
+## Client
+
+The client allows interaction with the server, it works either in the browser or in other node instances.
+
+The client can be created like so:
+
+```js
+const client = new Client({
+  host: 'localhost',
+  port: 80
+})
+```
+
+It is not added to the global scope as you can have multiple clients.

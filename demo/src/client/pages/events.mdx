@@ -1,0 +1,29 @@
+## Events
+
+Events allow you to invert the control of the application by casting a piece of data to a set of clients.
+
+You can group these clients in different ways by using channels.
+
+Events need to be declared first:
+
+```js
+server.addEvent('event', { protected: false })
+```
+
+Then you can subscribe to it from the client:
+
+```js
+client.subscribe('event')
+```
+
+You can now listen to that event in the client app:
+
+```js
+client.on('event', console.log)
+```
+
+We can emit something from the server:
+
+```js
+server.emit('event', 42)
+```

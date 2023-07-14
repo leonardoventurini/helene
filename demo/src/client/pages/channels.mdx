@@ -1,0 +1,24 @@
+## Channels
+
+It is possible to use multiple channels to better target an audience with events. 
+
+In the server just use:
+
+```js
+server.channel('chat:1')
+```
+
+or chain it like so:
+
+```js
+server.channel('chat:1').addEvent('message')
+
+server.channel('chat:1').emit('message', { 
+  author: 'John Doe', 
+  content: 'Hello World'
+})
+```
+
+```js
+await client.channel('chat:1').subscribe('message')
+```

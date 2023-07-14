@@ -1,0 +1,20 @@
+### Provider
+
+First you need to set up the client provider:
+
+```jsx
+<ClientProvider
+  clientOptions={{
+    host: 'localhost',
+    port: 80,
+    secure: true, // Use https or http
+    errorHandler(error) {
+      console.error(error)
+    },
+  }}
+>
+  ...
+</ClientProvider>
+```
+
+Then you can use any of the hooks down the component tree.
