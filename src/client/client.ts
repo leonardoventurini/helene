@@ -162,7 +162,7 @@ export class Client extends ClientChannel {
       return this.client.call(Methods.KEEP_ALIVE)
     })
 
-    if (!this.options.ws.autoConnect && this.options.eventSource) {
+    if (!this.options.ws?.autoConnect && this.options.eventSource) {
       this.clientHttp.createEventSource().catch(console.error)
     }
   }
