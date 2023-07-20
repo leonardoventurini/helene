@@ -53,6 +53,7 @@ export type ClientOptions = {
   allowedContextKeys?: string[]
   meta?: Record<string, any>
   idlenessTimeout?: number
+  eventSource?: boolean
 }
 
 export type CallOptions = {
@@ -93,6 +94,7 @@ export class Client extends ClientChannel {
     debug: false,
     allowedContextKeys: [],
     meta: {},
+    eventSource: true,
   }
 
   keepAliveTimeout: Timeout = null
@@ -159,6 +161,10 @@ export class Client extends ClientChannel {
 
       return this.client.call(Methods.KEEP_ALIVE)
     })
+
+    if (!this.options.ws.autoConnect && this.options.eventSource) {
+      this.clientHttp.createEventSource().catch(console.error)
+    }
   }
 
   get isConnecting() {

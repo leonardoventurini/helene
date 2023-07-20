@@ -47,8 +47,11 @@ export const rpcOn = (server, method) =>
           continue
         }
 
+        const node = this.socket
+          ? this
+          : server.httpTransport.eventSourceClients.get(this.uuid)
         const serverChannel = server.channel(channel)
-        serverChannel.addChannelClient(event.name, this)
+        serverChannel.addChannelClient(event.name, node)
 
         acc[eventName] = true
       }

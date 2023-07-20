@@ -132,7 +132,7 @@ describe('Server', function () {
     })
 
     expect(
-      Array.from(server.allClients.values()).map(({ _id }) => _id),
+      Array.from(server.allClients.values()).map(({ uuid }) => uuid),
     ).to.be.deep.equal([client.uuid])
 
     const node = server.allClients.get(client.uuid)

@@ -2,8 +2,14 @@ import http from 'http'
 import express, { Request, Response } from 'express'
 import cors from 'cors'
 import { RateLimit, Server } from '../server'
-import { Errors, PublicError, SchemaValidationError } from '../../utils/errors'
-import { ServerEvents, TOKEN_HEADER_KEY } from '../../utils/constants'
+import {
+  CLIENT_ID_HEADER_KEY,
+  Errors,
+  PublicError,
+  SchemaValidationError,
+  ServerEvents,
+  TOKEN_HEADER_KEY,
+} from '../../utils'
 import { Presentation } from '../../utils/presentation'
 import { ClientNode } from '../client-node'
 import { createHttpTerminator, HttpTerminator } from 'http-terminator'
@@ -11,6 +17,8 @@ import { createHttpTerminator, HttpTerminator } from 'http-terminator'
 import rateLimit from 'express-rate-limit'
 import { EJSON } from 'ejson2'
 import { isString } from 'lodash'
+
+import 'express-async-errors'
 import MethodCallPayload = Presentation.MethodCallPayload
 
 declare module 'express' {
@@ -35,6 +43,8 @@ export class HttpTransport {
   http: http.Server
   httpTerminator: HttpTerminator
   express: express.Express
+
+  eventSourceClients: Map<string, ClientNode> = new Map()
 
   constructor(server: Server, origins: string[], limit: RateLimit) {
     this.server = server
@@ -69,6 +79,8 @@ export class HttpTransport {
     this.http.on(ServerEvents.REQUEST, this.express)
 
     this.express.post('/__h', this.requestHandler)
+
+    this.express.get('/__h', this.eventSourceHandler)
 
     this.http.listen(server.port, () => {
       this.server.debugger(`Helene HTTP Transport: Listening on ${server.port}`)
@@ -116,6 +128,40 @@ export class HttpTransport {
     return false
   }
 
+  eventSourceHandler = async (req, res) => {
+    const clientId = req.headers[CLIENT_ID_HEADER_KEY] as string
+
+    if (!clientId) {
+      return res.status(400).send('400 Bad Request')
+    }
+
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      Connection: 'keep-alive',
+      'Cache-Control': 'no-cache',
+    })
+
+    const clientNode = new ClientNode(this.server, null, req, res)
+    clientNode.uuid = clientId
+    clientNode.isEventSource = true
+
+    const serverContext = await this.getServerContext(clientNode)
+
+    clientNode.authenticated = Boolean(serverContext)
+    clientNode.setContext(serverContext)
+
+    this.eventSourceClients.set(clientId, clientNode)
+
+    this.server.emit(ServerEvents.EVENTSOURCE_CONNECT, clientNode)
+
+    req.on('close', () => {
+      this.eventSourceClients.delete(clientId)
+      this.server.deleteClient(clientNode)
+
+      this.server.emit(ServerEvents.EVENTSOURCE_DISCONNECT, clientNode)
+    })
+  }
+
   requestHandler = async (req: Request, res: Response) => {
     let uuid
     let payload
@@ -139,7 +185,9 @@ export class HttpTransport {
 
       const method = this.server.getMethod(payload.method)
 
+      const clientId = req.headers[CLIENT_ID_HEADER_KEY] as string
       const clientNode = new ClientNode(this.server, null, req, res)
+      clientNode.uuid = clientId
 
       if (!method) {
         return res.json(

@@ -76,6 +76,8 @@ export class TestUtility {
         host: opts?.host ?? this.host,
         port: opts?.port ?? this.port,
 
+        eventSource: false,
+
         ...opts,
 
         ws: {
@@ -99,6 +101,16 @@ export class TestUtility {
       )
 
       client.once(ClientEvents.ERROR, error => reject(error))
+    })
+  }
+
+  async createHttpClient(opts?: ClientOptions) {
+    return this.createClient({
+      ...opts,
+      eventSource: true,
+      ws: {
+        autoConnect: false,
+      },
     })
   }
 
