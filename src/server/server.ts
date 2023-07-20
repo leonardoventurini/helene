@@ -212,12 +212,18 @@ export class Server extends ServerChannel {
   }
 
   addClient(node: ClientNode) {
-    this.allClients.set(node._id, node)
+    this.allClients.set(node.uuid, node)
   }
 
   deleteClient(node: ClientNode) {
-    this.allClients.delete(node._id)
-    this.channels.forEach(channel => channel.deleteClientNode(node))
+    this.allClients.delete(node.uuid)
+    this.channels.forEach(channel => {
+      channel.deleteClientNode(node)
+
+      if (channel.clients.size === 0) {
+        this.channels.delete(channel.channelName)
+      }
+    })
   }
 
   addMethod(method: string, fn: MethodFunction, opts?: MethodOptions) {

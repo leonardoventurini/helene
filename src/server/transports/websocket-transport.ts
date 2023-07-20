@@ -97,7 +97,7 @@ export class WebSocketTransport {
 
     try {
       if (node.readyState !== 1) {
-        console.warn(`Socket Not Ready`, node.readyState, node._id)
+        console.warn(`Socket Not Ready`, node.readyState, node.uuid)
         return
       }
 

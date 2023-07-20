@@ -92,6 +92,8 @@ export class ClientSocket {
     this.connecting = false
     this.ready = false
     this.socket = undefined
+
+    this.client.clientHttp.createEventSource().catch(console.error)
   }
 
   public close(force = false) {
@@ -136,6 +138,8 @@ export class ClientSocket {
 
       return this.handleOpen(ws)
     }
+
+    this.client.clientHttp.clientEventSource?.close()
 
     this.socket.addEventListener(
       WebSocketEvents.ERROR,

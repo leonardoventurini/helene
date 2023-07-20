@@ -26,6 +26,9 @@ export enum ServerEvents {
   REDIS_CONNECT = 'redis:connect',
   READY = 'ready',
   METHOD_EXECUTION = 'method:execution',
+
+  EVENTSOURCE_CONNECT = 'eventsource:connection',
+  EVENTSOURCE_DISCONNECT = 'eventsource:disconnect',
 }
 
 export enum ClientEvents {
@@ -77,6 +80,7 @@ export const HELENE_WS_PATH = '/helene-ws'
 
 export const NO_CHANNEL = 'NO_CHANNEL'
 
+export const CLIENT_ID_HEADER_KEY = 'x-client-id'
 export const TOKEN_HEADER_KEY = 'x-api-key'
 
 export enum Methods {

@@ -15,13 +15,14 @@ import { HeleneEvents, ServerEvents } from '../utils'
 export type ClientNodeContext = Record<string, any>
 
 export class ClientNode extends EventEmitter2 {
-  _id: string
+  uuid: string
   isAuthenticated = false
   meta: Record<string, any> = {}
   context: ClientNodeContext = {}
   userId: ObjectId | string | null = null
   user: Record<string, any> = null
   socket?: WebSocket = {} as WebSocket
+  isEventSource = false
   req?: Request = {} as Request
   res?: Response = {} as Response
   isServer = false
@@ -104,7 +105,7 @@ export class ClientNode extends EventEmitter2 {
   setId(request: http.IncomingMessage) {
     const { query } = url.parse(request.url, true)
 
-    this._id = (query?.uuid as string) ?? Presentation.uuid()
+    this.uuid = (query?.uuid as string) ?? Presentation.uuid()
   }
 
   setContext(context: ClientNodeContext) {
@@ -129,7 +130,21 @@ export class ClientNode extends EventEmitter2 {
     this.user = this.context.user
   }
 
+  writeEventSource(res: Response, payload: string | Record<string, any>) {
+    res?.write(
+      `data: ${isString(payload) ? payload : Presentation.encode(payload)}\n\n`,
+    )
+  }
+
   send(payload: Presentation.Payload | string, opts?: WebSocketMessageOptions) {
+    if (!this.socket) {
+      const clientNode = this.server.httpTransport.eventSourceClients.get(
+        this.uuid,
+      )
+      this.writeEventSource(clientNode?.res, payload)
+      return
+    }
+
     this.socket?.send(
       isString(payload) ? payload : Presentation.encode(payload),
       opts,
@@ -167,6 +182,14 @@ export class ClientNode extends EventEmitter2 {
 
   close() {
     this.server.emit(ServerEvents.DISCONNECTION, this)
-    this.socket.terminate()
+    this.socket?.terminate()
+
+    if (this.isEventSource) {
+      // If we don't destroy the request, we have to force to terminate the HTTP server,
+      // and it takes a ton of idle time to do so.
+      this.req?.destroy()
+      this.res?.end()
+      this.server.httpTransport.eventSourceClients.delete(this.uuid)
+    }
   }
 }

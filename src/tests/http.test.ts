@@ -139,4 +139,83 @@ describe('HTTP', async () => {
       expect(response.text).to.match(/Foo Fighting/)
     })
   })
+
+  describe('server sent events', () => {
+    it('should send an event through the current client node', async () => {
+      const client = await test.createHttpClient()
+
+      test.server.addMethod('send:event', async function () {
+        this.sendEvent('event', { hello: 'world' })
+      })
+
+      client.call('send:event')
+
+      const [payload] = await client.waitFor('event', 200)
+
+      expect(payload).to.be.an('object')
+      expect(payload).to.have.property('hello').that.is.equal('world')
+    })
+
+    it('should subscribe to an event', async () => {
+      test.server.addEvent('test:event')
+
+      const client = await test.createHttpClient()
+
+      const subscribeResponse = await client.subscribe('test:event')
+
+      expect(subscribeResponse).to.be.deep.equal({
+        'test:event': true,
+      })
+
+      test.server.addMethod('send:event', async function () {
+        this.server.emit('test:event', true)
+      })
+
+      client.call('send:event')
+
+      const [payload] = await client.waitFor('test:event', 200)
+
+      expect(payload).to.be.true
+    })
+
+    it('should send an event to a channel', async () => {
+      test.server.addEvent('test:event')
+
+      const client = await test.createHttpClient()
+
+      const channel = await client.channel('test:channel')
+
+      const subscribeResponse = await channel.subscribe('test:event')
+
+      expect(subscribeResponse).to.be.deep.equal({
+        'test:event': true,
+      })
+
+      test.server.addMethod('send:event', async function () {
+        this.server.channel('test:channel').emit('test:event', true)
+      })
+
+      client.call('send:event')
+
+      const [payload] = await channel.waitFor('test:event', 200)
+
+      expect(payload).to.be.true
+    })
+
+    it('should try to subscribe to a protected event while unauthenticated and fail', async () => {
+      const client = await test.createHttpClient()
+
+      test.server.addEvent('protected:event', { protected: true })
+
+      const result = await client.subscribe('protected:event')
+
+      expect(result).to.have.property('protected:event').that.is.false
+
+      test.server.defer('protected:event', true)
+
+      const eventTimeout = await test.client.timeout('protected:event')
+
+      expect(eventTimeout).to.be.true
+    })
+  })
 })

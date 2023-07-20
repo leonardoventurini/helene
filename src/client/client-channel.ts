@@ -1,7 +1,7 @@
 import { EventEmitter2 } from 'eventemitter2'
 import { Client } from './client'
 import { isEmpty, isString } from 'lodash'
-import { ClientEvents, Helpers, Methods } from '../utils'
+import { Helpers, Methods } from '../utils'
 
 export class ClientChannel extends EventEmitter2 {
   client: Client
@@ -29,31 +29,7 @@ export class ClientChannel extends EventEmitter2 {
 
     if (isEmpty(events)) return {}
 
-    let connected = this.client.connected
-
-    if (!connected) {
-      try {
-        await this.client.waitFor(ClientEvents.INITIALIZED, 30000)
-        connected = true
-      } catch {
-        connected = false
-      }
-    }
-
-    if (!connected) {
-      console.error(
-        'Client not connected, cannot subscribe to',
-        channel,
-        events,
-      )
-      return {}
-    }
-
-    const result = await this.client.call(
-      Methods.RPC_ON,
-      { events, channel },
-      { httpFallback: false },
-    )
+    const result = await this.client.call(Methods.RPC_ON, { events, channel })
 
     Object.entries(result).forEach(([event, result]) => {
       if (result) this.events.add(event)

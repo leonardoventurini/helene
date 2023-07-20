@@ -53,6 +53,7 @@ export type ClientOptions = {
   allowedContextKeys?: string[]
   meta?: Record<string, any>
   idlenessTimeout?: number
+  eventSource?: boolean
 }
 
 export type CallOptions = {
@@ -93,6 +94,7 @@ export class Client extends ClientChannel {
     debug: false,
     allowedContextKeys: [],
     meta: {},
+    eventSource: true,
   }
 
   keepAliveTimeout: Timeout = null
@@ -148,6 +150,8 @@ export class Client extends ClientChannel {
     this.client.on(HeleneEvents.KEEP_ALIVE, () => {
       clearTimeout(this.keepAliveTimeout)
 
+      if (!this.clientSocket.ready) return
+
       this.keepAliveTimeout = setTimeout(
         async () => {
           await this.close(true)
@@ -159,6 +163,10 @@ export class Client extends ClientChannel {
 
       return this.client.call(Methods.KEEP_ALIVE)
     })
+
+    if (!this.options.ws?.autoConnect && this.options.eventSource) {
+      this.clientHttp.createEventSource().catch(console.error)
+    }
   }
 
   get isConnecting() {
@@ -190,6 +198,7 @@ export class Client extends ClientChannel {
   }
 
   resetIdleTimer() {
+    if (!this.options.ws?.autoConnect) return
     this.connect().catch(console.error)
     this.stopIdleTimeout()
     this.startIdleTimeout()
@@ -198,6 +207,7 @@ export class Client extends ClientChannel {
   setupBrowserIdlenessCheck() {
     if (!Environment.isBrowser) return
     if (!this.options.idlenessTimeout) return
+    if (!this.options.ws?.autoConnect) return
 
     if (this.options.idlenessTimeout < 1000) {
       console.warn('Helene: idlenessTimeout must not be less than 1000ms')
@@ -270,6 +280,8 @@ export class Client extends ClientChannel {
   }
 
   async close(force = false) {
+    this.clientHttp.clientEventSource?.close()
+
     if (!this.connected) return null
 
     this.timeouts.forEach(timeout => clearTimeout(timeout))
