@@ -28,6 +28,8 @@ export class ClientHttp {
 
   // @todo Recreate event source on token change.
   async createEventSource() {
+    if (!this.client.options.eventSource) return
+
     this.clientEventSource = new IsomorphicEventSource(this.uri, {
       headers: {
         [CLIENT_ID_HEADER_KEY]: this.client.uuid,
