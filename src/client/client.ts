@@ -43,8 +43,6 @@ export type WebSocketRequestParams = {
   [x: number]: any
 }
 
-console.log('Helene Updated')
-
 export type ClientOptions = {
   host?: string
   port?: number
