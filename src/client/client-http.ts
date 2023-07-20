@@ -30,23 +30,29 @@ export class ClientHttp {
   async createEventSource() {
     if (!this.client.options.eventSource) return
 
-    this.clientEventSource = new IsomorphicEventSource(this.uri, {
-      headers: {
-        [CLIENT_ID_HEADER_KEY]: this.client.uuid,
-        ...(this.client.context.token
-          ? { [TOKEN_HEADER_KEY]: this.client.context.token }
-          : {}),
-      },
-      withCredentials: true,
-    }) as EventSource
+    return new Promise(resolve => {
+      this.clientEventSource = new IsomorphicEventSource(this.uri, {
+        headers: {
+          [CLIENT_ID_HEADER_KEY]: this.client.uuid,
+          ...(this.client.context.token
+            ? { [TOKEN_HEADER_KEY]: this.client.context.token }
+            : {}),
+        },
+        withCredentials: true,
+      }) as EventSource
 
-    this.clientEventSource.onmessage = (event: MessageEvent) => {
-      this.client.emit(ClientEvents.INBOUND_MESSAGE, event.data)
+      this.clientEventSource.onmessage = (event: MessageEvent) => {
+        this.client.emit(ClientEvents.INBOUND_MESSAGE, event.data)
 
-      const payload = Presentation.decode(event.data)
+        const payload = Presentation.decode(event.data)
 
-      this.client.payloadRouter(payload)
-    }
+        this.client.payloadRouter(payload)
+      }
+
+      this.clientEventSource.onopen = resolve
+
+      this.clientEventSource.onerror = console.error
+    })
   }
 
   async request(

@@ -306,6 +306,10 @@ export class HttpTransport {
    */
   close() {
     return new Promise<void>((resolve, reject) => {
+      for (const client of this.eventSourceClients.values()) {
+        client.close()
+      }
+
       if (!this.httpTerminator) resolve()
 
       this.httpTerminator

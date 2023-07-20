@@ -182,6 +182,14 @@ export class ClientNode extends EventEmitter2 {
 
   close() {
     this.server.emit(ServerEvents.DISCONNECTION, this)
-    this.socket.terminate()
+    this.socket?.terminate()
+
+    if (this.isEventSource) {
+      // If we don't destroy the request, we have to force to terminate the HTTP server,
+      // and it takes a ton of idle time to do so.
+      this.req?.destroy()
+      this.res?.end()
+      this.server.httpTransport.eventSourceClients.delete(this.uuid)
+    }
   }
 }

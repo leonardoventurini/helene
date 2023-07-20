@@ -276,6 +276,8 @@ export class Client extends ClientChannel {
   }
 
   async close(force = false) {
+    this.clientHttp.clientEventSource?.close()
+
     if (!this.connected) return null
 
     this.timeouts.forEach(timeout => clearTimeout(timeout))
