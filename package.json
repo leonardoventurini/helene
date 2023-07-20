@@ -8,6 +8,7 @@
     "build": "tsc",
     "watch": "tsc --watch",
     "clean": "rm -rf client react server data utils index.* tsconfig.tsbuildinfo",
+    "rebuild": "yarn run clean && yarn run build",
     "test": "nodemon --watch 'src/**/*' -e ts,tsx --exec 'yarn test:mocha'",
     "test:mocha": "NODE_ENV=test mocha --require ts-node/register/transpile-only 'src/**/*.test.*' --file 'src/tests/utils/setup-tests.ts' --exit"
   },

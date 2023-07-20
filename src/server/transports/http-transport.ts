@@ -5,6 +5,7 @@ import { RateLimit, Server } from '../server'
 import {
   CLIENT_ID_HEADER_KEY,
   Errors,
+  HeleneEvents,
   PublicError,
   SchemaValidationError,
   ServerEvents,
@@ -154,7 +155,13 @@ export class HttpTransport {
 
     this.server.emit(ServerEvents.EVENTSOURCE_CONNECT, clientNode)
 
+    const keepAliveInterval = setInterval(() => {
+      clientNode.sendEvent(HeleneEvents.KEEP_ALIVE)
+    }, ClientNode.KEEP_ALIVE_INTERVAL)
+
     req.on('close', () => {
+      clearInterval(keepAliveInterval)
+
       this.eventSourceClients.delete(clientId)
       this.server.deleteClient(clientNode)
 

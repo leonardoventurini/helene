@@ -43,6 +43,8 @@ export type WebSocketRequestParams = {
   [x: number]: any
 }
 
+console.log('Helene Updated')
+
 export type ClientOptions = {
   host?: string
   port?: number
@@ -150,6 +152,8 @@ export class Client extends ClientChannel {
     this.client.on(HeleneEvents.KEEP_ALIVE, () => {
       clearTimeout(this.keepAliveTimeout)
 
+      if (!this.clientSocket.ready) return
+
       this.keepAliveTimeout = setTimeout(
         async () => {
           await this.close(true)
@@ -196,6 +200,7 @@ export class Client extends ClientChannel {
   }
 
   resetIdleTimer() {
+    if (!this.options.ws?.autoConnect) return
     this.connect().catch(console.error)
     this.stopIdleTimeout()
     this.startIdleTimeout()
@@ -204,6 +209,7 @@ export class Client extends ClientChannel {
   setupBrowserIdlenessCheck() {
     if (!Environment.isBrowser) return
     if (!this.options.idlenessTimeout) return
+    if (!this.options.ws?.autoConnect) return
 
     if (this.options.idlenessTimeout < 1000) {
       console.warn('Helene: idlenessTimeout must not be less than 1000ms')
