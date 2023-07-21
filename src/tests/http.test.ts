@@ -1,9 +1,10 @@
 import { expect } from 'chai'
-import { Errors } from '../utils'
+import { Errors, sleep } from '../utils'
 import { TestUtility } from './utils/test-utility'
 import path from 'path'
 import request from 'supertest'
 import { range } from 'lodash'
+import IsomorphicEventSource from '@sanity/eventsource'
 
 describe('HTTP', async () => {
   const test = new TestUtility()
@@ -217,5 +218,27 @@ describe('HTTP', async () => {
 
       expect(eventTimeout).to.be.true
     })
+
+    it('should disconnect on idleness and reconnect upon interaction', async () => {
+      const client = await test.createHttpClient({
+        idlenessTimeout: 100,
+      })
+
+      expect(client.clientHttp.clientEventSource.readyState).to.equal(
+        IsomorphicEventSource.CONNECTING,
+      )
+
+      await sleep(200)
+
+      expect(client.clientHttp.clientEventSource.readyState).to.equal(
+        IsomorphicEventSource.CLOSED,
+      )
+
+      client.resetIdleTimer()
+
+      expect(client.clientHttp.clientEventSource.readyState).to.equal(
+        IsomorphicEventSource.CONNECTING,
+      )
+    }).timeout(60000)
   })
 })

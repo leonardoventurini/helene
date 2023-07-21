@@ -55,6 +55,9 @@ export enum ClientEvents {
   WEBSOCKET_BACKOFF_READY = 'websocket:backoff:ready',
   WEBSOCKET_BACKOFF_FAIL = 'websocket:backoff:fail',
   WEBSOCKET_BACKOFF_RESET = 'websocket:backoff:reset',
+
+  EVENTSOURCE_OPEN = 'eventsource:open',
+  EVENTSOURCE_ERROR = 'eventsource:error',
 }
 
 export enum WebSocketEvent {

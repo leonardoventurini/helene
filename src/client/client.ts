@@ -165,7 +165,7 @@ export class Client extends ClientChannel {
     })
 
     if (!this.options.ws?.autoConnect && this.options.eventSource) {
-      this.clientHttp.createEventSource().catch(console.error)
+      this.clientHttp.createEventSource()
     }
   }
 
@@ -198,23 +198,23 @@ export class Client extends ClientChannel {
   }
 
   resetIdleTimer() {
-    if (!this.options.ws?.autoConnect) return
-    this.connect().catch(console.error)
+    if (!this.options.ws?.autoConnect) {
+      this.clientHttp.createEventSource()
+    } else {
+      this.connect().catch(console.error)
+    }
+
     this.stopIdleTimeout()
     this.startIdleTimeout()
   }
 
   setupBrowserIdlenessCheck() {
-    if (!Environment.isBrowser) return
     if (!this.options.idlenessTimeout) return
-    if (!this.options.ws?.autoConnect) return
 
-    if (this.options.idlenessTimeout < 1000) {
-      console.warn('Helene: idlenessTimeout must not be less than 1000ms')
-      return
-    }
-
-    const reset = throttle(this.resetIdleTimer.bind(this), 500)
+    const reset = throttle(
+      this.resetIdleTimer.bind(this),
+      this.options.idlenessTimeout / 2,
+    )
 
     window.addEventListener('mousemove', reset, false)
     window.addEventListener('mousedown', reset, false)
@@ -225,6 +225,8 @@ export class Client extends ClientChannel {
     window.addEventListener('pagehide', reset, false)
 
     document.addEventListener('visibilitychange', reset)
+
+    this.startIdleTimeout()
   }
 
   debugger(...args) {
@@ -280,6 +282,8 @@ export class Client extends ClientChannel {
   }
 
   async close(force = false) {
+    clearTimeout(this.idleTimeout)
+
     this.clientHttp.clientEventSource?.close()
 
     if (!this.connected) return null

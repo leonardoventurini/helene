@@ -27,32 +27,40 @@ export class ClientHttp {
   }
 
   // @todo Recreate event source on token change.
-  async createEventSource() {
+  createEventSource() {
     if (!this.client.options.eventSource) return
+    if (
+      this.clientEventSource &&
+      this.clientEventSource.readyState !== IsomorphicEventSource.CLOSED
+    )
+      return
 
-    return new Promise(resolve => {
-      this.clientEventSource = new IsomorphicEventSource(this.uri, {
-        headers: {
-          [CLIENT_ID_HEADER_KEY]: this.client.uuid,
-          ...(this.client.context.token
-            ? { [TOKEN_HEADER_KEY]: this.client.context.token }
-            : {}),
-        },
-        withCredentials: true,
-      }) as EventSource
+    this.clientEventSource = new IsomorphicEventSource(this.uri, {
+      headers: {
+        [CLIENT_ID_HEADER_KEY]: this.client.uuid,
+        ...(this.client.context.token
+          ? { [TOKEN_HEADER_KEY]: this.client.context.token }
+          : {}),
+      },
+      withCredentials: true,
+    }) as EventSource
 
-      this.clientEventSource.onmessage = (event: MessageEvent) => {
-        this.client.emit(ClientEvents.INBOUND_MESSAGE, event.data)
+    this.clientEventSource.onmessage = (event: MessageEvent) => {
+      this.client.emit(ClientEvents.INBOUND_MESSAGE, event.data)
 
-        const payload = Presentation.decode(event.data)
+      const payload = Presentation.decode(event.data)
 
-        this.client.payloadRouter(payload)
-      }
+      this.client.payloadRouter(payload)
+    }
 
-      this.clientEventSource.onopen = resolve
+    this.clientEventSource.onopen = () => {
+      this.client.emit(ClientEvents.EVENTSOURCE_OPEN)
+    }
 
-      this.clientEventSource.onerror = console.error
-    })
+    this.clientEventSource.onerror = error => {
+      this.client.emit(ClientEvents.EVENTSOURCE_ERROR)
+      console.error(error)
+    }
   }
 
   async request(

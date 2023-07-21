@@ -93,7 +93,7 @@ export class ClientSocket {
     this.ready = false
     this.socket = undefined
 
-    this.client.clientHttp.createEventSource().catch(console.error)
+    this.client.clientHttp.createEventSource()
   }
 
   public close(force = false) {
