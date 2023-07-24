@@ -12,3 +12,20 @@ const client = new Client({
 ```
 
 It is not added to the global scope as you can have multiple clients.
+
+Other ways to use client:
+
+```js
+// Connect to the server
+client.connect();
+
+// Handle incoming events from the server
+client.on('event', data => {
+  console.log('Received event:', data);
+});
+
+// Call a remote method on the server
+client.call('hello').then(result => {
+  console.log('Method result:', result);
+});
+```
