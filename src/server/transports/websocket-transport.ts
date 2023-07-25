@@ -1,13 +1,15 @@
 import WebSocket from 'ws'
 import { Server } from '../server'
 import {
+  Errors,
   HELENE_WS_PATH,
   Methods,
+  PublicError,
+  SchemaValidationError,
   ServerEvents,
   WebSocketEvents,
-} from '../../utils/constants'
+} from '../../utils'
 import http from 'http'
-import { Errors, PublicError, SchemaValidationError } from '../../utils/errors'
 import { ClientNode } from '../client-node'
 import IsomorphicWebSocket from 'isomorphic-ws'
 import { Presentation } from '../../utils/presentation'
@@ -64,12 +66,8 @@ export class WebSocketTransport {
       this.server.rateLimit,
     )
 
-    node.headers = request.headers as any
-    node.remoteAddress =
-      request.headers['x-forwarded-for'] || request.socket.remoteAddress
-    node.userAgent = request.headers['user-agent']
-
     node.setId(request)
+    node.setTrackingProperties(request)
 
     this.server.addClient(node)
 

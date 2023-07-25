@@ -114,6 +114,13 @@ export class ClientNode extends EventEmitter2 {
     this.setUserId()
   }
 
+  setTrackingProperties(request: http.IncomingMessage) {
+    this.headers = request.headers as any
+    this.remoteAddress =
+      request.headers['x-forwarded-for'] || request.socket.remoteAddress
+    this.userAgent = request.headers['user-agent']
+  }
+
   // The user ID is used for authorizing the user's channel.
   setUserId() {
     if (!this.authenticated) return

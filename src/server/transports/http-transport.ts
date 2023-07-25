@@ -142,9 +142,17 @@ export class HttpTransport {
       'Cache-Control': 'no-cache',
     })
 
-    const clientNode = new ClientNode(this.server, null, req, res)
+    const clientNode = new ClientNode(
+      this.server,
+      null,
+      req,
+      res,
+      this.server.rateLimit,
+    )
     clientNode.uuid = clientId
     clientNode.isEventSource = true
+
+    clientNode.setTrackingProperties(req)
 
     const serverContext = await this.getServerContext(clientNode)
 
@@ -153,19 +161,19 @@ export class HttpTransport {
 
     this.eventSourceClients.set(clientId, clientNode)
 
-    this.server.emit(ServerEvents.EVENTSOURCE_CONNECT, clientNode)
+    this.server.emit(ServerEvents.CONNECTION, clientNode)
 
     const keepAliveInterval = setInterval(() => {
       clientNode.sendEvent(HeleneEvents.KEEP_ALIVE)
     }, ClientNode.KEEP_ALIVE_INTERVAL)
 
     req.on('close', () => {
+      clientNode.close()
+
       clearInterval(keepAliveInterval)
 
       this.eventSourceClients.delete(clientId)
       this.server.deleteClient(clientNode)
-
-      this.server.emit(ServerEvents.EVENTSOURCE_DISCONNECT, clientNode)
     })
   }
 

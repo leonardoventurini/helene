@@ -1,10 +1,11 @@
 import { expect } from 'chai'
-import { Errors, sleep } from '../utils'
+import { Errors, ServerEvents, sleep } from '../utils'
 import { TestUtility } from './utils/test-utility'
 import path from 'path'
 import request from 'supertest'
 import { range } from 'lodash'
 import IsomorphicEventSource from '@sanity/eventsource'
+import { ClientNode } from '../server'
 
 describe('HTTP', async () => {
   const test = new TestUtility()
@@ -240,5 +241,19 @@ describe('HTTP', async () => {
         IsomorphicEventSource.CONNECTING,
       )
     }).timeout(60000)
+
+    it('should call connection and disconnection events', async () => {
+      test.createHttpClient()
+
+      const [node1] = await test.server.waitFor(ServerEvents.CONNECTION)
+
+      expect(node1).to.be.instanceof(ClientNode)
+
+      test.client.close()
+
+      const [node2] = await test.server.waitFor(ServerEvents.DISCONNECTION)
+
+      expect(node2).to.be.instanceof(ClientNode)
+    })
   })
 })

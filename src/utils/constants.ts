@@ -26,9 +26,6 @@ export enum ServerEvents {
   REDIS_CONNECT = 'redis:connect',
   READY = 'ready',
   METHOD_EXECUTION = 'method:execution',
-
-  EVENTSOURCE_CONNECT = 'eventsource:connection',
-  EVENTSOURCE_DISCONNECT = 'eventsource:disconnect',
 }
 
 export enum ClientEvents {
