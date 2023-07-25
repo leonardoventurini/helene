@@ -168,6 +168,8 @@ export class HttpTransport {
     }, ClientNode.KEEP_ALIVE_INTERVAL)
 
     req.on('close', () => {
+      clientNode.close()
+
       clearInterval(keepAliveInterval)
 
       this.eventSourceClients.delete(clientId)
