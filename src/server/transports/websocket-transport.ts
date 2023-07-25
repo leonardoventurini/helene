@@ -83,8 +83,7 @@ export class WebSocketTransport {
   }
 
   handleClose = (node: ClientNode) => () => {
-    node.emit(ServerEvents.DISCONNECT)
-    this.server.emit(ServerEvents.DISCONNECTION, node)
+    node.close()
     this.server.deleteClient(node)
   }
 

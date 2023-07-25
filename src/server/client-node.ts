@@ -188,6 +188,7 @@ export class ClientNode extends EventEmitter2 {
   }
 
   close() {
+    this.emit(ServerEvents.DISCONNECT)
     this.server.emit(ServerEvents.DISCONNECTION, this)
     this.socket?.terminate()
 
