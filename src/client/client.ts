@@ -308,17 +308,11 @@ export class Client extends ClientChannel {
       ? pick(this.context ?? {}, this.options.allowedContextKeys)
       : {}
 
-    const result = await this.call(
-      Methods.RPC_INIT,
-      {
-        token,
-        meta: this.options.meta,
-        ...context,
-      },
-      {
-        httpFallback: false,
-      },
-    )
+    const result = await this.call(Methods.RPC_INIT, {
+      token,
+      meta: this.options.meta,
+      ...context,
+    })
 
     /**
      * It needs to validate the token first as it can be invalid,
