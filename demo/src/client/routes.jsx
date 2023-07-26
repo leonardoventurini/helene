@@ -9,12 +9,12 @@ import Events from './pages/events.mdx'
 import Channels from './pages/channels.mdx'
 import Data from './pages/data.mdx'
 import Provider from './pages/react/provider.mdx'
-import UseClient from './pages/react/useClient.mdx'
-import UseAuth from './pages/react/useAuth.mdx'
-import UseEvent from './pages/react/useEvent.mdx'
-import UseConnectionState from './pages/react/useConnUctionState.mdx'
-import UseDepsChange from './pages/react/useDepsChange.mdx'
-import UseMethod from './pages/react/useMethod.mdx'
+import UseClient from './pages/react/use-client.mdx'
+import UseAuth from './pages/react/use-auth.mdx'
+import UseEvent from './pages/react/use-event.mdx'
+import UseConnectionState from './pages/react/use-connection-state.mdx'
+import UseDepsChange from './pages/react/use-deps-change.mdx'
+import UseMethod from './pages/react/use-method.mdx'
 import Roadmap from './pages/roadmap.mdx'
 import License from './pages/license.mdx'
 import { LayoutRoute } from './components/layout-route.jsx'
@@ -38,7 +38,8 @@ export function Routes() {
       <LayoutRoute path='/react/useClient' component={UseClient} />
       <LayoutRoute path='/react/useAuth' component={UseAuth} />
       <LayoutRoute path='/react/useEvent' component={UseEvent} />
-      <LayoutRoute path='/react/useConnUctionState' component={UseConnectionState} />
+      <LayoutRoute path='/react/useConnection' component={UseConnectionState} />
+      <LayoutRoute path='/react/UseMethod' component={UseMethod} />
       <LayoutRoute path='/react/useDepsChange' component={UseDepsChange} />
       <LayoutRoute path='/roadmap' component={Roadmap} />
       <LayoutRoute path='/license' component={License} />
