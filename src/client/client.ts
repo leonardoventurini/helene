@@ -315,7 +315,7 @@ export class Client extends ClientChannel {
     })
 
     /**
-     * It needs to validate the token first as it can be invalid,
+     * It needs to validate the token first as it can be invalid
      */
     this.authenticated = Boolean(result)
 
@@ -409,10 +409,7 @@ export class Client extends ClientChannel {
       const payload = { uuid, method, params }
 
       // It should call the method via HTTP if the socket is not ready or the initialization did not occur yet.
-      if (
-        http ||
-        (!(this.clientSocket?.ready && this.initialized) && httpFallback)
-      ) {
+      if (http || (!this.clientSocket?.ready && httpFallback)) {
         return this.clientHttp.request(payload, resolve, reject)
       }
 

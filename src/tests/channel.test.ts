@@ -86,7 +86,7 @@ describe('Channel', () => {
 
     let channelName = null
 
-    test.server.setChannelAuthorization((client, channel) => {
+    test.server.setChannelAuthorization(async (client, channel) => {
       channelName = channel
 
       return client.authenticated
