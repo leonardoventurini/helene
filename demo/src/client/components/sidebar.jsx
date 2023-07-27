@@ -28,7 +28,7 @@ export function Sidebar() {
         <Link to='/data'>Data</Link>
       </li>
       <li>
-        <Link to='/react'>React</Link>
+        <Link to='/react-intro'>React</Link>
         <ul>
           <li>
             <Link to='/react/provider'>Provider Hook</Link>
@@ -49,7 +49,7 @@ export function Sidebar() {
             <Link to='/react/UseMethod'>UseMethod Hook</Link>
           </li>
           <li>
-            <Link to='/rreact/useDepsChange'>useDepsChange Hook</Link>
+            <Link to='/react/useDepsChange'>useDepsChange Hook</Link>
           </li>
         </ul>
       </li>

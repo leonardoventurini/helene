@@ -8,6 +8,7 @@ import Methods from './pages/methods.mdx'
 import Events from './pages/events.mdx'
 import Channels from './pages/channels.mdx'
 import Data from './pages/data.mdx'
+import React from './pages/react-intro.mdx'
 import Provider from './pages/react/provider.mdx'
 import UseClient from './pages/react/use-client.mdx'
 import UseAuth from './pages/react/use-auth.mdx'
@@ -17,6 +18,7 @@ import UseDepsChange from './pages/react/use-deps-change.mdx'
 import UseMethod from './pages/react/use-method.mdx'
 import Roadmap from './pages/roadmap.mdx'
 import License from './pages/license.mdx'
+import PageNotFound from './pages/404-page'
 import { LayoutRoute } from './components/layout-route.jsx'
 import { useTheme } from './hooks/use-theme.jsx'
 
@@ -25,7 +27,7 @@ export function Routes() {
 
   return (
     <Switch>
-      <LayoutRoute path='/' component={Intro} />
+      <LayoutRoute path='/' component={Intro} exact />
       <LayoutRoute path='/installation' component={Installation} />
       <LayoutRoute path='/server' component={Server} />
       <LayoutRoute path='/client' component={Client} />
@@ -34,6 +36,7 @@ export function Routes() {
       <LayoutRoute path='/events' component={Events} />
       <LayoutRoute path='/channels' component={Channels} />
       <LayoutRoute path='/data' component={Data} />
+      <LayoutRoute path='/react-intro' component={React} />
       <LayoutRoute path='/react/provider' component={Provider} />
       <LayoutRoute path='/react/useClient' component={UseClient} />
       <LayoutRoute path='/react/useAuth' component={UseAuth} />
@@ -43,6 +46,7 @@ export function Routes() {
       <LayoutRoute path='/react/useDepsChange' component={UseDepsChange} />
       <LayoutRoute path='/roadmap' component={Roadmap} />
       <LayoutRoute path='/license' component={License} />
+      <LayoutRoute path='/' component={PageNotFound} />
     </Switch>
   )
 }

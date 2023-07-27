@@ -8,7 +8,7 @@
   "private": true,
   "volta": {
     "node": "20.3.1",
-    "yarn": "4.0.0-rc.48"
+    "yarn": "1.22.19"
   },
   "scripts": {
     "dev": "nodemon --watch src/server src/server/server.js",
