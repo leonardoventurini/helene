@@ -6,6 +6,8 @@ import request from 'supertest'
 import { range } from 'lodash'
 import IsomorphicEventSource from '@sanity/eventsource'
 import { ClientNode } from '../server'
+import { Client, ClientHttp } from '../client'
+import sinon from 'sinon'
 
 describe('HTTP', async () => {
   const test = new TestUtility()
@@ -254,6 +256,21 @@ describe('HTTP', async () => {
       const [node2] = await test.server.waitFor(ServerEvents.DISCONNECTION)
 
       expect(node2).to.be.instanceof(ClientNode)
+    })
+
+    it('should not call event source creation if auto connect is enabled (default)', async () => {
+      const stub = sinon.stub(ClientHttp.prototype, 'createEventSource')
+
+      const client = new Client({
+        host: test.host,
+        port: test.port,
+      })
+
+      await client.isConnected()
+
+      expect(stub.called).to.be.false
+
+      await client.close()
     })
   })
 })

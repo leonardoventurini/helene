@@ -35,6 +35,8 @@ export class ClientHttp {
     )
       return
 
+    this.client.emit(ClientEvents.EVENTSOURCE_CREATE)
+
     this.clientEventSource = new IsomorphicEventSource(this.uri, {
       headers: {
         [CLIENT_ID_HEADER_KEY]: this.client.uuid,

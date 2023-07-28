@@ -38,6 +38,9 @@ async function start() {
       server: {
         middlewareMode: true,
       },
+      optimizeDeps: {
+        force: process.argv.includes('--force'),
+      },
     })
 
     app.use(vite.middlewares)

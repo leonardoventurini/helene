@@ -53,6 +53,7 @@ export enum ClientEvents {
   WEBSOCKET_BACKOFF_FAIL = 'websocket:backoff:fail',
   WEBSOCKET_BACKOFF_RESET = 'websocket:backoff:reset',
 
+  EVENTSOURCE_CREATE = 'eventsource:create',
   EVENTSOURCE_OPEN = 'eventsource:open',
   EVENTSOURCE_ERROR = 'eventsource:error',
 }

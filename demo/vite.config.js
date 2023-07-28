@@ -9,6 +9,9 @@ export default {
   server: {
     middlewareMode: true,
   },
+  optimizeDeps: {
+    include: ['helene'],
+  },
   resolve: {
     preserveSymlinks: true,
     alias: {
