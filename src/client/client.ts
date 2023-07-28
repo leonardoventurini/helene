@@ -164,7 +164,7 @@ export class Client extends ClientChannel {
       return this.client.call(Methods.KEEP_ALIVE)
     })
 
-    if (!this.options.ws?.autoConnect && this.options.eventSource) {
+    if (!this.clientSocket.options?.autoConnect && this.options.eventSource) {
       this.clientHttp.createEventSource()
     }
   }
@@ -198,7 +198,7 @@ export class Client extends ClientChannel {
   }
 
   resetIdleTimer() {
-    if (!this.options.ws?.autoConnect) {
+    if (!this.clientSocket.options?.autoConnect) {
       this.clientHttp.createEventSource()
     } else {
       this.connect().catch(console.error)
