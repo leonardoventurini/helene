@@ -1,0 +1,24 @@
+### useLocalEvent Hook
+
+The useLocalEvent hook is used to subscribe to local events within your application. 
+These events are not communicated to the server but instead are triggered and handled locally within the client-side React components.
+
+```jsx
+useLocalEvent(
+  { event, channel },
+  value => console.log(value),
+  [],
+)
+```
+
+### useRemoteEvent Hook
+
+This hook will automatically subscribe to the event on the server.
+
+```jsx
+useRemoteEvent(
+  { event, channel },
+  value => console.log(value),
+  [],
+)
+```

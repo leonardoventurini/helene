@@ -1,0 +1,104 @@
+## Data
+
+You can use Helene Data to manage local data both in Node and in the browser using a syntax similar to that of MongoDB.
+
+We don't support all the features of MongoDB and certainly there are differences, the goal is to make it easy to manage local data.
+
+This is not intended to be a replacement for MongoDB or a DBS, but rather a way to manage local data at the application level, which can then be synchronized with your database.
+
+> This implementation is based on the amazing [NeDB](https://github.com/louischatriot/nedb) which sadly is no longer maintained with some big changes. Our new API is entirely promise-based, and we made sure all code works in the browser and in Node.js.
+
+The main Helene Data unit, intuitively, is the `Collection`:
+
+```ts
+import {
+  BrowserStorage
+} from 'helene/data/browser'
+import {
+  NodeStorage
+} from 'helene/data/node'
+
+// Memory Collection
+const memoryCollection = await Helene.createCollection({ name: 'logs' })
+
+// With Browser Storage (Local Storage)
+const browserCollection = await Helene.createCollection({
+  name: 'logs',
+  storage: new BrowserStorage()
+})
+
+// With Node Storage (File System)
+const nodeCollection = await Helene.createCollection({
+  name: 'logs',
+  storage: new NodeStorage()
+})
+```
+
+### Inserting Data
+
+```ts
+// A single document
+await collection.insert({
+  name: 'John Doe',
+  age: 42,
+})
+
+// Multiple documents
+await collection.insert([
+  { name: 'John Doe', age: 42 },
+  { name: 'Jane Doe', age: 42 },
+])
+```
+
+### Finding Data
+
+```ts
+// Find all documents
+const all = await collection.find()
+
+// Find a single document
+const single = await collection.findOne({ name: 'John Doe' })
+
+// Find all documents with age 42
+const allWithAge42 = await collection.find({ age: 42 })
+```
+
+### Updating Data
+
+```ts
+
+// Update a single document
+await collection.update({ name: 'John Doe' }, { $set: { age: 43 } })
+
+// Update all documents with age 4
+await collection.update({ age: 42 }, { $set: { age: 43 } }, { multi: true })
+```
+
+### Removing Data
+
+```ts
+// Remove a single document
+await collection.remove({ age: 42 })
+
+// Remove all documents
+await collection.remove({}, { multi: true })
+```
+
+### Indexes
+
+Indexes are a way to improve the performance of your queries.
+
+```ts
+
+// Create a normal index on the field "age"
+await collection.ensureIndex({ fieldName: 'age' })
+
+// Create a unique index on the field "name"
+await collection.ensureIndex({ fieldName: 'name', unique: true })
+
+// Create a sparse index on the field "age", which means it will index only 
+// documents with the field "age" and ignore the ones which don't have it
+await collection.ensureIndex({ fieldName: 'age', sparse: true })
+```
+
+We do not support compound indexes yet.

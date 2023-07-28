@@ -1,0 +1,19 @@
+### useMethod Hook
+
+The useMethod hook is a powerful tool that facilitates loading data from the server 
+and provides an easy way to refresh that data when necessary.
+
+In the future we will add support for Live Queries and other more precise techniques.
+
+```jsx
+const { result, loading, refresh } = useMethod({
+  method: 'hello',
+})
+
+// Refresh the method in the client programmatically
+refresh()
+
+// Refresh the method in the server programmatically
+
+Helene.refresh('hello')
+```

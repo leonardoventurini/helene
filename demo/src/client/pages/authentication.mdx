@@ -1,0 +1,33 @@
+## Authentication
+
+You need a way to validate your token or whichever strategy you choose, and a way to generate it through the login method:
+
+Please note that the user must be an object with an `_id` property that is either a `string` or an `ObjectId` from `mongoose`.
+
+```js
+
+server.setAuth({
+  async auth({ token }) {
+    // We fail the authentication by returning false.
+    if (!isValid(token)) return false
+
+    const user = await getUser(token)
+
+    // Otherwise we return a context object.
+    return { user }
+  },
+  async logIn({ username, password }) {
+    const token = await Auth.login({ username, password})
+  
+    return { token }
+  }
+})
+```
+
+Then somewhere in the UI:
+
+```js
+await client.login({ username, password })
+```
+
+As you see this is completely agnostic, and you can set up your own authentication and login logic.
