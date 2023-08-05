@@ -25,7 +25,7 @@ export const rpcInit = (server, method) =>
         return pick(result, server.allowedContextKeys)
       }
 
-      return this.authenticated
+      return false
     },
     { protected: false },
   )
