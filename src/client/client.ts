@@ -102,6 +102,8 @@ export class Client extends ClientChannel {
 
   idleTimeout: Timeout = null
 
+  initializing: boolean
+
   static KEEP_ALIVE_INTERVAL = 10000
 
   constructor(options: ClientOptions = {}) {
@@ -147,6 +149,46 @@ export class Client extends ClientChannel {
 
     this.setupBrowserIdlenessCheck()
 
+    this.initializeAfterEventSource()
+
+    this.registerKeepAlive()
+  }
+
+  get isConnecting() {
+    return !!this.clientSocket?.connecting
+  }
+
+  get isOffline() {
+    return !this.clientSocket?.ready
+  }
+
+  get isOnline() {
+    return !!this.clientSocket?.ready
+  }
+
+  get maySubscribe() {
+    return this.isOnline || this.clientHttp.clientEventSource?.readyState === 1
+  }
+
+  async initializeAfterEventSource() {
+    if (this.clientSocket.options?.autoConnect) {
+      return
+    }
+
+    try {
+      if (!this.options?.eventSource) {
+        throw new Error('not using event source')
+      }
+
+      this.clientHttp.createEventSource()
+
+      await this.client.waitFor(ClientEvents.EVENTSOURCE_OPEN, 10000)
+    } finally {
+      await this.init()
+    }
+  }
+
+  registerKeepAlive() {
     // If the server stops sending the keep alive event we should disconnect.
     this.client.on(HeleneEvents.KEEP_ALIVE, () => {
       clearTimeout(this.keepAliveTimeout)
@@ -164,22 +206,6 @@ export class Client extends ClientChannel {
 
       return this.client.call(Methods.KEEP_ALIVE)
     })
-
-    if (!this.clientSocket.options?.autoConnect && this.options.eventSource) {
-      this.clientHttp.createEventSource()
-    }
-  }
-
-  get isConnecting() {
-    return !!this.clientSocket?.connecting
-  }
-
-  get isOffline() {
-    return !this.clientSocket?.ready
-  }
-
-  get isOnline() {
-    return !!this.clientSocket?.ready
   }
 
   startIdleTimeout() {
@@ -287,14 +313,16 @@ export class Client extends ClientChannel {
 
     this.clientHttp.clientEventSource?.close()
 
-    if (!this.connected) return null
-
     this.timeouts.forEach(timeout => clearTimeout(timeout))
 
     return this.clientSocket.close(force)
   }
 
   async init() {
+    if (this.initializing) return
+
+    this.initializing = true
+
     this.initialized = false
 
     this.loadContext()
@@ -326,9 +354,10 @@ export class Client extends ClientChannel {
       this.clearContext()
     }
 
-    this.initialized = true
-
     await this.resubscribeAllChannels()
+
+    this.initialized = true
+    this.initializing = false
 
     this.emit(ClientEvents.INITIALIZED, result)
   }
@@ -353,6 +382,8 @@ export class Client extends ClientChannel {
   }
 
   async resubscribeAllChannels() {
+    if (!this.maySubscribe) return
+
     for (const [, channel] of this.channels) {
       await channel.resubscribe()
     }

@@ -3,6 +3,7 @@ import { ClientEvents, HELENE_WS_PATH, sleep, WebSocketEvents } from '../utils'
 import { Presentation } from '../utils/presentation'
 import { WebSocketMessageOptions } from '../server'
 import { connectWithBackoff, GenericWebSocket } from './websocket'
+import { defer } from 'lodash'
 
 export const WebSocketState = {
   CONNECTING: 0,
@@ -45,16 +46,16 @@ export class ClientSocket {
       this.uri = `${this.protocol}${this.client.options.host}${this.options.path}`
     }
 
-    if (this.options.autoConnect)
-      setTimeout(() => {
-        this.client
-          .connect()
-          .catch(error => console.error('Auto Connect Error', error))
-      }, 0)
-    else {
-      setTimeout(() => {
-        this.client.emit(ClientEvents.INITIALIZED)
-      }, 0)
+    this.client.on(ClientEvents.WEBSOCKET_BACKOFF_FAIL, () => {
+      this.connecting = false
+    })
+
+    if (this.options.autoConnect) {
+      defer(() => {
+        this.connect().catch(error =>
+          console.error('Auto Connect Error', error),
+        )
+      })
     }
   }
 
@@ -98,7 +99,9 @@ export class ClientSocket {
 
   public close(force = false) {
     return new Promise<void>(resolve => {
-      if (!this.socket) resolve()
+      if (!this.socket) return resolve()
+
+      this.connecting = false
 
       if (force) {
         this.socket.close()

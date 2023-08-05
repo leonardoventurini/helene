@@ -163,6 +163,9 @@ export class HttpTransport {
 
     this.server.emit(ServerEvents.CONNECTION, clientNode)
 
+    // Needs to send an event to the client immediately to `onopen` is triggered
+    clientNode.sendEvent(HeleneEvents.SERVER_SENT_EVENTS_CONNECTED)
+
     const keepAliveInterval = setInterval(() => {
       clientNode.sendEvent(HeleneEvents.KEEP_ALIVE)
     }, ClientNode.KEEP_ALIVE_INTERVAL)

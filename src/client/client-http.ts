@@ -5,6 +5,7 @@ import { EJSON } from 'ejson2'
 import { CLIENT_ID_HEADER_KEY, ClientEvents, TOKEN_HEADER_KEY } from '../utils'
 import { fetch } from 'fetch-undici'
 import IsomorphicEventSource from '@sanity/eventsource'
+import { defer } from 'lodash'
 
 export class ClientHttp {
   client: Client
@@ -28,41 +29,50 @@ export class ClientHttp {
 
   // @todo Recreate event source on token change.
   createEventSource() {
-    if (!this.client.options.eventSource) return
-    if (
-      this.clientEventSource &&
-      this.clientEventSource.readyState !== IsomorphicEventSource.CLOSED
-    )
-      return
+    return new Promise(resolve => {
+      this.client.emit(ClientEvents.EVENTSOURCE_CREATE)
 
-    this.client.emit(ClientEvents.EVENTSOURCE_CREATE)
+      if (!this.client.options.eventSource) {
+        return resolve(null)
+      }
+      if (
+        this.clientEventSource &&
+        this.clientEventSource.readyState !== IsomorphicEventSource.CLOSED
+      )
+        return resolve(null)
 
-    this.clientEventSource = new IsomorphicEventSource(this.uri, {
-      headers: {
-        [CLIENT_ID_HEADER_KEY]: this.client.uuid,
-        ...(this.client.context.token
-          ? { [TOKEN_HEADER_KEY]: this.client.context.token }
-          : {}),
-      },
-      withCredentials: true,
-    }) as EventSource
+      this.clientEventSource = new IsomorphicEventSource(this.uri, {
+        headers: {
+          [CLIENT_ID_HEADER_KEY]: this.client.uuid,
+          ...(this.client.context.token
+            ? { [TOKEN_HEADER_KEY]: this.client.context.token }
+            : {}),
+        },
+        withCredentials: true,
+      }) as EventSource
 
-    this.clientEventSource.onmessage = (event: MessageEvent) => {
-      this.client.emit(ClientEvents.INBOUND_MESSAGE, event.data)
+      this.clientEventSource.onmessage = (event: MessageEvent) => {
+        this.client.emit(ClientEvents.INBOUND_MESSAGE, event.data)
 
-      const payload = Presentation.decode(event.data)
+        const payload = Presentation.decode(event.data)
 
-      this.client.payloadRouter(payload)
-    }
+        this.client.payloadRouter(payload)
+      }
 
-    this.clientEventSource.onopen = () => {
-      this.client.emit(ClientEvents.EVENTSOURCE_OPEN)
-    }
+      this.clientEventSource.onopen = () => {
+        defer(() => {
+          this.client.emit(ClientEvents.EVENTSOURCE_OPEN)
+          resolve(this.clientEventSource)
+        })
+      }
 
-    this.clientEventSource.onerror = error => {
-      this.client.emit(ClientEvents.EVENTSOURCE_ERROR)
-      console.error(error)
-    }
+      this.clientEventSource.onerror = (error: any) => {
+        if (error.message) {
+          this.client.emit(ClientEvents.EVENTSOURCE_ERROR)
+          console.error(error.message)
+        }
+      }
+    })
   }
 
   async request(

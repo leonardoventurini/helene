@@ -2,6 +2,7 @@ export enum HeleneEvents {
   METHOD_REFRESH = 'helene:method:refresh',
   KEEP_ALIVE = 'keep:alive',
   KEEP_ALIVE_DISCONNECT = 'keep:alive:disconnect',
+  SERVER_SENT_EVENTS_CONNECTED = 'server:sent:events:connected',
 }
 
 export enum WebSocketEvents {

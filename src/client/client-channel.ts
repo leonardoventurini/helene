@@ -24,6 +24,8 @@ export class ClientChannel extends EventEmitter2 {
   }
 
   async subscribe(event: string | string[]) {
+    if (!this.client.maySubscribe) return {}
+
     const channel = this.name
     const events = Helpers.ensureArray(event)
 

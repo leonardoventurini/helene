@@ -1,6 +1,6 @@
 import { expect } from 'chai'
 import { TestUtility } from './utils/test-utility'
-import { ClientEvents, NO_CHANNEL } from '../utils/constants'
+import { ClientEvents, NO_CHANNEL } from '../utils'
 
 describe('Events', function () {
   const test = new TestUtility()
