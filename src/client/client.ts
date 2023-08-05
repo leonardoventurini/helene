@@ -177,11 +177,11 @@ export class Client extends ClientChannel {
       return
     }
 
-    try {
-      if (!this.options?.eventSource) {
-        throw new Error('not using event source')
-      }
+    if (!this.options?.eventSource) {
+      return this.init()
+    }
 
+    try {
       this.clientHttp.createEventSource()
 
       await this.client.waitFor(ClientEvents.EVENTSOURCE_OPEN, 10000)
@@ -437,6 +437,15 @@ export class Client extends ClientChannel {
     params?: MethodParams,
     { timeout = 20000, ws, http, httpFallback = true }: CallOptions = {},
   ): Promise<any> {
+    // It should wait for the client to initialize before calling any method.
+    if (!this.initialized && method !== Methods.RPC_INIT) {
+      try {
+        await this.waitFor(ClientEvents.INITIALIZED, 10000)
+      } catch {
+        console.log('Helene Method Call: client did not initialize in time')
+      }
+    }
+
     return new Promise((resolve, reject) => {
       const uuid = Presentation.uuid()
 
