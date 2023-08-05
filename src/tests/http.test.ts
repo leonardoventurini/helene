@@ -272,6 +272,8 @@ describe('HTTP', async () => {
       expect(stub.called).to.be.false
 
       await client.close()
+
+      stub.restore()
     })
   })
 })
