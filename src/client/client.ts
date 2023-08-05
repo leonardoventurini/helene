@@ -171,6 +171,8 @@ export class Client extends ClientChannel {
   }
 
   async initializeAfterEventSource() {
+    // If it is going to connect with WebSocket automatically, then we should
+    // not call `init` for HTTP fallback before it is ready.
     if (this.clientSocket.options?.autoConnect) {
       return
     }
