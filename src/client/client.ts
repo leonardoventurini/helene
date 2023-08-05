@@ -21,6 +21,7 @@ import {
   HeleneEvents,
   Methods,
   NO_CHANNEL,
+  TOKEN_HEADER_KEY,
 } from '../utils'
 import { ClientHttp } from './client-http'
 import { ClientChannel } from './client-channel'
@@ -568,5 +569,19 @@ export class Client extends ClientChannel {
     const collection = await createCollection(options)
     this.collections.set(options.name, collection)
     return collection
+  }
+
+  fetch(url: string, options: any) {
+    return fetch(
+      url,
+      merge(
+        {
+          headers: {
+            [TOKEN_HEADER_KEY]: this.context.token,
+          },
+        },
+        options,
+      ),
+    )
   }
 }
