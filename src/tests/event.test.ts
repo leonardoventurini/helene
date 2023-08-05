@@ -40,9 +40,9 @@ describe('Events', function () {
 
     await test.client.clientSocket.close()
 
-    await test.client.clientSocket.connect()
+    test.client.clientSocket.connect()
 
-    await test.client.wait(ClientEvents.INITIALIZED)
+    await test.client.waitFor(ClientEvents.INITIALIZED, 1000)
 
     expect(test.client.events).to.have.length(1)
 

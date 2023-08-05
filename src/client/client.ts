@@ -356,10 +356,10 @@ export class Client extends ClientChannel {
       this.clearContext()
     }
 
-    await this.resubscribeAllChannels()
-
     this.initialized = true
     this.initializing = false
+
+    await this.resubscribeAllChannels()
 
     this.emit(ClientEvents.INITIALIZED, result)
   }

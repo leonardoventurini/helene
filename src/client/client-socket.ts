@@ -110,6 +110,8 @@ export class ClientSocket {
         this.socket.close(1000, 'Closed Gracefully')
       }
 
+      this.socket = undefined
+
       this.client.once(ClientEvents.CLOSE, resolve)
     })
   }
