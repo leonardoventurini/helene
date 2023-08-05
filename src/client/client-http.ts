@@ -35,6 +35,7 @@ export class ClientHttp {
       if (!this.client.options.eventSource) {
         return resolve(null)
       }
+
       if (
         this.clientEventSource &&
         this.clientEventSource.readyState !== IsomorphicEventSource.CLOSED

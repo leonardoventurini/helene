@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { RedisTestUtil } from './utils/redis-test-util'
 import { TestUtility } from './utils/test-utility'
-import { RedisTransport } from '../server/transports/redis-transport'
+import { RedisTransport } from '../server'
 
 describe('Redis Pub/Sub', function () {
   const redis = new RedisTestUtil()
@@ -44,5 +44,43 @@ describe('Redis Pub/Sub', function () {
     const data2 = await test2.client.wait('monkey:king')
 
     expect(data2).to.be.equal(11)
+  })
+
+  it('should emit an event in one server and both clients should fire (server sent events)', async () => {
+    console.log('before create http client')
+
+    const client1 = await test1.createHttpClient()
+    const client2 = await test2.createHttpClient()
+
+    console.log('after create http client')
+
+    expect(client1.clientHttp.clientEventSource.readyState).to.be.equal(1)
+    expect(client2.clientHttp.clientEventSource.readyState).to.be.equal(1)
+
+    expect(client1.clientSocket.socket).to.be.undefined
+    expect(client2.clientSocket.socket).to.be.undefined
+
+    test1.server.addEvent('monkey:king')
+    test2.server.addEvent('monkey:king')
+
+    console.log('before subscribe')
+
+    await client1.subscribe('monkey:king')
+    await client2.subscribe('monkey:king')
+
+    console.log('after subscribe')
+
+    test1.server.defer('monkey:king', 11)
+
+    const [data1, data2] = await Promise.all([
+      client1.wait('monkey:king'),
+      client2.wait('monkey:king'),
+    ])
+
+    expect(data1).to.be.equal(11)
+    expect(data2).to.be.equal(11)
+
+    await client1.close()
+    await client2.close()
   })
 })
