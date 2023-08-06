@@ -440,9 +440,9 @@ export class Client extends ClientChannel {
     // It should wait for the client to initialize before calling any method.
     if (!this.initialized && method !== Methods.RPC_INIT) {
       try {
-        await this.waitFor(ClientEvents.INITIALIZED, 10000)
+        await this.waitFor(ClientEvents.INITIALIZED, Math.floor(timeout / 2))
       } catch {
-        console.log('Helene Method Call: client did not initialize in time')
+        throw new Error('client not initialized')
       }
     }
 

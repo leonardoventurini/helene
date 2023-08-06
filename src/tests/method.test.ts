@@ -6,6 +6,8 @@ import { ClientNode, HeleneAsyncLocalStorage } from '../server'
 import * as yup from 'yup'
 import * as superstruct from 'superstruct'
 import { range } from 'lodash'
+import { Client } from '../client'
+import sinon from 'sinon'
 
 describe('Methods', function () {
   const test = new TestUtility()
@@ -256,5 +258,34 @@ describe('Methods', function () {
     expect(result.time).to.be.greaterThan(100)
     expect(result.params).to.deep.equal({ a: 1, b: 2 })
     expect(result.result).to.equal(42)
+  })
+
+  it('should only call a method if the client has initialized', async () => {
+    const calls = []
+
+    test.server.addMethod('test:method', async param => {
+      calls.push(param)
+      return 42
+    })
+
+    const stub = sinon.stub(Client.prototype, 'init')
+
+    const client = new Client({
+      port: test.server.port,
+    })
+
+    await expect(
+      client.call('test:method', 1, { timeout: 200 }),
+    ).to.rejectedWith(/client not initialized/)
+
+    expect(calls).to.deep.equal([])
+
+    stub.restore()
+
+    setTimeout(() => client.init(), 100)
+
+    await client.call('test:method', 1, { timeout: 400 })
+
+    expect(calls).to.deep.equal([1])
   })
 })
