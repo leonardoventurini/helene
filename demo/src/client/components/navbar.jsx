@@ -16,7 +16,10 @@ export function ThemeButton() {
   const theme = useTheme()
 
   return (
-    <button onClick={theme.toggle} className='flex items-center gap-1.5'>
+    <button
+      onClick={theme.toggle}
+      className='flex items-center gap-1.5 border dark:border-gray-600'
+    >
       {theme.isDark ? (
         <>
           Dark Mode <ToggleRight className='h-4 w-4' />
