@@ -15,7 +15,7 @@
     Delightful Real-time Apps for Node.js and the Browser
   </p>
   <p>
-    <a href="https://helene.leonardoventurini.tech">📘 Documentation</a>
+    <a href="https://helene.leonardoventurini.tech" target="_blank">📘 Documentation</a>
   </p>
   <br>
 </div>
