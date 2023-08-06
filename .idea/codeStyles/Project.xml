@@ -6,7 +6,6 @@
         <option name="TAB_SIZE" value="2" />
       </value>
     </option>
-    <option name="ENABLE_SECOND_REFORMAT" value="true" />
     <HTMLCodeStyleSettings>
       <option name="HTML_SPACE_INSIDE_EMPTY_TAG" value="true" />
       <option name="HTML_QUOTE_STYLE" value="Single" />

@@ -1,6 +1,7 @@
-import { ReactComponent as Logo } from '../assets/logo.svg'
+import { ReactComponent as Logo } from '../assets/helene.svg'
 import { useTheme } from '../hooks/use-theme.jsx'
 import { MoonStar, Sun } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 export function ThemeButton() {
   const theme = useTheme()
@@ -23,10 +24,10 @@ export function ThemeButton() {
 export function Navbar() {
   return (
     <div className='navbar bg-base-100'>
-      <div className='flex-1'>
-        <a className='btn btn-ghost text-xl normal-case'>
-          <Logo />
-        </a>
+      <div className='ml-2.5 flex-1'>
+        <Link to='/' className='text-xl normal-case'>
+          <Logo height={32} width={128} />
+        </Link>
       </div>
       <div className='flex-none'>
         <ul className='menu menu-horizontal gap-2 px-1'>
