@@ -10,7 +10,7 @@ export function DefaultLayout({
   return (
     <div className='flex min-h-screen flex-col'>
       <Navbar />
-      <div className='mb-auto grid grid-cols-[14rem_1fr] gap-4'>
+      <div className='mb-auto grid grid-cols-[256px_1fr] gap-4'>
         <Sidebar />
         <section className={className}>{children}</section>
       </div>

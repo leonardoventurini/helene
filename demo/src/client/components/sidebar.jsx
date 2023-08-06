@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 
 export function Sidebar() {
   return (
-    <ul className='menu w-56'>
+    <ul className='menu w-[256px] gap-1.5'>
       <li>
         <Link to='/'>Introduction</Link>
       </li>
@@ -29,7 +29,7 @@ export function Sidebar() {
       </li>
       <li>
         <Link to='/react-intro'>React</Link>
-        <ul>
+        <ul className='menu gap-1.5'>
           <li>
             <Link to='/react/provider'>Provider Hook</Link>
           </li>
