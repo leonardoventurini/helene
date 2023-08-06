@@ -6,12 +6,6 @@ import svgr from 'vite-plugin-svgr'
 
 export default {
   root: './src/client',
-  server: {
-    middlewareMode: true,
-  },
-  optimizeDeps: {
-    include: ['helene'],
-  },
   resolve: {
     preserveSymlinks: true,
     alias: {

@@ -6,18 +6,36 @@ import {
 
 Helene is an event-driven **real-time framework** for **Node.js** and **React**.
 
-Great for fast prototypes, small projects, and large applications.
+It's **lightweight** and **fast**.
 
-It's **easy to use** and **easy to scale**. If you have more than a single server instance, you can use Redis to allow communication between them.
+It's **easy to use** and **easy to scale**.
+
+If you have more than a single server instance, you can use **Redis** to propagate events across all instances.
+
+## How it works
 
 Instead of setting up and calling REST endpoints or GraphQL schemas, you can call methods declared in a simple syntax.
-You still can do that if you want to as Helene exposes the underlying Express instance.
 
-Helene methods work via WebSockets and automatically revert to HTTP in its absence.
+```js
+const result = await client.call('method.name', { param: 'value' })
+```
 
-It supports authentication, channels, data manipulation and persistence, middlewares, React hooks and more.
+Helene's methods work via WebSockets and automatically revert to HTTP in its absence.
+You can also disable WebSockets and use Server Sent Events, although it is experimental right now.
+
+Helene supports authentication, channels, data manipulation and persistence, middlewares, React hooks and more.
 
 Send events to a specific user, a group of users, or all users.
+
+```js
+server.addEvent('event')
+
+await client.subscribe('event')
+
+server.emit('event', 'value')
+
+server.channel('chat:1').emit('event', 'value')
+```
 
 Authorize events to specific users or groups.
 
@@ -28,17 +46,15 @@ Have a problem or suggestion?
 
 ## Installation
 
-```shell
-npm install helene
+```sh
+$ npm install helene
 ```
 
-```shell
-yarn add helene
+```sh
+$ yarn add helene
 ```
 
 ## Example
-
-
 
 <ConnectedNodes/>
 
@@ -74,6 +90,7 @@ export function ConnectedNodes() {
 
 import { Server, ServerEvents } from 'helene'
 
+// This will register Helene globally on the server
 new Server({
   port: 3000,
   host: 'localhost',

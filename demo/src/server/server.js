@@ -1,13 +1,8 @@
-import { dirname, resolve } from 'path'
-import { readFileSync } from 'fs'
+import { resolve } from 'path'
 import { createServer, ServerEvents } from 'helene'
 import sirv from 'sirv'
-import { fileURLToPath } from 'url'
 
 const port = process.env.PORT || 3000
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
 
 async function start() {
   const server = createServer({
@@ -34,7 +29,8 @@ async function start() {
   } else {
     const { createServer: createViteServer } = await import('vite')
 
-    const vite = await createViteServer({
+    const { middlewares } = await createViteServer({
+      configFile: resolve(process.cwd(), './vite.config.mjs'),
       server: {
         middlewareMode: true,
       },
@@ -43,26 +39,7 @@ async function start() {
       },
     })
 
-    app.use(vite.middlewares)
-
-    const indexHtmlPath = resolve(__dirname, '../client/index.html')
-    const indexHtmlContent = readFileSync(indexHtmlPath, 'utf-8')
-
-    app.use('*', async (req, res) => {
-      const url = req.originalUrl
-
-      try {
-        const template = await vite.transformIndexHtml(
-          url,
-          indexHtmlContent.toString(),
-        )
-        res.status(200).set({ 'Content-Type': 'text/html' }).end(template)
-      } catch (e) {
-        vite.ssrFixStacktrace(e)
-        console.error(e.stack)
-        res.status(500).end(e.message)
-      }
-    })
+    app.use(middlewares)
   }
 
   await server.isReady()

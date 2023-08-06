@@ -34,30 +34,30 @@ export function Sidebar() {
             <Link to='/react/provider'>Provider Hook</Link>
           </li>
           <li>
-            <Link to='/react/useClient'>useClient Hook</Link>
+            <Link to='/react/use-client'>useClient Hook</Link>
           </li>
           <li>
-            <Link to='/react/useAuth'>useAuth Hook</Link>
+            <Link to='/react/use-auth'>useAuth Hook</Link>
           </li>
           <li>
-            <Link to='/react/useEvent'>useEvent Hook</Link>
+            <Link to='/react/use-local-event'>useLocalEvent Hook</Link>
           </li>
           <li>
-            <Link to='/react/useConnection'>useConnection Hook</Link>
+            <Link to='/react/use-remote-event'>useRemoteEvent Hook</Link>
           </li>
           <li>
-            <Link to='/react/UseMethod'>UseMethod Hook</Link>
+            <Link to='/react/use-connection'>useConnection Hook</Link>
           </li>
           <li>
-            <Link to='/react/useDepsChange'>useDepsChange Hook</Link>
+            <Link to='/react/use-method'>UseMethod Hook</Link>
+          </li>
+          <li>
+            <Link to='/react/use-deps-change'>useDepsChange Hook</Link>
           </li>
         </ul>
       </li>
       <li>
         <Link to='/roadmap'>Roadmap</Link>
-      </li>
-      <li>
-        <Link to='/license'>License</Link>
       </li>
     </ul>
   )

@@ -12,15 +12,20 @@ import React from './pages/react-intro.mdx'
 import Provider from './pages/react/provider.mdx'
 import UseClient from './pages/react/use-client.mdx'
 import UseAuth from './pages/react/use-auth.mdx'
-import UseEvent from './pages/react/use-event.mdx'
 import UseConnectionState from './pages/react/use-connection-state.mdx'
 import UseDepsChange from './pages/react/use-deps-change.mdx'
 import UseMethod from './pages/react/use-method.mdx'
 import Roadmap from './pages/roadmap.mdx'
-import License from './pages/license.mdx'
 import PageNotFound from './pages/404-page'
 import { LayoutRoute } from './components/layout-route.jsx'
 import { useTheme } from './hooks/use-theme.jsx'
+
+import loadable from '@loadable/component'
+import { Loader } from 'lucide-react'
+
+export const fallback = <Loader className='h-8 w-8 animate-spin' />
+
+export const load = path => loadable(() => path, { fallback })
 
 export function Routes() {
   useTheme()
@@ -38,14 +43,23 @@ export function Routes() {
       <LayoutRoute path='/data' component={Data} />
       <LayoutRoute path='/react-intro' component={React} />
       <LayoutRoute path='/react/provider' component={Provider} />
-      <LayoutRoute path='/react/useClient' component={UseClient} />
-      <LayoutRoute path='/react/useAuth' component={UseAuth} />
-      <LayoutRoute path='/react/useEvent' component={UseEvent} />
-      <LayoutRoute path='/react/useConnection' component={UseConnectionState} />
-      <LayoutRoute path='/react/UseMethod' component={UseMethod} />
-      <LayoutRoute path='/react/useDepsChange' component={UseDepsChange} />
+      <LayoutRoute path='/react/use-client' component={UseClient} />
+      <LayoutRoute path='/react/use-auth' component={UseAuth} />
+      <LayoutRoute
+        path='/react/use-local-event'
+        component={load(import('./pages/react/use-local-event.mdx'))}
+      />
+      <LayoutRoute
+        path='/react/use-remote-event'
+        component={load(import('./pages/react/use-remote-event.mdx'))}
+      />
+      <LayoutRoute
+        path='/react/use-connection'
+        component={UseConnectionState}
+      />
+      <LayoutRoute path='/react/use-method' component={UseMethod} />
+      <LayoutRoute path='/react/use-deps-change' component={UseDepsChange} />
       <LayoutRoute path='/roadmap' component={Roadmap} />
-      <LayoutRoute path='/license' component={License} />
       <LayoutRoute path='/' component={PageNotFound} />
     </Switch>
   )
