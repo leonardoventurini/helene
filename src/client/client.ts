@@ -14,7 +14,6 @@ import {
   throttle,
 } from 'lodash'
 import {
-  AnyFunction,
   ClientEvents,
   Environment,
   Errors,
@@ -84,7 +83,6 @@ export class Client extends ClientChannel {
   initialized = false
 
   authenticated = false
-  _events: AnyFunction[]
 
   collections: Map<string, Collection> = new Map()
 

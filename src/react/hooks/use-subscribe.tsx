@@ -1,8 +1,8 @@
-import { NO_CHANNEL } from '../../utils/constants'
+import { NO_CHANNEL } from '../../utils'
 import { useEffect, useState } from 'react'
 import { useClient } from './use-client'
 import { isString } from 'lodash'
-import { ClientChannel } from '../../client/client-channel'
+import { ClientChannel } from '../../client'
 
 type UseSubscribeParams = {
   event: string
@@ -52,7 +52,12 @@ export function useSubscribe({
 
   useEffect(
     () => () => {
-      client.channel(channel)?.unsubscribe(event).catch(console.error)
+      const ch = client.channel(channel)
+
+      // Only unsubscribe if there are no other listeners
+      if (!ch._events[event]?.length) {
+        ch?.unsubscribe(event).catch(console.error)
+      }
     },
     [event, channel],
   )

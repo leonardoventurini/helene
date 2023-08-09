@@ -275,6 +275,36 @@ describe('React Hooks', () => {
       })
     })
 
+    it('should listen to multiple events and only unsubscribe after all listeners are removed', async () => {
+      test.server.addEvent('random:event')
+
+      const { wrapper } = test
+
+      const hook1 = renderHook(
+        ({ event }: any) => useRemoteEvent({ event }, () => {}, []),
+        { wrapper, initialProps: { event: 'random:event' } },
+      )
+
+      const hook2 = renderHook(
+        ({ event }: any) => useRemoteEvent({ event }, () => {}, []),
+        { wrapper, initialProps: { event: 'random:event' } },
+      )
+
+      await sleep(100)
+
+      hook1.unmount()
+
+      await sleep(100)
+
+      expect(test.client.events).to.include('random:event')
+
+      hook2.unmount()
+
+      await sleep(100)
+
+      expect(test.client.events).to.not.include('random:event')
+    })
+
     it('should use local event', async () => {
       const values = []
 
