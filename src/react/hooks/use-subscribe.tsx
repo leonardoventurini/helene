@@ -1,30 +1,23 @@
-import { NO_CHANNEL } from '../../utils'
+import { AnyFunction, NO_CHANNEL } from '../../utils'
 import { useEffect, useState } from 'react'
 import { useClient } from './use-client'
 import { isString } from 'lodash'
-import { ClientChannel } from '../../client'
 
 type UseSubscribeParams = {
   event: string
   channel?: string
-  setup?: (ch: ClientChannel) => void
-  teardown?: (ch: ClientChannel) => void
-  deps?: any[]
   active?: boolean
 }
 
-export function useSubscribe({
-  event,
-  channel = NO_CHANNEL,
-  setup,
-  teardown,
-  deps: _deps = [],
-  active = true,
-}: UseSubscribeParams) {
+export function useSubscribe(
+  { event, channel = NO_CHANNEL, active = true }: UseSubscribeParams,
+  callback: AnyFunction = null,
+  deps: any[] = [],
+) {
   const client = useClient()
   const [ready, setReady] = useState(false)
 
-  const deps = [channel, event, setup, teardown].concat(_deps)
+  deps = [channel, event, active].concat(deps)
 
   useEffect(() => {
     if (!event) return
@@ -35,7 +28,7 @@ export function useSubscribe({
 
     const ch = client.channel(channel)
 
-    setup?.(ch)
+    if (callback) ch.on(event, callback)
 
     ch.subscribe(event)
       .then(result => {
@@ -46,7 +39,7 @@ export function useSubscribe({
       .catch(console.error)
 
     return () => {
-      teardown?.(ch)
+      if (callback) ch.off(event, callback)
     }
   }, deps)
 

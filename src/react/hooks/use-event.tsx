@@ -48,26 +48,15 @@ export function useRemoteEvent(
   fn: (...args: any[]) => void,
   deps: any[] = [],
 ) {
-  const refreshCallback = useCallback(fn, deps)
-
-  return useSubscribe({
-    event,
-    channel,
-    setup: useCallback(
-      ch => {
-        ch.on(event, refreshCallback)
-      },
-      [event, refreshCallback],
-    ),
-    teardown: useCallback(
-      ch => {
-        ch.off(event, refreshCallback)
-      },
-      [event, refreshCallback],
-    ),
-    deps: [refreshCallback],
-    active,
-  })
+  return useSubscribe(
+    {
+      event,
+      channel,
+      active,
+    },
+    fn,
+    deps,
+  )
 }
 
 export function useEvent(
