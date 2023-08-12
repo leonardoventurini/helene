@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { Errors, ServerEvents, sleep } from '../utils'
+import { ClientEvents, Errors, ServerEvents } from '../utils'
 import { TestUtility } from './utils/test-utility'
 import path from 'path'
 import request from 'supertest'
@@ -227,15 +227,9 @@ describe('HTTP', async () => {
         idlenessTimeout: 100,
       })
 
-      // expect(client.clientHttp.clientEventSource.readyState).to.equal(
-      //   IsomorphicEventSource.CONNECTING,
-      // )
+      await client.waitFor(ClientEvents.EVENTSOURCE_CLOSE)
 
-      await sleep(200)
-
-      expect(client.clientHttp.clientEventSource.readyState).to.equal(
-        IsomorphicEventSource.CLOSED,
-      )
+      expect(client.clientHttp.clientEventSource).to.be.null
 
       client.resetIdleTimer()
 

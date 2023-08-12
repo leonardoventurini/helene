@@ -76,6 +76,14 @@ export class ClientHttp {
     })
   }
 
+  close() {
+    if (this.clientEventSource) {
+      this.clientEventSource.close()
+      this.clientEventSource = null
+      this.client.emit(ClientEvents.EVENTSOURCE_CLOSE)
+    }
+  }
+
   async request(
     payload: Record<string, any>,
     resolve: Resolve,

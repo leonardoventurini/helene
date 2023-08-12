@@ -3,6 +3,7 @@ import { PromiseQueue } from './promise-queue'
 import { ClientSocket } from './client-socket'
 import { Presentation } from '../utils/presentation'
 import {
+  defer,
   isEmpty,
   isFunction,
   isObject,
@@ -14,6 +15,7 @@ import {
   throttle,
 } from 'lodash'
 import {
+  AnyFunction,
   ClientEvents,
   Environment,
   Errors,
@@ -103,6 +105,7 @@ export class Client extends ClientChannel {
   initializing: boolean
 
   static KEEP_ALIVE_INTERVAL = 10000
+  static EVENT_PROBE_TIMEOUT = 2000
 
   constructor(options: ClientOptions = {}) {
     super(NO_CHANNEL)
@@ -209,6 +212,8 @@ export class Client extends ClientChannel {
   }
 
   startIdleTimeout() {
+    if (!this.options.idlenessTimeout) return
+
     this.idleTimeout = setTimeout(() => {
       this.close()
         .then(() => {
@@ -249,7 +254,6 @@ export class Client extends ClientChannel {
 
     // https://github.com/socketio/socket.io/issues/2924#issuecomment-297985409
     window.addEventListener('focus', reset)
-
     window.addEventListener('mousemove', reset)
     window.addEventListener('mousedown', reset)
     window.addEventListener('keydown', reset)
@@ -258,9 +262,30 @@ export class Client extends ClientChannel {
     window.addEventListener('pageshow', reset)
     window.addEventListener('pagehide', reset)
 
-    document.addEventListener('visibilitychange', reset)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        this.onDocumentVisible(reset).catch(console.error)
+      }
+    })
 
     this.startIdleTimeout()
+  }
+
+  async onDocumentVisible(reset: AnyFunction) {
+    try {
+      this.call(Methods.EVENT_PROBE).catch(console.error)
+      await this.waitFor(HeleneEvents.EVENT_PROBE, Client.EVENT_PROBE_TIMEOUT)
+      return true
+    } catch {
+      this.emit(HeleneEvents.EVENT_PROBE_FAILED)
+      await this.close(true)
+
+      defer(() => {
+        reset()
+      })
+
+      return false
+    }
   }
 
   debugger(...args) {
@@ -318,7 +343,7 @@ export class Client extends ClientChannel {
   async close(force = false) {
     clearTimeout(this.idleTimeout)
 
-    this.clientHttp.clientEventSource?.close()
+    this.clientHttp.close()
 
     this.timeouts.forEach(timeout => clearTimeout(timeout))
 

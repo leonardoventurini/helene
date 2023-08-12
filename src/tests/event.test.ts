@@ -1,6 +1,8 @@
 import { expect } from 'chai'
 import { TestUtility } from './utils/test-utility'
 import { ClientEvents, NO_CHANNEL } from '../utils'
+import { Client } from '../client'
+import { defer, noop } from 'lodash'
 
 describe('Events', function () {
   const test = new TestUtility()
@@ -116,4 +118,28 @@ describe('Events', function () {
     expect(params.event).to.equal('open:event')
     expect(params.channel).to.equal(NO_CHANNEL)
   })
+
+  it('should ask for probing event after visibility context changes', async () => {
+    Client.EVENT_PROBE_TIMEOUT = 100
+
+    const client = await test.createHttpClient()
+
+    const probe1 = await client.onDocumentVisible(noop)
+
+    expect(probe1).to.be.true
+
+    defer(() => {
+      client.clientHttp.close()
+    })
+
+    await client.waitFor(ClientEvents.EVENTSOURCE_CLOSE)
+
+    const probe2 = await client.onDocumentVisible(
+      client.resetIdleTimer.bind(client),
+    )
+
+    await client.waitFor(ClientEvents.EVENTSOURCE_OPEN)
+
+    expect(probe2).to.be.false
+  }).timeout(10000)
 })

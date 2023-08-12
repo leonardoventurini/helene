@@ -1,6 +1,7 @@
 import { Method } from './method'
 import { Server } from './server'
 import {
+  eventProbe,
   keepAlive,
   listMethods,
   rpcInit,
@@ -21,4 +22,5 @@ export const DefaultMethods: {
   [Methods.RPC_OFF]: rpcOff,
   [Methods.RPC_INIT]: rpcInit,
   [Methods.RPC_LOGOUT]: rpcLogout,
+  [Methods.EVENT_PROBE]: eventProbe,
 }
