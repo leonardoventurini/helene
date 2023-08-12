@@ -241,15 +241,22 @@ export class Client extends ClientChannel {
     const reset = throttle(
       this.resetIdleTimer.bind(this),
       this.options.idlenessTimeout / 2,
+      {
+        leading: true,
+        trailing: false,
+      },
     )
 
-    window.addEventListener('mousemove', reset, false)
-    window.addEventListener('mousedown', reset, false)
-    window.addEventListener('keydown', reset, false)
-    window.addEventListener('scroll', reset, false)
-    window.addEventListener('touchstart', reset, false)
-    window.addEventListener('pageshow', reset, false)
-    window.addEventListener('pagehide', reset, false)
+    // https://github.com/socketio/socket.io/issues/2924#issuecomment-297985409
+    window.addEventListener('focus', reset)
+
+    window.addEventListener('mousemove', reset)
+    window.addEventListener('mousedown', reset)
+    window.addEventListener('keydown', reset)
+    window.addEventListener('scroll', reset)
+    window.addEventListener('touchstart', reset)
+    window.addEventListener('pageshow', reset)
+    window.addEventListener('pagehide', reset)
 
     document.addEventListener('visibilitychange', reset)
 
