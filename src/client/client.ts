@@ -167,10 +167,6 @@ export class Client extends ClientChannel {
     return !!this.clientSocket?.ready
   }
 
-  get maySubscribe() {
-    return this.isOnline || this.clientHttp.clientEventSource?.readyState === 1
-  }
-
   async initializeAfterEventSource() {
     // If it is going to connect with WebSocket automatically, then we should
     // not call `init` for HTTP fallback before it is ready.
@@ -414,8 +410,6 @@ export class Client extends ClientChannel {
   }
 
   async resubscribeAllChannels() {
-    if (!this.maySubscribe) return
-
     for (const [, channel] of this.channels) {
       await channel.resubscribe()
     }
