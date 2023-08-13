@@ -31,7 +31,7 @@ export function Sidebar() {
         <Link to='/react-intro'>React</Link>
         <ul className='menu gap-1.5'>
           <li>
-            <Link to='/react/provider'>Provider Hook</Link>
+            <Link to='/react/provider'>Provider</Link>
           </li>
           <li>
             <Link to='/react/use-client'>useClient Hook</Link>
