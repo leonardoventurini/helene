@@ -10,6 +10,7 @@ export default {
     preserveSymlinks: true,
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      'react': fileURLToPath(new URL('./node_modules/react', import.meta.url)),
     },
   },
   plugins: [
