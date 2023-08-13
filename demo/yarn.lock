@@ -1724,10 +1724,10 @@ hast-util-whitespace@^2.0.0:
   resolved "https://registry.yarnpkg.com/hast-util-whitespace/-/hast-util-whitespace-2.0.1.tgz#0ec64e257e6fc216c7d14c8a1b74d27d650b4557"
   integrity sha512-nAxA0v8+vXSBDt3AnRUNjyRIQ0rD+ntpbAp4LnPkumc5M9yUbSMa4XDU9Q6etY4f1Wp4bNgvc1yjiZtsTTrSng==
 
-helene@^1.2.12:
-  version "1.2.12"
-  resolved "https://registry.yarnpkg.com/helene/-/helene-1.2.12.tgz#b5bfe60195c8c5dee08b59d52a80c654e533dcbf"
-  integrity sha512-qkNoV1TUiNI/MTB+15WP406WDY14qZ0BKODfEDtmpofzd1s3Snb6uYAmRFXyD84OzED2MhG3/SfVEaVqHO1F7g==
+helene@^1.2.13:
+  version "1.2.13"
+  resolved "https://registry.yarnpkg.com/helene/-/helene-1.2.13.tgz#6e52461993b741b60c990e7406da604bab3f2f66"
+  integrity sha512-F86d+txMMgTY9jUPxi1HgGRJ286ZK9FIUIBzEwaVGgs8ZlwRUh9/y9M49D5SsuCeP7MXrLFcNwlKmd9SEyV6Qw==
   dependencies:
     "@sanity/eventsource" "^5.0.0"
     ahooks "^3.7.7"
