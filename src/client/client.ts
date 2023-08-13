@@ -231,7 +231,7 @@ export class Client extends ClientChannel {
 
   resetIdleTimer() {
     if (!this.clientSocket.options?.autoConnect) {
-      this.clientHttp.createEventSource()
+      this.initializeAfterEventSource()
     } else {
       this.connect().catch(console.error)
     }
