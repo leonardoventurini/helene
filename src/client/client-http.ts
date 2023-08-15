@@ -27,6 +27,12 @@ export class ClientHttp {
     this.uri = `${this.host}/__h`
   }
 
+  get isEventSourceConnected() {
+    return Boolean(
+      this.clientEventSource?.readyState === IsomorphicEventSource.OPEN,
+    )
+  }
+
   // @todo Recreate event source on token change.
   createEventSource() {
     return new Promise(resolve => {
@@ -35,12 +41,6 @@ export class ClientHttp {
       if (!this.client.options.eventSource) {
         return resolve(null)
       }
-
-      if (
-        this.clientEventSource &&
-        this.clientEventSource.readyState !== IsomorphicEventSource.CLOSED
-      )
-        return resolve(null)
 
       this.clientEventSource = new IsomorphicEventSource(this.uri, {
         headers: {

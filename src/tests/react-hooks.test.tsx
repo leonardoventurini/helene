@@ -94,7 +94,7 @@ describe('React Hooks', () => {
         })
       })
 
-      await test.client.connect()
+      await test.client.connectWebSocket()
 
       await waitFor(() => {
         expect(result.current).to.be.deep.equal({
@@ -121,7 +121,7 @@ describe('React Hooks', () => {
         isConnecting: false,
       })
 
-      await test.client.connect()
+      await test.client.connectWebSocket()
 
       await test.client.isConnected()
 

@@ -3,7 +3,6 @@ import { ClientEvents, HELENE_WS_PATH, sleep, WebSocketEvents } from '../utils'
 import { Presentation } from '../utils/presentation'
 import { WebSocketMessageOptions } from '../server'
 import { connectWithBackoff, GenericWebSocket } from './websocket'
-import { defer } from 'lodash'
 
 export const WebSocketState = {
   CONNECTING: 0,
@@ -49,18 +48,10 @@ export class ClientSocket {
     this.client.on(ClientEvents.WEBSOCKET_BACKOFF_FAIL, () => {
       this.connecting = false
     })
-
-    if (this.options.autoConnect) {
-      defer(() => {
-        this.connect().catch(error =>
-          console.error('Auto Connect Error', error),
-        )
-      })
-    }
   }
 
-  get readyState(): number {
-    return this.socket.readyState
+  get isOpen(): boolean {
+    return Boolean(this.socket?.readyState === WebSocketState.OPEN)
   }
 
   public handleMessage = ({ data, type, target }) => {

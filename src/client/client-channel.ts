@@ -1,7 +1,7 @@
 import { EventEmitter2 } from 'eventemitter2'
 import { Client } from './client'
 import { castArray, isEmpty, isString } from 'lodash'
-import { AnyFunction, Helpers, Methods } from '../utils'
+import { AnyFunction, Methods } from '../utils'
 
 export class ClientChannel extends EventEmitter2 {
   client: Client
@@ -32,11 +32,12 @@ export class ClientChannel extends EventEmitter2 {
 
     if (isEmpty(events)) return {}
 
-    const result = await this.client.call(Methods.RPC_ON, { events, channel })
+    // We need to store them even if they fail as we want to resubscribe to them when the connection type changes.
+    for (const event of events) {
+      this.events.add(event)
+    }
 
-    Object.entries(result).forEach(([event, result]) => {
-      if (result) this.events.add(event)
-    })
+    const result = await this.client.call(Methods.RPC_ON, { events, channel })
 
     console.log('subscription', this.name, result)
 
@@ -44,21 +45,18 @@ export class ClientChannel extends EventEmitter2 {
   }
 
   async unsubscribe(event: string | string[]) {
-    this.client.debugger('Unsubscribing from', this.name, event)
-
-    if (!event) return
-    if (!this.client.clientSocket.ready) return
-
     const channel = this.name
-    const events = Helpers.ensureArray(event)
+    const events = castArray(event)
 
     if (isEmpty(events)) return {}
 
+    for (const event of events) {
+      this.events.delete(event)
+    }
+
     const result = await this.client.call(Methods.RPC_OFF, { events, channel })
 
-    Object.entries(result).forEach(([event, result]) => {
-      if (result) this.events.delete(event)
-    })
+    console.log('unsubscription', this.name, result)
 
     return result
   }

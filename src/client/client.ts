@@ -3,7 +3,6 @@ import { PromiseQueue } from './promise-queue'
 import { ClientSocket } from './client-socket'
 import { Presentation } from '../utils/presentation'
 import {
-  defer,
   isEmpty,
   isFunction,
   isObject,
@@ -15,7 +14,6 @@ import {
   throttle,
 } from 'lodash'
 import {
-  AnyFunction,
   ClientEvents,
   Environment,
   Errors,
@@ -148,9 +146,15 @@ export class Client extends ClientChannel {
       })
     }
 
-    this.setupBrowserIdlenessCheck()
+    // If it is going to connect with WebSocket automatically, then we should
+    // not call `init` for HTTP fallback before it is ready.
+    if (this.clientSocket.options.autoConnect) {
+      this.connectWebSocket().catch(console.error)
+    } else {
+      this.connectEventSource().catch(console.error)
+    }
 
-    this.initializeAfterEventSource()
+    this.setupBrowserIdlenessCheck()
 
     this.registerKeepAlive()
   }
@@ -167,21 +171,28 @@ export class Client extends ClientChannel {
     return !!this.clientSocket?.ready
   }
 
-  async initializeAfterEventSource() {
-    // If it is going to connect with WebSocket automatically, then we should
-    // not call `init` for HTTP fallback before it is ready.
-    if (this.clientSocket.options?.autoConnect) {
-      return
-    }
+  get isEventSourceEnabled() {
+    return this.options?.eventSource && !this.clientSocket?.options?.autoConnect
+  }
 
-    if (!this.options?.eventSource) {
+  async connectEventSource() {
+    if (!this.isEventSourceEnabled) {
       return this.init()
     }
 
     try {
+      if (
+        this.clientHttp.isEventSourceConnected &&
+        (await this.probeConnection())
+      ) {
+        return
+      }
+
       this.clientHttp.createEventSource()
 
       await this.client.waitFor(ClientEvents.EVENTSOURCE_OPEN, 10000)
+    } catch {
+      console.log('event source open failed')
     } finally {
       await this.init()
     }
@@ -226,10 +237,10 @@ export class Client extends ClientChannel {
   }
 
   resetIdleTimer() {
-    if (!this.clientSocket.options?.autoConnect) {
-      this.initializeAfterEventSource()
+    if (this.isEventSourceEnabled) {
+      this.connectEventSource()
     } else {
-      this.connect().catch(console.error)
+      this.connectWebSocket().catch(console.error)
     }
 
     this.stopIdleTimeout()
@@ -260,26 +271,28 @@ export class Client extends ClientChannel {
 
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') {
-        this.onDocumentVisible(reset).catch(console.error)
+        this.resetIdleTimer()
       }
     })
 
     this.startIdleTimeout()
   }
 
-  async onDocumentVisible(reset: AnyFunction) {
+  /**
+   * Workaround for Safari not reconnecting after the app is brought back to the foreground.
+   */
+  async probeConnection() {
+    console.log('probing connection')
+
     try {
       this.call(Methods.EVENT_PROBE).catch(console.error)
       await this.waitFor(HeleneEvents.EVENT_PROBE, Client.EVENT_PROBE_TIMEOUT)
+      console.log('event probe success')
       return true
     } catch {
+      console.log('event probe failed')
       this.emit(HeleneEvents.EVENT_PROBE_FAILED)
       await this.close(true)
-
-      defer(() => {
-        reset()
-      })
-
       return false
     }
   }
@@ -327,8 +340,8 @@ export class Client extends ClientChannel {
     this.emit(ClientEvents.CONTEXT_CHANGED)
   }
 
-  async connect() {
-    if (this.clientSocket.ready) return
+  async connectWebSocket() {
+    if (this.clientSocket.isOpen) return
     if (this.isConnecting) return
 
     await this.clientSocket.connect()

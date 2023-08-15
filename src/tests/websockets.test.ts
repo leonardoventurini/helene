@@ -14,7 +14,7 @@ describe('WebSockets', function () {
 
     expect(test.client.clientSocket.ready).to.be.false
 
-    await test.client.connect()
+    await test.client.connectWebSocket()
 
     expect(test.client.clientSocket.ready).to.be.true
   })
@@ -34,7 +34,7 @@ describe('WebSockets', function () {
 
     test.server.acceptConnections = true
 
-    await test.client.connect()
+    await test.client.connectWebSocket()
 
     expect(test.client.clientSocket.ready).to.be.true
   })
@@ -57,7 +57,7 @@ describe('WebSockets', function () {
       backoffCount++
     })
 
-    client.connect()
+    client.connectWebSocket()
 
     await client.waitFor(ClientEvents.WEBSOCKET_BACKOFF_FAIL)
 

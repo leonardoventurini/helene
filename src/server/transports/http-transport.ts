@@ -163,6 +163,8 @@ export class HttpTransport {
 
     this.server.emit(ServerEvents.CONNECTION, clientNode)
 
+    console.log('event source connected', clientNode.uuid)
+
     // Needs to send an event to the client immediately to `onopen` is triggered
     clientNode.sendEvent(HeleneEvents.SERVER_SENT_EVENTS_CONNECTED)
 
@@ -171,6 +173,8 @@ export class HttpTransport {
     }, ClientNode.KEEP_ALIVE_INTERVAL)
 
     req.on('close', () => {
+      console.log('event source closed', clientNode.uuid)
+
       clientNode.close()
 
       clearInterval(keepAliveInterval)

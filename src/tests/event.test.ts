@@ -2,7 +2,7 @@ import { expect } from 'chai'
 import { TestUtility } from './utils/test-utility'
 import { ClientEvents, NO_CHANNEL } from '../utils'
 import { Client } from '../client'
-import { defer, noop } from 'lodash'
+import { defer } from 'lodash'
 
 describe('Events', function () {
   const test = new TestUtility()
@@ -124,7 +124,7 @@ describe('Events', function () {
 
     const client = await test.createHttpClient()
 
-    const probe1 = await client.onDocumentVisible(noop)
+    const probe1 = await client.probeConnection()
 
     expect(probe1).to.be.true
 
@@ -134,9 +134,9 @@ describe('Events', function () {
 
     await client.waitFor(ClientEvents.EVENTSOURCE_CLOSE)
 
-    const probe2 = await client.onDocumentVisible(
-      client.resetIdleTimer.bind(client),
-    )
+    const probe2 = await client.probeConnection()
+
+    client.resetIdleTimer()
 
     await client.waitFor(ClientEvents.EVENTSOURCE_OPEN)
 
