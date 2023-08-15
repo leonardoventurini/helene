@@ -1,4 +1,4 @@
-import { Errors, NO_CHANNEL } from '../../utils'
+import { NO_CHANNEL } from '../../utils'
 import { Method } from '../method'
 
 export const rpcOff = (server, method) =>
@@ -11,19 +11,18 @@ export const rpcOff = (server, method) =>
         const event = ch.server.events.get(eventName)
 
         if (!event) {
+          console.log('[Helene] Event Not Found:', eventName)
+
           return {
             ...acc,
-            [eventName]: Errors.EVENT_NOT_FOUND,
+            [eventName]: false,
           }
         }
 
         const isSubscribed = ch.isSubscribed(this, event)
 
         if (!isSubscribed) {
-          return {
-            ...acc,
-            [eventName]: Errors.EVENT_NOT_SUBSCRIBED,
-          }
+          console.log('[Helene] Event Not Subscribed:', eventName)
         }
 
         ch.clients.get(event.name).delete(this)
