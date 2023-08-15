@@ -4,7 +4,7 @@ import { Presentation } from '../utils/presentation'
 import { EJSON } from 'ejson2'
 import { CLIENT_ID_HEADER_KEY, ClientEvents, TOKEN_HEADER_KEY } from '../utils'
 import { fetch } from 'fetch-undici'
-import IsomorphicEventSource from '@sanity/eventsource'
+import EventSource from 'eventsource'
 import { defer } from 'lodash'
 
 export class ClientHttp {
@@ -28,9 +28,7 @@ export class ClientHttp {
   }
 
   get isEventSourceConnected() {
-    return Boolean(
-      this.clientEventSource?.readyState === IsomorphicEventSource.OPEN,
-    )
+    return Boolean(this.clientEventSource?.readyState === EventSource.OPEN)
   }
 
   // @todo Recreate event source on token change.
@@ -42,7 +40,7 @@ export class ClientHttp {
         return resolve(null)
       }
 
-      this.clientEventSource = new IsomorphicEventSource(this.uri, {
+      this.clientEventSource = new EventSource(this.uri, {
         headers: {
           [CLIENT_ID_HEADER_KEY]: this.client.uuid,
           ...(this.client.context.token

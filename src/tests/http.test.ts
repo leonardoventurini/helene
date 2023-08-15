@@ -4,10 +4,10 @@ import { TestUtility } from './utils/test-utility'
 import path from 'path'
 import request from 'supertest'
 import { range } from 'lodash'
-import IsomorphicEventSource from '@sanity/eventsource'
 import { ClientNode } from '../server'
 import { Client, ClientHttp } from '../client'
 import sinon from 'sinon'
+import EventSource from 'eventsource'
 
 describe('HTTP', async () => {
   const test = new TestUtility()
@@ -234,7 +234,7 @@ describe('HTTP', async () => {
       client.resetIdleTimer()
 
       expect(client.clientHttp.clientEventSource.readyState).to.equal(
-        IsomorphicEventSource.CONNECTING,
+        EventSource.CONNECTING,
       )
     }).timeout(60000)
 
