@@ -2,6 +2,7 @@ import { AnyFunction, NO_CHANNEL } from '../../utils'
 import { useEffect, useState } from 'react'
 import { useClient } from './use-client'
 import { isString } from 'lodash'
+import { useCreation } from 'ahooks'
 
 type UseSubscribeParams = {
   event: string
@@ -14,46 +15,45 @@ export function useSubscribe(
   callback: AnyFunction = null,
   deps: any[] = [],
 ) {
+  if (!isString(event)) {
+    throw new Error('event name is required')
+  }
+
+  if (!isString(channel)) {
+    throw new Error('channel name is required')
+  }
+
   const client = useClient()
   const [ready, setReady] = useState(false)
 
-  deps = [channel, event, active].concat(deps)
+  const _channel = useCreation(() => client.channel(channel), [client, channel])
 
   useEffect(() => {
-    if (!event) return
-    if (!channel) return
+    if (!callback) return
     if (!active) return
 
-    setReady(false)
+    _channel.on(event, callback)
 
-    const ch = client.channel(channel)
+    return () => {
+      _channel.off(event, callback)
+    }
+  }, [event, channel, callback, active].concat(deps))
 
-    if (callback) ch.on(event, callback)
+  useEffect(() => {
+    if (!active) return
 
-    ch.subscribe(event)
-      .then(result => {
-        if (isString(result[event]))
-          throw new Error(`[${event}] ${result[event]}`)
-        setReady(true)
-      })
+    _channel
+      .subscribe(event)
+      .then(result => setReady(result[event]))
       .catch(console.error)
 
     return () => {
-      if (callback) ch.off(event, callback)
-    }
-  }, deps)
-
-  useEffect(
-    () => () => {
-      const ch = client.channel(channel)
-
       // Only unsubscribe if there are no other listeners
-      if (!ch._events[event]?.length) {
-        ch?.unsubscribe(event).catch(console.error)
+      if (!_channel._events[event]?.length) {
+        _channel.unsubscribe(event).catch(console.error)
       }
-    },
-    [event, channel],
-  )
+    }
+  }, [event, channel, active])
 
   return ready
 }

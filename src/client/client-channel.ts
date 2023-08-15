@@ -1,6 +1,6 @@
 import { EventEmitter2 } from 'eventemitter2'
 import { Client } from './client'
-import { isEmpty, isString } from 'lodash'
+import { castArray, isEmpty, isString } from 'lodash'
 import { AnyFunction, Helpers, Methods } from '../utils'
 
 export class ClientChannel extends EventEmitter2 {
@@ -28,7 +28,7 @@ export class ClientChannel extends EventEmitter2 {
 
   async subscribe(event: string | string[]) {
     const channel = this.name
-    const events = Helpers.ensureArray(event)
+    const events = castArray(event)
 
     if (isEmpty(events)) return {}
 
@@ -37,6 +37,8 @@ export class ClientChannel extends EventEmitter2 {
     Object.entries(result).forEach(([event, result]) => {
       if (result) this.events.add(event)
     })
+
+    console.log('subscription', this.name, result)
 
     return result
   }
