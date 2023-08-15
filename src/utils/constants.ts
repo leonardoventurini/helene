@@ -6,6 +6,9 @@ export enum HeleneEvents {
   EVENT_PROBE = 'event:probe',
 
   EVENT_PROBE_FAILED = 'event:probe:failed',
+
+  COMMIT_PENDING_SUBSCRIPTIONS = 'commit:pending:subscriptions',
+  COMMIT_PENDING_UNSUBSCRIPTIONS = 'commit:pending:unsubscriptions',
 }
 
 export enum WebSocketEvents {

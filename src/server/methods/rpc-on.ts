@@ -25,6 +25,7 @@ export const rpcOn = (server, method) =>
         const event = server.events.get(eventName)
 
         if (!event) {
+          console.log('[Helene] Event Not Found:', eventName)
           acc[eventName] = false
           continue
         }

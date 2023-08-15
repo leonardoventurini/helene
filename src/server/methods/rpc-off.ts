@@ -6,6 +6,10 @@ export const rpcOff = (server, method) =>
     server,
     method,
     function ({ events, channel = NO_CHANNEL }) {
+      const node = this.socket
+        ? this
+        : server.httpTransport.eventSourceClients.get(this.uuid)
+
       return events.reduce((acc, eventName) => {
         const ch = server.channel(channel)
         const event = ch.server.events.get(eventName)
@@ -19,13 +23,13 @@ export const rpcOff = (server, method) =>
           }
         }
 
-        const isSubscribed = ch.isSubscribed(this, event)
+        const isSubscribed = ch.isSubscribed(node, event)
 
         if (!isSubscribed) {
           console.log('[Helene] Event Not Subscribed:', eventName)
         }
 
-        ch.clients.get(event.name).delete(this)
+        ch.clients.get(event.name)?.delete(node)
 
         return {
           ...acc,

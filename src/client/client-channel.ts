@@ -1,7 +1,7 @@
 import { EventEmitter2 } from 'eventemitter2'
 import { Client } from './client'
 import { castArray, isEmpty, isString } from 'lodash'
-import { AnyFunction, Methods } from '../utils'
+import { AnyFunction, HeleneEvents, Methods } from '../utils'
 
 export class ClientChannel extends EventEmitter2 {
   client: Client
@@ -25,40 +25,104 @@ export class ClientChannel extends EventEmitter2 {
   setClient(client: Client) {
     this.client = client
   }
+  private pendingSubscriptions: Set<string> = new Set()
+  private subscribeDebounceTimeout?: NodeJS.Timeout
+
+  async commitPendingSubscriptions() {
+    const channel = this.name
+    const allEvents = Array.from(this.pendingSubscriptions)
+    this.pendingSubscriptions.clear()
+
+    if (!isEmpty(allEvents)) {
+      const result = await this.client.call(Methods.RPC_ON, {
+        events: allEvents,
+        channel,
+      })
+      console.log('subscription', this.name, result)
+      this.emit(HeleneEvents.COMMIT_PENDING_SUBSCRIPTIONS, result)
+    }
+  }
 
   async subscribe(event: string | string[]) {
-    const channel = this.name
     const events = castArray(event)
 
     if (isEmpty(events)) return {}
 
-    // We need to store them even if they fail as we want to resubscribe to them when the connection type changes.
     for (const event of events) {
       this.events.add(event)
+      this.pendingSubscriptions.add(event)
     }
 
-    const result = await this.client.call(Methods.RPC_ON, { events, channel })
+    if (this.subscribeDebounceTimeout) {
+      clearTimeout(this.subscribeDebounceTimeout)
+    }
 
-    console.log('subscription', this.name, result)
+    this.subscribeDebounceTimeout = setTimeout(
+      this.commitPendingSubscriptions.bind(this),
+      100,
+    )
 
-    return result
+    try {
+      const [result] = await this.waitFor(
+        HeleneEvents.COMMIT_PENDING_SUBSCRIPTIONS,
+        5000,
+      )
+
+      return result
+    } catch (error) {
+      console.error('[Helene] Failed to commit subscriptions', error)
+      return {}
+    }
+  }
+
+  private pendingUnsubscriptions: Set<string> = new Set()
+  private unsubscribeDebounceTimeout?: NodeJS.Timeout
+
+  async commitPendingUnsubscriptions() {
+    const channel = this.name
+    const allEvents = Array.from(this.pendingUnsubscriptions)
+    this.pendingUnsubscriptions.clear()
+
+    if (!isEmpty(allEvents)) {
+      const result = await this.client.call(Methods.RPC_OFF, {
+        events: allEvents,
+        channel,
+      })
+      console.log('unsubscription', this.name, result)
+      this.emit(HeleneEvents.COMMIT_PENDING_UNSUBSCRIPTIONS, result)
+    }
   }
 
   async unsubscribe(event: string | string[]) {
-    const channel = this.name
     const events = castArray(event)
 
     if (isEmpty(events)) return {}
 
     for (const event of events) {
       this.events.delete(event)
+      this.pendingUnsubscriptions.add(event)
     }
 
-    const result = await this.client.call(Methods.RPC_OFF, { events, channel })
+    if (this.unsubscribeDebounceTimeout) {
+      clearTimeout(this.unsubscribeDebounceTimeout)
+    }
 
-    console.log('unsubscription', this.name, result)
+    this.unsubscribeDebounceTimeout = setTimeout(
+      this.commitPendingUnsubscriptions.bind(this),
+      100,
+    )
 
-    return result
+    try {
+      const [result] = await this.waitFor(
+        HeleneEvents.COMMIT_PENDING_UNSUBSCRIPTIONS,
+        5000,
+      )
+
+      return result
+    } catch (error) {
+      console.error('[Helene] Failed to commit unsubscriptions', error)
+      return {}
+    }
   }
 
   async resubscribe() {

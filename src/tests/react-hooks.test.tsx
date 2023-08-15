@@ -172,6 +172,9 @@ describe('React Hooks', () => {
         })
       })
 
+      // The subscription is debounced/batched at 100ms
+      await sleep(101)
+
       test.server.refresh('count')
 
       await waitFor(() => {
@@ -260,6 +263,9 @@ describe('React Hooks', () => {
 
       rerender({ event: 'another:event' })
 
+      // Hook unsubscribes after 1s if there are no listeners
+      await sleep(1001)
+
       expect(unsub.called).to.be.true
 
       unsub.resetHistory()
@@ -300,7 +306,7 @@ describe('React Hooks', () => {
 
       hook2.unmount()
 
-      await sleep(100)
+      await sleep(1001)
 
       expect(test.client.events).to.not.include('random:event')
     })

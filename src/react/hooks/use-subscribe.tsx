@@ -48,10 +48,13 @@ export function useSubscribe(
       .catch(console.error)
 
     return () => {
-      // Only unsubscribe if there are no other listeners
-      if (!_channel._events[event]?.length) {
-        _channel.unsubscribe(event).catch(console.error)
-      }
+      // Prevent unsubscribing too early due to simple re-rendering
+      setTimeout(() => {
+        // Only unsubscribe if there are no other listeners
+        if (!_channel._events[event]?.length) {
+          _channel.unsubscribe(event).catch(console.error)
+        }
+      }, 1000)
     }
   }, [event, channel, active])
 
