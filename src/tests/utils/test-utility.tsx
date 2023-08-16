@@ -5,12 +5,11 @@ import { ClientEvents, NO_CHANNEL, ServerEvents } from '../../utils'
 import { Client, ClientOptions } from '../../client'
 import { ClientProvider } from '../../react'
 import { afterEach } from 'mocha'
-import { defer } from 'lodash'
 
 export class TestUtility {
   server: Server
   client: Client
-  host = 'localhost'
+  host = '127.0.0.1'
   port: number
 
   constructor({
@@ -34,9 +33,8 @@ export class TestUtility {
     })
 
     afterEach(async () => {
-      await this.client?.close()
-
-      await this.server?.close()
+      await this.client.close()
+      await this.server.close()
     })
   }
 
@@ -58,7 +56,7 @@ export class TestUtility {
       })
 
       after(async () => {
-        defer(() => server?.close())
+        setTimeout(() => server?.close(), 100)
       })
 
       server.once(ServerEvents.READY, () => resolve(server))
@@ -75,9 +73,11 @@ export class TestUtility {
 
   async createClient(opts?: ClientOptions) {
     return new Promise<Client>((resolve, reject) => {
+      const port = opts?.port ?? this.port
+
       const client = new Client({
         host: opts?.host ?? this.host,
-        port: opts?.port ?? this.port,
+        port,
 
         eventSource: false,
 
@@ -91,8 +91,8 @@ export class TestUtility {
         },
       })
 
-      after(async () => {
-        await client?.close()
+      afterEach(async () => {
+        if (client.connected) await client.close()
       })
 
       client.once(ClientEvents.INITIALIZED, () => {
@@ -100,6 +100,12 @@ export class TestUtility {
       })
 
       client.once(ClientEvents.ERROR, error => reject(error))
+
+      if (this.server.port === port) {
+        this.server.once(ServerEvents.CLOSED, () => {
+          client.close()
+        })
+      }
     })
   }
 

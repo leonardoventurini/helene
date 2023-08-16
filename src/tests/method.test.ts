@@ -287,5 +287,7 @@ describe('Methods', function () {
     await client.call('test:method', 1, { timeout: 400 })
 
     expect(calls).to.deep.equal([1])
+
+    await client.close()
   })
 })

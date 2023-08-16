@@ -176,7 +176,7 @@ export class Server extends ServerChannel {
 
     delete global.Helene
 
-    this.debugger('Helene: Server Stopped')
+    this.emit(ServerEvents.CLOSED)
 
     return true
   }

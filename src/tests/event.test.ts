@@ -69,6 +69,8 @@ describe('Events', function () {
     const eventTimeout = await test.client.timeout('protected:event')
 
     expect(eventTimeout).to.be.true
+
+    await client.close()
   })
 
   it('should prevent subscription based on condition', async () => {
@@ -87,6 +89,8 @@ describe('Events', function () {
     const eventTimeout = await test.client.timeout('protected:event')
 
     expect(eventTimeout).to.be.true
+
+    await client.close()
   })
 
   it('should allow subscription based on condition', async () => {

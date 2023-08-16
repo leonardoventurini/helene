@@ -1,7 +1,7 @@
 import { ClientEvents, Environment, sleep, WebSocketEvent } from '../utils'
 import IsomorphicWebSocket from 'isomorphic-ws'
 import { Client } from './client'
-import prettyBytes from 'pretty-bytes'
+import { defer } from 'lodash'
 
 export type GenericWebSocket = IsomorphicWebSocket
 
@@ -55,8 +55,6 @@ export function connectWebSocket(url: string): Promise<GenericWebSocket> {
   })
 }
 
-let instanceNo = 0
-
 export const MAX_DELAY = 60000
 
 export const once = async (ws: IsomorphicWebSocket, event: string) =>
@@ -68,20 +66,18 @@ export function connectWebSocketWithPersistentReconnect(
   url: string,
   client: Client,
   timeFunction = (i: number) =>
-    Math.min(64 * Math.pow(i, 2), MAX_DELAY) * (0.9 + 0.2 * Math.random()),
+    Math.min(100 * Math.pow(i, 2), MAX_DELAY) * (0.9 + 0.2 * Math.random()),
 ) {
-  instanceNo++
-
   let stopped = false
   let ws = null
 
   async function connect() {
-    stopped = false
-
     let attempts = 0
 
     while (!stopped) {
       try {
+        client.emit(ClientEvents.WEBSOCKET_CONNECT_ATTEMPT)
+
         ws = await connectWebSocket(url)
 
         attempts = 0
@@ -91,7 +87,9 @@ export function connectWebSocketWithPersistentReconnect(
           break
         }
 
-        client.emit(ClientEvents.WEBSOCKET_CONNECTED, ws)
+        defer(() => {
+          client.emit(ClientEvents.WEBSOCKET_CONNECTED, ws)
+        })
 
         await once(ws, 'close')
 
@@ -106,10 +104,7 @@ export function connectWebSocketWithPersistentReconnect(
         attempts++
 
         console.error(
-          `[Helene] Attempt to reconnect WebSocket ${attempts} failed (Instance ${instanceNo}) ${JSON.stringify(
-            stopped,
-          )}`,
-          prettyBytes(process.memoryUsage().heapUsed),
+          `[Helene] Attempt to reconnect WebSocket ${attempts} failed (Client ID: ${client.uuid})`,
         )
         console.dir(error)
       }

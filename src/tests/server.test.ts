@@ -86,6 +86,7 @@ describe('Server', function () {
       .with.property('method')
       .that.equals('test')
 
+    await client.close()
     await server.close()
   })
 

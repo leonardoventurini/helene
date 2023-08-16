@@ -133,8 +133,6 @@ export class Client extends ClientChannel {
 
     this.on(ClientEvents.ERROR, console.error)
 
-    this.debugger('Client Created', this.uuid)
-
     if (Environment.isBrowser) {
       if (Environment.isDevelopment) {
         // @ts-ignore

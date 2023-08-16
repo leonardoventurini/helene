@@ -34,6 +34,7 @@ export enum ServerEvents {
   REDIS_CONNECT = 'redis:connect',
   READY = 'ready',
   METHOD_EXECUTION = 'method:execution',
+  CLOSED = 'closed',
 }
 
 export enum ClientEvents {

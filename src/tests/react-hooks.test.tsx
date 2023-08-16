@@ -17,7 +17,7 @@ import {
   useRemoteEvent,
 } from '../react'
 import sinon from 'sinon'
-import { omit } from 'lodash'
+import { noop, omit } from 'lodash'
 import { EventEmitter2 } from 'eventemitter2'
 import { sleep } from '../utils'
 
@@ -290,12 +290,12 @@ describe('React Hooks', () => {
       const { wrapper } = test
 
       const hook1 = renderHook(
-        ({ event }: any) => useRemoteEvent({ event }, () => {}, []),
+        ({ event }: any) => useRemoteEvent({ event }, noop, []),
         { wrapper, initialProps: { event: 'random:event' } },
       )
 
       const hook2 = renderHook(
-        ({ event }: any) => useRemoteEvent({ event }, () => {}, []),
+        ({ event }: any) => useRemoteEvent({ event }, noop, []),
         { wrapper, initialProps: { event: 'random:event' } },
       )
 

@@ -80,11 +80,15 @@ describe('WebSockets', function () {
 
     client.removeAllListeners(HeleneEvents.KEEP_ALIVE)
 
+    // It is normal for there to be an `ECONNREFUSED` error here
+
     await clientNode.waitFor(HeleneEvents.KEEP_ALIVE_DISCONNECT, 100)
 
     await client.waitFor(ClientEvents.WEBSOCKET_CLOSED, 100)
 
     expect(client.connected).to.be.false
+
+    await client.close()
   }).timeout(10000)
 
   it('should detect disconnection using keep alive on the client', async () => {
