@@ -6,7 +6,7 @@ import { HeleneEvents, ServerEvents } from '../utils'
 import { Event, EventOptions } from './event'
 import { ClientNode } from './client-node'
 
-const AllEvents: string[] = [
+const SystemEvents: string[] = [
   ...Object.values(HttpTransportEvents),
   ...Object.values(ServerEvents),
   ...Object.values(WebSocketTransportEvents),
@@ -18,16 +18,18 @@ export class ServerChannel extends EventEmitter2 {
   clients: Map<string, Set<ClientNode>> = new Map()
 
   constructor(channelName: string) {
-    super()
-
-    this.setMaxListeners(1024)
+    super({
+      wildcard: true,
+      delimiter: ':',
+      maxListeners: 1024,
+    })
 
     this.channelName = channelName
 
     this.onAny((event, value) => {
       if (
         !this.server.events.has(event as string) &&
-        !AllEvents.includes(event as string)
+        !SystemEvents.includes(event as string)
       ) {
         console.warn('Event Not Registered:', event)
       }

@@ -1,6 +1,6 @@
 // @ts-ignore
 import React from 'react'
-import { Server, ServerOptions } from '../../server'
+import { EventOptions, Server, ServerOptions } from '../../server'
 import { ClientEvents, NO_CHANNEL, ServerEvents } from '../../utils'
 import { Client, ClientOptions } from '../../client'
 import { ClientProvider } from '../../react'
@@ -114,8 +114,12 @@ export class TestUtility {
     })
   }
 
-  async createEvent(event: string, channel: string = NO_CHANNEL) {
-    this.server.addEvent(event)
+  async createEvent(
+    event: string,
+    channel: string = NO_CHANNEL,
+    opts?: EventOptions,
+  ) {
+    this.server.addEvent(event, opts)
     await this.client.channel(channel).subscribe(event)
   }
 

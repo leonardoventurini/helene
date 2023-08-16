@@ -19,6 +19,11 @@ export type EventOptions = {
     eventName: string,
     channel: string,
   ) => Promise<boolean>
+
+  /**
+   * This will propagate the event to other instances when running node in a cluster.
+   */
+  cluster?: boolean
 }
 
 export class Event {
@@ -27,6 +32,7 @@ export class Event {
   isProtected: boolean
   channel: ServerChannel
   server: Server
+  cluster: boolean
 
   shouldSubscribe: (
     client: ClientNode,
@@ -60,6 +66,8 @@ export class Event {
     if (opts?.shouldSubscribe) {
       this.shouldSubscribe = opts.shouldSubscribe
     }
+
+    this.cluster = Boolean(opts?.cluster)
   }
 
   handler(channel: ServerChannel, params: Presentation.Params) {
@@ -69,7 +77,7 @@ export class Event {
       params,
     })
 
-    if (this.server?.redisTransport?.pub) {
+    if (this.cluster && this.server?.redisTransport?.pub) {
       this.server.redisTransport
         .publish(this.name, channel.channelName, payload)
         .catch(console.error)

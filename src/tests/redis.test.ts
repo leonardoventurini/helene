@@ -3,7 +3,7 @@ import { RedisTestUtil } from './utils/redis-test-util'
 import { TestUtility } from './utils/test-utility'
 import { RedisTransport } from '../server'
 
-describe('Redis Pub/Sub', function () {
+describe.only('Redis Pub/Sub', function () {
   const redis = new RedisTestUtil()
   const test1 = new TestUtility({ globalInstance: false, redis: true })
   const test2 = new TestUtility({ globalInstance: false, redis: true })
@@ -36,8 +36,8 @@ describe('Redis Pub/Sub', function () {
   })
 
   it('should emit an event in one server and both clients should fire', async () => {
-    await test1.createEvent('monkey:king')
-    await test2.createEvent('monkey:king')
+    await test1.createEvent('monkey:king', undefined, { cluster: true })
+    await test2.createEvent('monkey:king', undefined, { cluster: true })
 
     test1.server.defer('monkey:king', 11)
 
@@ -60,8 +60,8 @@ describe('Redis Pub/Sub', function () {
     expect(client1.clientSocket.socket).to.be.undefined
     expect(client2.clientSocket.socket).to.be.undefined
 
-    test1.server.addEvent('monkey:king')
-    test2.server.addEvent('monkey:king')
+    test1.server.addEvent('monkey:king', { cluster: true })
+    test2.server.addEvent('monkey:king', { cluster: true })
 
     console.log('before subscribe')
 
@@ -82,5 +82,18 @@ describe('Redis Pub/Sub', function () {
 
     await client1.close()
     await client2.close()
+  })
+
+  it('should not propagate an event if it does not have the cluster flag', async () => {
+    await test1.createEvent('monkey:king')
+    await test2.createEvent('monkey:king')
+
+    test1.server.defer('monkey:king', 11)
+
+    const data1 = await test1.client.wait('monkey:king')
+    const timeout = await test2.client.timeout('monkey:king')
+
+    expect(data1).to.be.equal(11)
+    expect(timeout).to.be.equal(true)
   })
 })

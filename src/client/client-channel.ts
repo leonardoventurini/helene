@@ -12,14 +12,16 @@ export class ClientChannel extends EventEmitter2 {
   _events?: Record<string, AnyFunction[]>
 
   constructor(name: string) {
-    super()
+    super({
+      wildcard: true,
+      delimiter: ':',
+      maxListeners: 128,
+    })
 
     if (!isString(name) || !name)
       throw new Error('the channel name needs to be a string')
 
     this.name = name
-
-    this.setMaxListeners(128)
   }
 
   setClient(client: Client) {
