@@ -3,7 +3,7 @@ import { RedisTestUtil } from './utils/redis-test-util'
 import { TestUtility } from './utils/test-utility'
 import { RedisTransport } from '../server'
 
-describe.only('Redis Pub/Sub', function () {
+describe('Redis Pub/Sub', function () {
   const redis = new RedisTestUtil()
   const test1 = new TestUtility({ globalInstance: false, redis: true })
   const test2 = new TestUtility({ globalInstance: false, redis: true })

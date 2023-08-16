@@ -85,7 +85,7 @@ export class HttpTransport {
 
     this.http.listen(server.port, () => {
       this.server.debugger(`Helene HTTP Transport: Listening on ${server.port}`)
-      this.server.emit(ServerEvents.LISTENING)
+      this.server.emit(ServerEvents.HTTP_LISTENING)
     })
 
     this.authMiddleware = this.authMiddleware.bind(this)

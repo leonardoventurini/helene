@@ -70,10 +70,12 @@ export class ClientSocket extends EventEmitter2 {
       this.client,
     )
 
-    this.client.once(ClientSocketEvent.DISCONNECT, disconnect)
+    this.once(ClientSocketEvent.DISCONNECT, disconnect)
+
+    await this.client.waitFor(ClientEvents.WEBSOCKET_CONNECTED)
   }
 
-  public handleMessage = ({ data, type, target }) => {
+  public handleMessage(data: string | ArrayBuffer | Buffer | Buffer[]) {
     const payload = Presentation.decode(data)
 
     this.client.emit(ClientEvents.INBOUND_MESSAGE, data)
@@ -93,7 +95,7 @@ export class ClientSocket extends EventEmitter2 {
 
       this.socket = undefined
 
-      this.client.once(ClientEvents.CLOSE, resolve)
+      this.client.once(ClientEvents.WEBSOCKET_CLOSED, resolve)
     })
   }
 
@@ -128,16 +130,12 @@ export class ClientSocket extends EventEmitter2 {
   /**
    * This runs if the connection is interrupted or if the server fails to establish a new connection.
    */
-  private handleClose = ({ code, reason }) => {
-    this.client.emit(ClientEvents.CLOSE)
-    this.client.emit(ClientEvents.WEBSOCKET_CLOSED)
-
-    if (this.ready)
-      setTimeout(() => this.client.emit(ClientEvents.CLOSE, code, reason), 0)
-
+  private handleClose = () => {
     this.connecting = false
     this.ready = false
     this.socket = undefined
+
+    this.client.emit(ClientEvents.WEBSOCKET_CLOSED)
   }
 
   private handleError = error => {

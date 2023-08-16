@@ -341,8 +341,9 @@ export class Client extends ClientChannel {
   }
 
   async connectWebSocket() {
-    if (this.clientSocket.isOpen) return
-    if (this.isConnecting) return
+    if (this.clientSocket.isOpen && (await this.probeConnection())) {
+      return
+    }
 
     await this.clientSocket.connect()
 
@@ -356,7 +357,7 @@ export class Client extends ClientChannel {
 
     this.timeouts.forEach(timeout => clearTimeout(timeout))
 
-    return this.clientSocket.close()
+    await this.clientSocket.close()
   }
 
   async init() {

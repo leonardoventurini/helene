@@ -15,7 +15,7 @@ export const useConnectionState = () => {
 
   const initialized$ = useRawEventObservable(client, ClientEvents.INITIALIZED)
   const open$ = useRawEventObservable(client, ClientEvents.OPEN)
-  const close$ = useRawEventObservable(client, ClientEvents.CLOSE)
+  const close$ = useRawEventObservable(client, ClientEvents.WEBSOCKET_CLOSED)
   const connecting$ = useRawEventObservable(client, ClientEvents.CONNECTING)
 
   const updateConnectionState = useCallback(() => {

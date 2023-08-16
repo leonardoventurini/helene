@@ -4,6 +4,8 @@ import { EventOptions, Server, ServerOptions } from '../../server'
 import { ClientEvents, NO_CHANNEL, ServerEvents } from '../../utils'
 import { Client, ClientOptions } from '../../client'
 import { ClientProvider } from '../../react'
+import { afterEach } from 'mocha'
+import { defer } from 'lodash'
 
 export class TestUtility {
   server: Server
@@ -33,6 +35,7 @@ export class TestUtility {
 
     afterEach(async () => {
       await this.client?.close()
+
       await this.server?.close()
     })
   }
@@ -55,7 +58,7 @@ export class TestUtility {
       })
 
       after(async () => {
-        await server?.close()
+        defer(() => server?.close())
       })
 
       server.once(ServerEvents.READY, () => resolve(server))

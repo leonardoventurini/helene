@@ -10,7 +10,7 @@ import { isFunction, isObject, isString } from 'lodash'
 import { ServerChannel } from './server-channel'
 import { DefaultMethods } from './default-methods'
 import { Event } from './event'
-import { combineLatest, fromEvent } from 'rxjs'
+import { debounceTime, first, fromEvent, merge } from 'rxjs'
 import { Presentation } from '../utils/presentation'
 
 declare global {
@@ -88,8 +88,6 @@ export class Server extends ServerChannel {
   }: ServerOptions = {}) {
     super(NO_CHANNEL)
 
-    this.setMaxListeners(1024)
-
     this.setServer(this)
     this.createDefaultMethods()
 
@@ -129,16 +127,18 @@ export class Server extends ServerChannel {
 
     const serverEvents = []
 
-    serverEvents.push(fromEvent(this, ServerEvents.LISTENING))
+    serverEvents.push(fromEvent(this, ServerEvents.HTTP_LISTENING))
 
     if (this.redisTransport) {
       serverEvents.push(fromEvent(this, ServerEvents.REDIS_CONNECT))
     }
 
-    combineLatest(serverEvents).subscribe(() => {
-      this.ready = true
-      this.emit(ServerEvents.READY, true)
-    })
+    merge(...serverEvents)
+      .pipe(debounceTime(10), first())
+      .subscribe(() => {
+        this.ready = true
+        this.emit(ServerEvents.READY, true)
+      })
   }
 
   isReady() {

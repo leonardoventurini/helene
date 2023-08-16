@@ -19,8 +19,6 @@ export class ServerChannel extends EventEmitter2 {
 
   constructor(channelName: string) {
     super({
-      wildcard: true,
-      delimiter: ':',
       maxListeners: 1024,
     })
 

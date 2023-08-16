@@ -1,4 +1,4 @@
-import WebSocket from 'ws'
+import IsomorphicWebSocket from 'isomorphic-ws'
 import { WebSocketMessageOptions } from './transports'
 import http from 'http'
 import url from 'url'
@@ -21,7 +21,7 @@ export class ClientNode extends EventEmitter2 {
   context: ClientNodeContext = {}
   userId: ObjectId | string | null = null
   user: Record<string, any> = null
-  socket?: WebSocket = {} as WebSocket
+  socket?: IsomorphicWebSocket
   isEventSource = false
   req?: Request = {} as Request
   res?: Response = {} as Response
@@ -39,7 +39,7 @@ export class ClientNode extends EventEmitter2 {
 
   constructor(
     server: Server,
-    socket?: WebSocket,
+    socket?: IsomorphicWebSocket,
     req?: Request,
     res?: Response,
     limit?: RateLimit,
@@ -69,14 +69,14 @@ export class ClientNode extends EventEmitter2 {
       this.keepAliveInterval = setInterval(() => {
         if (
           ClientNode.ENABLE_KEEP_ALIVE &&
-          socket.readyState === WebSocket.OPEN
+          socket.readyState === IsomorphicWebSocket.OPEN
         ) {
           this.sendEvent(HeleneEvents.KEEP_ALIVE)
 
           this.terminationTimeout = setTimeout(() => {
             clearInterval(this.keepAliveInterval)
 
-            if (socket.readyState === WebSocket.OPEN) {
+            if (socket.readyState === IsomorphicWebSocket.OPEN) {
               socket.terminate()
               this.emit(HeleneEvents.KEEP_ALIVE_DISCONNECT)
             }
@@ -162,7 +162,7 @@ export class ClientNode extends EventEmitter2 {
     payload: Presentation.MethodResultPayloadPartial,
     opts?: WebSocketMessageOptions,
   ) {
-    this.socket?.send(Presentation.Outbound.result(payload), opts)
+    this.socket.send(Presentation.Outbound.result(payload), opts)
   }
 
   /**

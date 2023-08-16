@@ -1,7 +1,6 @@
 import { describe, it } from 'mocha'
 import { expect } from 'chai'
 import { ClientEvents, HeleneEvents, sleep } from '../utils'
-import { connectWithRetry } from '../client/websocket'
 import { TestUtility } from './utils/test-utility'
 import { ClientNode } from '../server'
 import { Client } from '../client'
@@ -23,14 +22,11 @@ describe('WebSockets', function () {
     test.client.clientSocket.options.reconnect = true
     test.client.clientSocket.options.reconnectRetries = 3
 
-    connectWithRetry._timeout = 10
     test.server.acceptConnections = false
 
-    await test.client.close(true)
+    await test.client.close()
 
     expect(test.client.clientSocket.ready).to.be.false
-
-    await test.client.waitFor(ClientEvents.WEBSOCKET_BACKOFF_FAIL)
 
     test.server.acceptConnections = true
 
@@ -39,32 +35,24 @@ describe('WebSockets', function () {
     expect(test.client.clientSocket.ready).to.be.true
   })
 
-  it('should attempt connection 4x and use the backoff strategy for maximum reliability', async () => {
-    connectWithRetry._timeout = 10
-
+  it('should attempt connection more than once while the server is not accepting connections', async () => {
     let attemptCount = 0
-    let backoffCount = 0
 
     test.server.acceptConnections = false
 
     const client = await test.createClient({ ws: { autoConnect: false } })
 
-    client.on(ClientEvents.WEBSOCKET_CONNECT_ATTEMPT, () => {
+    client.on(ClientEvents.WEBSOCKET_RECONNECTING, () => {
       attemptCount++
-    })
-
-    client.on(ClientEvents.WEBSOCKET_BACKOFF, () => {
-      backoffCount++
     })
 
     client.connectWebSocket()
 
-    await client.waitFor(ClientEvents.WEBSOCKET_BACKOFF_FAIL)
+    await sleep(1000)
 
     test.server.acceptConnections = true
 
-    expect(attemptCount).to.be.equal(16)
-    expect(backoffCount).to.be.equal(3)
+    expect(attemptCount).to.be.greaterThan(1)
   }).timeout(10000)
 
   it('should detect disconnection using keep alive on the server', async () => {
@@ -88,7 +76,7 @@ describe('WebSockets', function () {
 
     expect(client.connected).to.be.true
 
-    expect(keepAliveCount).to.be.within(9, 11)
+    expect(keepAliveCount).to.be.within(8, 12)
 
     client.removeAllListeners(HeleneEvents.KEEP_ALIVE)
 

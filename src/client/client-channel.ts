@@ -13,8 +13,6 @@ export class ClientChannel extends EventEmitter2 {
 
   constructor(name: string) {
     super({
-      wildcard: true,
-      delimiter: ':',
       maxListeners: 128,
     })
 

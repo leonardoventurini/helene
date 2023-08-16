@@ -255,7 +255,7 @@ describe('Methods', function () {
 
     expect(result).to.be.an('object')
     expect(result.method).to.equal('test:method')
-    expect(result.time).to.be.greaterThan(100)
+    expect(result.time).to.be.within(90, 110)
     expect(result.params).to.deep.equal({ a: 1, b: 2 })
     expect(result.result).to.equal(42)
   })

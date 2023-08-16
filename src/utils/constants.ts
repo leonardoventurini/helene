@@ -24,7 +24,8 @@ export enum ServerEvents {
   LOGOUT = 'logout',
   UPGRADE = 'upgrade',
   REQUEST = 'request',
-  LISTENING = 'listening',
+  HTTP_LISTENING = 'http:listening',
+  WEBSOCKET_LISTENING = 'websocket:listening',
   CONNECTION = 'connection',
   DISCONNECTION = 'disconnection',
   DISCONNECT = 'disconnect',
@@ -37,7 +38,7 @@ export enum ServerEvents {
 
 export enum ClientEvents {
   LOGOUT = 'auth:logout',
-  CLOSE = 'close',
+  WEBSOCKET_CLOSED = 'close',
   ERROR = 'error',
   INITIALIZING = 'initializing',
   INITIALIZED = 'initialized',
@@ -54,7 +55,6 @@ export enum ClientEvents {
   WEBSOCKET_CONNECT_ATTEMPT = 'websocket:connect:attempt',
   WEBSOCKET_CONNECTED = 'websocket:connected',
   WEBSOCKET_ATTEMPT = 'websocket:attempt',
-  WEBSOCKET_CLOSED = 'websocket:closed',
   WEBSOCKET_RECONNECTING = 'websocket:reconnecting',
 
   EVENTSOURCE_CREATE = 'eventsource:create',

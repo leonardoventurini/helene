@@ -1,36 +1,61 @@
 import { ClientEvents, Environment, sleep, WebSocketEvent } from '../utils'
 import IsomorphicWebSocket from 'isomorphic-ws'
 import { Client } from './client'
+import prettyBytes from 'pretty-bytes'
 
 export type GenericWebSocket = IsomorphicWebSocket
 
-export const isDocumentHidden = () => {
+export const isHidden = () => {
   return Boolean(
-    !Environment.isNode && typeof document !== 'undefined' && document.hidden,
+    !Environment.isNode &&
+      typeof document !== 'undefined' &&
+      (document.hidden || document.visibilityState === 'hidden'),
   )
+}
+
+export const waitUntilVisible = () => {
+  return new Promise<void>(resolve => {
+    if (!isHidden()) {
+      resolve()
+    } else {
+      const handler = () => {
+        if (!isHidden()) {
+          document.removeEventListener('visibilitychange', handler)
+          resolve()
+        }
+      }
+
+      document.addEventListener('visibilitychange', handler)
+    }
+  })
 }
 
 export function connectWebSocket(url: string): Promise<GenericWebSocket> {
   return new Promise((resolve, reject) => {
-    const errorHandler = event => {
+    const errorHandler = (event: any) => {
       reject(event)
+
+      ws.off(WebSocketEvent.CLOSE, errorHandler)
+      ws.off(WebSocketEvent.ERROR, errorHandler)
     }
 
     const ws = new IsomorphicWebSocket(url)
 
-    ws.addEventListener(WebSocketEvent.CLOSE, errorHandler)
-    ws.addEventListener(WebSocketEvent.ERROR, errorHandler)
+    ws.on(WebSocketEvent.CLOSE, errorHandler)
+    ws.on(WebSocketEvent.ERROR, errorHandler)
 
-    ws.addEventListener(WebSocketEvent.OPEN, () => {
+    ws.once(WebSocketEvent.OPEN, () => {
       // Need to remove the handlers, otherwise they will
       // be called again in normal operation
-      ws.removeEventListener(WebSocketEvent.CLOSE, errorHandler)
-      ws.removeEventListener(WebSocketEvent.ERROR, errorHandler)
+      ws.off(WebSocketEvent.CLOSE, errorHandler)
+      ws.off(WebSocketEvent.ERROR, errorHandler)
 
       resolve(ws)
     })
   })
 }
+
+let instanceNo = 0
 
 export const MAX_DELAY = 60000
 
@@ -45,6 +70,8 @@ export function connectWebSocketWithPersistentReconnect(
   timeFunction = (i: number) =>
     Math.min(64 * Math.pow(i, 2), MAX_DELAY) * (0.9 + 0.2 * Math.random()),
 ) {
+  instanceNo++
+
   let stopped = false
   let ws = null
 
@@ -69,22 +96,27 @@ export function connectWebSocketWithPersistentReconnect(
         await once(ws, 'close')
 
         ws = null
-      } catch (error) {
-        if (attempts > 10) {
-          console.error(
-            `[Helene] Attempt to reconnect WebSocket ${attempts + 1} failed`,
-          )
-        }
 
-        // If not closed locally by the client, we log the error
-        if (error.code !== 1006) {
-          console.error(error)
+        await waitUntilVisible()
+      } catch (error) {
+        if (stopped) {
+          break
         }
 
         attempts++
+
+        console.error(
+          `[Helene] Attempt to reconnect WebSocket ${attempts} failed (Instance ${instanceNo}) ${JSON.stringify(
+            stopped,
+          )}`,
+          prettyBytes(process.memoryUsage().heapUsed),
+        )
+        console.dir(error)
       }
 
       await sleep(timeFunction(attempts))
+
+      client.emit(ClientEvents.WEBSOCKET_RECONNECTING, attempts)
     }
   }
 
