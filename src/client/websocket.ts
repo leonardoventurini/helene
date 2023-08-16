@@ -1,13 +1,6 @@
-import {
-  BackoffEvent,
-  ClientEvents,
-  Environment,
-  sleep,
-  WebSocketEvent,
-} from '../utils'
-import { Client } from './client'
+import { ClientEvents, Environment, sleep, WebSocketEvent } from '../utils'
 import IsomorphicWebSocket from 'isomorphic-ws'
-import { exponential } from '../utils/backoff'
+import { Client } from './client'
 
 export type GenericWebSocket = IsomorphicWebSocket
 
@@ -39,105 +32,71 @@ export function connectWebSocket(url: string): Promise<GenericWebSocket> {
   })
 }
 
-export async function connectWithRetry(
+export const MAX_DELAY = 60000
+
+export const once = async (ws: IsomorphicWebSocket, event: string) =>
+  new Promise(resolve => {
+    ws.once(event, resolve)
+  })
+
+export function connectWebSocketWithPersistentReconnect(
   url: string,
   client: Client,
-  attempts = 4,
+  timeFunction = (i: number) =>
+    Math.min(64 * Math.pow(i, 2), MAX_DELAY) * (0.9 + 0.2 * Math.random()),
 ) {
-  for (let i = 0; i < attempts; i++) {
-    try {
-      client.emit(ClientEvents.WEBSOCKET_CONNECT_ATTEMPT)
-
-      // Connection successful; exit the loop and return the WebSocket instance
-      const ws = (await connectWebSocket(url)) as GenericWebSocket
-
-      setTimeout(() => {
-        client.emit(ClientEvents.WEBSOCKET_CONNECTED, ws)
-      }, 0)
-
-      return ws
-    } catch (error) {
-      // eslint-disable-next-line no-console,max-len
-      console.error(`Helene: Attempt ${i + 1} of ${attempts} failed`)
-      if (i + 1 === attempts) {
-        throw error
-      }
-    }
-    // Wait for a while before retrying (e.g., 1000ms)
-    await new Promise(resolve => setTimeout(resolve, connectWithRetry._timeout))
-  }
-}
-
-connectWithRetry._timeout = 5000
-
-export async function connectWithBackoff(url: string, client: Client) {
+  let stopped = false
   let ws = null
 
-  const _backoff = exponential({
-    randomisationFactor: 1,
-    initialDelay: 64,
-    maxDelay: connectWithBackoff._maxDelay,
-  })
+  async function connect() {
+    stopped = false
 
-  const onDisconnect = () => {
-    if (ws) {
-      ws.removeAllListeners()
-      ws.close()
-      ws = null
-    }
+    let attempts = 0
 
-    _backoff.reset()
+    while (!stopped) {
+      try {
+        ws = await connectWebSocket(url)
 
-    client.off(ClientEvents.DISCONNECT, onDisconnect)
-  }
+        attempts = 0
 
-  client.on(ClientEvents.DISCONNECT, onDisconnect)
+        if (stopped) {
+          ws.close()
+          break
+        }
 
-  const connect = async () => {
-    try {
-      ws = await connectWithRetry(url, client)
+        client.emit(ClientEvents.WEBSOCKET_CONNECTED, ws)
 
-      await client.waitFor(ClientEvents.WEBSOCKET_CONNECTED)
+        await once(ws, 'close')
 
-      _backoff.reset()
+        ws = null
+      } catch (error) {
+        if (attempts > 10) {
+          console.error(
+            `[Helene] Attempt to reconnect WebSocket ${attempts + 1} failed`,
+          )
+        }
 
-      // The browser does not support `on`. Use `addEventListener` instead.
-      ws.addEventListener(WebSocketEvent.CLOSE, code => {
-        if (code === 1000) return
-        if (!client.clientSocket.options.reconnect) return
-        if (client.clientSocket.closedGracefully) return
-        if (isDocumentHidden()) return
+        // If not closed locally by the client, we log the error
+        if (error.code !== 1006) {
+          console.error(error)
+        }
 
-        _backoff.backoff(code)
-      })
-    } catch (error) {
-      _backoff.backoff(error)
+        attempts++
+      }
+
+      await sleep(timeFunction(attempts))
     }
   }
 
-  _backoff.failAfter(client.clientSocket.options.reconnectRetries)
+  connect()
 
-  _backoff.on(BackoffEvent.READY, async (number, delay) => {
-    client.emit(ClientEvents.WEBSOCKET_BACKOFF_READY, number, delay)
-  })
+  return {
+    disconnect() {
+      stopped = true
 
-  _backoff.on(BackoffEvent.BACKOFF, async (number, delay, error) => {
-    // eslint-disable-next-line no-console,max-len
-    console.log(
-      `Helene: Reconnection attempt #${number + 1} with a delay of ${delay}ms`,
-    )
-    client.emit(ClientEvents.WEBSOCKET_BACKOFF, number, delay, error)
-    await sleep(delay)
-    await connect()
-  })
-
-  _backoff.on(BackoffEvent.FAIL, () => {
-    // eslint-disable-next-line no-console,max-len
-    console.error('Helene: Reconnection Failed (Exhausted Backoff)')
-    client.emit(ClientEvents.WEBSOCKET_BACKOFF_FAIL)
-  })
-
-  await connect()
+      if (ws) {
+        ws.close()
+      }
+    },
+  }
 }
-
-connectWithBackoff._maxDelay = 60000

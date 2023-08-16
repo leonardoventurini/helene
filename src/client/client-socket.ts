@@ -1,8 +1,18 @@
 import { Client, WebSocketOptions } from './client'
-import { ClientEvents, HELENE_WS_PATH, sleep, WebSocketEvents } from '../utils'
+import {
+  ClientEvents,
+  ClientSocketEvent,
+  HELENE_WS_PATH,
+  sleep,
+  WebSocketEvents,
+} from '../utils'
 import { Presentation } from '../utils/presentation'
 import { WebSocketMessageOptions } from '../server'
-import { connectWithBackoff, GenericWebSocket } from './websocket'
+import {
+  connectWebSocketWithPersistentReconnect,
+  GenericWebSocket,
+} from './websocket'
+import { EventEmitter2 } from 'eventemitter2'
 
 export const WebSocketState = {
   CONNECTING: 0,
@@ -11,14 +21,13 @@ export const WebSocketState = {
   CLOSED: 3,
 }
 
-export class ClientSocket {
+export class ClientSocket extends EventEmitter2 {
   client: Client
   socket: GenericWebSocket
 
   protocol: string
   uri: string
 
-  closedGracefully = false
   ready = false
   connecting = false
   reconnecting = false
@@ -31,6 +40,8 @@ export class ClientSocket {
   }
 
   constructor(client: Client, options: WebSocketOptions = {}) {
+    super()
+
     this.client = client
 
     this.client.on(ClientEvents.WEBSOCKET_CONNECTED, this.handleOpen.bind(this))
@@ -44,14 +55,22 @@ export class ClientSocket {
     } else {
       this.uri = `${this.protocol}${this.client.options.host}${this.options.path}`
     }
-
-    this.client.on(ClientEvents.WEBSOCKET_BACKOFF_FAIL, () => {
-      this.connecting = false
-    })
   }
 
   get isOpen(): boolean {
     return Boolean(this.socket?.readyState === WebSocketState.OPEN)
+  }
+
+  async connect() {
+    this.connecting = true
+    this.client.emit(ClientEvents.CONNECTING)
+
+    const { disconnect } = connectWebSocketWithPersistentReconnect(
+      `${this.uri}?uuid=${this.client.uuid}`,
+      this.client,
+    )
+
+    this.client.once(ClientSocketEvent.DISCONNECT, disconnect)
   }
 
   public handleMessage = ({ data, type, target }) => {
@@ -64,42 +83,13 @@ export class ClientSocket {
     this.client.payloadRouter(payload)
   }
 
-  private handleError = error => {
-    this.connecting = false
-    this.ready = false
-    console.error(error)
-    this.client.emit(ClientEvents.ERROR, error)
-  }
-
-  /**
-   * This runs if the connection is interrupted or if the server fails to establish a new connection.
-   */
-  private handleClose = ({ code, reason }) => {
-    this.client.emit(ClientEvents.CLOSE)
-    this.client.emit(ClientEvents.WEBSOCKET_CLOSED)
-
-    if (this.ready)
-      setTimeout(() => this.client.emit(ClientEvents.CLOSE, code, reason), 0)
-
-    this.connecting = false
-    this.ready = false
-    this.socket = undefined
-
-    this.client.clientHttp.createEventSource()
-  }
-
-  public close(force = false) {
+  public close() {
     return new Promise<void>(resolve => {
       if (!this.socket) return resolve()
 
       this.connecting = false
 
-      if (force) {
-        this.socket.close()
-      } else {
-        this.closedGracefully = true
-        this.socket.close(1000, 'Closed Gracefully')
-      }
+      this.emit(ClientSocketEvent.DISCONNECT)
 
       this.socket = undefined
 
@@ -115,17 +105,6 @@ export class ClientSocket {
     this.socket.send(payload, opts)
   }
 
-  async connect() {
-    this.connecting = true
-    this.closedGracefully = false
-    this.client.emit(ClientEvents.CONNECTING)
-
-    await connectWithBackoff(
-      `${this.uri}?uuid=${this.client.uuid}`,
-      this.client,
-    )
-  }
-
   async handleOpen(ws: GenericWebSocket): Promise<void> {
     this.socket = ws
 
@@ -135,25 +114,36 @@ export class ClientSocket {
       return this.handleOpen(ws)
     }
 
-    this.client.clientHttp.clientEventSource?.close()
-
-    this.socket.addEventListener(
-      WebSocketEvents.ERROR,
-      this.handleError.bind(this),
-    )
-    this.socket.addEventListener(
-      WebSocketEvents.MESSAGE,
-      this.handleMessage.bind(this),
-    )
-    this.socket.addEventListener(
-      WebSocketEvents.CLOSE,
-      this.handleClose.bind(this),
-    )
+    this.socket.on(WebSocketEvents.ERROR, this.handleError.bind(this))
+    this.socket.on(WebSocketEvents.MESSAGE, this.handleMessage.bind(this))
+    this.socket.on(WebSocketEvents.CLOSE, this.handleClose.bind(this))
 
     this.connecting = false
     this.ready = true
     this.reconnecting = false
 
     await this.client.init()
+  }
+
+  /**
+   * This runs if the connection is interrupted or if the server fails to establish a new connection.
+   */
+  private handleClose = ({ code, reason }) => {
+    this.client.emit(ClientEvents.CLOSE)
+    this.client.emit(ClientEvents.WEBSOCKET_CLOSED)
+
+    if (this.ready)
+      setTimeout(() => this.client.emit(ClientEvents.CLOSE, code, reason), 0)
+
+    this.connecting = false
+    this.ready = false
+    this.socket = undefined
+  }
+
+  private handleError = error => {
+    this.connecting = false
+    this.ready = false
+    console.error(error)
+    this.client.emit(ClientEvents.ERROR, error)
   }
 }

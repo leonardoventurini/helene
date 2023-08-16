@@ -207,7 +207,7 @@ export class Client extends ClientChannel {
 
       this.keepAliveTimeout = setTimeout(
         async () => {
-          await this.close(true)
+          await this.close()
           this.emit(HeleneEvents.KEEP_ALIVE_DISCONNECT)
         },
         // 2x the keep alive interval as a safety net.
@@ -292,7 +292,7 @@ export class Client extends ClientChannel {
     } catch {
       console.log('event probe failed')
       this.emit(HeleneEvents.EVENT_PROBE_FAILED)
-      await this.close(true)
+      await this.close()
       return false
     }
   }
@@ -349,14 +349,14 @@ export class Client extends ClientChannel {
     return await this.isConnected()
   }
 
-  async close(force = false) {
+  async close() {
     clearTimeout(this.idleTimeout)
 
     this.clientHttp.close()
 
     this.timeouts.forEach(timeout => clearTimeout(timeout))
 
-    return this.clientSocket.close(force)
+    return this.clientSocket.close()
   }
 
   async init() {

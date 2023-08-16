@@ -55,10 +55,7 @@ export enum ClientEvents {
   WEBSOCKET_CONNECTED = 'websocket:connected',
   WEBSOCKET_ATTEMPT = 'websocket:attempt',
   WEBSOCKET_CLOSED = 'websocket:closed',
-  WEBSOCKET_BACKOFF = 'websocket:backoff',
-  WEBSOCKET_BACKOFF_READY = 'websocket:backoff:ready',
-  WEBSOCKET_BACKOFF_FAIL = 'websocket:backoff:fail',
-  WEBSOCKET_BACKOFF_RESET = 'websocket:backoff:reset',
+  WEBSOCKET_RECONNECTING = 'websocket:reconnecting',
 
   EVENTSOURCE_CREATE = 'eventsource:create',
   EVENTSOURCE_OPEN = 'eventsource:open',
@@ -66,17 +63,15 @@ export enum ClientEvents {
   EVENTSOURCE_ERROR = 'eventsource:error',
 }
 
+export enum ClientSocketEvent {
+  DISCONNECT = 'disconnect',
+}
+
 export enum WebSocketEvent {
   OPEN = 'open',
   CLOSE = 'close',
   MESSAGE = 'message',
   ERROR = 'error',
-}
-
-export enum BackoffEvent {
-  READY = 'ready',
-  BACKOFF = 'backoff',
-  FAIL = 'fail',
 }
 
 export enum RedisListeners {
