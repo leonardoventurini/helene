@@ -158,6 +158,16 @@
   resolved "https://registry.yarnpkg.com/@redis/time-series/-/time-series-1.0.4.tgz#af85eb080f6934580e4d3b58046026b6c2b18717"
   integrity sha512-ThUIgo2U/g7cCuZavucQTQzA9g9JbDDY2f64u3AbAoz/8vE2lt2U37LamDUVChhaDA3IRT9R6VvJwqnUfTJzng==
 
+"@sanity/eventsource@^5.0.0":
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/@sanity/eventsource/-/eventsource-5.0.0.tgz#45410c8259e0bb80b4e308e1872846439590805a"
+  integrity sha512-0ewT+BDzfiamHwitUfRcwsl/RREHjWv6VNZvQ8Q4OnnNKXfEEGXbWmqzof0okOTkp4XELgyliht4Qj28o9AU2g==
+  dependencies:
+    "@types/event-source-polyfill" "1.0.1"
+    "@types/eventsource" "1.1.11"
+    event-source-polyfill "1.0.31"
+    eventsource "2.0.2"
+
 "@sinonjs/commons@^2.0.0":
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/@sinonjs/commons/-/commons-2.0.0.tgz#fd4ca5b063554307e8327b4564bd56d3b73924a3"
@@ -315,7 +325,12 @@
   dependencies:
     "@types/node" "*"
 
-"@types/eventsource@^1.1.11":
+"@types/event-source-polyfill@1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@types/event-source-polyfill/-/event-source-polyfill-1.0.1.tgz#ffcb4ca17bc35bc1ca5d3e047fe833292bb73c32"
+  integrity sha512-dls8b0lUgJ/miRApF0efboQ9QZnAm7ofTO6P1ILu8bRPxUFKDxVwFf8+TeuuErmNui6blpltyr7+eV72dbQXlQ==
+
+"@types/eventsource@1.1.11":
   version "1.1.11"
   resolved "https://registry.yarnpkg.com/@types/eventsource/-/eventsource-1.1.11.tgz#a2c0bfd0436b7db42ed1b2b2117f7ec2e8478dc7"
   integrity sha512-L7wLDZlWm5mROzv87W0ofIYeQP5K2UhoFnnUyEWLKM6UBb0ZNRgAqp98qE5DkgfBXdWfc2kYmw9KZm4NLjRbsw==
@@ -1660,12 +1675,17 @@ event-emitter@^0.3.5:
     d "1"
     es5-ext "~0.10.14"
 
+event-source-polyfill@1.0.31:
+  version "1.0.31"
+  resolved "https://registry.yarnpkg.com/event-source-polyfill/-/event-source-polyfill-1.0.31.tgz#45fb0a6fc1375b2ba597361ba4287ffec5bf2e0c"
+  integrity sha512-4IJSItgS/41IxN5UVAVuAyczwZF7ZIEsM1XAoUzIHA6A+xzusEZUutdXz2Nr+MQPLxfTiCvqE79/C8HT8fKFvA==
+
 eventemitter2@^6.4.7:
   version "6.4.7"
   resolved "https://registry.yarnpkg.com/eventemitter2/-/eventemitter2-6.4.7.tgz#a7f6c4d7abf28a14c1ef3442f21cb306a054271d"
   integrity sha512-tYUSVOGeQPKt/eC1ABfhHy5Xd96N3oIijJvN3O9+TsC28T5V9yX9oEfEK5faP0EFSNVOG97qtAS68GBrQB2hDg==
 
-eventsource@^2.0.2:
+eventsource@2.0.2:
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/eventsource/-/eventsource-2.0.2.tgz#76dfcc02930fb2ff339520b6d290da573a9e8508"
   integrity sha512-IzUmBGPR3+oUG9dUeXynyNmf91/3zUSJg1lCktzKw47OXuhco54U3r9B7O4XX+Rb1Itm9OZ2b0RkTs10bICOxA==

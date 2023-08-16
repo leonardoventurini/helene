@@ -4,7 +4,7 @@ import { Presentation } from '../utils/presentation'
 import { EJSON } from 'ejson2'
 import { CLIENT_ID_HEADER_KEY, ClientEvents, TOKEN_HEADER_KEY } from '../utils'
 import { fetch } from 'fetch-undici'
-import EventSource from 'eventsource'
+import EventSource from '@sanity/eventsource'
 import { defer } from 'lodash'
 
 export class ClientHttp {
