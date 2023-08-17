@@ -178,14 +178,15 @@ export class Client extends ClientChannel {
       return this.init()
     }
 
-    try {
-      if (
-        this.clientHttp.isEventSourceConnected &&
-        (await this.probeConnection())
-      ) {
-        return
-      }
+    // Should not init if the event source is already connected either.
+    if (
+      this.clientHttp.isEventSourceConnected &&
+      (await this.probeConnection())
+    ) {
+      return
+    }
 
+    try {
       this.clientHttp.createEventSource()
 
       await this.client.waitFor(ClientEvents.EVENTSOURCE_OPEN, 10000)
