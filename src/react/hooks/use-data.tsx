@@ -24,6 +24,7 @@ type Props = {
   projection?: Record<string, 0 | 1>
   selectiveSync?: boolean
   authenticated?: boolean
+  collectionName?: string
 }
 
 export function useData({
@@ -35,10 +36,11 @@ export function useData({
   projection,
   selectiveSync = false,
   authenticated = false,
+  collectionName = null,
 }: Props) {
   const name = useCreation(
-    () => `collection:${uuidv5(method, uuidv5.URL)}`,
-    [method],
+    () => collectionName ?? `collection:${uuidv5(method, uuidv5.URL)}`,
+    [method, collectionName],
   )
 
   const collection = useCollection({
