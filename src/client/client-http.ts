@@ -48,6 +48,8 @@ export class ClientHttp {
             : {}),
         },
         withCredentials: true,
+        // @ts-ignore
+        heartbeatTimeout: 600000,
       }) as EventSource
 
       this.clientEventSource.onmessage = (event: MessageEvent) => {

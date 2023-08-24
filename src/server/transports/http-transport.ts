@@ -172,6 +172,9 @@ export class HttpTransport {
       clientNode.sendEvent(HeleneEvents.KEEP_ALIVE)
     }, ClientNode.KEEP_ALIVE_INTERVAL)
 
+    res.write('retry: 1000\n')
+    res.write('heartbeatTimeout: 600000\n')
+
     req.on('close', () => {
       console.log('event source closed', clientNode.uuid)
 

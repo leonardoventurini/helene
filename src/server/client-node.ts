@@ -33,6 +33,7 @@ export class ClientNode extends EventEmitter2 {
   userAgent: string
   keepAliveInterval: NodeJS.Timeout
   terminationTimeout: NodeJS.Timeout
+  eventSourceDataId = 0
 
   static KEEP_ALIVE_INTERVAL = 10000
   static ENABLE_KEEP_ALIVE = true
@@ -139,7 +140,12 @@ export class ClientNode extends EventEmitter2 {
 
   writeEventSource(res: Response, payload: string | Record<string, any>) {
     res?.write(
-      `data: ${isString(payload) ? payload : Presentation.encode(payload)}\n\n`,
+      `id: ${++this.eventSourceDataId}\ndata: ${(isString(payload)
+        ? payload
+        : Presentation.encode(payload)
+      )
+        // eslint-disable-next-line no-control-regex
+        .replace(/[\r\n\x00]/g, '\ndata: ')}\n\n`,
     )
   }
 
