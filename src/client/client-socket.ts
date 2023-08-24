@@ -75,7 +75,9 @@ export class ClientSocket extends EventEmitter2 {
     await this.client.waitFor(ClientEvents.WEBSOCKET_CONNECTED)
   }
 
-  public handleMessage(data: string | ArrayBuffer | Buffer | Buffer[]) {
+  public handleMessage(
+    data: string | ArrayBuffer | Buffer | Buffer[] | MessageEvent,
+  ) {
     const payload = Presentation.decode(data)
 
     this.client.emit(ClientEvents.INBOUND_MESSAGE, data)
@@ -116,9 +118,18 @@ export class ClientSocket extends EventEmitter2 {
       return this.handleOpen(ws)
     }
 
-    this.socket.on(WebSocketEvents.ERROR, this.handleError.bind(this))
-    this.socket.on(WebSocketEvents.MESSAGE, this.handleMessage.bind(this))
-    this.socket.on(WebSocketEvents.CLOSE, this.handleClose.bind(this))
+    this.socket.addEventListener(
+      WebSocketEvents.ERROR,
+      this.handleError.bind(this),
+    )
+    this.socket.addEventListener(
+      WebSocketEvents.MESSAGE,
+      this.handleMessage.bind(this),
+    )
+    this.socket.addEventListener(
+      WebSocketEvents.CLOSE,
+      this.handleClose.bind(this),
+    )
 
     this.connecting = false
     this.ready = true

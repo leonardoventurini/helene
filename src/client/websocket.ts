@@ -13,6 +13,18 @@ export const isHidden = () => {
   )
 }
 
+export const once = async (ws: IsomorphicWebSocket, event: string) =>
+  new Promise<void>(resolve => {
+    const _once = () => {
+      resolve()
+      // @ts-ignore
+      ws.removeEventListener(event, _once)
+    }
+
+    // @ts-ignore
+    ws.addEventListener(event, _once)
+  })
+
 export const waitUntilVisible = () => {
   return new Promise<void>(resolve => {
     if (!isHidden()) {
@@ -35,20 +47,20 @@ export function connectWebSocket(url: string): Promise<GenericWebSocket> {
     const errorHandler = (event: any) => {
       reject(event)
 
-      ws.off(WebSocketEvent.CLOSE, errorHandler)
-      ws.off(WebSocketEvent.ERROR, errorHandler)
+      ws.removeEventListener(WebSocketEvent.CLOSE, errorHandler)
+      ws.removeEventListener(WebSocketEvent.ERROR, errorHandler)
     }
 
     const ws = new IsomorphicWebSocket(url)
 
-    ws.on(WebSocketEvent.CLOSE, errorHandler)
-    ws.on(WebSocketEvent.ERROR, errorHandler)
+    ws.addEventListener(WebSocketEvent.CLOSE, errorHandler)
+    ws.addEventListener(WebSocketEvent.ERROR, errorHandler)
 
-    ws.once(WebSocketEvent.OPEN, () => {
+    once(ws, WebSocketEvent.OPEN).then(() => {
       // Need to remove the handlers, otherwise they will
       // be called again in normal operation
-      ws.off(WebSocketEvent.CLOSE, errorHandler)
-      ws.off(WebSocketEvent.ERROR, errorHandler)
+      ws.removeEventListener(WebSocketEvent.CLOSE, errorHandler)
+      ws.removeEventListener(WebSocketEvent.ERROR, errorHandler)
 
       resolve(ws)
     })
@@ -56,11 +68,6 @@ export function connectWebSocket(url: string): Promise<GenericWebSocket> {
 }
 
 export const MAX_DELAY = 60000
-
-export const once = async (ws: IsomorphicWebSocket, event: string) =>
-  new Promise(resolve => {
-    ws.once(event, resolve)
-  })
 
 export function connectWebSocketWithPersistentReconnect(
   url: string,

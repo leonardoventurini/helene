@@ -69,8 +69,12 @@ export namespace Presentation {
     | ErrorPayload
 
   export function decode<T = Payload>(
-    payload: string | ArrayBuffer | Buffer | Buffer[],
+    payload: string | ArrayBuffer | Buffer | Buffer[] | MessageEvent,
   ): T {
+    if (payload.constructor?.name === 'MessageEvent') {
+      payload = (payload as MessageEvent).data
+    }
+
     if (Environment.isBrowser && !Environment.isTest) {
       return EJSON.parse(payload as string)
     }
