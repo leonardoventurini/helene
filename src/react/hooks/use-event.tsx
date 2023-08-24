@@ -1,11 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect } from 'react'
 import { NO_CHANNEL } from '../../utils'
 import { useSubscribe } from './use-subscribe'
 import { useClient } from './use-client'
 import { useCreation } from 'ahooks'
-import { EMPTY } from 'rxjs'
 import { isString } from 'lodash'
-import { fromEventThrottled } from '../utils'
 
 export type UseEventParams = {
   event: string
@@ -18,30 +16,23 @@ export function useLocalEvent(
   fn: (...args: any[]) => void,
   deps: any[] = [],
 ) {
-  const [ready, setReady] = useState(false)
   const _callback = useCallback(fn, deps)
 
   const client = useClient()
 
-  const _channel = useCreation(() => {
+  const ch = useCreation(() => {
     return channel && isString(channel) ? client.channel(channel) : client
   }, [channel])
 
-  const event$ = useCreation(() => {
-    return _channel ? fromEventThrottled(_channel, event) : EMPTY
-  }, [event, _channel])
-
   useEffect(() => {
-    const _sub = event$.subscribe(_callback)
-    setReady(true)
+    if (!channel) return
+
+    ch.on(event, _callback)
 
     return () => {
-      _sub.unsubscribe()
-      setReady(false)
+      ch.off(event, _callback)
     }
-  }, [event$])
-
-  return ready
+  }, [event, channel, _callback])
 }
 export function useRemoteEvent(
   { event, channel = NO_CHANNEL, active = true }: UseEventParams,
@@ -57,12 +48,4 @@ export function useRemoteEvent(
     fn,
     deps,
   )
-}
-
-export function useEvent(
-  { event, channel = NO_CHANNEL }: UseEventParams,
-  fn: (...args: any[]) => void,
-  deps: any[] = [],
-) {
-  return useLocalEvent({ event, channel }, fn, deps)
 }
