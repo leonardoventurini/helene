@@ -1,7 +1,7 @@
 import { identity, isString } from 'lodash'
 import { Environment, Errors, Helpers } from './index'
 import { EJSON } from 'ejson2'
-import { v4 } from 'uuid'
+import { v4 } from '@lukeed/uuid'
 
 export namespace Presentation {
   export type Params = Record<string, any> | any[] | any

@@ -8,7 +8,6 @@ import {
 } from './index'
 import { useCallback, useState } from 'react'
 import { isEmpty, set } from 'lodash'
-import { v5 as uuidv5 } from 'uuid'
 import { BrowserStorage } from '../../data/browser'
 import { useFind } from './use-find'
 import { ClientEvents, HeleneEvents } from '../../utils'
@@ -39,7 +38,7 @@ export function useData({
   collectionName = null,
 }: Props) {
   const name = useCreation(
-    () => collectionName ?? `collection:${uuidv5(method, uuidv5.URL)}`,
+    () => collectionName ?? `collection:${method}`,
     [method, collectionName],
   )
 
