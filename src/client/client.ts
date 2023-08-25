@@ -1,4 +1,4 @@
-import { MethodParams, WebSocketMessageOptions } from '@/server'
+import { MethodParams, WebSocketMessageOptions } from '../server'
 import { PromiseQueue } from './promise-queue'
 import { ClientSocket } from './client-socket'
 import {
@@ -10,7 +10,7 @@ import {
   NO_CHANNEL,
   Presentation,
   TOKEN_HEADER_KEY,
-} from '@/utils'
+} from '../utils'
 import {
   isEmpty,
   isFunction,
@@ -26,7 +26,7 @@ import { ClientHttp } from './client-http'
 import { ClientChannel } from './client-channel'
 import qs from 'query-string'
 import { EJSON } from 'ejson2'
-import { Collection, CollectionOptions, createCollection } from '@/data'
+import { Collection, CollectionOptions, createCollection } from '../data'
 import Timeout = NodeJS.Timeout
 
 export type ErrorHandler = (error: Presentation.ErrorPayload) => any

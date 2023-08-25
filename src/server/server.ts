@@ -9,7 +9,7 @@ import {
   NO_CHANNEL,
   Presentation,
   ServerEvents,
-} from '@/utils'
+} from '../utils'
 import { RequestListener } from 'http'
 import * as assert from 'assert'
 import { isFunction, isObject, isString } from 'lodash'
