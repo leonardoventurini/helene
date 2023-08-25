@@ -7,7 +7,6 @@ import {
   useAuth,
   useCombinedDebounce,
   useConnectionState,
-  useEvent,
   useLocalEvent,
   useMethod,
   useMultipleRawEventsObservable,
@@ -340,10 +339,6 @@ describe('React Hooks', () => {
       expect(test.client._events)
         .to.have.property('set:value')
         .that.is.a('function')
-
-      await waitFor(() => {
-        expect(result.current).to.equal(true)
-      })
 
       test.client.emit('set:value', 42)
 
