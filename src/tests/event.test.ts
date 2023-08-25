@@ -146,4 +146,24 @@ describe('Events', function () {
 
     expect(probe2).to.be.false
   }).timeout(10000)
+
+  it('should support iterating with for await', async () => {
+    await test.createEvent('test:event')
+
+    const interval = setInterval(() => {
+      test.client.emit('test:event', 16)
+    }, 1)
+
+    const values = []
+
+    for await (const data of test.client.iterator('test:event')) {
+      values.push(data)
+
+      if (values.length === 4) break
+    }
+
+    expect(values).to.have.members([16, 16, 16, 16])
+
+    clearInterval(interval)
+  })
 })
