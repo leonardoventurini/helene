@@ -1,7 +1,16 @@
-import { MethodParams, WebSocketMessageOptions } from '../server'
+import { MethodParams, WebSocketMessageOptions } from '@/server'
 import { PromiseQueue } from './promise-queue'
 import { ClientSocket } from './client-socket'
-import { Presentation } from '../utils/presentation'
+import {
+  ClientEvents,
+  Environment,
+  Errors,
+  HeleneEvents,
+  Methods,
+  NO_CHANNEL,
+  Presentation,
+  TOKEN_HEADER_KEY,
+} from '@/utils'
 import {
   isEmpty,
   isFunction,
@@ -13,20 +22,11 @@ import {
   pick,
   throttle,
 } from 'lodash'
-import {
-  ClientEvents,
-  Environment,
-  Errors,
-  HeleneEvents,
-  Methods,
-  NO_CHANNEL,
-  TOKEN_HEADER_KEY,
-} from '../utils'
 import { ClientHttp } from './client-http'
 import { ClientChannel } from './client-channel'
 import qs from 'query-string'
 import { EJSON } from 'ejson2'
-import { Collection, CollectionOptions, createCollection } from '../data'
+import { Collection, CollectionOptions, createCollection } from '@/data'
 import Timeout = NodeJS.Timeout
 
 export type ErrorHandler = (error: Presentation.ErrorPayload) => any

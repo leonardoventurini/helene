@@ -3,7 +3,13 @@ import { RedisClientOptions } from 'redis'
 import { HttpTransport, RedisTransport, WebSocketTransport } from './transports'
 import { Method, MethodFunction, MethodOptions, MethodParams } from './method'
 import { ClientNode } from './client-node'
-import { HeleneEvents, Methods, NO_CHANNEL, ServerEvents } from '../utils'
+import {
+  HeleneEvents,
+  Methods,
+  NO_CHANNEL,
+  Presentation,
+  ServerEvents,
+} from '@/utils'
 import { RequestListener } from 'http'
 import * as assert from 'assert'
 import { isFunction, isObject, isString } from 'lodash'
@@ -11,7 +17,6 @@ import { ServerChannel } from './server-channel'
 import { DefaultMethods } from './default-methods'
 import { Event } from './event'
 import { debounceTime, first, fromEvent, merge } from 'rxjs'
-import { Presentation } from '../utils/presentation'
 
 declare global {
   // eslint-disable-next-line no-var
