@@ -8,18 +8,15 @@ export function createIterator(emitter: EventEmitter2, event: string) {
       return this
     },
     next() {
-      return new Promise((resolve, reject) => {
+      return new Promise(resolve => {
         if (done) {
           resolve({ done: true })
           return
         }
 
-        const eventListener = (value: unknown) => {
-          emitter.off(event, eventListener)
+        emitter.once(event, (value: unknown) => {
           resolve({ value, done: false })
-        }
-
-        emitter.on(event, eventListener)
+        })
       })
     },
     return() {

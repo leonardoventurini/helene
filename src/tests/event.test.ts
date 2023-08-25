@@ -151,18 +151,20 @@ describe('Events', function () {
     await test.createEvent('test:event')
 
     const interval = setInterval(() => {
-      test.client.emit('test:event', 16)
-    }, 1)
+      test.client.emit('test:event', 42)
+    }, 0)
 
     const values = []
+
+    const length = 200
 
     for await (const data of test.client.iterator('test:event')) {
       values.push(data)
 
-      if (values.length === 4) break
+      if (values.length === length) break
     }
 
-    expect(values).to.have.members([16, 16, 16, 16])
+    expect(values).to.have.members(Array(length).fill(42))
 
     clearInterval(interval)
   })
