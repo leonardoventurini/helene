@@ -80,6 +80,10 @@ client.on('event', (data) => {
 await client.call('emit:event')
 ```
 
+### Stats
+
+![Alt](https://repobeats.axiom.co/api/embed/2a323b2903ef389fb1e55b4b49b97a7d455640bb.svg "Repobeats analytics image")
+
 ### License
 
 [MIT](LICENSE)
