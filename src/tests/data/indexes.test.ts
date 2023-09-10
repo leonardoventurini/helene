@@ -1,5 +1,5 @@
-import { assert } from 'chai'
-import { Index } from '../../data/indexes'
+import { assert, expect } from 'chai'
+import { Index } from '../../data'
 
 describe('Indexes', function () {
   describe('Insertion', function () {
@@ -29,9 +29,9 @@ describe('Indexes', function () {
         doc1 = { a: 5, tf: 'hello' }
       idx.insert(doc1)
       idx.tree.getNumberOfKeys().should.equal(1)
-      ;(function () {
+      expect(() => {
         idx.insert(doc1)
-      }.should.throw())
+      }).to.throw()
     })
 
     it('Inserting twice for a fieldName the docs dont have with a unique index results in an error thrown', function () {
@@ -42,7 +42,7 @@ describe('Indexes', function () {
       idx.tree.getNumberOfKeys().should.equal(1)
       ;(function () {
         idx.insert(doc2)
-      }.should.throw())
+      }).should.throw()
     })
 
     it('Inserting twice for a fieldName the docs dont have with a unique and sparse index will not throw, since the docs will be non indexed', function () {
@@ -148,7 +148,7 @@ describe('Indexes', function () {
         idx.getAll()[0].should.equal(obj)
         ;(function () {
           idx.insert(obj2)
-        }.should.throw())
+        }).should.throw()
       })
 
       it('When removing a document, remove it from the index at all unique array elements', function () {
@@ -182,7 +182,7 @@ describe('Indexes', function () {
         idx.getMatching('ee').length.should.equal(0)
         ;(function () {
           idx.insert(obj2)
-        }.should.throw())
+        }).should.throw()
         idx.getAll().length.should.equal(2)
         idx.getMatching('aa').length.should.equal(1)
         idx.getMatching('bb').length.should.equal(1)

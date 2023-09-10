@@ -5,7 +5,6 @@ export class AVLTreeImplementation extends BinarySearchTree {
   left: any
   right: any
   parent: any
-  key: any
   data: any
   unique: any
   compareKeys: any
@@ -227,7 +226,7 @@ export class AVLTreeImplementation extends BinarySearchTree {
     return newRoot
   }
 
-  insert(key, value) {
+  insert(key: any, value: any) {
     const insertPath = []
     let currentNode = this
     // Empty tree, insert as root

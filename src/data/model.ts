@@ -160,11 +160,11 @@ function compareArrays(a, b) {
  * @param {Function} _compareStrings String comparing function, returning -1, 0 or 1, overriding default string comparison (useful for languages with accented letters)
  */
 export function compareThings(
-  a,
-  b,
+  a: any,
+  b: any,
   _compareStrings?: (a: string, b: string) => number,
 ) {
-  let comp, i
+  let comp: number, i: number
 
   const compareStrings = _compareStrings || compareNSB
 
@@ -218,7 +218,7 @@ export function compareThings(
     return isDate(a) ? compareNSB(a.getTime(), b.getTime()) : 1
   }
 
-  // Arrays (first element is most significant and so on)
+  // Arrays (the first element is most significant and so on)
   if (isArray(a)) {
     return isArray(b) ? compareArrays(a, b) : -1
   }

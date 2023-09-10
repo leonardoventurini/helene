@@ -10,7 +10,7 @@ export class AVLTreeInterface {
     this.tree.checkIsAVLT()
   }
 
-  insert(key, value?) {
+  insert(key: string | number, value?: any) {
     const newTree = this.tree.insert(key, value)
 
     // If newTree is undefined, that means its structure was not modified
