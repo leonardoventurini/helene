@@ -88,6 +88,8 @@ export class WebSocketTransport {
   }
 
   handleMessage = (node: ClientNode) => async (data: WebSocket.Data) => {
+    if (Buffer.isBuffer(data)) data = data.toString()
+
     const opts = {
       binary: data instanceof ArrayBuffer,
     }
