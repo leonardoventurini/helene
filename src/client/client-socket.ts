@@ -93,11 +93,11 @@ export class ClientSocket extends EventEmitter2 {
 
       this.connecting = false
 
-      this.emit(ClientSocketEvent.DISCONNECT)
-
       this.socket = undefined
 
       this.client.once(ClientEvents.WEBSOCKET_CLOSED, resolve)
+
+      this.emit(ClientSocketEvent.DISCONNECT)
     })
   }
 
