@@ -429,7 +429,7 @@ export class Client extends ClientChannel {
   }
 
   async disconnect() {
-    return await this.close()
+    return this.close()
   }
 
   /**

@@ -10,7 +10,7 @@
     "watch": "tsc --watch",
     "clean": "rm -rf client react server data utils index.* tsconfig.tsbuildinfo",
     "rebuild": "yarn run clean && yarn run build",
-    "test": "nodemon --watch 'src/**/*' -e ts,tsx --exec 'yarn test:mocha'",
+    "test": "nodemon --watch 'src/**/*' -e ts,tsx --exec 'bun run test:mocha'",
     "test:mocha": "bun run ./node_modules/mocha/bin/mocha.js 'src/**/*.test.*' --extension js,ts,jsx,tsx --file 'src/tests/utils/setup-tests.ts' --exit"
   },
   "dependencies": {
@@ -58,6 +58,7 @@
     "@types/ws": "^8.5.5",
     "@typescript-eslint/eslint-plugin": "^6.6.0",
     "@typescript-eslint/parser": "^6.6.0",
+    "bun-types": "^1.0.1",
     "chai": "^4.3.7",
     "chai-as-promised": "^7.1.1",
     "chai-subset": "^1.6.0",

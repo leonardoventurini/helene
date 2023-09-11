@@ -89,15 +89,13 @@ export class ClientSocket extends EventEmitter2 {
 
   public close() {
     return new Promise<void>(resolve => {
-      if (!this.socket) return resolve()
+      this.client.once(ClientEvents.WEBSOCKET_CLOSED, resolve)
+
+      this.emit(ClientSocketEvent.DISCONNECT)
 
       this.connecting = false
 
       this.socket = undefined
-
-      this.client.once(ClientEvents.WEBSOCKET_CLOSED, resolve)
-
-      this.emit(ClientSocketEvent.DISCONNECT)
     })
   }
 

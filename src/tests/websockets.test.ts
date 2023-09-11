@@ -4,6 +4,7 @@ import { ClientEvents, HeleneEvents, sleep } from '../utils'
 import { TestUtility } from './utils/test-utility'
 import { ClientNode } from '../server'
 import { Client } from '../client'
+import { defer } from 'lodash'
 
 describe('WebSockets', function () {
   const test = new TestUtility()
@@ -46,13 +47,17 @@ describe('WebSockets', function () {
       attemptCount++
     })
 
-    client.connectWebSocket()
+    defer(() => {
+      client.connectWebSocket().catch(console.error)
+    })
 
-    await sleep(1000)
+    await sleep(3000)
 
     test.server.acceptConnections = true
 
     expect(attemptCount).to.be.greaterThan(1)
+
+    await client.disconnect()
   }).timeout(10000)
 
   it('should detect disconnection using keep alive on the server', async () => {
