@@ -75,6 +75,11 @@ export namespace Presentation {
       payload = (payload as MessageEvent).data
     }
 
+    // Seen this happen in tests on Bun 1.0, but not sure why
+    if (payload === 'undefined') {
+      return undefined as any
+    }
+
     if (Environment.isBrowser && !Environment.isTest) {
       return EJSON.parse(payload as string)
     }

@@ -4,6 +4,7 @@ import {
   Errors,
   HELENE_WS_PATH,
   Methods,
+  Presentation,
   PublicError,
   SchemaValidationError,
   ServerEvents,
@@ -12,7 +13,6 @@ import {
 import http from 'http'
 import { ClientNode } from '../client-node'
 import IsomorphicWebSocket from 'isomorphic-ws'
-import { Presentation } from '../../utils/presentation'
 import MethodCallPayload = Presentation.MethodCallPayload
 
 export enum WebSocketTransportEvents {
