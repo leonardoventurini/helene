@@ -57,7 +57,9 @@ export class TestUtility {
       })
 
       afterEach(async () => {
-        await server?.close()
+        setTimeout(() => {
+          server.close()
+        }, 200)
       })
 
       server.once(ServerEvents.READY, () => resolve(server))

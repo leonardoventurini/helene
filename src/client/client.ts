@@ -356,6 +356,15 @@ export class Client extends ClientChannel {
 
     this.timeouts.forEach(timeout => clearTimeout(timeout))
 
+    // Clear event sub/unsub timeouts.
+    this.channels.forEach(channel => {
+      channel.emit(HeleneEvents.COMMIT_PENDING_SUBSCRIPTIONS, {})
+    })
+
+    this.channels.forEach(channel => {
+      channel.emit(HeleneEvents.COMMIT_PENDING_UNSUBSCRIPTIONS, {})
+    })
+
     await this.clientSocket.close()
   }
 

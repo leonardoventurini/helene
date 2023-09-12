@@ -34,11 +34,15 @@ export class ClientChannel extends EventEmitter2 {
     this.pendingSubscriptions.clear()
 
     if (!isEmpty(allEvents)) {
-      const result = await this.client.call(Methods.RPC_ON, {
-        events: allEvents,
-        channel,
-      })
-      console.log('subscription', this.name, result)
+      let result = null
+      try {
+        result = await this.client.call(Methods.RPC_ON, {
+          events: allEvents,
+          channel,
+        })
+      } catch {
+        result = null
+      }
       this.emit(HeleneEvents.COMMIT_PENDING_SUBSCRIPTIONS, result)
     }
   }
@@ -84,11 +88,17 @@ export class ClientChannel extends EventEmitter2 {
     this.pendingUnsubscriptions.clear()
 
     if (!isEmpty(allEvents)) {
-      const result = await this.client.call(Methods.RPC_OFF, {
-        events: allEvents,
-        channel,
-      })
-      console.log('unsubscription', this.name, result)
+      let result = null
+
+      try {
+        result = await this.client.call(Methods.RPC_OFF, {
+          events: allEvents,
+          channel,
+        })
+      } catch {
+        result = {}
+      }
+
       this.emit(HeleneEvents.COMMIT_PENDING_UNSUBSCRIPTIONS, result)
     }
   }
