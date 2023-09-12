@@ -19,7 +19,6 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 20
-          cache: 'yarn'
       - run: bun install
       - run: bun run bun:test:mocha
         env:
@@ -36,7 +35,6 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 20
-          cache: 'yarn'
       - run: bun install
       - run: bun run node:test:mocha
         env:
