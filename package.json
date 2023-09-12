@@ -10,8 +10,10 @@
     "watch": "tsc --watch",
     "clean": "rm -rf client react server data utils index.* tsconfig.tsbuildinfo",
     "rebuild": "yarn run clean && yarn run build",
-    "test": "nodemon --watch 'src/**/*' -e ts,tsx --exec 'bun run test:mocha'",
-    "test:mocha": "bun run ./node_modules/mocha/bin/mocha.js 'src/**/*.test.*' --extension js,ts,jsx,tsx --file 'src/tests/utils/setup-tests.ts' --exit"
+    "bun:test": "nodemon --watch 'src/**/*' -e ts,tsx --exec 'bun run bun:test:mocha'",
+    "bun:test:mocha": "bun run ./node_modules/mocha/bin/mocha.js 'src/**/*.test.*' --extension js,ts,jsx,tsx --file 'src/tests/utils/setup-tests.ts' --exit",
+    "node:test": "nodemon --watch 'src/**/*' -e ts,tsx --exec 'bun run node:test:mocha'",
+    "node:test:mocha": "yarn run mocha -r ts-node/register/transpile-only 'src/**/*.test.*' --extension js,ts,jsx,tsx --file 'src/tests/utils/setup-tests.ts' --exit"
   },
   "dependencies": {
     "@lukeed/uuid": "^2.0.1",
