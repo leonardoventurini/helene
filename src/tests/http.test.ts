@@ -3,7 +3,7 @@ import { ClientEvents, Errors, ServerEvents } from '../utils'
 import { TestUtility } from './utils/test-utility'
 import path from 'path'
 import request from 'supertest'
-import { range } from 'lodash'
+import { defer, range } from 'lodash'
 import { ClientNode } from '../server'
 import { Client, ClientHttp } from '../client'
 import sinon from 'sinon'
@@ -187,7 +187,7 @@ describe('HTTP', async () => {
 
       const client = await test.createHttpClient()
 
-      const channel = await client.channel('test:channel')
+      const channel = client.channel('test:channel')
 
       const subscribeResponse = await channel.subscribe('test:event')
 
@@ -239,15 +239,20 @@ describe('HTTP', async () => {
     }).timeout(60000)
 
     it('should call connection and disconnection events', async () => {
-      test.createHttpClient().then(client => client.close())
+      const clientPromise = test.createHttpClient()
 
       const [node1] = await test.server.waitFor(ServerEvents.CONNECTION, 1000)
-
       expect(node1).to.be.instanceof(ClientNode)
+
+      await clientPromise
+
+      defer(() => {
+        node1.req.destroy()
+      })
 
       const [node2] = await test.server.waitFor(
         ServerEvents.DISCONNECTION,
-        1000,
+        5000,
       )
 
       expect(node2).to.be.instanceof(ClientNode)

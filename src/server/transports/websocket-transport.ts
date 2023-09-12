@@ -158,9 +158,11 @@ export class WebSocketTransport {
       })
 
     try {
-      const response = await method.exec(payload.params, node)
+      const methodPromise = method.exec(payload.params, node)
 
       if (payload.void) return
+
+      const response = await methodPromise
 
       return node.result({
         uuid: payload.uuid,

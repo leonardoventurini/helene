@@ -6,12 +6,12 @@ import {
   CLIENT_ID_HEADER_KEY,
   Errors,
   HeleneEvents,
+  Presentation,
   PublicError,
   SchemaValidationError,
   ServerEvents,
   TOKEN_HEADER_KEY,
 } from '../../utils'
-import { Presentation } from '../../utils/presentation'
 import { ClientNode } from '../client-node'
 import { createHttpTerminator, HttpTerminator } from 'http-terminator'
 
@@ -129,7 +129,7 @@ export class HttpTransport {
     return false
   }
 
-  eventSourceHandler = async (req, res) => {
+  eventSourceHandler = async (req: express.Request, res: express.Response) => {
     const clientId = req.headers[CLIENT_ID_HEADER_KEY] as string
 
     if (!clientId) {
@@ -163,21 +163,19 @@ export class HttpTransport {
 
     this.server.emit(ServerEvents.CONNECTION, clientNode)
 
-    console.log('event source connected', clientNode.uuid)
-
     // Needs to send an event to the client immediately to `onopen` is triggered
     clientNode.sendEvent(HeleneEvents.SERVER_SENT_EVENTS_CONNECTED)
-
-    const keepAliveInterval = setInterval(() => {
-      clientNode.sendEvent(HeleneEvents.KEEP_ALIVE)
-    }, ClientNode.KEEP_ALIVE_INTERVAL)
 
     res.write('retry: 1000\n')
     res.write('heartbeatTimeout: 600000\n')
 
-    req.on('close', () => {
-      console.log('event source closed', clientNode.uuid)
+    req.on('error', console.error)
 
+    const keepAliveInterval = setInterval(() => {
+      res.write(': keep-alive\n')
+    }, ClientNode.KEEP_ALIVE_INTERVAL)
+
+    req.on('close', () => {
       clientNode.close()
 
       clearInterval(keepAliveInterval)

@@ -7,6 +7,4 @@ export * from './page-manager'
 export * from './types'
 export * from './iterator'
 export * from './presentation'
-
-export const sleep = (ms: number) =>
-  new Promise(resolve => setTimeout(resolve, ms))
+export * from './promise'

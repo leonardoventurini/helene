@@ -17,9 +17,10 @@ export class TestUtility {
     globalInstance = true,
     redis = undefined,
   } = {}) {
-    this.port = this.randomPort
-
     beforeEach(async () => {
+      // Make sure we have a different server for each test
+      this.port = this.randomPort
+
       this.server = await this.createSrv({
         debug,
         globalInstance,
@@ -55,8 +56,8 @@ export class TestUtility {
         ...opts,
       })
 
-      after(async () => {
-        setTimeout(() => server?.close(), 100)
+      afterEach(async () => {
+        await server?.close()
       })
 
       server.once(ServerEvents.READY, () => resolve(server))

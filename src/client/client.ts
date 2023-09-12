@@ -454,15 +454,9 @@ export class Client extends ClientChannel {
         return this.clientHttp.request(payload, null, reject)
       }
 
-      this.clientSocket?.socket?.send(
-        Presentation.Inbound.call(payload),
-        ws,
-        (error: any) => {
-          if (error) return reject(error)
+      this.clientSocket.send(Presentation.Inbound.call(payload), ws)
 
-          resolve()
-        },
-      )
+      resolve()
     })
   }
 

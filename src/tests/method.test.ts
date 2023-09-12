@@ -1,7 +1,13 @@
 import { expect } from 'chai'
 import { TestUtility } from './utils/test-utility'
-import { Errors, PublicError, ServerEvents, sleep } from '../utils'
-import { Presentation } from '../utils/presentation'
+import {
+  Errors,
+  getPromise,
+  Presentation,
+  PublicError,
+  ServerEvents,
+  sleep,
+} from '../utils'
 import { ClientNode, HeleneAsyncLocalStorage } from '../server'
 import * as yup from 'yup'
 import * as superstruct from 'superstruct'
@@ -66,13 +72,16 @@ describe('Methods', function () {
 
   it('should run middleware', async () => {
     let calledMiddleware = false
-    let params
+    let params: any
+
+    const { promise, resolve } = getPromise()
 
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     test.server.addMethod(
       'test:method:middleware',
       function (_params) {
         params = _params
+        resolve()
       },
       {
         middleware: [
@@ -88,7 +97,7 @@ describe('Methods', function () {
 
     await test.client.void('test:method:middleware', { world: true })
 
-    await test.sleep(0)
+    await promise
 
     expect(calledMiddleware).to.be.true
     expect(params).to.containSubset({
