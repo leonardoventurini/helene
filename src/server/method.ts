@@ -12,7 +12,6 @@ import {
 } from '../utils'
 import { AnyObjectSchema, ObjectSchema } from 'yup'
 import { EJSON } from 'ejson2'
-import { create, Struct } from 'superstruct'
 import perf_hooks from 'perf_hooks'
 import { Server } from './server'
 
@@ -27,11 +26,7 @@ export interface MethodOptions {
   maxAge?: number
   protected?: boolean
   middleware?: AnyFunction[]
-
-  /**
-   * Supports Yup and Superstruct schemas.
-   */
-  schema?: AnyObjectSchema | Struct
+  schema?: AnyObjectSchema
 }
 
 export class Method {
@@ -39,7 +34,7 @@ export class Method {
   fn: MethodFunction
   isProtected: boolean
   middleware: AnyFunction[]
-  schema: AnyObjectSchema | Struct = null
+  schema: AnyObjectSchema = null
   name: string
   server: Server
 
@@ -89,10 +84,6 @@ export class Method {
 
     if (this.schema) {
       try {
-        if (this.schema instanceof Struct) {
-          cleanParams = create(params, this.schema)
-        }
-
         if (this.schema instanceof ObjectSchema) {
           await this.schema.validate(params)
 

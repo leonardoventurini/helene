@@ -281,15 +281,12 @@ export class Client extends ClientChannel {
    * Workaround for Safari not reconnecting after the app is brought back to the foreground.
    */
   async probeConnection() {
-    console.log('probing connection')
-
     try {
       this.call(Methods.EVENT_PROBE).catch(console.error)
       await this.waitFor(HeleneEvents.EVENT_PROBE, Client.EVENT_PROBE_TIMEOUT)
-      console.log('event probe success')
       return true
     } catch {
-      console.log('event probe failed')
+      console.error('event probe failed')
       this.emit(HeleneEvents.EVENT_PROBE_FAILED)
       await this.close()
       return false
