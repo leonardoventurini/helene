@@ -49,13 +49,12 @@ export class HttpTransport {
 
   constructor(server: Server, origins: string[], limit: RateLimit) {
     this.server = server
-    this.http = http.createServer()
-
+    this.express = express()
+    this.http = http.createServer(this.express)
     this.httpTerminator = createHttpTerminator({
       server: this.http,
     })
 
-    this.express = express()
     this.express.use('/__h', express.urlencoded({ extended: true }))
     this.express.use('/__h', express.text({ type: 'text/plain' }))
 
@@ -77,15 +76,15 @@ export class HttpTransport {
       this.http.on(ServerEvents.REQUEST, this.server.requestListener)
     }
 
-    this.http.on(ServerEvents.REQUEST, this.express)
-
     this.express.post('/__h', this.requestHandler)
 
     this.express.get('/__h', this.eventSourceHandler)
 
-    this.http.listen(server.port, () => {
-      this.server.debugger(`Helene HTTP Transport: Listening on ${server.port}`)
+    this.http.listen(server.port, server.host, () => {
       this.server.emit(ServerEvents.HTTP_LISTENING)
+      console.log(
+        `Helene HTTP server started on http://${server.host}:${server.port}`,
+      )
     })
 
     this.authMiddleware = this.authMiddleware.bind(this)

@@ -107,7 +107,7 @@ export class Server extends ServerChannel {
     assert.ok(port, 'Invalid Port')
 
     this.host = host
-    this.port = port
+    this.port = Number(port)
     this.requestListener = requestListener
     this.debug = debug
 
