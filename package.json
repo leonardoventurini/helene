@@ -6,6 +6,7 @@
   "main": "index.js",
   "type": "commonjs",
   "scripts": {
+    "lint": "eslint --ext .js,.jsx,.ts,.tsx src",
     "build": "tsc",
     "watch": "tsc --watch",
     "clean": "rm -rf client react server data utils index.* tsconfig.tsbuildinfo",

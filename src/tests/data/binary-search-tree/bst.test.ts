@@ -89,7 +89,7 @@ describe('Binary search tree', function () {
         node.key += 1
         ;(function () {
           t.checkAllNodesFullfillCondition(test)
-        }.should.throw())
+        }).should.throw()
         node.key -= 1
       })
 
@@ -117,57 +117,57 @@ describe('Binary search tree', function () {
       l.key = 12
       ;(function () {
         t.checkNodeOrdering()
-      }.should.throw())
+      }).should.throw()
       l.key = 5
 
       r.key = 9
       ;(function () {
         t.checkNodeOrdering()
-      }.should.throw())
+      }).should.throw()
       r.key = 15
 
       ll.key = 6
       ;(function () {
         t.checkNodeOrdering()
-      }.should.throw())
+      }).should.throw()
       ll.key = 11
       ;(function () {
         t.checkNodeOrdering()
-      }.should.throw())
+      }).should.throw()
       ll.key = 3
 
       lr.key = 4
       ;(function () {
         t.checkNodeOrdering()
-      }.should.throw())
+      }).should.throw()
       lr.key = 11
       ;(function () {
         t.checkNodeOrdering()
-      }.should.throw())
+      }).should.throw()
       lr.key = 8
 
       rl.key = 16
       ;(function () {
         t.checkNodeOrdering()
-      }.should.throw())
+      }).should.throw()
       rl.key = 9
       ;(function () {
         t.checkNodeOrdering()
-      }.should.throw())
+      }).should.throw()
       rl.key = 11
 
       rr.key = 12
       ;(function () {
         t.checkNodeOrdering()
-      }.should.throw())
+      }).should.throw()
       rr.key = 7
       ;(function () {
         t.checkNodeOrdering()
-      }.should.throw())
+      }).should.throw()
       rr.key = 10.5
       ;(function () {
         t.checkNodeOrdering()
-      }.should.throw())
+      }).should.throw()
       rr.key = 42
 
       t.checkNodeOrdering()
@@ -189,27 +189,27 @@ describe('Binary search tree', function () {
       r.right = rr
       ;(function () {
         t.checkInternalPointers()
-      }.should.throw())
+      }).should.throw()
       l.parent = t
       ;(function () {
         t.checkInternalPointers()
-      }.should.throw())
+      }).should.throw()
       r.parent = t
       ;(function () {
         t.checkInternalPointers()
-      }.should.throw())
+      }).should.throw()
       ll.parent = l
       ;(function () {
         t.checkInternalPointers()
-      }.should.throw())
+      }).should.throw()
       lr.parent = l
       ;(function () {
         t.checkInternalPointers()
-      }.should.throw())
+      }).should.throw()
       rl.parent = r
       ;(function () {
         t.checkInternalPointers()
-      }.should.throw())
+      }).should.throw()
       rr.parent = r
 
       t.checkInternalPointers()
@@ -748,11 +748,11 @@ describe('Binary search tree', function () {
       let bst
 
       bst = new BinarySearchTree()
-      ;[10, 5, 3, 1, 4, 8, 6, 9, 15, 12, 11, 13, 20, 19, 42].forEach(function (
-        k,
-      ) {
-        bst.insert(k, 'some ' + k)
-      })
+      ;[10, 5, 3, 1, 4, 8, 6, 9, 15, 12, 11, 13, 20, 19, 42].forEach(
+        function (k) {
+          bst.insert(k, 'some ' + k)
+        },
+      )
       bst.getNumberOfKeys().should.equal(15)
       bst.delete(5)
       bst.checkIsBST()
@@ -763,11 +763,11 @@ describe('Binary search tree', function () {
       bst.search(5).length.should.equal(0)
 
       bst = new BinarySearchTree()
-      ;[10, 5, 3, 1, 4, 8, 6, 9, 15, 12, 11, 13, 20, 19, 42].forEach(function (
-        k,
-      ) {
-        bst.insert(k, 'some ' + k)
-      })
+      ;[10, 5, 3, 1, 4, 8, 6, 9, 15, 12, 11, 13, 20, 19, 42].forEach(
+        function (k) {
+          bst.insert(k, 'some ' + k)
+        },
+      )
       bst.getNumberOfKeys().should.equal(15)
       bst.delete(15)
       bst.checkIsBST()

@@ -26,47 +26,47 @@ describe('AVL tree', function () {
       r.right = rr
       ;(function () {
         avlt.checkHeightCorrect()
-      }.should.throw())
+      }).should.throw()
       avlt.height = 1
       ;(function () {
         avlt.checkHeightCorrect()
-      }.should.throw())
+      }).should.throw()
       l.height = 1
       ;(function () {
         avlt.checkHeightCorrect()
-      }.should.throw())
+      }).should.throw()
       r.height = 1
       ;(function () {
         avlt.checkHeightCorrect()
-      }.should.throw())
+      }).should.throw()
       ll.height = 1
       ;(function () {
         avlt.checkHeightCorrect()
-      }.should.throw())
+      }).should.throw()
       lr.height = 1
       ;(function () {
         avlt.checkHeightCorrect()
-      }.should.throw())
+      }).should.throw()
       rl.height = 1
       ;(function () {
         avlt.checkHeightCorrect()
-      }.should.throw())
+      }).should.throw()
       rr.height = 1
       ;(function () {
         avlt.checkHeightCorrect()
-      }.should.throw())
+      }).should.throw()
       avlt.height = 2
       ;(function () {
         avlt.checkHeightCorrect()
-      }.should.throw())
+      }).should.throw()
       l.height = 2
       ;(function () {
         avlt.checkHeightCorrect()
-      }.should.throw())
+      }).should.throw()
       r.height = 2
       ;(function () {
         avlt.checkHeightCorrect()
-      }.should.throw())
+      }).should.throw()
       avlt.height = 3
       avlt.checkHeightCorrect() // Correct
 
@@ -74,31 +74,31 @@ describe('AVL tree', function () {
       lr.left = lrl
       ;(function () {
         avlt.checkHeightCorrect()
-      }.should.throw())
+      }).should.throw()
       lrl.left = lrll
       ;(function () {
         avlt.checkHeightCorrect()
-      }.should.throw())
+      }).should.throw()
       lrl.height = 1
       ;(function () {
         avlt.checkHeightCorrect()
-      }.should.throw())
+      }).should.throw()
       lrll.height = 1
       ;(function () {
         avlt.checkHeightCorrect()
-      }.should.throw())
+      }).should.throw()
       lrl.height = 2
       ;(function () {
         avlt.checkHeightCorrect()
-      }.should.throw())
+      }).should.throw()
       lr.height = 3
       ;(function () {
         avlt.checkHeightCorrect()
-      }.should.throw())
+      }).should.throw()
       l.height = 4
       ;(function () {
         avlt.checkHeightCorrect()
-      }.should.throw())
+      }).should.throw()
       avlt.height = 5
       avlt.checkHeightCorrect() // Correct
     })
@@ -175,33 +175,33 @@ describe('AVL tree', function () {
       r.height = 0
       ;(function () {
         avlt.checkBalanceFactors()
-      }.should.throw())
+      }).should.throw()
       r.height = 4
       ;(function () {
         avlt.checkBalanceFactors()
-      }.should.throw())
+      }).should.throw()
       r.height = 2
       avlt.checkBalanceFactors()
 
       ll.height = -1
       ;(function () {
         avlt.checkBalanceFactors()
-      }.should.throw())
+      }).should.throw()
       ll.height = 3
       ;(function () {
         avlt.checkBalanceFactors()
-      }.should.throw())
+      }).should.throw()
       ll.height = 1
       avlt.checkBalanceFactors()
 
       rl.height = -1
       ;(function () {
         avlt.checkBalanceFactors()
-      }.should.throw())
+      }).should.throw()
       rl.height = 3
       ;(function () {
         avlt.checkBalanceFactors()
-      }.should.throw())
+      }).should.throw()
       rl.height = 1
       avlt.checkBalanceFactors()
     })
