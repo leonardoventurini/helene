@@ -8,3 +8,8 @@ chai.use(sinonChai)
 chai.use(chaiSubset)
 
 chai.should()
+
+// Needed for Bun as mocha --exit does not work
+after(() => {
+  process.exit(0)
+})
