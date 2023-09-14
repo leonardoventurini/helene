@@ -49,7 +49,7 @@ export function Sidebar() {
             <Link to='/react/use-connection'>useConnection Hook</Link>
           </li>
           <li>
-            <Link to='/react/use-method'>UseMethod Hook</Link>
+            <Link to='/react/use-method'>useMethod Hook</Link>
           </li>
           <li>
             <Link to='/react/use-deps-change'>useDepsChange Hook</Link>
