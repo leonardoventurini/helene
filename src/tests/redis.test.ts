@@ -26,11 +26,8 @@ describe('Redis Pub/Sub', function () {
       .that.is.instanceof(RedisTransport)
   })
 
-  /**
-   * @flaky
-   */
   it('should publish and receive message', async () => {
-    redis.publishNextTick('fake:channel', 'test')
+    redis.deferPublish('fake:channel', 'test')
 
     const data = await redis.wait('fake:channel')
 

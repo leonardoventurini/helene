@@ -31,10 +31,10 @@ export class RedisTestUtil {
     })
   }
 
-  publishNextTick(channel: string, value: string) {
-    process.nextTick(() => {
+  deferPublish(channel: string, value: string) {
+    setTimeout(() => {
       this.pub.publish(channel, value).catch(console.error)
-    })
+    }, 0)
   }
 
   wait(channel: string, callback?) {
