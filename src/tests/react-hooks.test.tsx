@@ -216,7 +216,6 @@ describe('React Hooks', () => {
 
   describe('useEvent', () => {
     it('should subscribe', async () => {
-      console.log('start subscribe')
       test.server.addEvent('set:value')
 
       let value = 0
@@ -277,8 +276,6 @@ describe('React Hooks', () => {
       await waitFor(() => {
         expect(value).to.equal('hello')
       })
-
-      console.log('end subscribe')
     })
 
     it('should listen to multiple events and only unsubscribe after all listeners are removed', async () => {
@@ -378,13 +375,13 @@ describe('React Hooks', () => {
       emitter.emit('test1', 42)
       emitter.emit('test1', 42)
 
-      await sleep(101)
+      await sleep(110)
 
       emitter.emit('test2', 43)
       emitter.emit('test2', 43)
       emitter.emit('test2', 43)
 
-      await sleep(101)
+      await sleep(110)
 
       expect(values).to.be.deep.equal([42, 43])
     })

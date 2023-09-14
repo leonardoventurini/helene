@@ -95,7 +95,7 @@
     "url": "https://github.com/leonardoventurini/helene/issues"
   },
   "volta": {
-    "node": "20.3.1",
+    "node": "20.6.1",
     "yarn": "1.22.19"
   }
 }
