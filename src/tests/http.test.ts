@@ -237,6 +237,14 @@ describe('HTTP', async () => {
       expect(client.clientHttp.clientEventSource.readyState).to.equal(
         EventSource.CONNECTING,
       )
+
+      await client.waitFor(ClientEvents.EVENTSOURCE_OPEN)
+
+      expect(client.clientHttp.clientEventSource.readyState).to.equal(
+        EventSource.OPEN,
+      )
+
+      await client.close()
     }).timeout(60000)
 
     it('should call connection and disconnection events', async () => {

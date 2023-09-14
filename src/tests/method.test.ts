@@ -257,6 +257,7 @@ describe('Methods', function () {
     const stub = sinon.stub(Client.prototype, 'init')
 
     const client = new Client({
+      host: test.server.host,
       port: test.server.port,
     })
 
