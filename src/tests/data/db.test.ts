@@ -6,6 +6,10 @@ import { deserialize, serialize } from '../../data/serialization'
 import { pluck } from '../../data/utils'
 import mkdirp from 'mkdirp'
 import { NodeStorage } from '../../data/node'
+import find from 'lodash/find'
+import filter from 'lodash/filter'
+import isEqual from 'lodash/isEqual'
+import each from 'lodash/each'
 
 const testDb = 'workspace/test.db',
   reloadTimeUpperBound = 60 // In ms, an upper bound for the reload time used to check createdAt and updatedAt

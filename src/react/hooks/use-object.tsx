@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import isEqual from 'lodash/isEqual'
-import { useCreation } from 'ahooks'
+import useCreation from 'ahooks/lib/useCreation'
 
 export function useLastChangedTimestamp(obj) {
   const [timestamp, setTimestamp] = useState(Date.now())

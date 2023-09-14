@@ -1,17 +1,14 @@
-import { useAsyncEffect, useCreation, useDebounceFn } from 'ahooks'
-import {
-  useClient,
-  useCollection,
-  useCombinedThrottle,
-  useRawEventObservable,
-  useRemoteEvent,
-} from './index'
-import { useCallback, useState } from 'react'
+import useAsyncEffect from 'ahooks/lib/useAsyncEffect'
+import useCreation from 'ahooks/lib/useCreation'
+import useDebounceFn from 'ahooks/lib/useDebounceFn'
+import { useClient, useCollection, useRemoteEvent } from './index'
+import { useState } from 'react'
 import isEmpty from 'lodash/isEmpty'
 import set from 'lodash/set'
 import { BrowserStorage } from '../../data/browser'
 import { useFind } from './use-find'
 import { ClientEvents, HeleneEvents } from '../../utils'
+import { useThrottledEvents } from './use-throttled-events'
 
 const browserStorage = new BrowserStorage()
 
@@ -106,19 +103,13 @@ export function useData({
     await refresh.run()
   }, [collection])
 
-  const initialized$ = useRawEventObservable(client, ClientEvents.INITIALIZED)
-  const contextChanged$ = useRawEventObservable(
+  useThrottledEvents(
     client,
-    ClientEvents.CONTEXT_CHANGED,
+    [ClientEvents.INITIALIZED, ClientEvents.CONTEXT_CHANGED],
+    refresh.run,
+    [refresh.run],
+    500,
   )
-
-  useCombinedThrottle({
-    observables: [initialized$, contextChanged$],
-    throttle: 500,
-    callback: useCallback(() => {
-      refresh.run()
-    }, [refresh.run]),
-  })
 
   useRemoteEvent(
     {

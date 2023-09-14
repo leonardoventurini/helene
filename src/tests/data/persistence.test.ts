@@ -12,6 +12,8 @@ import {
   ensureFileDoesntExist,
 } from '../../data/node/utils'
 import { NodeStorage } from '../../data/node'
+import find from 'lodash/find'
+import isEqual from 'lodash/isEqual'
 
 const testDb = 'workspace/test.db'
 

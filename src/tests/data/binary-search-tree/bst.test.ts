@@ -2,6 +2,9 @@
 import { assert } from 'chai'
 import { BinarySearchTree } from '../../../data/binary-search-tree/bst'
 import { getRandomArray } from '../../../data/binary-search-tree/utils'
+import reduce from 'lodash/reduce'
+import isEqual from 'lodash/isEqual'
+import map from 'lodash/map'
 
 describe('Binary search tree', function () {
   it('Upon creation, left, right are null, key and data can be set', function () {

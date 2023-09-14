@@ -19,7 +19,7 @@ import isString from 'lodash/isString'
 import { ServerChannel } from './server-channel'
 import { DefaultMethods } from './default-methods'
 import { Event } from './event'
-import { forkJoin, fromEvent, take } from 'rxjs'
+import { waitForAll } from '../utils/events'
 
 declare global {
   // eslint-disable-next-line no-var
@@ -142,19 +142,13 @@ export class Server extends ServerChannel {
 
     this.channels.set(NO_CHANNEL, this)
 
-    const observables: Record<string, any> = {}
-
-    observables.http = fromEvent(this, ServerEvents.HTTP_LISTENING).pipe(
-      take(1),
-    )
-
-    if (this.redisTransport) {
-      observables.redis = fromEvent(this, ServerEvents.REDIS_CONNECT).pipe(
-        take(1),
-      )
-    }
-
-    forkJoin(observables).subscribe(() => {
+    waitForAll(
+      this,
+      [
+        ServerEvents.HTTP_LISTENING,
+        this.redisTransport ? ServerEvents.REDIS_CONNECT : null,
+      ].filter(Boolean),
+    ).then(() => {
       this.ready = true
       this.emit(ServerEvents.READY, true)
     })

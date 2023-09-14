@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useClient } from './use-client'
 import { ClientEvents } from '../../utils'
-import { useRawEventObservable } from './use-raw-event-observable'
-import { useCombinedThrottle } from './use-combined-throttle'
+import { useThrottledEvents } from './use-throttled-events'
 
 export const useConnectionState = () => {
   const client = useClient()
@@ -13,22 +12,24 @@ export const useConnectionState = () => {
   const [isOnline, setOnline] = useState(false)
   const [isConnecting, setConnecting] = useState(false)
 
-  const initialized$ = useRawEventObservable(client, ClientEvents.INITIALIZED)
-  const open$ = useRawEventObservable(client, ClientEvents.OPEN)
-  const close$ = useRawEventObservable(client, ClientEvents.WEBSOCKET_CLOSED)
-  const connecting$ = useRawEventObservable(client, ClientEvents.CONNECTING)
-
   const updateConnectionState = useCallback(() => {
     setOffline(client.isOffline)
     setOnline(client.isOnline)
     setConnecting(client.isConnecting)
   }, [client])
 
-  useCombinedThrottle({
-    observables: [initialized$, open$, close$, connecting$],
-    throttle: 16,
-    callback: updateConnectionState,
-  })
+  useThrottledEvents(
+    client,
+    [
+      ClientEvents.INITIALIZED,
+      ClientEvents.OPEN,
+      ClientEvents.WEBSOCKET_CLOSED,
+      ClientEvents.CONNECTING,
+    ],
+    updateConnectionState,
+    [updateConnectionState],
+    16,
+  )
 
   useEffect(() => {
     if (!client) return

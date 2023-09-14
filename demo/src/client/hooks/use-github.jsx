@@ -1,4 +1,4 @@
-import { useRequest } from 'ahooks'
+import useRequest from 'ahooks/lib/useRequest'
 
 export function useGitHub() {
   const { data, loading, error } = useRequest(async () => {
