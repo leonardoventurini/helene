@@ -16,11 +16,9 @@
     "target": "es2021"
   },
   "include": [
-    "./src/**/*.ts",
-    "./src/**/*.tsx"
+    "./src/**/*"
   ],
   "exclude": [
-    "./src/**/*.test.ts",
-    "./src/**/*.test.tsx"
+    "./src/tests/**/*"
   ]
 }

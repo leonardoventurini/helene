@@ -3,10 +3,10 @@ import {
   ClientEvents,
   ClientSocketEvent,
   HELENE_WS_PATH,
+  Presentation,
   sleep,
   WebSocketEvents,
 } from '../utils'
-import { Presentation } from '../utils/presentation'
 import { WebSocketMessageOptions } from '../server'
 import {
   connectWebSocketWithPersistentReconnect,

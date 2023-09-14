@@ -99,7 +99,7 @@ export function connectWebSocket(url: string): Promise<GenericWebSocket> {
 
       ws.onopen = null
       ws.onerror = null
-      ws.onclose = console.error
+      ws.onclose = null
 
       resolve(ws)
     }
