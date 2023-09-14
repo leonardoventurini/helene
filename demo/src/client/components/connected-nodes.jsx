@@ -1,5 +1,5 @@
 import { useMethod } from 'helene/react'
-import { isNumber } from 'lodash'
+import isNumber from 'lodash/isNumber'
 
 export function ConnectedNodes() {
   const { result: connections } = useMethod({

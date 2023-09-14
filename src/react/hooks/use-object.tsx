@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { isEqual } from 'lodash'
+import isEqual from 'lodash/isEqual'
 import { useCreation } from 'ahooks'
 
 export function useLastChangedTimestamp(obj) {

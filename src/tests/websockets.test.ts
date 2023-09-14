@@ -4,7 +4,7 @@ import { ClientEvents, HeleneEvents, sleep } from '../utils'
 import { TestUtility } from './utils/test-utility'
 import { ClientNode } from '../server'
 import { Client } from '../client'
-import { defer } from 'lodash'
+import defer from 'lodash/defer'
 
 describe('WebSockets', function () {
   const test = new TestUtility()

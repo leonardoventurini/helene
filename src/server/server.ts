@@ -12,11 +12,14 @@ import {
 } from '../utils'
 import { RequestListener } from 'http'
 import * as assert from 'assert'
-import { isFunction, isObject, isString } from 'lodash'
+import defer from 'lodash/defer'
+import isFunction from 'lodash/isFunction'
+import isObject from 'lodash/isObject'
+import isString from 'lodash/isString'
 import { ServerChannel } from './server-channel'
 import { DefaultMethods } from './default-methods'
 import { Event } from './event'
-import { debounceTime, first, fromEvent, merge } from 'rxjs'
+import { forkJoin, fromEvent, take } from 'rxjs'
 
 declare global {
   // eslint-disable-next-line no-var
@@ -124,26 +127,37 @@ export class Server extends ServerChannel {
       ...ws,
     })
 
+    this.httpTransport.http.listen(this.port, this.host, () => {
+      console.log(
+        `Helene HTTP server started on http://${this.host}:${this.port}`,
+      )
+      defer(() => {
+        this.server.emit(ServerEvents.HTTP_LISTENING)
+      })
+    })
+
     this.redisTransport = redis ? new RedisTransport(this, redis) : null
 
     this.addEvent(HeleneEvents.METHOD_REFRESH)
 
     this.channels.set(NO_CHANNEL, this)
 
-    const serverEvents = []
+    const observables: Record<string, any> = {}
 
-    serverEvents.push(fromEvent(this, ServerEvents.HTTP_LISTENING))
+    observables.http = fromEvent(this, ServerEvents.HTTP_LISTENING).pipe(
+      take(1),
+    )
 
     if (this.redisTransport) {
-      serverEvents.push(fromEvent(this, ServerEvents.REDIS_CONNECT))
+      observables.redis = fromEvent(this, ServerEvents.REDIS_CONNECT).pipe(
+        take(1),
+      )
     }
 
-    merge(...serverEvents)
-      .pipe(debounceTime(10), first())
-      .subscribe(() => {
-        this.ready = true
-        this.emit(ServerEvents.READY, true)
-      })
+    forkJoin(observables).subscribe(() => {
+      this.ready = true
+      this.emit(ServerEvents.READY, true)
+    })
   }
 
   isReady() {

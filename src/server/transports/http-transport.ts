@@ -17,7 +17,7 @@ import { createHttpTerminator, HttpTerminator } from 'http-terminator'
 
 import rateLimit from 'express-rate-limit'
 import { EJSON } from 'ejson2'
-import { isString } from 'lodash'
+import isString from 'lodash/isString'
 
 import 'express-async-errors'
 import MethodCallPayload = Presentation.MethodCallPayload
@@ -79,13 +79,6 @@ export class HttpTransport {
     this.express.post('/__h', this.requestHandler)
 
     this.express.get('/__h', this.eventSourceHandler)
-
-    this.http.listen(server.port, server.host, () => {
-      this.server.emit(ServerEvents.HTTP_LISTENING)
-      console.log(
-        `Helene HTTP server started on http://${server.host}:${server.port}`,
-      )
-    })
 
     this.authMiddleware = this.authMiddleware.bind(this)
     this.contextMiddleware = this.contextMiddleware.bind(this)

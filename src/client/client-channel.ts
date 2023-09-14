@@ -1,6 +1,8 @@
 import { EventEmitter2 } from 'eventemitter2'
 import { Client } from './client'
-import { castArray, isEmpty, isString } from 'lodash'
+import castArray from 'lodash/castArray'
+import isEmpty from 'lodash/isEmpty'
+import isString from 'lodash/isString'
 import { AnyFunction, createIterator, HeleneEvents, Methods } from '../utils'
 
 export class ClientChannel extends EventEmitter2 {

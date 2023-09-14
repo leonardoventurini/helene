@@ -1,5 +1,6 @@
 import { match } from './model'
-import _ from 'lodash'
+import isBoolean from 'lodash/isBoolean'
+import isFunction from 'lodash/isFunction'
 
 /**
  * Match any of the subqueries
@@ -51,13 +52,13 @@ export const LogicalOperators = {
    * Match if the function returns true
    */
   $where: function (obj, fn) {
-    if (!_.isFunction(fn)) {
+    if (!isFunction(fn)) {
       throw new Error('$where operator used without a function')
     }
 
     const result = fn.call(obj)
 
-    if (!_.isBoolean(result)) {
+    if (!isBoolean(result)) {
       throw new Error('$where function must return boolean')
     }
 

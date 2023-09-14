@@ -16,7 +16,8 @@ import {
   useRemoteEvent,
 } from '../react'
 import sinon from 'sinon'
-import { noop, omit } from 'lodash'
+import noop from 'lodash/noop'
+import omit from 'lodash/omit'
 import { EventEmitter2 } from 'eventemitter2'
 import { sleep } from '../utils'
 

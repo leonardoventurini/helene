@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { isFunction } from 'lodash'
+import isFunction from 'lodash/isFunction'
 
 export const useMethodRefresh = ({
   authenticated,

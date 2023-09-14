@@ -1,6 +1,5 @@
 import { assert, expect } from 'chai'
 import fs from 'fs'
-import _ from 'lodash'
 import path from 'path'
 import { Collection, createCollection } from '../../data'
 import { deserialize, serialize } from '../../data/serialization'
@@ -183,15 +182,15 @@ describe('Database', function () {
       const foundDocs = await collection.find({})
 
       foundDocs.length.should.equal(2)
-      _.find(foundDocs, function (doc) {
+      find(foundDocs, function (doc) {
         return doc.a === 5
       }).b.should.equal('hello')
-      _.find(foundDocs, function (doc) {
+      find(foundDocs, function (doc) {
         return doc.a === 42
       }).b.should.equal('world')
 
       // The data has been persisted correctly
-      const data = _.filter(
+      const data = filter(
         fs.readFileSync(testDb, 'utf8').split('\n'),
         function (line) {
           return line.length > 0
@@ -417,16 +416,16 @@ describe('Database', function () {
         notf: { $in: [6, 9, 5] },
       })
 
-      const doc1 = _.find(data, function (d) {
+      const doc1 = find(data, function (d) {
         return d._id === _doc1._id
       })
-      const doc2 = _.find(data, function (d) {
+      const doc2 = find(data, function (d) {
         return d._id === _doc2._id
       })
-      const doc3 = _.find(data, function (d) {
+      const doc3 = find(data, function (d) {
         return d._id === _doc3._id
       })
-      const doc4 = _.find(data, function (d) {
+      const doc4 = find(data, function (d) {
         return d._id === _doc4._id
       })
 
@@ -447,10 +446,10 @@ describe('Database', function () {
         r: 6,
         tf: { $lte: 9, $gte: 6 },
       })
-      const foundDoc2 = _.find(data, function (d) {
+      const foundDoc2 = find(data, function (d) {
         return d._id === doc2._id
       })
-      const foundDoc4 = _.find(data, function (d) {
+      const foundDoc4 = find(data, function (d) {
         return d._id === doc4._id
       })
       data.length.should.equal(2)
@@ -556,7 +555,7 @@ describe('Database', function () {
       docs.length.should.equal(3)
       pluck(docs, 'somedata').should.contain('ok')
       pluck(docs, 'somedata').should.contain('another')
-      _.find(docs, function (d) {
+      find(docs, function (d) {
         return d.somedata === 'another'
       }).plus.should.equal('additional data')
       pluck(docs, 'somedata').should.contain('again')
@@ -796,19 +795,19 @@ describe('Database', function () {
 
       const docs = await collection.find({})
 
-      const doc1 = _.find(docs, function (d) {
+      const doc1 = find(docs, function (d) {
         return d.somedata === 'ok'
       })
-      const doc2 = _.find(docs, function (d) {
+      const doc2 = find(docs, function (d) {
         return d.somedata === 'again'
       })
-      const doc3 = _.find(docs, function (d) {
+      const doc3 = find(docs, function (d) {
         return d.somedata === 'another'
       })
 
       docs.length.should.equal(3)
       assert.isUndefined(
-        _.find(docs, function (d) {
+        find(docs, function (d) {
           return d.newDoc === 'yes'
         }),
       )
@@ -874,13 +873,13 @@ describe('Database', function () {
       async function testPostUpdateState() {
         const docs = await collection.find({})
 
-        const doc1 = _.find(docs, function (d) {
+        const doc1 = find(docs, function (d) {
             return d._id === id1
           }),
-          doc2 = _.find(docs, function (d) {
+          doc2 = find(docs, function (d) {
             return d._id === id2
           }),
-          doc3 = _.find(docs, function (d) {
+          doc3 = find(docs, function (d) {
             return d._id === id3
           })
 
@@ -937,9 +936,9 @@ describe('Database', function () {
       async function testPostUpdateState() {
         const docs = await collection.find({})
 
-        const doc1 = _.find(docs, d => d._id === id1),
-          doc2 = _.find(docs, d => d._id === id2),
-          doc3 = _.find(docs, d => d._id === id3)
+        const doc1 = find(docs, d => d._id === id1),
+          doc2 = find(docs, d => d._id === id2),
+          doc3 = find(docs, d => d._id === id3)
 
         docs.length.should.equal(3)
 
@@ -1218,12 +1217,12 @@ describe('Database', function () {
       })
 
       docs.length.should.equal(2)
-      _.isEqual(docs[0], {
+      isEqual(docs[0], {
         _id: doc1._id,
         a: 1,
         hello: 'world',
       }).should.equal(true)
-      _.isEqual(docs[1], {
+      isEqual(docs[1], {
         _id: doc2._id,
         a: 2,
         hello: 'changed',
@@ -1238,12 +1237,12 @@ describe('Database', function () {
       })
 
       docs.length.should.equal(2)
-      _.isEqual(docs[0], {
+      isEqual(docs[0], {
         _id: doc1._id,
         a: 1,
         hello: 'world',
       }).should.equal(true)
-      _.isEqual(docs[1], {
+      isEqual(docs[1], {
         _id: doc2._id,
         a: 2,
         hello: 'changed',
@@ -1264,17 +1263,17 @@ describe('Database', function () {
       const docs = await collection.find({}).sort({ a: 1 })
 
       docs.length.should.equal(3)
-      _.isEqual(docs[0], {
+      isEqual(docs[0], {
         _id: doc1._id,
         a: 1,
         hello: 'changed',
       }).should.equal(true)
-      _.isEqual(docs[1], {
+      isEqual(docs[1], {
         _id: doc2._id,
         a: 2,
         hello: 'changed',
       }).should.equal(true)
-      _.isEqual(docs[2], {
+      isEqual(docs[2], {
         _id: doc3._id,
         a: 5,
         hello: 'pluton',
@@ -1286,17 +1285,17 @@ describe('Database', function () {
       const reloadedDocs = await collection.find({}).sort({ a: 1 })
 
       reloadedDocs.length.should.equal(3)
-      _.isEqual(reloadedDocs[0], {
+      isEqual(reloadedDocs[0], {
         _id: doc1._id,
         a: 1,
         hello: 'changed',
       }).should.equal(true)
-      _.isEqual(reloadedDocs[1], {
+      isEqual(reloadedDocs[1], {
         _id: doc2._id,
         a: 2,
         hello: 'changed',
       }).should.equal(true)
-      _.isEqual(reloadedDocs[2], {
+      isEqual(reloadedDocs[2], {
         _id: doc3._id,
         a: 5,
         hello: 'pluton',
@@ -1314,11 +1313,11 @@ describe('Database', function () {
 
       const docs = await collection.find({})
 
-      const d1 = _.find(docs, doc => doc._id === doc1._id)
+      const d1 = find(docs, doc => doc._id === doc1._id)
 
-      const d2 = _.find(docs, doc => doc._id === doc2._id)
+      const d2 = find(docs, doc => doc._id === doc2._id)
 
-      const d3 = _.find(docs, doc => doc._id === doc3._id)
+      const d3 = find(docs, doc => doc._id === doc3._id)
 
       assert.strictEqual(d1.a, 1)
       assert.strictEqual(d2.a, 12)
@@ -1341,15 +1340,15 @@ describe('Database', function () {
       )
 
       // No index modified
-      _.each(collection.indexes, function (index) {
+      each(collection.indexes, function (index) {
         const docs = index.getAll(),
-          d1 = _.find(docs, function (doc) {
+          d1 = find(docs, function (doc) {
             return doc._id === doc1._id
           }),
-          d2 = _.find(docs, function (doc) {
+          d2 = find(docs, function (doc) {
             return doc._id === doc2._id
           }),
-          d3 = _.find(docs, function (doc) {
+          d3 = find(docs, function (doc) {
             return doc._id === doc3._id
           })
         // All changes rolled back, including those that didn't trigger an error
@@ -1374,12 +1373,12 @@ describe('Database', function () {
       )
 
       // Check that no index was modified
-      _.each(collection.indexes, function (index) {
+      each(collection.indexes, function (index) {
         const docs = index.getAll(),
-          d1 = _.find(docs, function (doc) {
+          d1 = find(docs, function (doc) {
             return doc._id === doc1._id
           }),
-          d2 = _.find(docs, function (doc) {
+          d2 = find(docs, function (doc) {
             return doc._id === doc2._id
           })
         d1.a.should.equal(4)
@@ -1615,14 +1614,14 @@ describe('Database', function () {
       docs.length.should.equal(2)
 
       assert.isTrue(
-        _.isEqual(docs[0], {
+        isEqual(docs[0], {
           _id: doc1._id,
           a: 1,
           hello: 'world',
         }),
       )
       assert.isTrue(
-        _.isEqual(docs[1], {
+        isEqual(docs[1], {
           _id: doc3._id,
           a: 3,
           hello: 'moto',
@@ -1637,14 +1636,14 @@ describe('Database', function () {
       reloadedDocs.length.should.equal(2)
 
       assert.isTrue(
-        _.isEqual(reloadedDocs[0], {
+        isEqual(reloadedDocs[0], {
           _id: doc1._id,
           a: 1,
           hello: 'world',
         }),
       )
       assert.isTrue(
-        _.isEqual(reloadedDocs[1], {
+        isEqual(reloadedDocs[1], {
           _id: doc3._id,
           a: 3,
           hello: 'moto',
@@ -1684,9 +1683,9 @@ describe('Database', function () {
       assert.equal(nr, 1)
 
       const docs = await collection.find({})
-      const d1 = _.find(docs, doc => doc._id === doc1._id)
-      const d2 = _.find(docs, doc => doc._id === doc2._id)
-      const d3 = _.find(docs, doc => doc._id === doc3._id)
+      const d1 = find(docs, doc => doc._id === doc1._id)
+      const d2 = find(docs, doc => doc._id === doc2._id)
+      const d3 = find(docs, doc => doc._id === doc3._id)
 
       assert.equal(d1.a, 1)
       assert.isUndefined(d2)
@@ -1802,13 +1801,13 @@ describe('Database', function () {
 
         // The data in the z index is correct
         const docs = await collection.find({})
-        const doc0 = _.find(docs, function (doc) {
+        const doc0 = find(docs, function (doc) {
           return doc._id === 'aaa'
         })
-        const doc1 = _.find(docs, function (doc) {
+        const doc1 = find(docs, function (doc) {
           return doc._id === newDoc1._id
         })
-        const doc2 = _.find(docs, function (doc) {
+        const doc2 = find(docs, function (doc) {
           return doc._id === newDoc2._id
         })
 
@@ -1853,9 +1852,9 @@ describe('Database', function () {
         await fs.promises.writeFile(testDb, rawData, 'utf8')
         await collection.loadDatabase()
 
-        const doc1 = _.find(collection.getAllData(), doc => doc.z === '1'),
-          doc2 = _.find(collection.getAllData(), doc => doc.z === '2'),
-          doc3 = _.find(collection.getAllData(), doc => doc.z === '3')
+        const doc1 = find(collection.getAllData(), doc => doc.z === '1'),
+          doc2 = find(collection.getAllData(), doc => doc.z === '2'),
+          doc3 = find(collection.getAllData(), doc => doc.z === '3')
 
         assert.equal(collection.getAllData().length, 3)
         assert.equal(collection.indexes.z.tree.getNumberOfKeys(), 3)
@@ -1882,9 +1881,9 @@ describe('Database', function () {
         await fs.promises.writeFile(testDb, rawData, 'utf8')
         await collection.loadDatabase()
 
-        const doc1 = _.find(collection.getAllData(), doc => doc.z === '1')
-        const doc2 = _.find(collection.getAllData(), doc => doc.z === '2')
-        const doc3 = _.find(collection.getAllData(), doc => doc.z === '3')
+        const doc1 = find(collection.getAllData(), doc => doc.z === '1')
+        const doc2 = find(collection.getAllData(), doc => doc.z === '2')
+        const doc3 = find(collection.getAllData(), doc => doc.z === '3')
 
         assert.equal(collection.getAllData().length, 3)
         assert.equal(collection.indexes.z.tree.getNumberOfKeys(), 3)
@@ -2087,13 +2086,13 @@ describe('Database', function () {
 
         assert.deepEqual(
           doc1,
-          _.find(docs, d => {
+          find(docs, d => {
             return d._id === doc1._id
           }),
         )
         assert.deepEqual(
           doc2,
-          _.find(docs, d => {
+          find(docs, d => {
             return d._id === doc2._id
           }),
         )
@@ -2156,8 +2155,8 @@ describe('Database', function () {
           {},
         )
         const data = collection.getAllData()
-        const doc1 = _.find(data, doc => doc._id === _doc1._id)
-        const doc2 = _.find(data, doc => doc._id === _doc2._id)
+        const doc1 = find(data, doc => doc._id === _doc1._id)
+        const doc2 = find(data, doc => doc._id === _doc2._id)
 
         assert.equal(nr.modifiedCount, 1)
         assert.equal(data.length, 2)
@@ -2170,8 +2169,8 @@ describe('Database', function () {
           { multi: true },
         )
         const data2 = collection.getAllData()
-        const doc3 = _.find(data2, doc => doc._id === _doc1._id)
-        const doc4 = _.find(data2, doc => doc._id === _doc2._id)
+        const doc3 = find(data2, doc => doc._id === _doc1._id)
+        const doc4 = find(data2, doc => doc._id === _doc2._id)
 
         assert.equal(nr2.modifiedCount, 2)
         assert.equal(data2.length, 2)
@@ -2241,9 +2240,9 @@ describe('Database', function () {
         )
 
         const data = collection.getAllData(),
-          doc1 = _.find(data, doc => doc._id === _doc1._id),
-          doc2 = _.find(data, doc => doc._id === _doc2._id),
-          doc3 = _.find(data, doc => doc._id === _doc3._id)
+          doc1 = find(data, doc => doc._id === _doc1._id),
+          doc2 = find(data, doc => doc._id === _doc2._id),
+          doc3 = find(data, doc => doc._id === _doc3._id)
 
         // Data left unchanged
         data.length.should.equal(3)

@@ -10,7 +10,7 @@ import {
 } from '../utils'
 import { ClientNode, HeleneAsyncLocalStorage } from '../server'
 import * as yup from 'yup'
-import { range } from 'lodash'
+import range from 'lodash/range'
 import { Client } from '../client'
 import sinon from 'sinon'
 

@@ -1,5 +1,5 @@
 import { areComparable, areThingsEqual, match } from './model'
-import { isRegExp } from 'lodash'
+import isRegExp from 'lodash/isRegExp'
 
 export const ComparisonFunctions = {
   /**

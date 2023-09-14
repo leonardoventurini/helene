@@ -2,7 +2,8 @@ import { assert, expect } from 'chai'
 import { deserialize, serialize } from '../../data/serialization'
 import { Collection } from '../../data'
 
-import _, { isDate } from 'lodash'
+import isDate from 'lodash/isDate'
+import isEqual from 'lodash/isEqual'
 
 import fs from 'fs'
 import {
@@ -377,7 +378,7 @@ describe('Model', function () {
           },
           modified = modify(obj, updateQuery)
 
-        _.isEqual(modified, {
+        isEqual(modified, {
           yup: { subfield: 'changed', yop: 'yes indeed' },
           totally: { doesnt: { exist: 'now it does' } },
         }).should.equal(true)
@@ -464,11 +465,11 @@ describe('Model', function () {
         const obj = { some: 'thing', nay: 40 }
 
         let modified = modify(obj, { $inc: { nay: 2 } })
-        _.isEqual(modified, { some: 'thing', nay: 42 }).should.equal(true)
+        isEqual(modified, { some: 'thing', nay: 42 }).should.equal(true)
 
         // Incidentally, this tests that obj was not modified
         modified = modify(obj, { $inc: { inexistent: -6 } })
-        _.isEqual(modified, {
+        isEqual(modified, {
           some: 'thing',
           nay: 40,
           inexistent: -6,
@@ -481,7 +482,7 @@ describe('Model', function () {
         const modified = modify(obj, {
           $inc: { 'nay.nope': -2, 'blip.blop': 123 },
         })
-        _.isEqual(modified, {
+        isEqual(modified, {
           some: 'thing',
           nay: { nope: 38 },
           blip: { blop: 123 },

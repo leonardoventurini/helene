@@ -11,17 +11,15 @@ import {
   Presentation,
   TOKEN_HEADER_KEY,
 } from '../utils'
-import {
-  isEmpty,
-  isFunction,
-  isObject,
-  isPlainObject,
-  isString,
-  last,
-  merge,
-  pick,
-  throttle,
-} from 'lodash'
+import isEmpty from 'lodash/isEmpty'
+import isPlainObject from 'lodash/isPlainObject'
+import isString from 'lodash/isString'
+import merge from 'lodash/merge'
+import pick from 'lodash/pick'
+import last from 'lodash/last'
+import throttle from 'lodash/throttle'
+import isObject from 'lodash/isObject'
+import isFunction from 'lodash/isFunction'
 import { ClientHttp } from './client-http'
 import { ClientChannel } from './client-channel'
 import qs from 'query-string'

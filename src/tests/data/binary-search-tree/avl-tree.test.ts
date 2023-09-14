@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-extra-semi,no-prototype-builtins */
 import { assert } from 'chai'
-import _ from 'lodash'
 import { AVLTreeImplementation } from '../../../data/binary-search-tree/avl-tree-implementation'
 import { AVLTreeInterface } from '../../../data/binary-search-tree/avl-tree-interface'
 import { getRandomArray } from '../../../data/binary-search-tree/utils'
@@ -222,7 +221,7 @@ describe('AVL tree', function () {
 
       avlt.checkIsAVLT()
       avlt.tree.key.should.equal(10)
-      _.isEqual(avlt.tree.data, ['some data']).should.equal(true)
+      isEqual(avlt.tree.data, ['some data']).should.equal(true)
       assert.isNull(avlt.tree.left)
       assert.isNull(avlt.tree.right)
     })
@@ -235,13 +234,13 @@ describe('AVL tree', function () {
       avlt.insert(3, 'world')
 
       avlt.checkIsAVLT()
-      _.isEqual(avlt.search(3), ['hello', 'world']).should.equal(true)
+      isEqual(avlt.search(3), ['hello', 'world']).should.equal(true)
 
       avlt.insert(12, 'a')
       avlt.insert(12, 'b')
 
       avlt.checkIsAVLT()
-      _.isEqual(avlt.search(12), ['a', 'b']).should.equal(true)
+      isEqual(avlt.search(12), ['a', 'b']).should.equal(true)
     })
 
     it('If uniqueness constraint is enforced, we cannot insert different data for same key', function () {
@@ -257,7 +256,7 @@ describe('AVL tree', function () {
       }
 
       avlt.checkIsAVLT()
-      _.isEqual(avlt.search(3), ['hello']).should.equal(true)
+      isEqual(avlt.search(3), ['hello']).should.equal(true)
 
       avlt.insert(12, 'a')
       try {
@@ -268,7 +267,7 @@ describe('AVL tree', function () {
       }
 
       avlt.checkIsAVLT()
-      _.isEqual(avlt.search(12), ['a']).should.equal(true)
+      isEqual(avlt.search(12), ['a']).should.equal(true)
     })
 
     it('Can insert 0 or the empty string', function () {
@@ -278,7 +277,7 @@ describe('AVL tree', function () {
 
       avlt.checkIsAVLT()
       avlt.tree.key.should.equal(0)
-      _.isEqual(avlt.tree.data, ['some data']).should.equal(true)
+      isEqual(avlt.tree.data, ['some data']).should.equal(true)
 
       avlt = new AVLTreeInterface()
 
@@ -286,7 +285,7 @@ describe('AVL tree', function () {
 
       avlt.checkIsAVLT()
       avlt.tree.key.should.equal('')
-      _.isEqual(avlt.tree.data, ['some other data']).should.equal(true)
+      isEqual(avlt.tree.data, ['some other data']).should.equal(true)
     })
 
     it('Auto-balancing insertions', function () {
@@ -388,7 +387,7 @@ describe('AVL tree', function () {
       avlt.checkIsAVLT()
 
       for (i = 0; i < 100; i += 1) {
-        _.isEqual(avlt.search(i), ['some data for ' + i]).should.equal(true)
+        isEqual(avlt.search(i), ['some data for ' + i]).should.equal(true)
       }
     })
 
@@ -521,7 +520,7 @@ describe('AVL tree', function () {
       function checkavlt() {
         // eslint-disable-next-line @typescript-eslint/no-extra-semi
         ;[10, 5, 3, 8, 15, 12, 37].forEach(function (k) {
-          _.isEqual(avlt.search(k), ['some ' + k]).should.equal(true)
+          isEqual(avlt.search(k), ['some ' + k]).should.equal(true)
         })
       }
 
@@ -567,7 +566,7 @@ describe('AVL tree', function () {
 
       avlt.insert(10, 'hello')
       avlt.tree.key.should.equal(10)
-      _.isEqual(avlt.tree.data, ['hello']).should.equal(true)
+      isEqual(avlt.tree.data, ['hello']).should.equal(true)
       avlt.getNumberOfKeys().should.equal(1)
 
       avlt.delete(10)
@@ -596,7 +595,7 @@ describe('AVL tree', function () {
           if (theRemoved.indexOf(k) !== -1) {
             avlt.search(k).length.should.equal(0)
           } else {
-            _.isEqual(avlt.search(k), ['some ' + k]).should.equal(true)
+            isEqual(avlt.search(k), ['some ' + k]).should.equal(true)
           }
         })
 
@@ -661,7 +660,7 @@ describe('AVL tree', function () {
       avlt.delete(10)
       avlt.checkIsAVLT()
       avlt.getNumberOfKeys().should.equal(1)
-      _.isEqual(avlt.search(5), ['some 5']).should.equal(true)
+      isEqual(avlt.search(5), ['some 5']).should.equal(true)
       avlt.search(10).length.should.equal(0)
 
       // Root has only one child, on the right
@@ -673,7 +672,7 @@ describe('AVL tree', function () {
       avlt.delete(10)
       avlt.checkIsAVLT()
       avlt.getNumberOfKeys().should.equal(1)
-      _.isEqual(avlt.search(15), ['some 15']).should.equal(true)
+      isEqual(avlt.search(15), ['some 15']).should.equal(true)
       avlt.search(10).length.should.equal(0)
     })
 
@@ -688,7 +687,7 @@ describe('AVL tree', function () {
           if (theRemoved.indexOf(k) !== -1) {
             avlt.search(k).length.should.equal(0)
           } else {
-            _.isEqual(avlt.search(k), ['some ' + k]).should.equal(true)
+            isEqual(avlt.search(k), ['some ' + k]).should.equal(true)
           }
         })
 
@@ -746,7 +745,7 @@ describe('AVL tree', function () {
       avlt.checkIsAVLT()
       avlt.getNumberOfKeys().should.equal(6)
       ;[5, 3, 8, 15, 12, 37].forEach(function (k) {
-        _.isEqual(avlt.search(k), ['some ' + k]).should.equal(true)
+        isEqual(avlt.search(k), ['some ' + k]).should.equal(true)
       })
       avlt.search(10).length.should.equal(0)
 
@@ -760,7 +759,7 @@ describe('AVL tree', function () {
       avlt.checkIsAVLT()
       avlt.getNumberOfKeys().should.equal(6)
       ;[5, 8, 15, 12, 37, 42].forEach(function (k) {
-        _.isEqual(avlt.search(k), ['some ' + k]).should.equal(true)
+        isEqual(avlt.search(k), ['some ' + k]).should.equal(true)
       })
       avlt.search(10).length.should.equal(0)
     })
@@ -781,7 +780,7 @@ describe('AVL tree', function () {
       avlt.getNumberOfKeys().should.equal(15)
       ;[10, 3, 1, 4, 8, 6, 9, 15, 12, 11, 13, 20, 19, 42, 3.5].forEach(
         function (k) {
-          _.isEqual(avlt.search(k), ['some ' + k]).should.equal(true)
+          isEqual(avlt.search(k), ['some ' + k]).should.equal(true)
         },
       )
       avlt.search(5).length.should.equal(0)
@@ -799,7 +798,7 @@ describe('AVL tree', function () {
       avlt.getNumberOfKeys().should.equal(15)
       ;[10, 3, 1, 4, 8, 6, 9, 5, 12, 11, 13, 20, 19, 42, 12.5].forEach(
         function (k) {
-          _.isEqual(avlt.search(k), ['some ' + k]).should.equal(true)
+          isEqual(avlt.search(k), ['some ' + k]).should.equal(true)
         },
       )
       avlt.search(15).length.should.equal(0)
@@ -1131,8 +1130,8 @@ describe('AVL tree', function () {
 
       // Number of key and number of pieces of data match
       avlt.getNumberOfKeys().should.equal(Object.keys(data).length)
-      _.reduce(
-        _.map(data, function (d) {
+      reduce(
+        map(data, function (d) {
           return d.length
         }),
         function (memo, n) {

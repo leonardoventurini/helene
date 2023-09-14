@@ -7,7 +7,7 @@ import {
 } from '../utils'
 import IsomorphicWebSocket from 'isomorphic-ws'
 import { Client } from './client'
-import { defer } from 'lodash'
+import defer from 'lodash/defer'
 
 export type GenericWebSocket = IsomorphicWebSocket
 

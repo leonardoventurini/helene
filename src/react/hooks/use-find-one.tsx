@@ -1,5 +1,5 @@
 import { useFind } from './use-find'
-import { first } from 'lodash'
+import first from 'lodash/first'
 import { Collection } from '../../data'
 
 export function useFindOne(

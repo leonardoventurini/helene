@@ -7,7 +7,8 @@ import {
   useRemoteEvent,
 } from './index'
 import { useCallback, useState } from 'react'
-import { isEmpty, set } from 'lodash'
+import isEmpty from 'lodash/isEmpty'
+import set from 'lodash/set'
 import { BrowserStorage } from '../../data/browser'
 import { useFind } from './use-find'
 import { ClientEvents, HeleneEvents } from '../../utils'

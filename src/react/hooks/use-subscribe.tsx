@@ -1,7 +1,7 @@
 import { AnyFunction, NO_CHANNEL } from '../../utils'
 import { useEffect, useState } from 'react'
 import { useClient } from './use-client'
-import { isString } from 'lodash'
+import isString from 'lodash/isString'
 import { useCreation } from 'ahooks'
 
 type UseSubscribeParams = {

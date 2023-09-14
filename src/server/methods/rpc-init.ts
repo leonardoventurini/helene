@@ -1,5 +1,5 @@
 import { Method } from '../method'
-import { pick } from 'lodash'
+import pick from 'lodash/pick'
 import { ServerEvents } from '../../utils'
 import { Server } from '../server'
 

@@ -1,6 +1,6 @@
 import { EMPTY, fromEvent, merge, throttleTime } from 'rxjs'
 import { EventEmitter2 } from 'eventemitter2'
-import { isEmpty } from 'lodash'
+import isEmpty from 'lodash/isEmpty'
 
 const SAFE_INTERVAL = 1000 / 60
 
