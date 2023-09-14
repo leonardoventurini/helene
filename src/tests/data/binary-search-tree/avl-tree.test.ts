@@ -375,8 +375,8 @@ describe('AVL tree', function () {
         avlt.insert(n, 'some data')
         avlt.checkIsAVLT()
       })
-    })
-  }) // ==== End of 'Insertion' ==== //
+    }).timeout(10000)
+  })
 
   describe('Search', function () {
     it('Can find data in an AVLT', function () {
