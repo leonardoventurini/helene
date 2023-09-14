@@ -233,15 +233,19 @@ export class Client extends ClientChannel {
     }
   }
 
-  resetIdleTimer() {
+  async resetIdleTimer() {
+    this.stopIdleTimeout()
+    this.startIdleTimeout()
+
+    if (!this.initialized) {
+      return
+    }
+
     if (this.isEventSourceEnabled) {
       this.connectEventSource()
     } else {
       this.connectWebSocket().catch(console.error)
     }
-
-    this.stopIdleTimeout()
-    this.startIdleTimeout()
   }
 
   setupBrowserIdlenessCheck() {

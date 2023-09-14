@@ -1,6 +1,7 @@
 import {
   AnyFunction,
   ClientEvents,
+  ClientSocketEvent,
   Environment,
   sleep,
   WebSocketEvent,
@@ -8,6 +9,7 @@ import {
 import IsomorphicWebSocket from 'isomorphic-ws'
 import { Client } from './client'
 import defer from 'lodash/defer'
+import { ClientSocket } from './client-socket'
 
 export type GenericWebSocket = IsomorphicWebSocket
 
@@ -97,7 +99,7 @@ export function connectWebSocket(url: string): Promise<GenericWebSocket> {
 
       ws.onopen = null
       ws.onerror = null
-      ws.onclose = null
+      ws.onclose = console.error
 
       resolve(ws)
     }
@@ -116,6 +118,7 @@ export const MAX_DELAY = 60000
 export function connectWebSocketWithPersistentReconnect(
   url: string,
   client: Client,
+  clientSocket: ClientSocket,
   timeFunction = (i: number) =>
     Math.min(100 * Math.pow(i, 2), MAX_DELAY) * (0.9 + 0.2 * Math.random()),
 ) {
@@ -170,15 +173,14 @@ export function connectWebSocketWithPersistentReconnect(
 
   connect()
 
-  return {
-    disconnect() {
-      state.stopped = true
+  clientSocket.once(ClientSocketEvent.DISCONNECT, () => {
+    state.stopped = true
 
-      if (ws && ws.readyState !== IsomorphicWebSocket.CLOSED) {
-        ws.close()
-      } else {
-        client.emit(ClientEvents.WEBSOCKET_CLOSED)
-      }
-    },
-  }
+    if (ws && ws.readyState !== IsomorphicWebSocket.CLOSED) {
+      ws?.terminate()
+      ws?.close?.()
+    } else {
+      client.emit(ClientEvents.WEBSOCKET_CLOSED)
+    }
+  })
 }

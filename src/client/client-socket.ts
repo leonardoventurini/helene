@@ -62,15 +62,16 @@ export class ClientSocket extends EventEmitter2 {
   }
 
   async connect() {
+    this.emit(ClientSocketEvent.DISCONNECT)
+
     this.connecting = true
     this.client.emit(ClientEvents.CONNECTING)
 
-    const { disconnect } = connectWebSocketWithPersistentReconnect(
+    connectWebSocketWithPersistentReconnect(
       `${this.uri}?uuid=${this.client.uuid}`,
       this.client,
+      this,
     )
-
-    this.once(ClientSocketEvent.DISCONNECT, disconnect)
 
     await this.client.waitFor(ClientEvents.WEBSOCKET_CONNECTED)
   }
