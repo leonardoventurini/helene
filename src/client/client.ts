@@ -237,6 +237,7 @@ export class Client extends ClientChannel {
     this.stopIdleTimeout()
     this.startIdleTimeout()
 
+    // If we don't wait for the client to initialize, it will cause a race condition when using WebSocket
     if (!this.initialized) {
       return
     }
