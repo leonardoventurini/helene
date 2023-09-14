@@ -49,12 +49,25 @@ export class TestUtility {
 
   async createSrv(opts?: ServerOptions) {
     return new Promise<Server>((resolve, reject) => {
-      const server = new Server({
-        host: this.host,
-        port: opts?.port ?? this.port,
-        rateLimit: true,
-        ...opts,
-      })
+      let server = null
+
+      while (!server) {
+        try {
+          server = new Server({
+            host: this.host,
+            port: opts?.port ?? this.port,
+            rateLimit: true,
+            globalInstance: false,
+            ...opts,
+          })
+        } catch (e) {
+          if (e.code === 'EADDRINUSE') {
+            this.port = this.randomPort
+          } else {
+            throw e
+          }
+        }
+      }
 
       afterEach(async () => {
         setTimeout(() => {
