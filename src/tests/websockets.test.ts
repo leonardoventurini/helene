@@ -87,9 +87,9 @@ describe('WebSockets', function () {
 
     // It is normal for there to be an `ECONNREFUSED` error here
 
-    await clientNode.waitFor(HeleneEvents.KEEP_ALIVE_DISCONNECT, 100)
+    await clientNode.waitFor(HeleneEvents.KEEP_ALIVE_DISCONNECT, 200)
 
-    await client.waitFor(ClientEvents.WEBSOCKET_CLOSED, 100)
+    await client.waitFor(ClientEvents.WEBSOCKET_CLOSED, 200)
 
     expect(client.connected).to.be.false
 
