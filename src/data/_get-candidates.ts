@@ -1,4 +1,5 @@
-import { isDate, isObject } from 'lodash'
+import isDate from 'lodash/isDate'
+import isObject from 'lodash/isObject'
 
 export async function checkIndexesFromMostToLeast(query, indexNames) {
   const queryKeys = Object.keys(query)

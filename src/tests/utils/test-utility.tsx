@@ -17,9 +17,10 @@ export class TestUtility {
     globalInstance = true,
     redis = undefined,
   } = {}) {
-    this.port = this.randomPort
-
     beforeEach(async () => {
+      // Make sure we have a different server for each test
+      this.port = this.randomPort
+
       this.server = await this.createSrv({
         debug,
         globalInstance,
@@ -48,15 +49,30 @@ export class TestUtility {
 
   async createSrv(opts?: ServerOptions) {
     return new Promise<Server>((resolve, reject) => {
-      const server = new Server({
-        host: this.host,
-        port: opts?.port ?? this.port,
-        rateLimit: true,
-        ...opts,
-      })
+      let server = null
 
-      after(async () => {
-        setTimeout(() => server?.close(), 100)
+      while (!server) {
+        try {
+          server = new Server({
+            host: this.host,
+            port: opts?.port ?? this.port,
+            rateLimit: true,
+            globalInstance: false,
+            ...opts,
+          })
+        } catch (e) {
+          if (e.code === 'EADDRINUSE') {
+            this.port = this.randomPort
+          } else {
+            throw e
+          }
+        }
+      }
+
+      afterEach(async () => {
+        setTimeout(() => {
+          server.close()
+        }, 200)
       })
 
       server.once(ServerEvents.READY, () => resolve(server))

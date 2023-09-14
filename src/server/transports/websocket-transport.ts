@@ -4,6 +4,7 @@ import {
   Errors,
   HELENE_WS_PATH,
   Methods,
+  Presentation,
   PublicError,
   SchemaValidationError,
   ServerEvents,
@@ -12,7 +13,6 @@ import {
 import http from 'http'
 import { ClientNode } from '../client-node'
 import IsomorphicWebSocket from 'isomorphic-ws'
-import { Presentation } from '../../utils/presentation'
 import MethodCallPayload = Presentation.MethodCallPayload
 
 export enum WebSocketTransportEvents {
@@ -48,7 +48,14 @@ export class WebSocketTransport {
       (request, socket, head) => {
         // Allows other upgrade requests to work alongside Helene, e.g. NextJS HMR.
         if (!request.url.startsWith(this.options.path)) return
-        if (!this.server.acceptConnections) return socket.destroy()
+        if (!this.server.acceptConnections) {
+          socket.write(
+            `HTTP/${request.httpVersion} 503 Service Unavailable\r\n\r\n`,
+          )
+          socket.destroy()
+          console.log('Helene: Upgrade Connection Refused')
+          return
+        }
 
         this.wss.handleUpgrade(request, socket, head, socket => {
           this.wss.emit(WebSocketEvents.CONNECTION, socket, request)
@@ -88,6 +95,8 @@ export class WebSocketTransport {
   }
 
   handleMessage = (node: ClientNode) => async (data: WebSocket.Data) => {
+    if (Buffer.isBuffer(data)) data = data.toString()
+
     const opts = {
       binary: data instanceof ArrayBuffer,
     }
@@ -149,9 +158,11 @@ export class WebSocketTransport {
       })
 
     try {
-      const response = await method.exec(payload.params, node)
+      const methodPromise = method.exec(payload.params, node)
 
       if (payload.void) return
+
+      const response = await methodPromise
 
       return node.result({
         uuid: payload.uuid,

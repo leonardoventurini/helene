@@ -5,10 +5,11 @@ import {
 } from './utils'
 
 export class BinarySearchTree {
-  left: any
-  right: any
+  // We use `hasOwnProperty` to check if a key has been set on the tree, so we cannot declare it beforehand
+  [x: string]: any
+  left: BinarySearchTree
+  right: BinarySearchTree
   parent: any
-  key: any
   data: any
   unique: any
   compareKeys: any
@@ -130,14 +131,13 @@ export class BinarySearchTree {
   }
 
   getNumberOfKeys() {
-    let res
-
     // eslint-disable-next-line no-prototype-builtins
     if (!this.hasOwnProperty('key')) {
       return 0
     }
 
-    res = 1
+    let res = 1
+
     if (this.left) {
       res += this.left.getNumberOfKeys()
     }
@@ -166,15 +166,16 @@ export class BinarySearchTree {
     return leftChild
   }
 
-  createRightChild(options) {
+  createRightChild(options: { key: any; value: any }) {
     const rightChild = this.createSimilar(options)
     rightChild.parent = this
+
     this.right = rightChild
 
     return rightChild
   }
 
-  insert(key, value?) {
+  insert(key: string | number, value?: any) {
     // Empty tree, insert as root
     // eslint-disable-next-line no-prototype-builtins
     if (!this.hasOwnProperty('key')) {

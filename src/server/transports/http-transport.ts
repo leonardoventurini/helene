@@ -6,18 +6,18 @@ import {
   CLIENT_ID_HEADER_KEY,
   Errors,
   HeleneEvents,
+  Presentation,
   PublicError,
   SchemaValidationError,
   ServerEvents,
   TOKEN_HEADER_KEY,
 } from '../../utils'
-import { Presentation } from '../../utils/presentation'
 import { ClientNode } from '../client-node'
 import { createHttpTerminator, HttpTerminator } from 'http-terminator'
 
 import rateLimit from 'express-rate-limit'
 import { EJSON } from 'ejson2'
-import { isString } from 'lodash'
+import isString from 'lodash/isString'
 
 import 'express-async-errors'
 import MethodCallPayload = Presentation.MethodCallPayload
@@ -49,13 +49,12 @@ export class HttpTransport {
 
   constructor(server: Server, origins: string[], limit: RateLimit) {
     this.server = server
-    this.http = http.createServer()
-
+    this.express = express()
+    this.http = http.createServer(this.express)
     this.httpTerminator = createHttpTerminator({
       server: this.http,
     })
 
-    this.express = express()
     this.express.use('/__h', express.urlencoded({ extended: true }))
     this.express.use('/__h', express.text({ type: 'text/plain' }))
 
@@ -77,16 +76,9 @@ export class HttpTransport {
       this.http.on(ServerEvents.REQUEST, this.server.requestListener)
     }
 
-    this.http.on(ServerEvents.REQUEST, this.express)
-
     this.express.post('/__h', this.requestHandler)
 
     this.express.get('/__h', this.eventSourceHandler)
-
-    this.http.listen(server.port, () => {
-      this.server.debugger(`Helene HTTP Transport: Listening on ${server.port}`)
-      this.server.emit(ServerEvents.HTTP_LISTENING)
-    })
 
     this.authMiddleware = this.authMiddleware.bind(this)
     this.contextMiddleware = this.contextMiddleware.bind(this)
@@ -129,7 +121,7 @@ export class HttpTransport {
     return false
   }
 
-  eventSourceHandler = async (req, res) => {
+  eventSourceHandler = async (req: express.Request, res: express.Response) => {
     const clientId = req.headers[CLIENT_ID_HEADER_KEY] as string
 
     if (!clientId) {
@@ -163,21 +155,19 @@ export class HttpTransport {
 
     this.server.emit(ServerEvents.CONNECTION, clientNode)
 
-    console.log('event source connected', clientNode.uuid)
-
     // Needs to send an event to the client immediately to `onopen` is triggered
     clientNode.sendEvent(HeleneEvents.SERVER_SENT_EVENTS_CONNECTED)
-
-    const keepAliveInterval = setInterval(() => {
-      clientNode.sendEvent(HeleneEvents.KEEP_ALIVE)
-    }, ClientNode.KEEP_ALIVE_INTERVAL)
 
     res.write('retry: 1000\n')
     res.write('heartbeatTimeout: 600000\n')
 
-    req.on('close', () => {
-      console.log('event source closed', clientNode.uuid)
+    req.on('error', console.error)
 
+    const keepAliveInterval = setInterval(() => {
+      res.write(': keep-alive\n')
+    }, ClientNode.KEEP_ALIVE_INTERVAL)
+
+    req.on('close', () => {
       clientNode.close()
 
       clearInterval(keepAliveInterval)

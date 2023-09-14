@@ -5,7 +5,14 @@
  * Querying, update
  */
 
-import _, { isArray, isDate, isNull, isObject, isRegExp } from 'lodash'
+import isArray from 'lodash/isArray'
+import isDate from 'lodash/isDate'
+import isNull from 'lodash/isNull'
+import isObject from 'lodash/isObject'
+import isRegExp from 'lodash/isRegExp'
+import map from 'lodash/map'
+import filter from 'lodash/filter'
+import uniq from 'lodash/uniq'
 import { ComparisonFunctions } from './comparison-functions'
 import { LastStepModifierFunctions } from './last-step-modifier-functions'
 import { LogicalOperators } from './logical-operators'
@@ -160,11 +167,11 @@ function compareArrays(a, b) {
  * @param {Function} _compareStrings String comparing function, returning -1, 0 or 1, overriding default string comparison (useful for languages with accented letters)
  */
 export function compareThings(
-  a,
-  b,
+  a: any,
+  b: any,
   _compareStrings?: (a: string, b: string) => number,
 ) {
-  let comp, i
+  let comp: number, i: number
 
   const compareStrings = _compareStrings || compareNSB
 
@@ -218,7 +225,7 @@ export function compareThings(
     return isDate(a) ? compareNSB(a.getTime(), b.getTime()) : 1
   }
 
-  // Arrays (first element is most significant and so on)
+  // Arrays (the first element is most significant and so on)
   if (isArray(a)) {
     return isArray(b) ? compareArrays(a, b) : -1
   }
@@ -281,10 +288,10 @@ Object.keys(LastStepModifierFunctions).forEach(function (modifier) {
  */
 export function modify(obj, updateQuery) {
   const keys = Object.keys(updateQuery),
-    firstChars = _.map(keys, function (item) {
+    firstChars = map(keys, function (item) {
       return item[0]
     }),
-    dollarFirstChars = _.filter(firstChars, function (c) {
+    dollarFirstChars = filter(firstChars, function (c) {
       return c === '$'
     })
   let newDoc, modifiers
@@ -306,7 +313,7 @@ export function modify(obj, updateQuery) {
     newDoc._id = obj._id
   } else {
     // Apply modifiers
-    modifiers = _.uniq(keys)
+    modifiers = uniq(keys)
     newDoc = deepCopy(obj)
     modifiers.forEach(function (m) {
       if (!modifierFunctions[m]) {
@@ -543,10 +550,10 @@ function matchQueryPart(obj, queryKey, queryValue, treatObjAsValue = false) {
     !isArray(queryValue)
   ) {
     keys = Object.keys(queryValue)
-    firstChars = _.map(keys, function (item) {
+    firstChars = map(keys, function (item) {
       return item[0]
     })
-    dollarFirstChars = _.filter(firstChars, function (c) {
+    dollarFirstChars = filter(firstChars, function (c) {
       return c === '$'
     })
 

@@ -1,5 +1,8 @@
 import { EventEmitter2 } from 'eventemitter2'
-import { first, isEmpty, isNaN, last } from 'lodash'
+import first from 'lodash/first'
+import isEmpty from 'lodash/isEmpty'
+import last from 'lodash/last'
+import isNaN from 'lodash/isNaN'
 import { Client } from '../client'
 
 export const PLACEHOLDER = 'PLACEHOLDER'

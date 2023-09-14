@@ -1,4 +1,5 @@
-import { identity, isString } from 'lodash'
+import identity from 'lodash/identity'
+import isString from 'lodash/isString'
 import { Environment, Errors, Helpers } from './index'
 import { EJSON } from 'ejson2'
 import { v4 } from '@lukeed/uuid'
@@ -73,6 +74,11 @@ export namespace Presentation {
   ): T {
     if (payload.constructor?.name === 'MessageEvent') {
       payload = (payload as MessageEvent).data
+    }
+
+    // Seen this happen in tests on Bun 1.0, but not sure why
+    if (payload === 'undefined') {
+      return undefined as any
     }
 
     if (Environment.isBrowser && !Environment.isTest) {

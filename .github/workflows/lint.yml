@@ -1,0 +1,17 @@
+name: Lint
+on:
+  push:
+    branches:
+      - main
+      - staging
+  pull_request:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: oven-sh/setup-bun@v1
+      - run: bun install
+      - run: bun run lint
+        env:
+          CI: true

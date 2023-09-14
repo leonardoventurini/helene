@@ -3,10 +3,10 @@ import {
   ClientEvents,
   ClientSocketEvent,
   HELENE_WS_PATH,
+  Presentation,
   sleep,
   WebSocketEvents,
 } from '../utils'
-import { Presentation } from '../utils/presentation'
 import { WebSocketMessageOptions } from '../server'
 import {
   connectWebSocketWithPersistentReconnect,
@@ -62,15 +62,16 @@ export class ClientSocket extends EventEmitter2 {
   }
 
   async connect() {
+    this.emit(ClientSocketEvent.DISCONNECT)
+
     this.connecting = true
     this.client.emit(ClientEvents.CONNECTING)
 
-    const { disconnect } = connectWebSocketWithPersistentReconnect(
+    connectWebSocketWithPersistentReconnect(
       `${this.uri}?uuid=${this.client.uuid}`,
       this.client,
+      this,
     )
-
-    this.once(ClientSocketEvent.DISCONNECT, disconnect)
 
     await this.client.waitFor(ClientEvents.WEBSOCKET_CONNECTED)
   }
@@ -89,15 +90,17 @@ export class ClientSocket extends EventEmitter2 {
 
   public close() {
     return new Promise<void>(resolve => {
-      if (!this.socket) return resolve()
+      // @ts-ignore
+      if (this._events.disconnect) {
+        this.client.once(ClientEvents.WEBSOCKET_CLOSED, resolve)
+        this.emit(ClientSocketEvent.DISCONNECT)
+      } else {
+        resolve()
+      }
 
       this.connecting = false
 
-      this.emit(ClientSocketEvent.DISCONNECT)
-
       this.socket = undefined
-
-      this.client.once(ClientEvents.WEBSOCKET_CLOSED, resolve)
     })
   }
 

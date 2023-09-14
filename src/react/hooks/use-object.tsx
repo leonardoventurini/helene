@@ -1,13 +1,13 @@
-import { useLayoutEffect, useRef, useState } from 'react'
-import { isEqual } from 'lodash'
-import { useCreation } from 'ahooks'
+import { useEffect, useRef, useState } from 'react'
+import isEqual from 'lodash/isEqual'
+import useCreation from 'ahooks/lib/useCreation'
 
 export function useLastChangedTimestamp(obj) {
   const [timestamp, setTimestamp] = useState(Date.now())
 
   const previousObj = useRef(obj)
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (!isEqual(previousObj.current, obj)) {
       previousObj.current = obj
       setTimestamp(Date.now())

@@ -12,11 +12,14 @@ import {
 } from '../utils'
 import { RequestListener } from 'http'
 import * as assert from 'assert'
-import { isFunction, isObject, isString } from 'lodash'
+import defer from 'lodash/defer'
+import isFunction from 'lodash/isFunction'
+import isObject from 'lodash/isObject'
+import isString from 'lodash/isString'
 import { ServerChannel } from './server-channel'
 import { DefaultMethods } from './default-methods'
 import { Event } from './event'
-import { debounceTime, first, fromEvent, merge } from 'rxjs'
+import { waitForAll } from '../utils/events'
 
 declare global {
   // eslint-disable-next-line no-var
@@ -107,7 +110,7 @@ export class Server extends ServerChannel {
     assert.ok(port, 'Invalid Port')
 
     this.host = host
-    this.port = port
+    this.port = Number(port)
     this.requestListener = requestListener
     this.debug = debug
 
@@ -124,26 +127,31 @@ export class Server extends ServerChannel {
       ...ws,
     })
 
+    this.httpTransport.http.listen(this.port, this.host, () => {
+      console.log(
+        `Helene HTTP server started on http://${this.host}:${this.port}`,
+      )
+      defer(() => {
+        this.server.emit(ServerEvents.HTTP_LISTENING)
+      })
+    })
+
     this.redisTransport = redis ? new RedisTransport(this, redis) : null
 
     this.addEvent(HeleneEvents.METHOD_REFRESH)
 
     this.channels.set(NO_CHANNEL, this)
 
-    const serverEvents = []
-
-    serverEvents.push(fromEvent(this, ServerEvents.HTTP_LISTENING))
-
-    if (this.redisTransport) {
-      serverEvents.push(fromEvent(this, ServerEvents.REDIS_CONNECT))
-    }
-
-    merge(...serverEvents)
-      .pipe(debounceTime(10), first())
-      .subscribe(() => {
-        this.ready = true
-        this.emit(ServerEvents.READY, true)
-      })
+    waitForAll(
+      this,
+      [
+        ServerEvents.HTTP_LISTENING,
+        this.redisTransport ? ServerEvents.REDIS_CONNECT : null,
+      ].filter(Boolean),
+    ).then(() => {
+      this.ready = true
+      this.emit(ServerEvents.READY, true)
+    })
   }
 
   isReady() {

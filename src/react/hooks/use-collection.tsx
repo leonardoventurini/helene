@@ -1,4 +1,4 @@
-import { useCreation } from 'ahooks'
+import useCreation from 'ahooks/lib/useCreation'
 import { Collection, CollectionOptions } from '../../data'
 import { useObject } from './use-object'
 

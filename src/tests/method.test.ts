@@ -1,11 +1,16 @@
 import { expect } from 'chai'
 import { TestUtility } from './utils/test-utility'
-import { Errors, PublicError, ServerEvents, sleep } from '../utils'
-import { Presentation } from '../utils/presentation'
+import {
+  Errors,
+  getPromise,
+  Presentation,
+  PublicError,
+  ServerEvents,
+  sleep,
+} from '../utils'
 import { ClientNode, HeleneAsyncLocalStorage } from '../server'
 import * as yup from 'yup'
-import * as superstruct from 'superstruct'
-import { range } from 'lodash'
+import range from 'lodash/range'
 import { Client } from '../client'
 import sinon from 'sinon'
 
@@ -66,13 +71,16 @@ describe('Methods', function () {
 
   it('should run middleware', async () => {
     let calledMiddleware = false
-    let params
+    let params: any
+
+    const { promise, resolve } = getPromise()
 
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     test.server.addMethod(
       'test:method:middleware',
       function (_params) {
         params = _params
+        resolve()
       },
       {
         middleware: [
@@ -88,7 +96,7 @@ describe('Methods', function () {
 
     await test.client.void('test:method:middleware', { world: true })
 
-    await test.sleep(0)
+    await promise
 
     expect(calledMiddleware).to.be.true
     expect(params).to.containSubset({
@@ -150,28 +158,6 @@ describe('Methods', function () {
     await expect(test.client.call('validated:method')).to.be.rejectedWith(
       Errors.INVALID_PARAMS,
     )
-
-    const result = await test.client.call('validated:method', {
-      knownProperty: true,
-    })
-
-    expect(result).to.be.true
-  })
-
-  it('should regsiter and call a method with schema validation using superstruct', async () => {
-    test.server.addMethod(
-      'validated:method',
-      ({ knownProperty }) => Boolean(knownProperty),
-      {
-        schema: superstruct.object({
-          knownProperty: superstruct.boolean(),
-        }),
-      },
-    )
-
-    await expect(
-      test.client.call('validated:method', { knownProperty: 1 }),
-    ).to.be.rejectedWith(Errors.INVALID_PARAMS)
 
     const result = await test.client.call('validated:method', {
       knownProperty: true,
@@ -271,6 +257,7 @@ describe('Methods', function () {
     const stub = sinon.stub(Client.prototype, 'init')
 
     const client = new Client({
+      host: test.server.host,
       port: test.server.port,
     })
 

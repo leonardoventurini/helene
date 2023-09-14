@@ -1,6 +1,6 @@
 import React, { PropsWithChildren } from 'react'
 import { Client, ClientOptions } from '../../client'
-import { useCreation } from 'ahooks'
+import useCreation from 'ahooks/lib/useCreation'
 
 export const ClientContext = React.createContext(undefined)
 

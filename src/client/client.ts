@@ -11,17 +11,15 @@ import {
   Presentation,
   TOKEN_HEADER_KEY,
 } from '../utils'
-import {
-  isEmpty,
-  isFunction,
-  isObject,
-  isPlainObject,
-  isString,
-  last,
-  merge,
-  pick,
-  throttle,
-} from 'lodash'
+import isEmpty from 'lodash/isEmpty'
+import isPlainObject from 'lodash/isPlainObject'
+import isString from 'lodash/isString'
+import merge from 'lodash/merge'
+import pick from 'lodash/pick'
+import last from 'lodash/last'
+import throttle from 'lodash/throttle'
+import isObject from 'lodash/isObject'
+import isFunction from 'lodash/isFunction'
 import { ClientHttp } from './client-http'
 import { ClientChannel } from './client-channel'
 import qs from 'query-string'
@@ -235,15 +233,20 @@ export class Client extends ClientChannel {
     }
   }
 
-  resetIdleTimer() {
+  async resetIdleTimer() {
+    this.stopIdleTimeout()
+    this.startIdleTimeout()
+
+    // If we don't wait for the client to initialize, it will cause a race condition when using WebSocket
+    if (!this.initialized) {
+      return
+    }
+
     if (this.isEventSourceEnabled) {
       this.connectEventSource()
     } else {
       this.connectWebSocket().catch(console.error)
     }
-
-    this.stopIdleTimeout()
-    this.startIdleTimeout()
   }
 
   setupBrowserIdlenessCheck() {
@@ -281,15 +284,12 @@ export class Client extends ClientChannel {
    * Workaround for Safari not reconnecting after the app is brought back to the foreground.
    */
   async probeConnection() {
-    console.log('probing connection')
-
     try {
       this.call(Methods.EVENT_PROBE).catch(console.error)
       await this.waitFor(HeleneEvents.EVENT_PROBE, Client.EVENT_PROBE_TIMEOUT)
-      console.log('event probe success')
       return true
     } catch {
-      console.log('event probe failed')
+      console.error('event probe failed')
       this.emit(HeleneEvents.EVENT_PROBE_FAILED)
       await this.close()
       return false
@@ -355,6 +355,15 @@ export class Client extends ClientChannel {
     this.clientHttp.close()
 
     this.timeouts.forEach(timeout => clearTimeout(timeout))
+
+    // Clear event sub/unsub timeouts.
+    this.channels.forEach(channel => {
+      channel.emit(HeleneEvents.COMMIT_PENDING_SUBSCRIPTIONS, {})
+    })
+
+    this.channels.forEach(channel => {
+      channel.emit(HeleneEvents.COMMIT_PENDING_UNSUBSCRIPTIONS, {})
+    })
 
     await this.clientSocket.close()
   }
@@ -429,7 +438,7 @@ export class Client extends ClientChannel {
   }
 
   async disconnect() {
-    return await this.close()
+    return this.close()
   }
 
   /**
@@ -454,15 +463,9 @@ export class Client extends ClientChannel {
         return this.clientHttp.request(payload, null, reject)
       }
 
-      this.clientSocket?.socket?.send(
-        Presentation.Inbound.call(payload),
-        ws,
-        (error: any) => {
-          if (error) return reject(error)
+      this.clientSocket.send(Presentation.Inbound.call(payload), ws)
 
-          resolve()
-        },
-      )
+      resolve()
     })
   }
 

@@ -10,7 +10,8 @@ import { deserialize, serialize } from './serialization'
 import { uid } from './custom-utils'
 import { Collection, CollectionEvent } from './collection'
 import { IStorage } from './types'
-import { defer, throttle } from 'lodash'
+import defer from 'lodash/defer'
+import throttle from 'lodash/throttle'
 
 type Options = {
   db: Collection

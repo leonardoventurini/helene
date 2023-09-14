@@ -3,7 +3,8 @@ import { compareThings, getDotValue, match, modify } from './model'
 /**
  * Manage access to data, be it to find, update or remove it
  */
-import { isEmpty, omit } from 'lodash'
+import isEmpty from 'lodash/isEmpty'
+import omit from 'lodash/omit'
 import { Collection } from './collection'
 
 export type Query = {

@@ -1,7 +1,7 @@
 import { assert } from 'chai'
 import * as fs from 'fs'
 import * as path from 'path'
-import { filter } from 'lodash'
+import filter from 'lodash/filter'
 import { Collection, Cursor } from '../../data'
 import mkdirp from 'mkdirp'
 import { pluck } from '../../data/utils'

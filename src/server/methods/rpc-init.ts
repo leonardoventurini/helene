@@ -1,8 +1,9 @@
 import { Method } from '../method'
-import { pick } from 'lodash'
+import pick from 'lodash/pick'
 import { ServerEvents } from '../../utils'
+import { Server } from '../server'
 
-export const rpcInit = (server, method) =>
+export const rpcInit = (server: Server, method: string) =>
   new Method(
     server,
     method,

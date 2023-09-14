@@ -2,15 +2,14 @@ import IsomorphicWebSocket from 'isomorphic-ws'
 import { WebSocketMessageOptions } from './transports'
 import http from 'http'
 import url from 'url'
-import { isString } from 'lodash'
-import { Presentation } from '../utils/presentation'
+import isString from 'lodash/isString'
+import { HeleneEvents, Presentation, ServerEvents } from '../utils'
 import { Request, Response } from 'express'
 import { HeleneAsyncLocalStorage } from './helene-async-local-storage'
 import { RateLimiter } from 'limiter'
 import { RateLimit, Server } from './server'
 import { ObjectId } from 'bson'
 import { EventEmitter2 } from 'eventemitter2'
-import { HeleneEvents, ServerEvents } from '../utils'
 
 export type ClientNodeContext = Record<string, any>
 
@@ -78,7 +77,8 @@ export class ClientNode extends EventEmitter2 {
             clearInterval(this.keepAliveInterval)
 
             if (socket.readyState === IsomorphicWebSocket.OPEN) {
-              socket.terminate()
+              socket?.terminate?.()
+              socket?.close?.()
               this.emit(HeleneEvents.KEEP_ALIVE_DISCONNECT)
             }
           }, ClientNode.KEEP_ALIVE_INTERVAL / 2)
@@ -194,7 +194,8 @@ export class ClientNode extends EventEmitter2 {
   }
 
   close() {
-    this.socket?.terminate()
+    this.socket?.terminate?.()
+    this.socket?.close?.()
 
     if (this.isEventSource) {
       // If we don't destroy the request, we have to force to terminate the HTTP server,

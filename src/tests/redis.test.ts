@@ -27,7 +27,7 @@ describe('Redis Pub/Sub', function () {
   })
 
   it('should publish and receive message', async () => {
-    redis.publishNextTick('fake:channel', 'test')
+    redis.deferPublish('fake:channel', 'test')
 
     const data = await redis.wait('fake:channel')
 
@@ -63,12 +63,8 @@ describe('Redis Pub/Sub', function () {
     test1.server.addEvent('monkey:king', { cluster: true })
     test2.server.addEvent('monkey:king', { cluster: true })
 
-    console.log('before subscribe')
-
     await client1.subscribe('monkey:king')
     await client2.subscribe('monkey:king')
-
-    console.log('after subscribe')
 
     test1.server.defer('monkey:king', 11)
 

@@ -1,5 +1,6 @@
 import { AnyFunction } from './types'
-import { isNil, isPlainObject } from 'lodash'
+import isNil from 'lodash/isNil'
+import isPlainObject from 'lodash/isPlainObject'
 
 /**
  * Get the params and the result and combine in a single output.

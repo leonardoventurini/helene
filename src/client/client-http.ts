@@ -1,11 +1,15 @@
 import { Client } from './client'
 import { Reject, Resolve } from './promise-queue'
-import { Presentation } from '../utils/presentation'
+import {
+  CLIENT_ID_HEADER_KEY,
+  ClientEvents,
+  Presentation,
+  TOKEN_HEADER_KEY,
+} from '../utils'
 import { EJSON } from 'ejson2'
-import { CLIENT_ID_HEADER_KEY, ClientEvents, TOKEN_HEADER_KEY } from '../utils'
 import { fetch } from 'fetch-undici'
 import EventSource from '@sanity/eventsource'
-import { defer } from 'lodash'
+import defer from 'lodash/defer'
 
 export class ClientHttp {
   client: Client

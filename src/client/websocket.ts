@@ -1,7 +1,15 @@
-import { ClientEvents, Environment, sleep, WebSocketEvent } from '../utils'
+import {
+  AnyFunction,
+  ClientEvents,
+  ClientSocketEvent,
+  Environment,
+  sleep,
+  WebSocketEvent,
+} from '../utils'
 import IsomorphicWebSocket from 'isomorphic-ws'
 import { Client } from './client'
-import { defer } from 'lodash'
+import defer from 'lodash/defer'
+import { ClientSocket } from './client-socket'
 
 export type GenericWebSocket = IsomorphicWebSocket
 
@@ -13,16 +21,30 @@ export const isHidden = () => {
   )
 }
 
+export function on(emitter: any, event: string, listener: AnyFunction) {
+  if (emitter.on) {
+    emitter.on(event, listener)
+  } else {
+    emitter.addEventListener(event, listener)
+  }
+}
+
+export function off(emitter: any, event: string, listener: AnyFunction) {
+  if (emitter.off) {
+    emitter.off(event, listener)
+  } else {
+    emitter.removeEventListener(event, listener)
+  }
+}
+
 export const once = async (ws: IsomorphicWebSocket, event: string) =>
   new Promise<void>(resolve => {
     const _once = () => {
       resolve()
-      // @ts-ignore
-      ws.removeEventListener(event, _once)
+      off(ws, event, _once)
     }
 
-    // @ts-ignore
-    ws.addEventListener(event, _once)
+    on(ws, event, _once)
   })
 
 export const waitUntilVisible = () => {
@@ -44,26 +66,50 @@ export const waitUntilVisible = () => {
 
 export function connectWebSocket(url: string): Promise<GenericWebSocket> {
   return new Promise((resolve, reject) => {
-    const errorHandler = (event: any) => {
-      reject(event)
-
-      ws.removeEventListener(WebSocketEvent.CLOSE, errorHandler)
-      ws.removeEventListener(WebSocketEvent.ERROR, errorHandler)
-    }
-
     const ws = new IsomorphicWebSocket(url)
 
-    ws.addEventListener(WebSocketEvent.CLOSE, errorHandler)
-    ws.addEventListener(WebSocketEvent.ERROR, errorHandler)
+    const timeout = setTimeout(() => {
+      if (ws.readyState !== IsomorphicWebSocket.CLOSED) {
+        ws.close()
+      }
+    }, 1000)
 
-    once(ws, WebSocketEvent.OPEN).then(() => {
+    const errorHandler = () => {
+      clearTimeout(timeout)
+
+      off(ws, WebSocketEvent.CLOSE, errorHandler)
+      off(ws, WebSocketEvent.ERROR, errorHandler)
+
+      ws.onerror = null
+      ws.onclose = null
+
+      reject(new Error('WebSocket connection failed'))
+    }
+
+    ws.onerror = errorHandler
+    ws.onclose = errorHandler
+
+    const openHandle = () => {
+      clearTimeout(timeout)
+
       // Need to remove the handlers, otherwise they will
       // be called again in normal operation
-      ws.removeEventListener(WebSocketEvent.CLOSE, errorHandler)
-      ws.removeEventListener(WebSocketEvent.ERROR, errorHandler)
+      off(ws, WebSocketEvent.CLOSE, errorHandler)
+      off(ws, WebSocketEvent.ERROR, errorHandler)
+
+      ws.onopen = null
+      ws.onerror = null
+      ws.onclose = null
 
       resolve(ws)
-    })
+    }
+
+    ws.onopen = openHandle
+
+    on(ws, WebSocketEvent.CLOSE, errorHandler)
+    on(ws, WebSocketEvent.ERROR, errorHandler)
+
+    once(ws, WebSocketEvent.OPEN).then(openHandle)
   })
 }
 
@@ -72,24 +118,27 @@ export const MAX_DELAY = 60000
 export function connectWebSocketWithPersistentReconnect(
   url: string,
   client: Client,
+  clientSocket: ClientSocket,
   timeFunction = (i: number) =>
     Math.min(100 * Math.pow(i, 2), MAX_DELAY) * (0.9 + 0.2 * Math.random()),
 ) {
-  let stopped = false
+  const state = {
+    stopped: false,
+    attempts: 0,
+  }
+
   let ws = null
 
   async function connect() {
-    let attempts = 0
-
-    while (!stopped) {
+    while (!state.stopped) {
       try {
         client.emit(ClientEvents.WEBSOCKET_CONNECT_ATTEMPT)
 
         ws = await connectWebSocket(url)
 
-        attempts = 0
+        state.attempts = 0
 
-        if (stopped) {
+        if (state.stopped) {
           ws.close()
           break
         }
@@ -104,33 +153,34 @@ export function connectWebSocketWithPersistentReconnect(
 
         await waitUntilVisible()
       } catch (error) {
-        if (stopped) {
+        if (state.stopped) {
           break
         }
 
-        attempts++
+        state.attempts++
 
         console.error(
-          `[Helene] Attempt to reconnect WebSocket ${attempts} failed (Client ID: ${client.uuid})`,
+          `[Helene] Attempt to reconnect WebSocket ${state.attempts} failed (Client ID: ${client.uuid})`,
         )
-        console.dir(error)
+        console.error(error)
       }
 
-      await sleep(timeFunction(attempts))
+      await sleep(timeFunction(state.attempts))
 
-      client.emit(ClientEvents.WEBSOCKET_RECONNECTING, attempts)
+      client.emit(ClientEvents.WEBSOCKET_RECONNECTING, client.uuid)
     }
   }
 
   connect()
 
-  return {
-    disconnect() {
-      stopped = true
+  clientSocket.once(ClientSocketEvent.DISCONNECT, () => {
+    state.stopped = true
 
-      if (ws) {
-        ws.close()
-      }
-    },
-  }
+    if (ws && ws.readyState !== IsomorphicWebSocket.CLOSED) {
+      ws?.terminate()
+      ws?.close?.()
+    } else {
+      client.emit(ClientEvents.WEBSOCKET_CLOSED)
+    }
+  })
 }

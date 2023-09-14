@@ -5,20 +5,18 @@ import { render, renderHook, screen, waitFor } from '@testing-library/react'
 import { TestUtility } from './utils/test-utility'
 import {
   useAuth,
-  useCombinedDebounce,
   useConnectionState,
   useLocalEvent,
   useMethod,
-  useMultipleRawEventsObservable,
   useObject,
-  useObserverSubscribe,
-  useRawEventObservable,
   useRemoteEvent,
 } from '../react'
 import sinon from 'sinon'
-import { noop, omit } from 'lodash'
+import noop from 'lodash/noop'
+import omit from 'lodash/omit'
 import { EventEmitter2 } from 'eventemitter2'
 import { sleep } from '../utils'
+import { useThrottledEvents } from '../react/hooks/use-throttled-events'
 
 describe('React Hooks', () => {
   const test = new TestUtility()
@@ -218,7 +216,6 @@ describe('React Hooks', () => {
 
   describe('useEvent', () => {
     it('should subscribe', async () => {
-      console.log('start subscribe')
       test.server.addEvent('set:value')
 
       let value = 0
@@ -279,8 +276,6 @@ describe('React Hooks', () => {
       await waitFor(() => {
         expect(value).to.equal('hello')
       })
-
-      console.log('end subscribe')
     })
 
     it('should listen to multiple events and only unsubscribe after all listeners are removed', async () => {
@@ -348,49 +343,7 @@ describe('React Hooks', () => {
     })
   })
 
-  describe('useCombinedDebounce', () => {
-    it('should fire event after debounce', async () => {
-      const values = []
-
-      const emitter1 = new EventEmitter2()
-      const emitter2 = new EventEmitter2()
-
-      await test.client.isConnected()
-
-      const { wrapper } = test
-
-      renderHook(
-        ({ event }: any) => {
-          const $event1 = useRawEventObservable(emitter1, 'test')
-          const $event2 = useRawEventObservable(emitter2, 'test')
-
-          useCombinedDebounce({
-            observables: [$event1, $event2],
-            debounce: 100,
-            callback() {
-              values.push(42)
-            },
-          })
-        },
-        { wrapper, initialProps: { event: 'set:value' } },
-      )
-
-      emitter1.emit('test', 42)
-      emitter2.emit('test', 42)
-
-      await sleep(200)
-
-      emitter2.emit('test', 42)
-      emitter2.emit('test', 42)
-      emitter2.emit('test', 42)
-
-      await waitFor(() => {
-        expect(values).to.be.deep.equal([42, 42])
-      })
-    })
-  })
-
-  describe('useMultipleRawEventsObservable', () => {
+  describe('useThrottledEvents', () => {
     it('should listen to multiple events', async () => {
       const values = []
 
@@ -400,34 +353,37 @@ describe('React Hooks', () => {
 
       const { wrapper } = test
 
-      const { result } = renderHook(
+      renderHook(
         () => {
-          const observable = useMultipleRawEventsObservable(emitter, [
-            'test1',
-            'test2',
-            'test3',
-          ])
-
-          return useObserverSubscribe(
-            observable,
+          return useThrottledEvents(
+            emitter,
+            ['test1', 'test2', 'test3'],
             val => {
               values.push(val)
             },
-            [values],
+            [],
+            100,
+            {
+              leading: false,
+            },
           )
         },
         { wrapper },
       )
 
-      await waitFor(() => expect(result.current).to.not.be.undefined)
-
       emitter.emit('test1', 42)
-      emitter.emit('test2', 42)
-      emitter.emit('test3', 42)
+      emitter.emit('test1', 42)
+      emitter.emit('test1', 42)
 
-      await waitFor(() => {
-        expect(values).to.be.deep.equal([42, 42, 42])
-      })
+      await sleep(110)
+
+      emitter.emit('test2', 43)
+      emitter.emit('test2', 43)
+      emitter.emit('test2', 43)
+
+      await sleep(110)
+
+      expect(values).to.be.deep.equal([42, 43])
     })
   })
 

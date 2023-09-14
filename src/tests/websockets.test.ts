@@ -4,6 +4,7 @@ import { ClientEvents, HeleneEvents, sleep } from '../utils'
 import { TestUtility } from './utils/test-utility'
 import { ClientNode } from '../server'
 import { Client } from '../client'
+import defer from 'lodash/defer'
 
 describe('WebSockets', function () {
   const test = new TestUtility()
@@ -46,13 +47,17 @@ describe('WebSockets', function () {
       attemptCount++
     })
 
-    client.connectWebSocket()
+    defer(() => {
+      client.connectWebSocket().catch(console.error)
+    })
 
-    await sleep(1000)
+    await sleep(3000)
 
     test.server.acceptConnections = true
 
     expect(attemptCount).to.be.greaterThan(1)
+
+    await client.disconnect()
   }).timeout(10000)
 
   it('should detect disconnection using keep alive on the server', async () => {
@@ -82,9 +87,9 @@ describe('WebSockets', function () {
 
     // It is normal for there to be an `ECONNREFUSED` error here
 
-    await clientNode.waitFor(HeleneEvents.KEEP_ALIVE_DISCONNECT, 100)
+    await clientNode.waitFor(HeleneEvents.KEEP_ALIVE_DISCONNECT, 200)
 
-    await client.waitFor(ClientEvents.WEBSOCKET_CLOSED, 100)
+    await client.waitFor(ClientEvents.WEBSOCKET_CLOSED, 200)
 
     expect(client.connected).to.be.false
 

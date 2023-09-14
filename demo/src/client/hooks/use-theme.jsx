@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { singletonHook } from 'react-singleton-hook'
-import { noop } from 'lodash'
-import { useLocalStorageState } from 'ahooks'
+import noop from 'lodash/noop'
+import useLocalStorageState from 'ahooks/lib/useLocalStorageState'
 
 export const useTheme = singletonHook(
   {

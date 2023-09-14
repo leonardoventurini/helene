@@ -1,6 +1,8 @@
 import { AVLTreeInterface } from './binary-search-tree/avl-tree-interface'
 import { compareThings, getDotValue } from './model'
-import _, { isArray, isDate } from 'lodash'
+import isArray from 'lodash/isArray'
+import isDate from 'lodash/isDate'
+import uniq from 'lodash/uniq'
 
 /**
  * Two indexed pointers are equal iif they point to the same place
@@ -112,7 +114,7 @@ export class Index {
     } else {
       // If an insert fails due to a unique constraint, roll back all inserts before it
       // @ts-ignore
-      keys = _.uniq(key, projectForUnique)
+      keys = uniq(key, projectForUnique)
 
       for (i = 0; i < keys.length; i += 1) {
         try {
@@ -188,7 +190,7 @@ export class Index {
       this.tree.delete(key, doc)
     } else {
       // @ts-ignore
-      _.uniq(key, projectForUnique).forEach(function (_key) {
+      uniq(key, projectForUnique).forEach(function (_key) {
         self.tree.delete(_key, doc)
       })
     }

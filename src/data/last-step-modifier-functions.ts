@@ -1,4 +1,5 @@
-import _, { isArray } from 'lodash'
+import isArray from 'lodash/isArray'
+import has from 'lodash/has'
 import { compareThings, match } from './model'
 
 /**
@@ -176,7 +177,7 @@ export const LastStepModifierFunctions = {
     }
 
     if (typeof obj[field] !== 'number') {
-      if (!_.has(obj, field)) {
+      if (!has(obj, field)) {
         obj[field] = value
       } else {
         throw new Error("Don't use the $inc modifier on non-number fields")

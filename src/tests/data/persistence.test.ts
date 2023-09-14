@@ -4,8 +4,6 @@ import fs from 'fs'
 
 import path from 'path'
 
-import _ from 'lodash'
-
 import { Collection, CollectionEvent, createCollection } from '../../data'
 import { Persistence } from '../../data/persistence'
 import { deserialize, serialize } from '../../data/serialization'
@@ -14,6 +12,8 @@ import {
   ensureFileDoesntExist,
 } from '../../data/node/utils'
 import { NodeStorage } from '../../data/node'
+import find from 'lodash/find'
+import isEqual from 'lodash/isEqual'
 
 const testDb = 'workspace/test.db'
 
@@ -44,13 +44,13 @@ describe('Persistence', function () {
       return a._id - b._id
     })
     treatedData.length.should.equal(3)
-    _.isEqual(treatedData[0], {
+    isEqual(treatedData[0], {
       _id: '1',
       a: 2,
       ages: [1, 5, 12],
     }).should.equal(true)
-    _.isEqual(treatedData[1], { _id: '2', hello: 'world' }).should.equal(true)
-    _.isEqual(treatedData[2], {
+    isEqual(treatedData[1], { _id: '2', hello: 'world' }).should.equal(true)
+    isEqual(treatedData[2], {
       _id: '3',
       nested: { today: now },
     }).should.equal(true)
@@ -68,12 +68,12 @@ describe('Persistence', function () {
       return a._id - b._id
     })
     treatedData.length.should.equal(2)
-    _.isEqual(treatedData[0], {
+    isEqual(treatedData[0], {
       _id: '1',
       a: 2,
       ages: [1, 5, 12],
     }).should.equal(true)
-    _.isEqual(treatedData[1], {
+    isEqual(treatedData[1], {
       _id: '3',
       nested: { today: now },
     }).should.equal(true)
@@ -92,12 +92,12 @@ describe('Persistence', function () {
       return a._id - b._id
     })
     treatedData.length.should.equal(2)
-    _.isEqual(treatedData[0], {
+    isEqual(treatedData[0], {
       _id: '1',
       a: 2,
       ages: [1, 5, 12],
     }).should.equal(true)
-    _.isEqual(treatedData[1], { _id: '2', hello: 'world' }).should.equal(true)
+    isEqual(treatedData[1], { _id: '2', hello: 'world' }).should.equal(true)
   })
 
   it('If two lines concern the same doc (= same _id), the last one is the good version', function () {
@@ -113,11 +113,11 @@ describe('Persistence', function () {
       return a._id - b._id
     })
     treatedData.length.should.equal(2)
-    _.isEqual(treatedData[0], {
+    isEqual(treatedData[0], {
       _id: '1',
       nested: { today: now },
     }).should.equal(true)
-    _.isEqual(treatedData[1], { _id: '2', hello: 'world' }).should.equal(true)
+    isEqual(treatedData[1], { _id: '2', hello: 'world' }).should.equal(true)
   })
 
   it('If a doc contains $$deleted: true, that means we need to remove it from the data', function () {
@@ -135,8 +135,8 @@ describe('Persistence', function () {
       return a._id - b._id
     })
     treatedData.length.should.equal(2)
-    _.isEqual(treatedData[0], { _id: '2', hello: 'world' }).should.equal(true)
-    _.isEqual(treatedData[1], { _id: '3', today: now }).should.equal(true)
+    isEqual(treatedData[0], { _id: '2', hello: 'world' }).should.equal(true)
+    isEqual(treatedData[1], { _id: '3', today: now }).should.equal(true)
   })
 
   it('If a doc contains $$deleted: true, no error is thrown if the doc wasnt in the list before', function () {
@@ -152,12 +152,12 @@ describe('Persistence', function () {
       return a._id - b._id
     })
     treatedData.length.should.equal(2)
-    _.isEqual(treatedData[0], {
+    isEqual(treatedData[0], {
       _id: '1',
       a: 2,
       ages: [1, 5, 12],
     }).should.equal(true)
-    _.isEqual(treatedData[1], { _id: '3', today: now }).should.equal(true)
+    isEqual(treatedData[1], { _id: '3', today: now }).should.equal(true)
   })
 
   it('If a doc contains $$indexCreated, no error is thrown during treatRawData and we can get the index options', async () => {
@@ -180,12 +180,12 @@ describe('Persistence', function () {
 
     treatedData.sort((a, b) => a._id - b._id)
     treatedData.length.should.equal(2)
-    _.isEqual(treatedData[0], {
+    isEqual(treatedData[0], {
       _id: '1',
       a: 2,
       ages: [1, 5, 12],
     }).should.equal(true)
-    _.isEqual(treatedData[1], { _id: '3', today: now }).should.equal(true)
+    isEqual(treatedData[1], { _id: '3', today: now }).should.equal(true)
   })
 
   it('Compact database on load', async function () {
@@ -226,8 +226,8 @@ describe('Persistence', function () {
     await d.insert({ a: 2 })
 
     let data = d.getAllData()
-    let doc1 = _.find(data, doc => doc.a === 1)
-    let doc2 = _.find(data, doc => doc.a === 2)
+    let doc1 = find(data, doc => doc.a === 1)
+    let doc2 = find(data, doc => doc.a === 2)
 
     assert.equal(data.length, 2)
     assert.equal(doc1.a, 1)
@@ -236,8 +236,8 @@ describe('Persistence', function () {
     await d.loadDatabase()
 
     data = d.getAllData()
-    doc1 = _.find(data, doc => doc.a === 1)
-    doc2 = _.find(data, doc => doc.a === 2)
+    doc1 = find(data, doc => doc.a === 1)
+    doc2 = find(data, doc => doc.a === 2)
 
     assert.equal(data.length, 2)
     assert.equal(doc1.a, 1)
@@ -267,8 +267,8 @@ describe('Persistence', function () {
     await d.insert({ a: 1 })
     await d.insert({ a: 2 })
     const data = d.getAllData()
-    const doc1 = _.find(data, doc => doc.a === 1)
-    const doc2 = _.find(data, doc => doc.a === 2)
+    const doc1 = find(data, doc => doc.a === 1)
+    const doc2 = find(data, doc => doc.a === 2)
     data.length.should.equal(2)
     doc1.a.should.equal(1)
     doc2.a.should.equal(2)
@@ -277,9 +277,9 @@ describe('Persistence', function () {
 
     await d.loadDatabase()
     const newData = d.getAllData()
-    const newDoc1 = _.find(newData, doc => doc.a === 1)
-    const newDoc2 = _.find(newData, doc => doc.a === 2)
-    const newDoc3 = _.find(newData, doc => doc.a === 3)
+    const newDoc1 = find(newData, doc => doc.a === 1)
+    const newDoc2 = find(newData, doc => doc.a === 2)
+    const newDoc3 = find(newData, doc => doc.a === 3)
     newData.length.should.equal(1)
     newDoc3.a.should.equal(3)
     assert.isUndefined(newDoc1)
@@ -819,15 +819,15 @@ describe('Persistence', function () {
 
       docs = await theDb.find({})
       assert.lengthOf(docs, 2)
-      assert.equal(_.find(docs, { _id: doc1._id }).a, 'hello')
-      assert.equal(_.find(docs, { _id: doc2._id }).a, 'world')
+      assert.equal(find(docs, { _id: doc1._id }).a, 'hello')
+      assert.equal(find(docs, { _id: doc2._id }).a, 'world')
 
       await theDb.loadDatabase()
 
       docs = await theDb.find({})
       assert.lengthOf(docs, 2)
-      assert.equal(_.find(docs, { _id: doc1._id }).a, 'hello')
-      assert.equal(_.find(docs, { _id: doc2._id }).a, 'world')
+      assert.equal(find(docs, { _id: doc1._id }).a, 'hello')
+      assert.equal(find(docs, { _id: doc2._id }).a, 'world')
 
       assert.isTrue(fs.existsSync(dbFile))
       assert.isFalse(fs.existsSync(dbFile + '~'))
@@ -841,8 +841,8 @@ describe('Persistence', function () {
       docs = await theDb2.find({})
 
       assert.lengthOf(docs, 2)
-      assert.equal(_.find(docs, { _id: doc1._id }).a, 'hello')
-      assert.equal(_.find(docs, { _id: doc2._id }).a, 'world')
+      assert.equal(find(docs, { _id: doc1._id }).a, 'hello')
+      assert.equal(find(docs, { _id: doc2._id }).a, 'world')
 
       assert.isTrue(fs.existsSync(dbFile))
       assert.isFalse(fs.existsSync(dbFile + '~'))

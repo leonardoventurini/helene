@@ -2,7 +2,8 @@ import { assert, expect } from 'chai'
 import { deserialize, serialize } from '../../data/serialization'
 import { Collection } from '../../data'
 
-import _, { isDate } from 'lodash'
+import isDate from 'lodash/isDate'
+import isEqual from 'lodash/isEqual'
 
 import fs from 'fs'
 import {
@@ -172,10 +173,10 @@ describe('Model', function () {
       assert.isDefined(checkObject)
       ;(function () {
         checkObject({ $bad: true })
-      }.should.throw())
+      }).should.throw()
       ;(function () {
         checkObject({ some: 42, nested: { again: 'no', $worse: true } })
-      }.should.throw())
+      }).should.throw()
 
       // This shouldn't throw since "$actuallyok" is not a field name
       checkObject({ some: 42, nested: [5, 'no', '$actuallyok', true] })
@@ -184,14 +185,14 @@ describe('Model', function () {
           some: 42,
           nested: [5, 'no', '$actuallyok', true, { $hidden: 'useless' }],
         })
-      }.should.throw())
+      }).should.throw()
     })
 
     it('Field names cannot contain a .', function () {
       assert.isDefined(checkObject)
       ;(function () {
         checkObject({ 'so.bad': true })
-      }.should.throw())
+      }).should.throw()
 
       // Recursive behaviour testing done in the above test on $ signs
     })
@@ -377,7 +378,7 @@ describe('Model', function () {
           },
           modified = modify(obj, updateQuery)
 
-        _.isEqual(modified, {
+        isEqual(modified, {
           yup: { subfield: 'changed', yop: 'yes indeed' },
           totally: { doesnt: { exist: 'now it does' } },
         }).should.equal(true)
@@ -464,11 +465,11 @@ describe('Model', function () {
         const obj = { some: 'thing', nay: 40 }
 
         let modified = modify(obj, { $inc: { nay: 2 } })
-        _.isEqual(modified, { some: 'thing', nay: 42 }).should.equal(true)
+        isEqual(modified, { some: 'thing', nay: 42 }).should.equal(true)
 
         // Incidentally, this tests that obj was not modified
         modified = modify(obj, { $inc: { inexistent: -6 } })
-        _.isEqual(modified, {
+        isEqual(modified, {
           some: 'thing',
           nay: 40,
           inexistent: -6,
@@ -481,7 +482,7 @@ describe('Model', function () {
         const modified = modify(obj, {
           $inc: { 'nay.nope': -2, 'blip.blop': 123 },
         })
-        _.isEqual(modified, {
+        isEqual(modified, {
           some: 'thing',
           nay: { nope: 38 },
           blip: { blop: 123 },
@@ -521,13 +522,13 @@ describe('Model', function () {
           modified
         ;(function () {
           modified = modify(obj, { $push: { arr: 'world' } })
-        }.should.throw())
+        }).should.throw()
 
         // @ts-ignore
         obj = { arr: { nested: 45 } }
         ;(function () {
           modified = modify(obj, { $push: { 'arr.nested': 'world' } })
-        }.should.throw())
+        }).should.throw()
       })
 
       it('Can use the $each modifier to add multiple values to an array at once', function () {
@@ -618,12 +619,12 @@ describe('Model', function () {
           modified = modify(obj, {
             $push: { arr: { $slice: 1, unauthorized: true } },
           })
-        }.should.throw())
+        }).should.throw()
         ;(function () {
           modified = modify(obj, {
             $push: { arr: { $each: [], unauthorized: true } },
           })
-        }.should.throw())
+        }).should.throw()
       })
     }) // End of '$push modifier'
 
@@ -690,7 +691,7 @@ describe('Model', function () {
           modified
         ;(function () {
           modified = modify(obj, { $pop: { arr: 1 } })
-        }.should.throw())
+        }).should.throw()
 
         // @ts-ignore
         obj = { bloup: 'nope' }
@@ -702,7 +703,7 @@ describe('Model', function () {
         obj = { arr: [1, 4, 8] }
         ;(function () {
           modified = modify(obj, { $pop: { arr: true } })
-        }.should.throw())
+        }).should.throw()
       })
 
       it('Can remove the first and last element of an array', function () {
@@ -1302,7 +1303,7 @@ describe('Model', function () {
         match({ a: { b: 5 } }, { a: { b: { $lt: 10 } } }).should.equal(false)
         ;(function () {
           match({ a: { b: 5 } }, { a: { $or: [{ b: 10 }, { b: 5 }] } })
-        }.should.throw())
+        }).should.throw()
       })
 
       it('Can match for field equality inside an array with the dot notation', function () {
@@ -1476,7 +1477,7 @@ describe('Model', function () {
         match({ a: 9 }, { a: { $in: [6, 8, 9] } }).should.equal(true)
         ;(function () {
           match({ a: 5 }, { a: { $in: 5 } })
-        }.should.throw())
+        }).should.throw()
       })
 
       it('$nin', function () {
@@ -1490,7 +1491,7 @@ describe('Model', function () {
         match({ a: 9 }, { b: { $nin: [6, 8, 9] } }).should.equal(true)
         ;(function () {
           match({ a: 5 }, { a: { $in: 5 } })
-        }.should.throw())
+        }).should.throw()
       })
 
       it('$exists', function () {

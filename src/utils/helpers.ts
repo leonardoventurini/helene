@@ -1,4 +1,5 @@
-import { isArray, isObject } from 'lodash'
+import isArray from 'lodash/isArray'
+import isObject from 'lodash/isObject'
 
 export namespace Helpers {
   export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>
