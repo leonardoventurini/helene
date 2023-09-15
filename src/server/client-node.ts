@@ -8,7 +8,6 @@ import { Request, Response } from 'express'
 import { HeleneAsyncLocalStorage } from './helene-async-local-storage'
 import { RateLimiter } from 'limiter'
 import { RateLimit, Server } from './server'
-import { ObjectId } from 'bson'
 import { EventEmitter2 } from 'eventemitter2'
 
 export type ClientNodeContext = Record<string, any>
@@ -18,7 +17,7 @@ export class ClientNode extends EventEmitter2 {
   isAuthenticated = false
   meta: Record<string, any> = {}
   context: ClientNodeContext = {}
-  userId: ObjectId | string | null = null
+  userId: any = null
   user: Record<string, any> = null
   socket?: IsomorphicWebSocket
   isEventSource = false
@@ -128,7 +127,7 @@ export class ClientNode extends EventEmitter2 {
 
     const userId = this.context?.user?._id
 
-    if (!isString(userId) && !ObjectId.isValid(userId)) {
+    if (!userId) {
       throw new Error(
         'The auth function must return a user object with a valid "_id" property',
       )
