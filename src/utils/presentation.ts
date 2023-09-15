@@ -85,9 +85,8 @@ export namespace Presentation {
       return EJSON.parse(payload as string)
     }
 
-    const isArrayBuffer =
-      typeof ArrayBuffer === 'function' && payload instanceof ArrayBuffer
-    const isBuffer = typeof Buffer === 'function' && payload instanceof Buffer
+    const isArrayBuffer = ArrayBuffer.isView(payload)
+    const isBuffer = Buffer.isBuffer(payload)
 
     let decoded: string
 
@@ -99,6 +98,7 @@ export namespace Presentation {
 
     if (!decoded) {
       console.log('Helene: Could not decode payload', payload)
+      console.trace()
       return null
     }
 

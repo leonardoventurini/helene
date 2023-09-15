@@ -19,7 +19,7 @@ export function useSubscribe(
     throw new Error('event name is required')
   }
 
-  if (!isString(channel)) {
+  if (!isString(channel) && active) {
     throw new Error('channel name is required')
   }
 
