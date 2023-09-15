@@ -98,7 +98,8 @@ export namespace Presentation {
     }
 
     if (!decoded) {
-      throw new Error('No Payload')
+      console.log('Helene: Could not decode payload', payload)
+      return null
     }
 
     return EJSON.parse(decoded)
