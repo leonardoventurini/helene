@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { EJSON } from 'ejson2'
+import { EJSON } from 'bson'
 import memoizee from 'memoizee'
 
 export const useCaller = ({ client, cache, maxAge }) => {

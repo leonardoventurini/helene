@@ -494,9 +494,14 @@ describe('React Hooks', () => {
 
       const capture3 = result.current
 
-      await waitFor(() => {
-        expect(capture1).to.not.equal(capture3)
-      })
+      await waitFor(
+        () => {
+          expect(capture1).to.not.equal(capture3)
+        },
+        {
+          timeout: 1000,
+        },
+      )
     })
   })
 })

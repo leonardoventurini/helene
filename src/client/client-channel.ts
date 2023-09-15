@@ -148,7 +148,7 @@ export class ClientChannel extends EventEmitter2 {
    */
   wait(event: string, callback?: (...data: any) => any): Promise<any | any[]> {
     return new Promise(resolve => {
-      this.once(event, function (data = true) {
+      this.once(event, function (data) {
         if (callback) {
           resolve(callback(data))
         } else {
