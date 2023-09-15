@@ -215,7 +215,7 @@ describe('Methods', function () {
     await expect(call()).to.be.rejectedWith(Errors.RATE_LIMIT_EXCEEDED)
   })
 
-  it('in case we return undefined in a method we should receive null', async () => {
+  it('in case we return undefined in a method we should ', async () => {
     const client = await test.createClient({
       port: test.server.port,
       ws: { autoConnect: false },
@@ -225,7 +225,7 @@ describe('Methods', function () {
 
     const result = await client.call('test:method')
 
-    expect(result).to.equal(null)
+    expect(result).to.equal(undefined)
   })
 
   it('should fire an event after a method call', async () => {

@@ -11,7 +11,7 @@ import {
 import { HeleneAsyncLocalStorage } from './helene-async-local-storage'
 import isEmpty from 'lodash/isEmpty'
 import { AnyObjectSchema, ObjectSchema } from 'yup'
-import { EJSON } from 'bson'
+import { EJSON } from 'ejson2'
 import perf_hooks from 'perf_hooks'
 import { Server } from './server'
 

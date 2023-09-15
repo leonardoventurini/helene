@@ -16,7 +16,7 @@ import { ClientNode } from '../client-node'
 import { createHttpTerminator, HttpTerminator } from 'http-terminator'
 
 import rateLimit from 'express-rate-limit'
-import { EJSON } from 'bson'
+import { EJSON } from 'ejson2'
 import isString from 'lodash/isString'
 
 import 'express-async-errors'

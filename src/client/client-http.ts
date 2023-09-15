@@ -6,7 +6,7 @@ import {
   Presentation,
   TOKEN_HEADER_KEY,
 } from '../utils'
-import { EJSON } from 'bson'
+import { EJSON } from 'ejson2'
 import { fetch } from 'fetch-undici'
 import EventSource from '@sanity/eventsource'
 import defer from 'lodash/defer'

@@ -23,7 +23,7 @@ import isFunction from 'lodash/isFunction'
 import { ClientHttp } from './client-http'
 import { ClientChannel } from './client-channel'
 import qs from 'query-string'
-import { EJSON } from 'bson'
+import { EJSON } from 'ejson2'
 import { Collection, CollectionOptions, createCollection } from '../data'
 import Timeout = NodeJS.Timeout
 

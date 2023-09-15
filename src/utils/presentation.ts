@@ -1,7 +1,7 @@
 import identity from 'lodash/identity'
 import isString from 'lodash/isString'
 import { Environment, Errors, Helpers } from './index'
-import { EJSON } from 'bson'
+import { EJSON } from 'ejson2'
 import { v4 } from '@lukeed/uuid'
 
 export namespace Presentation {

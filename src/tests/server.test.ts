@@ -1,8 +1,10 @@
 import { expect } from 'chai'
 import { TestUtility } from './utils/test-utility'
-import { HttpTransport, Server, WebSocketTransport } from '../server'
-import { EJSON } from 'bson'
-import { ServerEvents } from '../utils'
+import { Server } from '../server/server'
+import { HttpTransport } from '../server/transports/http-transport'
+import { WebSocketTransport } from '../server/transports/websocket-transport'
+import { EJSON } from 'ejson2'
+import { ServerEvents } from '../utils/constants'
 
 describe('Server', function () {
   const test = new TestUtility()

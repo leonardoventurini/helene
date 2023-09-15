@@ -24,7 +24,7 @@ describe('Events', function () {
 
     const result = await test.client.wait('test:event')
 
-    expect(result).to.be.null
+    expect(result).to.be.true
   })
 
   it('should emit event with an array parameter', async () => {
