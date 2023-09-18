@@ -1,6 +1,6 @@
 {
   "name": "helene",
-  "version": "1.2.27",
+  "version": "1.2.28",
   "description": "Real-time Web Apps for Node.js and Bun",
   "browser": "index.browser.js",
   "main": "index.js",
