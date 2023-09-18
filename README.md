@@ -12,7 +12,7 @@
 	<br>
 	<br>
   <p>
-    Delightful Real-time Apps for Node.js and the Browser
+    Real-time Web Apps for Node.js and Bun
   </p>
   <p>
     <a href="https://helene.leonardoventurini.tech" target="_blank">📘 Documentation</a>
@@ -20,17 +20,20 @@
   <br>
 </div>
 
-- ⚡️ **Real-time** - Helene is a real-time framework for Node.js and the browser.
+- ⚡️ **Real-time** - Helene is a real-time framework for Node.js, Bun and the browser.
 - 🦾 **Event-driven** - Helene is event-driven, which means that it uses events to communicate between the server and the client.
 - 🪝 **React Hooks** - Helene provides a set of React Hooks to easily integrate your React application with the server.
 <hr/>
 
 ### Quickstart
 
-  ```bash
-  npm install helene
-  ```
-
+```bash
+bun add helene
+```
+```bash
+npm install helene
+```
+---
 ```js
 // server.js
 
