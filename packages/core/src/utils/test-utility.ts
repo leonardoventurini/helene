@@ -1,10 +1,13 @@
-// @ts-ignore
-import React from 'react'
-import { EventOptions, Server, ServerOptions } from '../../server'
-import { ClientEvents, NO_CHANNEL, ServerEvents } from '../../utils'
-import { Client, ClientOptions } from '../../client'
-import { ClientProvider } from '../../react'
-import { afterEach } from 'mocha'
+import {
+  Client,
+  ClientEvents,
+  ClientOptions,
+  EventOptions,
+  NO_CHANNEL,
+  Server,
+  ServerEvents,
+  ServerOptions,
+} from '..'
 
 export class TestUtility {
   server: Server
@@ -157,13 +160,5 @@ export class TestUtility {
     return new Promise<void>(resolve => {
       setTimeout(() => resolve(), timeout)
     })
-  }
-
-  get wrapper() {
-    const client = this.client
-
-    return function wrapper({ children }) {
-      return <ClientProvider clientInstance={client}>{children}</ClientProvider>
-    }
   }
 }
