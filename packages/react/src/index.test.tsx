@@ -10,13 +10,13 @@ import {
   useMethod,
   useObject,
   useRemoteEvent,
+  useThrottledEvents,
 } from '../react'
 import sinon from 'sinon'
 import noop from 'lodash/noop'
 import omit from 'lodash/omit'
 import { EventEmitter2 } from 'eventemitter2'
 import { sleep } from '../utils'
-import { useThrottledEvents } from '../react/hooks/use-throttled-events'
 
 describe('React Hooks', () => {
   const test = new TestUtility()
