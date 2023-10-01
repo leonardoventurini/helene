@@ -1,3 +1,0 @@
-require:
-  - 'jsdom-global/register'
-  - './src/tests/utils/configure-mocha.ts'

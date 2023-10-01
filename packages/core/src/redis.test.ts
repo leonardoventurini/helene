@@ -1,7 +1,7 @@
 import { expect } from 'chai'
-import { RedisTestUtil } from './utils/redis-test-util'
 import { TestUtility } from './utils/test-utility'
-import { RedisTransport } from '../server'
+import { RedisTestUtil } from './tests/redis-test-util'
+import { RedisTransport } from './server'
 
 describe('Redis Pub/Sub', function () {
   const redis = new RedisTestUtil()

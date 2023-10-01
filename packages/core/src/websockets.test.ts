@@ -1,10 +1,10 @@
 import { describe, it } from 'mocha'
 import { expect } from 'chai'
-import { ClientEvents, HeleneEvents, sleep } from '../utils'
 import { TestUtility } from './utils/test-utility'
-import { ClientNode } from '../server'
-import { Client } from '../client'
 import defer from 'lodash/defer'
+import { ClientEvents, HeleneEvents, sleep } from './utils'
+import { ClientNode } from './server'
+import { Client } from './client'
 
 describe('WebSockets', function () {
   const test = new TestUtility()

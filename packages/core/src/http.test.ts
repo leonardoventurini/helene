@@ -1,14 +1,14 @@
 import { expect } from 'chai'
-import { ClientEvents, Errors, ServerEvents } from '../utils'
 import { TestUtility } from './utils/test-utility'
 import path from 'path'
 import request from 'supertest'
 import defer from 'lodash/defer'
 import range from 'lodash/range'
-import { ClientNode } from '../server'
-import { Client, ClientHttp } from '../client'
 import sinon from 'sinon'
 import EventSource from 'eventsource'
+import { ClientEvents, Errors, ServerEvents } from './utils'
+import { Client, ClientHttp } from './client'
+import { ClientNode } from './server'
 
 describe('HTTP', async () => {
   const test = new TestUtility()
@@ -117,7 +117,7 @@ describe('HTTP', async () => {
 
   describe('express static', () => {
     beforeEach(() => {
-      test.server.static(path.join(__dirname, '../../test/static'), true)
+      test.server.static(path.join(__dirname, './tests/static'), true)
     })
 
     it('sends index.html', async () => {

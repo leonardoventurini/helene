@@ -24,7 +24,7 @@ import { ClientHttp } from './client-http'
 import { ClientChannel } from './client-channel'
 import qs from 'query-string'
 import { EJSON } from 'ejson2'
-import { Collection, CollectionOptions, createCollection } from '../data'
+import defer from 'lodash/defer'
 import Timeout = NodeJS.Timeout
 
 export type ErrorHandler = (error: Presentation.ErrorPayload) => any
@@ -62,7 +62,7 @@ export type CallOptions = {
 }
 
 /**
- * When working with Next.js it is probably a good idea to not run this in the
+ * When working with Next.js, it is probably a good idea to not run this in the
  * server side by using it inside a `useEffect` hook.
  */
 export class Client extends ClientChannel {
@@ -81,8 +81,6 @@ export class Client extends ClientChannel {
   initialized = false
 
   authenticated = false
-
-  collections: Map<string, Collection> = new Map()
 
   options: ClientOptions = {
     host: 'localhost',
@@ -261,6 +259,12 @@ export class Client extends ClientChannel {
       },
     )
 
+    defer(() => {
+      this.startIdleTimeout()
+    })
+
+    if (typeof window === 'undefined') return
+
     // https://github.com/socketio/socket.io/issues/2924#issuecomment-297985409
     window.addEventListener('focus', reset)
     window.addEventListener('mousemove', reset)
@@ -276,8 +280,6 @@ export class Client extends ClientChannel {
         this.resetIdleTimer()
       }
     })
-
-    this.startIdleTimeout()
   }
 
   /**
@@ -641,16 +643,6 @@ export class Client extends ClientChannel {
         timestamp: Date.now(),
       })
     })
-  }
-
-  /**
-   * Creates a new collection and stores it into the `this.collections` map.
-   * Useful for contextualizing collections to a specific client.
-   */
-  async createCollection(options: CollectionOptions) {
-    const collection = await createCollection(options)
-    this.collections.set(options.name, collection)
-    return collection
   }
 
   fetch(url: string, options: any) {

@@ -1,5 +1,9 @@
 import { expect } from 'chai'
 import { TestUtility } from './utils/test-utility'
+
+import * as yup from 'yup'
+import range from 'lodash/range'
+import sinon from 'sinon'
 import {
   Errors,
   getPromise,
@@ -7,12 +11,9 @@ import {
   PublicError,
   ServerEvents,
   sleep,
-} from '../utils'
-import { ClientNode, HeleneAsyncLocalStorage } from '../server'
-import * as yup from 'yup'
-import range from 'lodash/range'
-import { Client } from '../client'
-import sinon from 'sinon'
+} from './utils'
+import { ClientNode, HeleneAsyncLocalStorage } from './server'
+import { Client } from './client'
 
 describe('Methods', function () {
   const test = new TestUtility()

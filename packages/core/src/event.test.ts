@@ -1,8 +1,8 @@
 import { expect } from 'chai'
 import { TestUtility } from './utils/test-utility'
-import { ClientEvents, NO_CHANNEL } from '../utils'
-import { Client } from '../client'
 import defer from 'lodash/defer'
+import { ClientEvents, NO_CHANNEL } from './utils'
+import { Client } from './client'
 
 describe('Events', function () {
   const test = new TestUtility()
