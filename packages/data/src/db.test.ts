@@ -1,15 +1,15 @@
 import { assert, expect } from 'chai'
 import fs from 'fs'
 import path from 'path'
-import { Collection, createCollection } from '../../data'
-import { deserialize, serialize } from '../../data/serialization'
-import { pluck } from '../../data/utils'
 import mkdirp from 'mkdirp'
-import { NodeStorage } from '../../data/node'
 import find from 'lodash/find'
 import filter from 'lodash/filter'
 import isEqual from 'lodash/isEqual'
 import each from 'lodash/each'
+import { Collection, createCollection } from './collection'
+import { NodeStorage } from './node'
+import { pluck } from './utils'
+import { deserialize, serialize } from './serialization'
 
 const testDb = 'workspace/test.db',
   reloadTimeUpperBound = 60 // In ms, an upper bound for the reload time used to check createdAt and updatedAt
@@ -95,7 +95,7 @@ describe('Database', function () {
       docs[0].somedata.should.equal('ok')
       assert.isDefined(docs[0]._id)
 
-      // After a reload the data has been correctly persisted
+      // After a reload, the data has been correctly persisted
       await collection.loadDatabase()
       docs = await collection.find({})
       docs.length.should.equal(1)

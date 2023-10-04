@@ -1,5 +1,5 @@
 import { assert, expect } from 'chai'
-import { Index } from '../../data'
+import { Index } from './indexes'
 
 describe('Indexes', function () {
   describe('Insertion', function () {

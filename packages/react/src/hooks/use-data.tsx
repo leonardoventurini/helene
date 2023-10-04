@@ -5,10 +5,10 @@ import { useClient, useCollection, useRemoteEvent } from './index'
 import { useState } from 'react'
 import isEmpty from 'lodash/isEmpty'
 import set from 'lodash/set'
-import { BrowserStorage } from '../../data/browser'
 import { useFind } from './use-find'
-import { ClientEvents, HeleneEvents } from '../../utils'
 import { useThrottledEvents } from './use-throttled-events'
+import { ClientEvents, HeleneEvents } from '@helenejs/core'
+import { BrowserStorage } from '@helenejs/data/dist/browser'
 
 const browserStorage = new BrowserStorage()
 

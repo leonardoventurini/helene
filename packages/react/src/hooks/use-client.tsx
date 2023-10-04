@@ -1,7 +1,6 @@
 import { useContext } from 'react'
 import { ClientContext } from '../components'
-import { Client } from '../../client'
-import { Environment } from '../../utils'
+import { Client, Environment } from '@helenejs/core'
 
 export const useClient = (): Client => {
   const client = useContext(ClientContext)

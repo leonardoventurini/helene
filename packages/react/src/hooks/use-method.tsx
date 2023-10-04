@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useClient } from './use-client'
-import { ClientEvents, HeleneEvents, NO_CHANNEL } from '../../utils'
 import isFunction from 'lodash/isFunction'
 import noop from 'lodash/noop'
 import { useDebouncedCallback } from 'use-debounce'
@@ -8,7 +7,12 @@ import { useLocalEvent, useRemoteEvent } from './use-event'
 import { useCircuitBreaker } from './use-circuit-breaker'
 import { useMethodRefresh } from './use-method-refresh'
 import { useCaller } from './use-caller'
-import { CallOptions } from '../../client'
+import {
+  CallOptions,
+  ClientEvents,
+  HeleneEvents,
+  NO_CHANNEL,
+} from '@helenejs/core'
 
 export type UseMethodParams = {
   method?: string

@@ -1,6 +1,6 @@
 import { assert, expect } from 'chai'
-import { deserialize, serialize } from '../../data/serialization'
-import { Collection } from '../../data'
+import { deserialize, serialize } from './serialization'
+import { Collection } from './collection'
 
 import isDate from 'lodash/isDate'
 import isEqual from 'lodash/isEqual'
@@ -15,8 +15,8 @@ import {
   isPrimitiveType,
   match,
   modify,
-} from '../../data/model'
-import { NodeStorage } from '../../data/node'
+} from './model'
+import { NodeStorage } from './node'
 
 describe('Model', function () {
   describe('Serialization, deserialization', function () {

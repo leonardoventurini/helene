@@ -2,8 +2,8 @@
 import React from 'react'
 import { expect } from 'chai'
 import { render, renderHook, screen, waitFor } from '@testing-library/react'
-import { TestUtility } from './utils/test-utility'
 import {
+  ClientProvider,
   useAuth,
   useConnectionState,
   useLocalEvent,
@@ -16,9 +16,17 @@ import sinon from 'sinon'
 import noop from 'lodash/noop'
 import omit from 'lodash/omit'
 import { EventEmitter2 } from 'eventemitter2'
+import { TestUtility } from '@helenejs/core/dist/utils/test-utility'
+import { sleep } from '@helenejs/core'
 
 describe('React Hooks', () => {
   const test = new TestUtility()
+
+  const wrapper = function wrapper({ children }) {
+    return (
+      <ClientProvider clientInstance={test.client}>{children}</ClientProvider>
+    )
+  }
 
   it('renders hello world', () => {
     render(<span role='message'>Hello World</span>)
@@ -43,8 +51,6 @@ describe('React Hooks', () => {
     })
 
     it('should return the auth state', async () => {
-      const { wrapper } = test
-
       const { result } = renderHook(() => useAuth(), { wrapper })
 
       expect(result.current).to.containSubset({
@@ -68,8 +74,6 @@ describe('React Hooks', () => {
 
   describe('useConnectionState', () => {
     it('should return the connection state', async () => {
-      const { wrapper } = test
-
       const { result } = renderHook(() => useConnectionState(), { wrapper })
 
       await waitFor(() => {
@@ -102,8 +106,6 @@ describe('React Hooks', () => {
     })
 
     it('should show the connection state when the client is connecting', async () => {
-      const { wrapper } = test
-
       const { result } = renderHook(() => useConnectionState(), { wrapper })
 
       await test.client.close()
@@ -135,8 +137,6 @@ describe('React Hooks', () => {
     it('should call the method', async () => {
       test.server.addMethod('echo', value => value)
 
-      const { wrapper } = test
-
       const { result } = renderHook(
         () => useMethod({ method: 'echo', params: 'test' }),
         { wrapper },
@@ -154,8 +154,6 @@ describe('React Hooks', () => {
       let count = 0
 
       test.server.addMethod('count', () => ++count)
-
-      const { wrapper } = test
 
       const { result } = renderHook(() => useMethod({ method: 'count' }), {
         wrapper,
@@ -191,8 +189,6 @@ describe('React Hooks', () => {
         return ++count
       })
 
-      const { wrapper } = test
-
       expect(socket).to.be.undefined
 
       const { result } = renderHook(
@@ -224,8 +220,6 @@ describe('React Hooks', () => {
       const unsub = sinon.fake.returns(Promise.resolve())
 
       test.client.channel().unsubscribe = unsub
-
-      const { wrapper } = test
 
       const { result, rerender } = renderHook(
         ({ event }: any) =>
@@ -280,8 +274,6 @@ describe('React Hooks', () => {
     it('should listen to multiple events and only unsubscribe after all listeners are removed', async () => {
       test.server.addEvent('random:event')
 
-      const { wrapper } = test
-
       const hook1 = renderHook(
         ({ event }: any) => useRemoteEvent({ event }, noop, []),
         { wrapper, initialProps: { event: 'random:event' } },
@@ -311,8 +303,6 @@ describe('React Hooks', () => {
       const values = []
 
       await test.client.isConnected()
-
-      const { wrapper } = test
 
       const { result, rerender } = renderHook(
         ({ event }: any) =>
@@ -350,8 +340,6 @@ describe('React Hooks', () => {
 
       await test.client.isConnected()
 
-      const { wrapper } = test
-
       renderHook(
         () => {
           return useThrottledEvents(
@@ -388,8 +376,6 @@ describe('React Hooks', () => {
 
   describe('useObject', () => {
     it('should keep the same reference', async () => {
-      const { wrapper } = test
-
       const { result, rerender } = renderHook(
         ({ c }) => {
           return useObject({
@@ -425,8 +411,6 @@ describe('React Hooks', () => {
     })
 
     it('should keep the same reference with child objects', async () => {
-      const { wrapper } = test
-
       const { result, rerender } = renderHook(
         ({ c }) => {
           return useObject({
@@ -462,8 +446,6 @@ describe('React Hooks', () => {
     })
 
     it('should keep the same reference with child array', async () => {
-      const { wrapper } = test
-
       const { result, rerender } = renderHook(
         ({ c }) => {
           return useObject({

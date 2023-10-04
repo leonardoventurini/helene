@@ -1,9 +1,9 @@
 import { useCallback, useEffect } from 'react'
-import { NO_CHANNEL } from '../../utils'
 import { useSubscribe } from './use-subscribe'
 import { useClient } from './use-client'
 import useCreation from 'ahooks/lib/useCreation'
 import isString from 'lodash/isString'
+import { NO_CHANNEL } from '@helenejs/core'
 
 export type UseEventParams = {
   event: string

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-extra-semi,no-prototype-builtins */
 import { assert } from 'chai'
-import { BinarySearchTree } from '../../../data/binary-search-tree/bst'
-import { getRandomArray } from '../../../data/binary-search-tree/utils'
+import { BinarySearchTree } from './bst'
+import { getRandomArray } from './utils'
 import reduce from 'lodash/reduce'
 import isEqual from 'lodash/isEqual'
 import map from 'lodash/map'

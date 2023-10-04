@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-extra-semi,no-prototype-builtins */
 import { assert } from 'chai'
-import { AVLTreeImplementation } from '../../../data/binary-search-tree/avl-tree-implementation'
-import { AVLTreeInterface } from '../../../data/binary-search-tree/avl-tree-interface'
-import { getRandomArray } from '../../../data/binary-search-tree/utils'
+import { AVLTreeImplementation } from './avl-tree-implementation'
+import { AVLTreeInterface } from './avl-tree-interface'
+import { getRandomArray } from './utils'
 import isEqual from 'lodash/isEqual'
 import reduce from 'lodash/reduce'
 import map from 'lodash/map'

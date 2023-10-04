@@ -1,4 +1,4 @@
-import { uid } from '../../data/custom-utils'
+import { uid } from './custom-utils'
 
 describe('customUtils', function () {
   describe('uid', function () {

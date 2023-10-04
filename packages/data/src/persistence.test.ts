@@ -4,14 +4,11 @@ import fs from 'fs'
 
 import path from 'path'
 
-import { Collection, CollectionEvent, createCollection } from '../../data'
-import { Persistence } from '../../data/persistence'
-import { deserialize, serialize } from '../../data/serialization'
-import {
-  ensureDatafileIntegrity,
-  ensureFileDoesntExist,
-} from '../../data/node/utils'
-import { NodeStorage } from '../../data/node'
+import { Collection, CollectionEvent, createCollection } from './collection'
+import { Persistence } from './persistence'
+import { deserialize, serialize } from './serialization'
+import { ensureDatafileIntegrity, ensureFileDoesntExist } from './node/utils'
+import { NodeStorage } from './node'
 import find from 'lodash/find'
 import isEqual from 'lodash/isEqual'
 

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useClient } from './use-client'
-import { ClientEvents } from '../../utils'
 import { useThrottledEvents } from './use-throttled-events'
+import { ClientEvents } from '@helenejs/core'
 
 export const useConnectionState = () => {
   const client = useClient()
