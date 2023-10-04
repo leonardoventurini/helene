@@ -7,9 +7,10 @@ import {
   TOKEN_HEADER_KEY,
 } from '../utils'
 import { EJSON } from 'ejson2'
-import { fetch } from 'fetch-undici'
 import EventSource from '@sanity/eventsource'
 import defer from 'lodash/defer'
+import MethodResultPayload = Presentation.MethodResultPayload
+import ErrorPayload = Presentation.ErrorPayload
 
 export class ClientHttp {
   client: Client
@@ -94,6 +95,7 @@ export class ClientHttp {
     reject: Reject,
   ) {
     try {
+      // @ts-ignore
       const data = await fetch(this.uri, {
         method: 'POST',
         headers: {
@@ -120,14 +122,16 @@ export class ClientHttp {
         )
       }
 
-      let response = await data.text()
+      const response = await data.text()
 
-      response = Presentation.decode(response)
+      const decoded = Presentation.decode<MethodResultPayload | ErrorPayload>(
+        response,
+      )
 
-      if (response.type === Presentation.PayloadType.ERROR)
-        return reject(response)
+      if (decoded.type === Presentation.PayloadType.ERROR)
+        return reject(decoded)
 
-      if (resolve) resolve(response.result)
+      if (resolve) resolve(decoded.result)
     } catch (error) {
       return reject(error)
     }

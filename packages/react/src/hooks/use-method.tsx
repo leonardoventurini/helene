@@ -35,7 +35,7 @@ export type UseMethodParams = {
   parse?(params: any): any
 
   /**
-   * Params required to call the method.
+   * Params required calling the method.
    */
   required?: string[]
 } & CallOptions

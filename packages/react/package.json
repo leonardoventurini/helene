@@ -24,9 +24,9 @@
     "use-debounce": "^7.0.1"
   },
   "devDependencies": {
-    "@helenejs/core": "workspace:*",
-    "@helenejs/data": "workspace:*",
-    "@helenejs/testing": "workspace:*",
+    "@helenejs/core": "*",
+    "@helenejs/data": "*",
+    "@helenejs/testing": "*",
     "@testing-library/dom": "^9.3.1",
     "@testing-library/react": "^14.0.0",
     "@testing-library/user-event": "^14.4.3",
@@ -53,5 +53,9 @@
   ],
   "bugs": {
     "url": "https://github.com/leonardoventurini/helene/issues"
+  },
+  "volta": {
+    "node": "20.8.0",
+    "yarn": "1.22.19"
   }
 }
