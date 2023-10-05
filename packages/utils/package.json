@@ -11,7 +11,6 @@
     "rebuild": "yarn run clean && yarn run build"
   },
   "dependencies": {
-    "@helenejs/utils": "*",
     "@lukeed/uuid": "^2.0.1",
     "ejson2": "^1.1.0",
     "eventemitter2": "^6.4.7",
