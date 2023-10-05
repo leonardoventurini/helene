@@ -4,7 +4,7 @@
   "description": "Real-time Web Apps for Node.js and Bun",
   "type": "commonjs",
   "scripts": {
-    "lint": "eslint --ext .js,.jsx,.ts,.tsx packages/**/src/**/*"
+    "lint": "eslint --ext .js,.jsx,.ts,.tsx 'packages/**/src/**/*' 'meta/**/*.ts'"
   },
   "dependencies": {},
   "devDependencies": {
