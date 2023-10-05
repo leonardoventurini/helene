@@ -7,7 +7,7 @@ const port = process.env.PORT || 3000
 async function start() {
   const server = createServer({
     port,
-    host: 'localhost',
+    host: '0.0.0.0',
     rateLimit: {
       max: 120,
       window: 60 * 1000,
