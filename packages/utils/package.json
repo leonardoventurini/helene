@@ -40,5 +40,10 @@
   "volta": {
     "node": "20.8.0",
     "yarn": "1.22.19"
-  }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "gitHead": "70979ea1153084884ce78ef3a53e97930d0cbfb7"
 }
