@@ -44,8 +44,6 @@ async function start() {
 
   await server.isReady()
 
-  console.log(`http://localhost:${port}`)
-
   Helene.addMethod('connection.count', function () {
     return this.server.allClients.size
   })
