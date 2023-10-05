@@ -2,12 +2,8 @@ lib
 node_modules
 yarn-error.log
 
-/client/
-/react/
-/server/
-/utils/
-/data/
-/tests/
+/**/dist/
+/**/lib/
 
 /index.*
 

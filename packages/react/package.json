@@ -1,0 +1,66 @@
+{
+  "name": "@helenejs/react",
+  "version": "0.0.4-alpha.0",
+  "description": "Real-time Web Apps for Node.js and Bun",
+  "main": "lib/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "clean": "rimraf lib",
+    "rebuild": "yarn run clean && yarn run build",
+    "bun:test": "nodemon --watch 'src/**/*' -e ts,tsx --exec 'yarn run bun:test:mocha'",
+    "bun:test:mocha": "bun --bun run mocha -r setup-tests.js --extensions ts,tsx --file ../../node_modules/@helenejs/testing --exit 'src/**/*.test.*'",
+    "node:test": "nodemon --watch 'src/**/*' -e ts,tsx --exec 'bun run node:test:mocha'",
+    "node:test:mocha": "mocha -r ts-node/register/transpile-only -r setup-tests.js --file ../../node_modules/@helenejs/testing --extension ts,tsx  --exit 'src/**/*.test.*'"
+  },
+  "dependencies": {
+    "ahooks": "^3.7.7",
+    "eventemitter2": "^6.4.7",
+    "lodash": "^4.17.21",
+    "memoizee": "^0.4.15",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "use-debounce": "^7.0.1"
+  },
+  "devDependencies": {
+    "@helenejs/client": "^0.0.4-alpha.0",
+    "@helenejs/data": "^0.0.4-alpha.0",
+    "@helenejs/testing": "^0.0.1-alpha.0",
+    "@testing-library/dom": "^9.3.1",
+    "@testing-library/react": "^14.0.0",
+    "@testing-library/user-event": "^14.4.3",
+    "@types/jsdom": "^20.0.0",
+    "@types/jsdom-global": "^3.0.2",
+    "@types/lodash": "^4.14.181",
+    "jsdom": "^21.1.2",
+    "jsdom-global": "^3.0.2",
+    "typescript": "^5.1.3"
+  },
+  "author": "Leonardo Venturini",
+  "license": "MIT",
+  "repository": "https://github.com/leonardoventurini/helene",
+  "keywords": [
+    "websockets",
+    "rpc",
+    "react",
+    "reactjs",
+    "methods",
+    "events",
+    "node",
+    "nodejs",
+    "bun"
+  ],
+  "bugs": {
+    "url": "https://github.com/leonardoventurini/helene/issues"
+  },
+  "volta": {
+    "node": "20.8.0",
+    "yarn": "1.22.19"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "gitHead": "70979ea1153084884ce78ef3a53e97930d0cbfb7"
+}
