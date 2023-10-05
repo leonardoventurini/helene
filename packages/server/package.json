@@ -1,6 +1,6 @@
 {
   "name": "@helenejs/server",
-  "version": "0.0.3-alpha.0",
+  "version": "0.0.4-alpha.0",
   "description": "Real-time Web Apps for Node.js and Bun",
   "main": "lib/index.js",
   "type": "commonjs",
