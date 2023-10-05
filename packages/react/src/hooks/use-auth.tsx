@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react'
 import { useClient } from './use-client'
 import { useObject } from './use-object'
 import { useThrottledEvents } from './use-throttled-events'
-import { ClientEvents } from '@helenejs/core'
+import { ClientEvents } from '@helenejs/utils'
 
 export function useAuth() {
   const client = useClient()

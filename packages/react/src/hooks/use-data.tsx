@@ -7,8 +7,8 @@ import isEmpty from 'lodash/isEmpty'
 import set from 'lodash/set'
 import { useFind } from './use-find'
 import { useThrottledEvents } from './use-throttled-events'
-import { ClientEvents, HeleneEvents } from '@helenejs/core'
-import { BrowserStorage } from '@helenejs/data/dist/browser'
+import { ClientEvents, HeleneEvents } from '@helenejs/utils'
+import { BrowserStorage } from '@helenejs/data/lib/browser'
 
 const browserStorage = new BrowserStorage()
 

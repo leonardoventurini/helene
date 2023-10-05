@@ -1,7 +1,13 @@
 {
   "name": "@helenejs/testing",
   "version": "0.0.0",
-  "main": "index.js",
+  "main": "index.ts",
+  "scripts": {
+    "bun:test": "nodemon --watch 'src/**/*' -e ts,tsx --exec 'bun run bun:test:mocha'",
+    "bun:test:mocha": "bun --bun run mocha --extension ts,tsx --file index.ts --exit '**/*.test.*'",
+    "node:test": "nodemon --watch 'src/**/*' -e ts,tsx --exec 'bun run node:test:mocha'",
+    "node:test:mocha": "mocha -r ts-node/register/transpile-only --file index.ts --extension js,jsx,ts,tsx  --exit '**/*.test.*'"
+  },
   "devDependencies": {
     "@types/chai": "^4.3.6",
     "@types/chai-as-promised": "^7.1.6",
@@ -20,8 +26,14 @@
     "supertest": "^6.3.3",
     "ts-node": "^10.9.1"
   },
+  "peerDependencies": {
+    "@helenejs/client": "*",
+    "@helenejs/server": "*"
+  },
   "volta": {
     "node": "20.8.0",
     "yarn": "1.22.19"
-  }
+  },
+  "private": true,
+  "license": "MIT"
 }

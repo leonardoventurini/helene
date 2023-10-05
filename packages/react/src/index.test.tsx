@@ -1,4 +1,3 @@
-// @ts-ignore
 import React from 'react'
 import { expect } from 'chai'
 import { render, renderHook, screen, waitFor } from '@testing-library/react'
@@ -16,8 +15,8 @@ import sinon from 'sinon'
 import noop from 'lodash/noop'
 import omit from 'lodash/omit'
 import { EventEmitter2 } from 'eventemitter2'
-import { TestUtility } from '@helenejs/core/dist/utils/test-utility'
-import { sleep } from '@helenejs/core'
+import { TestUtility } from '@helenejs/testing/test-utility'
+import { sleep } from '@helenejs/utils'
 
 describe('React Hooks', () => {
   const test = new TestUtility()

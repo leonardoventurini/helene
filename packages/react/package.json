@@ -2,12 +2,12 @@
   "name": "@helenejs/react",
   "version": "1.0.0",
   "description": "Real-time Web Apps for Node.js and Bun",
-  "main": "dist/index.js",
+  "main": "lib/index.js",
   "type": "commonjs",
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch",
-    "clean": "rimraf dist",
+    "clean": "rimraf lib",
     "rebuild": "yarn run clean && yarn run build",
     "bun:test": "nodemon --watch 'src/**/*' -e ts,tsx --exec 'bun run bun:test:mocha'",
     "bun:test:mocha": "bun --bun run mocha -r setup-tests.js --extensions ts,tsx --file 'src/tests/utils/setup-tests.ts' --exit 'src/**/*.test.*'",
@@ -24,8 +24,8 @@
     "use-debounce": "^7.0.1"
   },
   "devDependencies": {
-    "@helenejs/core": "*",
     "@helenejs/data": "*",
+    "@helenejs/client": "*",
     "@helenejs/testing": "*",
     "@testing-library/dom": "^9.3.1",
     "@testing-library/react": "^14.0.0",

@@ -2,19 +2,9 @@
   "name": "helene",
   "version": "1.2.28",
   "description": "Real-time Web Apps for Node.js and Bun",
-  "browser": "index.browser.js",
-  "main": "index.js",
   "type": "commonjs",
   "scripts": {
-    "lint": "eslint --ext .js,.jsx,.ts,.tsx packages/**/src/**/*",
-    "build": "tsc",
-    "watch": "tsc --watch",
-    "clean": "rm -rf client react server data utils index.* tsconfig.tsbuildinfo",
-    "rebuild": "yarn run clean && yarn run build",
-    "bun:test": "nodemon --watch 'src/**/*' -e ts,tsx --exec 'bun run bun:test:mocha'",
-    "bun:test:mocha": "bun run ./node_modules/mocha/bin/mocha.js 'src/**/*.test.*' --extensions ts,tsx --file 'src/tests/utils/setup-tests.ts' --exit",
-    "node:test": "nodemon --watch 'src/**/*' -e ts,tsx --exec 'bun run node:test:mocha'",
-    "node:test:mocha": "node --require @swc/register ./node_modules/mocha/bin/mocha.js 'src/**/*.test.*' --extensions ts,tsx --file 'src/tests/utils/setup-tests.ts' --exit"
+    "lint": "eslint --ext .js,.jsx,.ts,.tsx packages/**/src/**/*"
   },
   "dependencies": {},
   "devDependencies": {
@@ -26,6 +16,7 @@
     "eslint-plugin-prettier": "^5.0.0",
     "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.0",
+    "lerna": "^7.3.0",
     "prettier": "^3.0.3",
     "typescript": "^5.1.3"
   },

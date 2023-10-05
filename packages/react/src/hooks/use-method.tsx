@@ -7,12 +7,8 @@ import { useLocalEvent, useRemoteEvent } from './use-event'
 import { useCircuitBreaker } from './use-circuit-breaker'
 import { useMethodRefresh } from './use-method-refresh'
 import { useCaller } from './use-caller'
-import {
-  CallOptions,
-  ClientEvents,
-  HeleneEvents,
-  NO_CHANNEL,
-} from '@helenejs/core'
+import { ClientEvents, HeleneEvents, NO_CHANNEL } from '@helenejs/utils'
+import { CallOptions } from '@helenejs/client'
 
 export type UseMethodParams = {
   method?: string
