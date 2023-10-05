@@ -11,6 +11,10 @@
       <excludeFolder url="file://$MODULE_DIR$/utils" />
       <excludeFolder url="file://$MODULE_DIR$/client" />
       <excludeFolder url="file://$MODULE_DIR$/data" />
+      <excludeFolder url="file://$MODULE_DIR$/packages/client/lib" />
+      <excludeFolder url="file://$MODULE_DIR$/packages/data/lib" />
+      <excludeFolder url="file://$MODULE_DIR$/packages/react/lib" />
+      <excludeFolder url="file://$MODULE_DIR$/packages/server/lib" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
