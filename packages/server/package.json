@@ -2,7 +2,6 @@
   "name": "@helenejs/server",
   "version": "0.0.3-alpha.0",
   "description": "Real-time Web Apps for Node.js and Bun",
-  "browser": "index.browser.js",
   "main": "lib/index.js",
   "type": "commonjs",
   "scripts": {
