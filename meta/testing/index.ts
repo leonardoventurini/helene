@@ -1,4 +1,3 @@
-import { after } from 'mocha'
 import chai from 'chai'
 import chaiAsPromised from 'chai-as-promised'
 import sinonChai from 'sinon-chai'
@@ -11,10 +10,3 @@ require('chai/register-assert.js')
 chai.use(chaiAsPromised)
 chai.use(sinonChai)
 chai.use(chaiSubset)
-
-// Needed for Bun as mocha --exit does not work
-after(() => {
-  setTimeout(() => {
-    process.exit(0)
-  }, 5000)
-})
