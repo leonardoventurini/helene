@@ -17,7 +17,7 @@
   </p>
 </div>
 
-Create a Helene server in Node.js or Bun. Easily add methods and real-time event-driven communication.
+Create a Helene server in Node.js or Bun
 
 ```bash
 npm install @helenejs/server
