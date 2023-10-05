@@ -28,16 +28,25 @@
 ### Quickstart
 
 ```bash
-bun add helene
+bun add @helenejs/server @helenejs/client
 ```
 ```bash
-npm install helene
+npm install @helenejs/server @helenejs/client
 ```
+
+### Core Packages
+
+- [@helenejs/server](packages/server/README.md) - Create a Helene server in Node.js or Bun
+- [@helenejs/client](packages/client/README.md) - Connect to your Helene server from the browser, Node.js or Bun
+- [@helenejs/data](packages/data/README.md) - In-memory database for the browser, Node.js and Bun with syntax similar to MongoDB
+- [@helenejs/react](packages/react/README.md) - A set of React hooks and utilities to easily integrate your React application with Helene
+- [@helenejs/utils](packages/utils/README.md) - A set of utilities used by Helene or its extensions
+
 ---
 ```js
 // server.js
 
-import { createServer } from 'helene'
+import { createServer } from '@helenejs/server'
 
 createServer({
   host: 'localhost',
@@ -60,7 +69,7 @@ Helene.addMethod('emit:event', () => {
 ```js
 // client.js
 
-import { Client } from 'helene'
+import { Client } from '@helenejs/client'
 
 const client = new Client({
   host: 'localhost:3000',
