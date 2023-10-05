@@ -1,6 +1,6 @@
 {
   "name": "@helenejs/data",
-  "version": "0.0.4-alpha.0",
+  "version": "1.3.0-alpha.0",
   "description": "Real-time Web Apps for Node.js and Bun",
   "main": "lib/index.js",
   "type": "commonjs",
@@ -20,7 +20,7 @@
     "mkdirp": "^2.1.6"
   },
   "devDependencies": {
-    "@helenejs/testing": "^0.0.1-alpha.0",
+    "@helenejs/testing": "^1.3.0-alpha.0",
     "typescript": "^5.1.3"
   },
   "author": "Leonardo Venturini",
