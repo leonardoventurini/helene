@@ -1,0 +1,50 @@
+{
+  "name": "helene",
+  "description": "Real-time Web Apps for Node.js and Bun",
+  "version": "1.2.28",
+  "browser": "index.browser.js",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "clean": "rimraf common* data* index* react* tsconfig.tsbuildinfo",
+    "rebuild": "yarn run clean && yarn run build"
+  },
+  "dependencies": {
+    "@helenejs/client": "^0.0.4-alpha.0",
+    "@helenejs/server": "^0.0.4-alpha.0",
+    "@helenejs/utils": "^0.0.3-alpha.0",
+    "@helenejs/data": "^0.0.4-alpha.0",
+    "@helenejs/react": "^0.0.4-alpha.0"
+  },
+  "devDependencies": {
+    "rimraf": "^5.0.5",
+    "typescript": "^5.2.2"
+  },
+  "author": "Leonardo Venturini",
+  "license": "MIT",
+  "repository": "https://github.com/leonardoventurini/helene",
+  "keywords": [
+    "websockets",
+    "rpc",
+    "react",
+    "reactjs",
+    "methods",
+    "events",
+    "node",
+    "nodejs",
+    "bun"
+  ],
+  "bugs": {
+    "url": "https://github.com/leonardoventurini/helene/issues"
+  },
+  "volta": {
+    "node": "20.8.0",
+    "yarn": "1.22.19"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}
