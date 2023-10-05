@@ -1,6 +1,6 @@
 {
   "name": "@helenejs/react",
-  "version": "1.0.0",
+  "version": "0.0.1-alpha.0",
   "description": "Real-time Web Apps for Node.js and Bun",
   "main": "lib/index.js",
   "type": "commonjs",
@@ -24,9 +24,9 @@
     "use-debounce": "^7.0.1"
   },
   "devDependencies": {
-    "@helenejs/data": "*",
-    "@helenejs/client": "*",
-    "@helenejs/testing": "*",
+    "@helenejs/client": "^0.0.1-alpha.0",
+    "@helenejs/data": "^0.0.1-alpha.0",
+    "@helenejs/testing": "^0.0.1-alpha.0",
     "@testing-library/dom": "^9.3.1",
     "@testing-library/react": "^14.0.0",
     "@testing-library/user-event": "^14.4.3",

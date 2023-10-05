@@ -1,6 +1,6 @@
 {
   "name": "@helenejs/testing",
-  "version": "0.0.0",
+  "version": "0.0.1-alpha.0",
   "main": "index.ts",
   "scripts": {
     "bun:test": "nodemon --watch 'src/**/*' -e ts,tsx --exec 'yarn run bun:test:mocha'",
