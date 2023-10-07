@@ -140,7 +140,7 @@ describe('Events', function () {
 
     const probe2 = await client.probeConnection()
 
-    client.resetIdleTimer()
+    client.idleTimeout.reset()
 
     await client.waitFor(ClientEvents.EVENTSOURCE_OPEN)
 

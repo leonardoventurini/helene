@@ -232,7 +232,7 @@ describe('HTTP', async () => {
 
       expect(client.clientHttp.clientEventSource).to.be.null
 
-      client.resetIdleTimer()
+      client.idleTimeout.reset()
 
       expect(client.clientHttp.clientEventSource.readyState).to.equal(
         EventSource.CONNECTING,

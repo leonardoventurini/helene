@@ -17,14 +17,15 @@ import isString from 'lodash/isString'
 import merge from 'lodash/merge'
 import pick from 'lodash/pick'
 import last from 'lodash/last'
-import throttle from 'lodash/throttle'
 import isObject from 'lodash/isObject'
 import isFunction from 'lodash/isFunction'
 import { ClientHttp } from './client-http'
 import { ClientChannel } from './client-channel'
 import qs from 'query-string'
 import { EJSON } from 'ejson2'
-import defer from 'lodash/defer'
+import { IdleTimeout } from './idle-timeout'
+import isNumber from 'lodash/isNumber'
+import { KeepAlive } from './keep-alive'
 import Timeout = NodeJS.Timeout
 
 export type ErrorHandler = (error: Presentation.ErrorPayload) => any
@@ -41,9 +42,30 @@ export type WebSocketRequestParams = {
   [x: number]: any
 }
 
+/**
+ * Declarative way to define transport mode. Can be changed at runtime.
+ */
+export enum TransportMode {
+  /**
+   * HTTP Only. No reactivity, no real-time, no nothing. Just plain old HTTP requests.
+   */
+  HttpOnly = 'HTTP_ONLY',
+
+  /**
+   * Server-Sent Events. It is a one-way communication channel from the server + HTTP calls.
+   */
+  HttpSSE = 'HTTP_SSE',
+
+  /**
+   * WebSocket. It is a two-way communication channel.
+   */
+  WebSocket = 'WEBSOCKET',
+}
+
 export type ClientOptions = {
   host?: string
   port?: number
+  mode?: TransportMode
   secure?: boolean
   ws?: WebSocketOptions
   errorHandler?: ErrorHandler
@@ -84,6 +106,7 @@ export class Client extends ClientChannel {
 
   options: ClientOptions = {
     host: 'localhost',
+    mode: TransportMode.WebSocket,
     secure: false,
     errorHandler: null,
     debug: false,
@@ -92,11 +115,11 @@ export class Client extends ClientChannel {
     eventSource: true,
   }
 
-  keepAliveTimeout: Timeout = null
-
-  idleTimeout: Timeout = null
-
   initializing: boolean
+
+  keepAlive: KeepAlive = new KeepAlive(this)
+
+  idleTimeout: IdleTimeout = null
 
   static KEEP_ALIVE_INTERVAL = 10000
   static EVENT_PROBE_TIMEOUT = 2000
@@ -140,17 +163,25 @@ export class Client extends ClientChannel {
       })
     }
 
-    // If it is going to connect with WebSocket automatically, then we should
-    // not call `init` for HTTP fallback before it is ready.
-    if (this.clientSocket.options.autoConnect) {
-      this.connectWebSocket().catch(console.error)
-    } else {
-      this.connectEventSource().catch(console.error)
+    this.connect().catch(console.error)
+
+    if (isNumber(this.options.idlenessTimeout) && Environment.isBrowser) {
+      this.idleTimeout = new IdleTimeout(this.options.idlenessTimeout, this)
     }
+  }
 
-    this.setupBrowserIdlenessCheck()
+  mode = {
+    get http() {
+      return this.options.mode === TransportMode.HttpOnly
+    },
 
-    this.registerKeepAlive()
+    get eventsource() {
+      return this.options.mode === TransportMode.HttpSSE
+    },
+
+    get websocket() {
+      return this.options.mode === TransportMode.WebSocket
+    },
   }
 
   get isConnecting() {
@@ -167,6 +198,18 @@ export class Client extends ClientChannel {
 
   get isEventSourceEnabled() {
     return this.options?.eventSource && !this.clientSocket?.options?.autoConnect
+  }
+
+  async connect() {
+    if (this.mode.eventsource) {
+      await this.connectEventSource()
+      this.keepAlive.start()
+    }
+
+    if (this.mode.websocket) {
+      await this.connectWebSocket()
+      this.keepAlive.start()
+    }
   }
 
   async connectEventSource() {
@@ -191,95 +234,6 @@ export class Client extends ClientChannel {
     } finally {
       await this.init()
     }
-  }
-
-  registerKeepAlive() {
-    // If the server stops sending the keep alive event we should disconnect.
-    this.client.on(HeleneEvents.KEEP_ALIVE, () => {
-      clearTimeout(this.keepAliveTimeout)
-
-      if (!this.clientSocket.ready) return
-
-      this.keepAliveTimeout = setTimeout(
-        async () => {
-          await this.close()
-          this.emit(HeleneEvents.KEEP_ALIVE_DISCONNECT)
-        },
-        // 2x the keep alive interval as a safety net.
-        Client.KEEP_ALIVE_INTERVAL * 2,
-      )
-
-      return this.client.call(Methods.KEEP_ALIVE)
-    })
-  }
-
-  startIdleTimeout() {
-    if (!this.options.idlenessTimeout) return
-
-    this.idleTimeout = setTimeout(() => {
-      this.close()
-        .then(() => {
-          console.log('Helene: Disconnected due to inactivity')
-        })
-        .catch(console.error)
-    }, this.options.idlenessTimeout)
-  }
-
-  stopIdleTimeout() {
-    if (this.idleTimeout) {
-      clearTimeout(this.idleTimeout)
-    }
-  }
-
-  async resetIdleTimer() {
-    this.stopIdleTimeout()
-    this.startIdleTimeout()
-
-    // If we don't wait for the client to initialize, it will cause a race condition when using WebSocket
-    if (!this.initialized) {
-      return
-    }
-
-    if (this.isEventSourceEnabled) {
-      this.connectEventSource()
-    } else {
-      this.connectWebSocket().catch(console.error)
-    }
-  }
-
-  setupBrowserIdlenessCheck() {
-    if (!this.options.idlenessTimeout) return
-
-    const reset = throttle(
-      this.resetIdleTimer.bind(this),
-      this.options.idlenessTimeout / 2,
-      {
-        leading: true,
-        trailing: false,
-      },
-    )
-
-    defer(() => {
-      this.startIdleTimeout()
-    })
-
-    if (typeof window === 'undefined') return
-
-    // https://github.com/socketio/socket.io/issues/2924#issuecomment-297985409
-    window.addEventListener('focus', reset)
-    window.addEventListener('mousemove', reset)
-    window.addEventListener('mousedown', reset)
-    window.addEventListener('keydown', reset)
-    window.addEventListener('scroll', reset)
-    window.addEventListener('touchstart', reset)
-    window.addEventListener('pageshow', reset)
-    window.addEventListener('pagehide', reset)
-
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') {
-        this.resetIdleTimer()
-      }
-    })
   }
 
   /**
@@ -352,7 +306,7 @@ export class Client extends ClientChannel {
   }
 
   async close() {
-    clearTimeout(this.idleTimeout)
+    this.emit(ClientEvents.CLOSE)
 
     this.clientHttp.close()
 
