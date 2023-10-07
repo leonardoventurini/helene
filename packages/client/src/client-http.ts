@@ -1,9 +1,10 @@
 import { Client } from './client'
-import { Reject, Resolve } from './promise-queue'
 import {
   CLIENT_ID_HEADER_KEY,
   ClientEvents,
   Presentation,
+  Reject,
+  Resolve,
   TOKEN_HEADER_KEY,
 } from '@helenejs/utils'
 import { EJSON } from 'ejson2'
@@ -41,9 +42,11 @@ export class ClientHttp {
     return new Promise(resolve => {
       this.client.emit(ClientEvents.EVENTSOURCE_CREATE)
 
-      if (!this.client.options.eventSource) {
+      if (!this.client.mode.eventsource) {
         return resolve(null)
       }
+
+      console.log('Helene: Creating event source')
 
       this.clientEventSource = new EventSource(this.uri, {
         headers: {

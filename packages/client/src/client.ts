@@ -1,6 +1,4 @@
 import { MethodParams, WebSocketMessageOptions } from '@helenejs/server'
-import { PromiseQueue } from './promise-queue'
-import { ClientSocket } from './client-socket'
 import {
   ClientEvents,
   Environment,
@@ -9,8 +7,10 @@ import {
   Methods,
   NO_CHANNEL,
   Presentation,
+  PromiseQueue,
   TOKEN_HEADER_KEY,
 } from '@helenejs/utils'
+import { ClientSocket } from './client-socket'
 import isEmpty from 'lodash/isEmpty'
 import isPlainObject from 'lodash/isPlainObject'
 import isString from 'lodash/isString'
@@ -31,9 +31,6 @@ import Timeout = NodeJS.Timeout
 export type ErrorHandler = (error: Presentation.ErrorPayload) => any
 
 export type WebSocketOptions = {
-  autoConnect?: boolean
-  reconnect?: boolean
-  reconnectRetries?: number
   path?: string
 }
 
@@ -73,7 +70,6 @@ export type ClientOptions = {
   allowedContextKeys?: string[]
   meta?: Record<string, any>
   idlenessTimeout?: number
-  eventSource?: boolean
 }
 
 export type CallOptions = {
@@ -112,7 +108,6 @@ export class Client extends ClientChannel {
     debug: false,
     allowedContextKeys: [],
     meta: {},
-    eventSource: true,
   }
 
   initializing: boolean
@@ -165,12 +160,17 @@ export class Client extends ClientChannel {
 
     this.connect().catch(console.error)
 
-    if (isNumber(this.options.idlenessTimeout) && Environment.isBrowser) {
+    if (
+      isNumber(this.options.idlenessTimeout) &&
+      (Environment.isBrowser || Environment.isTest)
+    ) {
       this.idleTimeout = new IdleTimeout(this.options.idlenessTimeout, this)
     }
   }
 
   mode = {
+    options: this.options,
+
     get http() {
       return this.options.mode === TransportMode.HttpOnly
     },
@@ -196,27 +196,27 @@ export class Client extends ClientChannel {
     return !!this.clientSocket?.ready
   }
 
-  get isEventSourceEnabled() {
-    return this.options?.eventSource && !this.clientSocket?.options?.autoConnect
+  get connected() {
+    return this.initialized && this.clientSocket?.ready
   }
 
   async connect() {
     if (this.mode.eventsource) {
       await this.connectEventSource()
-      this.keepAlive.start()
     }
 
     if (this.mode.websocket) {
       await this.connectWebSocket()
-      this.keepAlive.start()
     }
+
+    console.log('keep alive start')
+
+    this.keepAlive.start()
+
+    await this.init()
   }
 
   async connectEventSource() {
-    if (!this.isEventSourceEnabled) {
-      return this.init()
-    }
-
     // Should not init if the event source is already connected either.
     if (
       this.clientHttp.isEventSourceConnected &&
@@ -225,15 +225,15 @@ export class Client extends ClientChannel {
       return
     }
 
-    try {
-      this.clientHttp.createEventSource()
+    await this.clientHttp.createEventSource()
+  }
 
-      await this.client.waitFor(ClientEvents.EVENTSOURCE_OPEN, 10000)
-    } catch {
-      console.log('event source open failed')
-    } finally {
-      await this.init()
+  async connectWebSocket() {
+    if (this.clientSocket.isOpen && (await this.probeConnection())) {
+      return
     }
+
+    await this.clientSocket.connect()
   }
 
   /**
@@ -293,16 +293,6 @@ export class Client extends ClientChannel {
     }
 
     this.emit(ClientEvents.CONTEXT_CHANGED)
-  }
-
-  async connectWebSocket() {
-    if (this.clientSocket.isOpen && (await this.probeConnection())) {
-      return
-    }
-
-    await this.clientSocket.connect()
-
-    return await this.isConnected()
   }
 
   async close() {
@@ -569,10 +559,6 @@ export class Client extends ClientChannel {
 
       this.once(ClientEvents.INITIALIZED, () => resolve(true))
     })
-  }
-
-  get connected() {
-    return this.initialized && this.clientSocket?.ready
   }
 
   async attachDevTools() {

@@ -11,7 +11,10 @@ export class IdleTimeout {
     public timeout: number,
     public client: Client,
   ) {
-    this.setup()
+    this.client.on(ClientEvents.INITIALIZED, () => {
+      console.log('Helene: Idleness timeout started')
+      this.setup()
+    })
   }
 
   start() {
@@ -38,6 +41,8 @@ export class IdleTimeout {
     defer(() => {
       this.start()
     })
+
+    if (typeof window === 'undefined') return
 
     // https://github.com/socketio/socket.io/issues/2924#issuecomment-297985409
     window.addEventListener('focus', reset)

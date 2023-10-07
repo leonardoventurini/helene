@@ -11,7 +11,6 @@ createRoot(document.getElementById('app')).render(
       host: window.location.host,
       errorHandler: console.error,
       secure: window.location.protocol === 'https:',
-      eventSource: false,
     }}
   >
     <BrowserRouter>

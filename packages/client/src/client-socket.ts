@@ -33,9 +33,6 @@ export class ClientSocket extends EventEmitter2 {
   reconnecting = false
 
   options: WebSocketOptions = {
-    autoConnect: true,
-    reconnect: true,
-    reconnectRetries: 10,
     path: HELENE_WS_PATH,
   }
 
@@ -137,8 +134,6 @@ export class ClientSocket extends EventEmitter2 {
     this.connecting = false
     this.ready = true
     this.reconnecting = false
-
-    await this.client.init()
   }
 
   /**

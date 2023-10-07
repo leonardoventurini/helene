@@ -1,5 +1,5 @@
 import { EventOptions, Server, ServerOptions } from '@helenejs/server'
-import { Client, ClientOptions } from '@helenejs/client'
+import { Client, ClientOptions, TransportMode } from '@helenejs/client'
 import { ClientEvents, NO_CHANNEL, ServerEvents } from '@helenejs/utils'
 
 export class TestUtility {
@@ -90,17 +90,8 @@ export class TestUtility {
       const client = new Client({
         host: opts?.host ?? this.host,
         port,
-
-        eventSource: false,
-
+        mode: TransportMode.WebSocket,
         ...opts,
-
-        ws: {
-          reconnect: false,
-          reconnectRetries: 3,
-
-          ...opts?.ws,
-        },
       })
 
       afterEach(async () => {
@@ -124,10 +115,7 @@ export class TestUtility {
   async createHttpClient(opts?: ClientOptions) {
     return this.createClient({
       ...opts,
-      eventSource: true,
-      ws: {
-        autoConnect: false,
-      },
+      mode: TransportMode.HttpSSE,
     })
   }
 
