@@ -226,7 +226,7 @@ export class Client extends ClientChannel {
   async shouldConnect() {
     if (this.mode.eventsource && !this.clientHttp.isEventSourceConnected)
       return true
-    if (this.mode.websocket && !this.clientSocket.isOpen) return true
+    if (this.mode.websocket && !this.clientSocket.ready) return true
 
     try {
       this.call(Methods.EVENT_PROBE).catch(console.error)
@@ -432,7 +432,7 @@ export class Client extends ClientChannel {
       const payload = { uuid, method, params }
 
       // It should call the method via HTTP if the socket is not ready or the initialization did not occur yet.
-      if (http || (!this.clientSocket?.ready && httpFallback)) {
+      if (http || (!this.clientSocket.ready && httpFallback)) {
         return this.clientHttp.request(payload, resolve, reject)
       }
 

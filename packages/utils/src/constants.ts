@@ -45,7 +45,6 @@ export enum ClientEvents {
   CONTEXT_CHANGED = 'context:changed',
   OUTBOUND_MESSAGE = 'outbound:message',
   INBOUND_MESSAGE = 'inbound:message',
-  DISCONNECT = 'disconnect',
   CONNECTING = 'connecting',
 
   WEBSOCKET_CONNECT_ATTEMPT = 'websocket:connect:attempt',
