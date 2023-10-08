@@ -40,9 +40,9 @@ describe('Events', function () {
   it('should still be subscribed after reconnecting', async () => {
     await test.createEvent('test:event')
 
-    await test.client.clientSocket.close()
+    await test.client.close()
 
-    test.client.clientSocket.connect()
+    test.client.connect()
 
     await test.client.waitFor(ClientEvents.INITIALIZED, 1000)
 
@@ -126,7 +126,9 @@ describe('Events', function () {
   it('should ask for probing event after visibility context changes', async () => {
     Client.EVENT_PROBE_TIMEOUT = 100
 
-    const client = await test.createHttpClient()
+    const client = await test.createHttpClient({
+      idlenessTimeout: 100,
+    })
 
     const probe1 = await client.probeConnection()
 
@@ -140,11 +142,15 @@ describe('Events', function () {
 
     const probe2 = await client.probeConnection()
 
-    client.idleTimeout.reset()
+    expect(probe2).to.be.false
+
+    client.connect()
 
     await client.waitFor(ClientEvents.EVENTSOURCE_OPEN)
 
-    expect(probe2).to.be.false
+    const probe3 = await client.probeConnection()
+
+    expect(probe3).to.be.true
   }).timeout(10000)
 
   it('should support iterating with for await', async () => {

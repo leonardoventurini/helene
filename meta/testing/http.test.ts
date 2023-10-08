@@ -223,36 +223,33 @@ describe('HTTP', async () => {
       expect(eventTimeout).to.be.true
     })
 
-    it.only(
-      'should disconnect on idleness and reconnect upon interaction',
-      async () => {
-        const client = await test.createHttpClient({
-          idlenessTimeout: 100,
-        })
+    it('should disconnect on idleness and reconnect upon interaction', async () => {
+      const client = await test.createHttpClient({
+        idlenessTimeout: 100,
+      })
 
-        console.log('here1')
+      console.log('here1')
 
-        await client.waitFor(ClientEvents.EVENTSOURCE_CLOSE)
+      await client.waitFor(ClientEvents.EVENTSOURCE_CLOSE)
 
-        console.log('here2')
+      console.log('here2')
 
-        expect(client.clientHttp.clientEventSource).to.be.null
+      expect(client.clientHttp.clientEventSource).to.be.null
 
-        client.idleTimeout.reset()
+      client.idleTimeout.reset()
 
-        expect(client.clientHttp.clientEventSource.readyState).to.equal(
-          EventSource.CONNECTING,
-        )
+      expect(client.clientHttp.clientEventSource.readyState).to.equal(
+        EventSource.CONNECTING,
+      )
 
-        await client.waitFor(ClientEvents.EVENTSOURCE_OPEN)
+      await client.waitFor(ClientEvents.EVENTSOURCE_OPEN)
 
-        expect(client.clientHttp.clientEventSource.readyState).to.equal(
-          EventSource.OPEN,
-        )
+      expect(client.clientHttp.clientEventSource.readyState).to.equal(
+        EventSource.OPEN,
+      )
 
-        await client.close()
-      },
-    ).timeout(60000)
+      await client.close()
+    }).timeout(60000)
 
     it('should call connection and disconnection events', async () => {
       const clientPromise = test.createHttpClient()

@@ -209,8 +209,6 @@ export class Client extends ClientChannel {
       await this.connectWebSocket()
     }
 
-    console.log('keep alive start')
-
     this.keepAlive.start()
 
     await this.init()
