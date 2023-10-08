@@ -13,7 +13,7 @@ import {
 } from '@helenejs/utils'
 import { ClientNode, HeleneAsyncLocalStorage } from '@helenejs/server'
 import { TestUtility } from './test-utility'
-import { Client } from '@helenejs/client'
+import { Client, TransportMode } from '@helenejs/client'
 
 describe('Methods', function () {
   const test = new TestUtility()
@@ -219,7 +219,7 @@ describe('Methods', function () {
   it('in case we return undefined in a method we should ', async () => {
     const client = await test.createClient({
       port: test.server.port,
-      ws: { autoConnect: false },
+      mode: TransportMode.HttpOnly,
     })
 
     test.server.addMethod('test:method', async () => undefined)

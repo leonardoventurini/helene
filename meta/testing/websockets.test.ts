@@ -20,9 +20,6 @@ describe('WebSockets', function () {
   })
 
   it('should attempt to reconnect, fail, and then succeed to connect manually', async () => {
-    test.client.clientSocket.options.reconnect = true
-    test.client.clientSocket.options.reconnectRetries = 3
-
     test.server.acceptConnections = false
 
     await test.client.close()
