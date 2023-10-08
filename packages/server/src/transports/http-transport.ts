@@ -161,8 +161,6 @@ export class HttpTransport {
     res.write('retry: 1000\n')
     res.write('heartbeatTimeout: 600000\n')
 
-    req.on('error', console.error)
-
     const keepAliveInterval = setInterval(() => {
       res.write(': keep-alive\n')
     }, ClientNode.KEEP_ALIVE_INTERVAL)

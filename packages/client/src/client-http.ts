@@ -70,15 +70,15 @@ export class ClientHttp {
 
       this.clientEventSource.onopen = () => {
         defer(() => {
-          this.client.init().catch(console.error)
-          this.client.emit(ClientEvents.EVENTSOURCE_OPEN)
           resolve(this.clientEventSource)
+          this.client.emit(ClientEvents.EVENTSOURCE_OPEN)
+          this.client.init().catch(console.error)
         })
       }
 
       this.clientEventSource.onerror = (error: any) => {
+        this.client.emit(ClientEvents.EVENTSOURCE_ERROR)
         if (error.message) {
-          this.client.emit(ClientEvents.EVENTSOURCE_ERROR)
           console.error(error.message)
         }
       }

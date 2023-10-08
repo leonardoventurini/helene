@@ -121,4 +121,12 @@ describe('WebSockets', function () {
 
     expect(client.connected).to.be.false
   }).timeout(10000)
+
+  it('should call init even after it abnormally reconnects', async () => {
+    test.server.allClients.get(test.client.uuid).socket.close()
+
+    await test.client.waitFor(ClientEvents.WEBSOCKET_CLOSED)
+
+    await test.client.waitFor(ClientEvents.INITIALIZED)
+  })
 })
