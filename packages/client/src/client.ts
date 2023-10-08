@@ -201,12 +201,17 @@ export class Client extends ClientChannel {
   }
 
   async connect() {
+    if (!(await this.shouldConnect())) {
+      console.log('Helene: Already connected')
+      return
+    }
+
     if (this.mode.eventsource) {
-      await this.connectEventSource()
+      await this.clientHttp.createEventSource()
     }
 
     if (this.mode.websocket) {
-      await this.connectWebSocket()
+      await this.clientSocket.connect()
     }
 
     this.keepAlive.start()
@@ -214,39 +219,23 @@ export class Client extends ClientChannel {
     await this.init()
   }
 
-  async connectEventSource() {
-    // Should not init if the event source is already connected either.
-    if (
-      this.clientHttp.isEventSourceConnected &&
-      (await this.probeConnection())
-    ) {
-      return
-    }
-
-    await this.clientHttp.createEventSource()
-  }
-
-  async connectWebSocket() {
-    if (this.clientSocket.isOpen && (await this.probeConnection())) {
-      return
-    }
-
-    await this.clientSocket.connect()
-  }
-
   /**
    * Workaround for Safari not reconnecting after the app is brought back to the foreground.
    */
-  async probeConnection() {
+  async shouldConnect() {
+    if (this.mode.eventsource && !this.clientHttp.isEventSourceConnected)
+      return true
+    if (this.mode.websocket && !this.clientSocket.isOpen) return true
+
     try {
       this.call(Methods.EVENT_PROBE).catch(console.error)
       await this.waitFor(HeleneEvents.EVENT_PROBE, Client.EVENT_PROBE_TIMEOUT)
-      return true
+      return false
     } catch {
-      console.error('event probe failed')
+      console.error('Helene: Event Probe Failed')
       this.emit(HeleneEvents.EVENT_PROBE_FAILED)
       await this.close()
-      return false
+      return true
     }
   }
 

@@ -14,7 +14,7 @@ describe('WebSockets', function () {
 
     expect(test.client.clientSocket.ready).to.be.false
 
-    await test.client.connectWebSocket()
+    await test.client.connect()
 
     expect(test.client.clientSocket.ready).to.be.true
   })
@@ -28,7 +28,7 @@ describe('WebSockets', function () {
 
     test.server.acceptConnections = true
 
-    await test.client.connectWebSocket()
+    await test.client.connect()
 
     expect(test.client.clientSocket.ready).to.be.true
   })
@@ -47,7 +47,7 @@ describe('WebSockets', function () {
     })
 
     defer(() => {
-      client.connectWebSocket().catch(console.error)
+      client.connect().catch(console.error)
     })
 
     await sleep(3000)

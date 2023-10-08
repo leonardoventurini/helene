@@ -1,0 +1,11 @@
+flowchart TB
+    A[Client.constructor] --> B[Client.connect]
+
+    B --> C{Client.shouldConnect}
+
+    C -- Http SSE --> ClientHttp.createEventSource
+    C -- WebSocket --> ClientSocket.connect
+    C -- Http Only --> Client.init
+
+    ClientHttp.createEventSource -- connected --> Client.init
+    ClientSocket.connect -- connected --> Client.init

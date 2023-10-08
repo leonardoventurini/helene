@@ -228,15 +228,13 @@ describe('HTTP', async () => {
         idlenessTimeout: 100,
       })
 
-      console.log('here1')
-
       await client.waitFor(ClientEvents.EVENTSOURCE_CLOSE)
-
-      console.log('here2')
 
       expect(client.clientHttp.clientEventSource).to.be.null
 
       client.idleTimeout.reset()
+
+      await client.waitFor(ClientEvents.EVENTSOURCE_CREATE)
 
       expect(client.clientHttp.clientEventSource.readyState).to.equal(
         EventSource.CONNECTING,

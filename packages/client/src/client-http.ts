@@ -40,8 +40,6 @@ export class ClientHttp {
   // @todo Recreate event source on token change.
   createEventSource() {
     return new Promise(resolve => {
-      this.client.emit(ClientEvents.EVENTSOURCE_CREATE)
-
       if (!this.client.mode.eventsource) {
         return resolve(null)
       }
@@ -59,6 +57,8 @@ export class ClientHttp {
         // @ts-ignore
         heartbeatTimeout: 600000,
       }) as EventSource
+
+      this.client.emit(ClientEvents.EVENTSOURCE_CREATE)
 
       this.clientEventSource.onmessage = (event: MessageEvent) => {
         this.client.emit(ClientEvents.INBOUND_MESSAGE, event.data)
