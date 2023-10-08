@@ -208,14 +208,15 @@ export class Client extends ClientChannel {
 
     if (this.mode.eventsource) {
       await this.clientHttp.createEventSource()
+      return
     }
 
     if (this.mode.websocket) {
       await this.clientSocket.connect()
+      return
     }
 
-    this.keepAlive.start()
-
+    // Init is called automatically once the respective connection mode is ready, we only call here if it is HTTP only.
     await this.init()
   }
 
@@ -342,6 +343,10 @@ export class Client extends ClientChannel {
 
     await this.resubscribeAllChannels()
 
+    if (this.mode.websocket || this.mode.eventsource) {
+      this.keepAlive.start()
+    }
+
     this.emit(ClientEvents.INITIALIZED, result)
   }
 
@@ -410,6 +415,8 @@ export class Client extends ClientChannel {
     params?: MethodParams,
     { timeout = 20000, ws, http, httpFallback = true }: CallOptions = {},
   ): Promise<any> {
+    // @todo perhaps should probe the connection here and reconnect if necessary?
+
     // It should wait for the client to initialize before calling any method.
     if (!this.initialized && method !== Methods.RPC_INIT) {
       try {

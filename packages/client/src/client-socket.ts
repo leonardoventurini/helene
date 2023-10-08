@@ -134,6 +134,8 @@ export class ClientSocket extends EventEmitter2 {
     this.connecting = false
     this.ready = true
     this.reconnecting = false
+
+    this.client.init().catch(console.error)
   }
 
   /**
