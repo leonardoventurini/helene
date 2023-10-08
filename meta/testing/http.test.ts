@@ -289,9 +289,7 @@ describe('HTTP', async () => {
     it('should call init even after it abnormally reconnects', async () => {
       const client = await test.createHttpClient()
 
-      test.server.httpTransport.eventSourceClients
-        .get(client.uuid)
-        .res.destroy()
+      test.server.httpTransport.eventSourceClients.get(client.uuid).res.end()
 
       await client.waitFor(ClientEvents.EVENTSOURCE_ERROR)
 
