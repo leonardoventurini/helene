@@ -28,15 +28,14 @@ export class ClientSocket extends EventEmitter2 {
   protocol: string
   uri: string
 
-  ready = false
   connecting = false
-  reconnecting = false
 
   options: WebSocketOptions = {
-    autoConnect: true,
-    reconnect: true,
-    reconnectRetries: 10,
     path: HELENE_WS_PATH,
+  }
+
+  get ready() {
+    return Boolean(this.socket?.readyState === WebSocketState.OPEN)
   }
 
   constructor(client: Client, options: WebSocketOptions = {}) {
@@ -57,13 +56,7 @@ export class ClientSocket extends EventEmitter2 {
     }
   }
 
-  get isOpen(): boolean {
-    return Boolean(this.socket?.readyState === WebSocketState.OPEN)
-  }
-
   async connect() {
-    this.emit(ClientSocketEvent.DISCONNECT)
-
     this.connecting = true
     this.client.emit(ClientEvents.CONNECTING)
 
@@ -135,10 +128,8 @@ export class ClientSocket extends EventEmitter2 {
     )
 
     this.connecting = false
-    this.ready = true
-    this.reconnecting = false
 
-    await this.client.init()
+    this.client.init().catch(console.error)
   }
 
   /**
@@ -146,7 +137,6 @@ export class ClientSocket extends EventEmitter2 {
    */
   private handleClose = () => {
     this.connecting = false
-    this.ready = false
     this.socket = undefined
 
     this.client.emit(ClientEvents.WEBSOCKET_CLOSED)
@@ -154,7 +144,6 @@ export class ClientSocket extends EventEmitter2 {
 
   private handleError = error => {
     this.connecting = false
-    this.ready = false
     console.error(error)
     this.client.emit(ClientEvents.ERROR, error)
   }

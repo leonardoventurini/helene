@@ -39,29 +39,25 @@ export enum ServerEvents {
 
 export enum ClientEvents {
   LOGOUT = 'auth:logout',
-  WEBSOCKET_CLOSED = 'close',
   ERROR = 'error',
   INITIALIZING = 'initializing',
   INITIALIZED = 'initialized',
-  OPEN = 'open',
-  MESSAGE = 'message',
   CONTEXT_CHANGED = 'context:changed',
   OUTBOUND_MESSAGE = 'outbound:message',
   INBOUND_MESSAGE = 'inbound:message',
-  DEBUGGER = 'debugger',
-  DISCONNECT = 'disconnect',
   CONNECTING = 'connecting',
-  CONNECTED = 'connected',
 
   WEBSOCKET_CONNECT_ATTEMPT = 'websocket:connect:attempt',
   WEBSOCKET_CONNECTED = 'websocket:connected',
-  WEBSOCKET_ATTEMPT = 'websocket:attempt',
   WEBSOCKET_RECONNECTING = 'websocket:reconnecting',
+  WEBSOCKET_CLOSED = 'websocket:closed',
 
   EVENTSOURCE_CREATE = 'eventsource:create',
   EVENTSOURCE_OPEN = 'eventsource:open',
   EVENTSOURCE_CLOSE = 'eventsource:close',
   EVENTSOURCE_ERROR = 'eventsource:error',
+
+  CLOSE = 'client:close',
 }
 
 export enum ClientSocketEvent {

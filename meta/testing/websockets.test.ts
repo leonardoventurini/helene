@@ -14,15 +14,12 @@ describe('WebSockets', function () {
 
     expect(test.client.clientSocket.ready).to.be.false
 
-    await test.client.connectWebSocket()
+    await test.client.connect()
 
     expect(test.client.clientSocket.ready).to.be.true
   })
 
   it('should attempt to reconnect, fail, and then succeed to connect manually', async () => {
-    test.client.clientSocket.options.reconnect = true
-    test.client.clientSocket.options.reconnectRetries = 3
-
     test.server.acceptConnections = false
 
     await test.client.close()
@@ -31,7 +28,7 @@ describe('WebSockets', function () {
 
     test.server.acceptConnections = true
 
-    await test.client.connectWebSocket()
+    await test.client.connect()
 
     expect(test.client.clientSocket.ready).to.be.true
   })
@@ -39,16 +36,18 @@ describe('WebSockets', function () {
   it('should attempt connection more than once while the server is not accepting connections', async () => {
     let attemptCount = 0
 
-    test.server.acceptConnections = false
+    const client = await test.createClient()
 
-    const client = await test.createClient({ ws: { autoConnect: false } })
+    await client.close()
+
+    test.server.acceptConnections = false
 
     client.on(ClientEvents.WEBSOCKET_RECONNECTING, () => {
       attemptCount++
     })
 
     defer(() => {
-      client.connectWebSocket().catch(console.error)
+      client.connect().catch(console.error)
     })
 
     await sleep(3000)
@@ -122,4 +121,12 @@ describe('WebSockets', function () {
 
     expect(client.connected).to.be.false
   }).timeout(10000)
+
+  it('should call init even after it abnormally reconnects', async () => {
+    test.server.allClients.get(test.client.uuid).socket.close()
+
+    await test.client.waitFor(ClientEvents.WEBSOCKET_CLOSED)
+
+    await test.client.waitFor(ClientEvents.INITIALIZED)
+  })
 })

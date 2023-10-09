@@ -1,6 +1,4 @@
 import { MethodParams, WebSocketMessageOptions } from '@helenejs/server'
-import { PromiseQueue } from './promise-queue'
-import { ClientSocket } from './client-socket'
 import {
   ClientEvents,
   Environment,
@@ -9,30 +7,30 @@ import {
   Methods,
   NO_CHANNEL,
   Presentation,
+  PromiseQueue,
   TOKEN_HEADER_KEY,
 } from '@helenejs/utils'
+import { ClientSocket } from './client-socket'
 import isEmpty from 'lodash/isEmpty'
 import isPlainObject from 'lodash/isPlainObject'
 import isString from 'lodash/isString'
 import merge from 'lodash/merge'
 import pick from 'lodash/pick'
 import last from 'lodash/last'
-import throttle from 'lodash/throttle'
 import isObject from 'lodash/isObject'
 import isFunction from 'lodash/isFunction'
 import { ClientHttp } from './client-http'
 import { ClientChannel } from './client-channel'
 import qs from 'query-string'
 import { EJSON } from 'ejson2'
-import defer from 'lodash/defer'
+import { IdleTimeout } from './idle-timeout'
+import isNumber from 'lodash/isNumber'
+import { KeepAlive } from './keep-alive'
 import Timeout = NodeJS.Timeout
 
 export type ErrorHandler = (error: Presentation.ErrorPayload) => any
 
 export type WebSocketOptions = {
-  autoConnect?: boolean
-  reconnect?: boolean
-  reconnectRetries?: number
   path?: string
 }
 
@@ -41,9 +39,30 @@ export type WebSocketRequestParams = {
   [x: number]: any
 }
 
+/**
+ * Declarative way to define transport mode. Can be changed at runtime.
+ */
+export enum TransportMode {
+  /**
+   * HTTP Only. No reactivity, no real-time, no nothing. Just plain old HTTP requests.
+   */
+  HttpOnly = 'HTTP_ONLY',
+
+  /**
+   * Server-Sent Events. It is a one-way communication channel from the server + HTTP calls.
+   */
+  HttpSSE = 'HTTP_SSE',
+
+  /**
+   * WebSocket. It is a two-way communication channel.
+   */
+  WebSocket = 'WEBSOCKET',
+}
+
 export type ClientOptions = {
   host?: string
   port?: number
+  mode?: TransportMode
   secure?: boolean
   ws?: WebSocketOptions
   errorHandler?: ErrorHandler
@@ -51,7 +70,6 @@ export type ClientOptions = {
   allowedContextKeys?: string[]
   meta?: Record<string, any>
   idlenessTimeout?: number
-  eventSource?: boolean
 }
 
 export type CallOptions = {
@@ -84,19 +102,19 @@ export class Client extends ClientChannel {
 
   options: ClientOptions = {
     host: 'localhost',
+    mode: TransportMode.WebSocket,
     secure: false,
     errorHandler: null,
     debug: false,
     allowedContextKeys: [],
     meta: {},
-    eventSource: true,
   }
 
-  keepAliveTimeout: Timeout = null
-
-  idleTimeout: Timeout = null
-
   initializing: boolean
+
+  keepAlive: KeepAlive = new KeepAlive(this)
+
+  idleTimeout: IdleTimeout = null
 
   static KEEP_ALIVE_INTERVAL = 10000
   static EVENT_PROBE_TIMEOUT = 2000
@@ -140,17 +158,30 @@ export class Client extends ClientChannel {
       })
     }
 
-    // If it is going to connect with WebSocket automatically, then we should
-    // not call `init` for HTTP fallback before it is ready.
-    if (this.clientSocket.options.autoConnect) {
-      this.connectWebSocket().catch(console.error)
-    } else {
-      this.connectEventSource().catch(console.error)
+    this.connect().catch(console.error)
+
+    if (
+      isNumber(this.options.idlenessTimeout) &&
+      (Environment.isBrowser || Environment.isTest)
+    ) {
+      this.idleTimeout = new IdleTimeout(this.options.idlenessTimeout, this)
     }
+  }
 
-    this.setupBrowserIdlenessCheck()
+  mode = {
+    options: this.options,
 
-    this.registerKeepAlive()
+    get http() {
+      return this.options.mode === TransportMode.HttpOnly
+    },
+
+    get eventsource() {
+      return this.options.mode === TransportMode.HttpSSE
+    },
+
+    get websocket() {
+      return this.options.mode === TransportMode.WebSocket
+    },
   }
 
   get isConnecting() {
@@ -165,136 +196,47 @@ export class Client extends ClientChannel {
     return !!this.clientSocket?.ready
   }
 
-  get isEventSourceEnabled() {
-    return this.options?.eventSource && !this.clientSocket?.options?.autoConnect
+  get connected() {
+    return this.initialized && this.clientSocket?.ready
   }
 
-  async connectEventSource() {
-    if (!this.isEventSourceEnabled) {
-      return this.init()
-    }
-
-    // Should not init if the event source is already connected either.
-    if (
-      this.clientHttp.isEventSourceConnected &&
-      (await this.probeConnection())
-    ) {
+  async connect() {
+    if (!(await this.shouldConnect())) {
+      console.log('Helene: Already connected')
       return
     }
 
-    try {
-      this.clientHttp.createEventSource()
-
-      await this.client.waitFor(ClientEvents.EVENTSOURCE_OPEN, 10000)
-    } catch {
-      console.log('event source open failed')
-    } finally {
-      await this.init()
-    }
-  }
-
-  registerKeepAlive() {
-    // If the server stops sending the keep alive event we should disconnect.
-    this.client.on(HeleneEvents.KEEP_ALIVE, () => {
-      clearTimeout(this.keepAliveTimeout)
-
-      if (!this.clientSocket.ready) return
-
-      this.keepAliveTimeout = setTimeout(
-        async () => {
-          await this.close()
-          this.emit(HeleneEvents.KEEP_ALIVE_DISCONNECT)
-        },
-        // 2x the keep alive interval as a safety net.
-        Client.KEEP_ALIVE_INTERVAL * 2,
-      )
-
-      return this.client.call(Methods.KEEP_ALIVE)
-    })
-  }
-
-  startIdleTimeout() {
-    if (!this.options.idlenessTimeout) return
-
-    this.idleTimeout = setTimeout(() => {
-      this.close()
-        .then(() => {
-          console.log('Helene: Disconnected due to inactivity')
-        })
-        .catch(console.error)
-    }, this.options.idlenessTimeout)
-  }
-
-  stopIdleTimeout() {
-    if (this.idleTimeout) {
-      clearTimeout(this.idleTimeout)
-    }
-  }
-
-  async resetIdleTimer() {
-    this.stopIdleTimeout()
-    this.startIdleTimeout()
-
-    // If we don't wait for the client to initialize, it will cause a race condition when using WebSocket
-    if (!this.initialized) {
+    if (this.mode.eventsource) {
+      await this.clientHttp.createEventSource()
       return
     }
 
-    if (this.isEventSourceEnabled) {
-      this.connectEventSource()
-    } else {
-      this.connectWebSocket().catch(console.error)
+    if (this.mode.websocket) {
+      await this.clientSocket.connect()
+      return
     }
-  }
 
-  setupBrowserIdlenessCheck() {
-    if (!this.options.idlenessTimeout) return
-
-    const reset = throttle(
-      this.resetIdleTimer.bind(this),
-      this.options.idlenessTimeout / 2,
-      {
-        leading: true,
-        trailing: false,
-      },
-    )
-
-    defer(() => {
-      this.startIdleTimeout()
-    })
-
-    if (typeof window === 'undefined') return
-
-    // https://github.com/socketio/socket.io/issues/2924#issuecomment-297985409
-    window.addEventListener('focus', reset)
-    window.addEventListener('mousemove', reset)
-    window.addEventListener('mousedown', reset)
-    window.addEventListener('keydown', reset)
-    window.addEventListener('scroll', reset)
-    window.addEventListener('touchstart', reset)
-    window.addEventListener('pageshow', reset)
-    window.addEventListener('pagehide', reset)
-
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') {
-        this.resetIdleTimer()
-      }
-    })
+    // Init is called automatically once the respective connection mode is ready, we only call here if it is HTTP only.
+    await this.init()
   }
 
   /**
    * Workaround for Safari not reconnecting after the app is brought back to the foreground.
    */
-  async probeConnection() {
+  async shouldConnect() {
+    if (this.mode.eventsource && !this.clientHttp.isEventSourceConnected)
+      return true
+    if (this.mode.websocket && !this.clientSocket.ready) return true
+
     try {
       this.call(Methods.EVENT_PROBE).catch(console.error)
       await this.waitFor(HeleneEvents.EVENT_PROBE, Client.EVENT_PROBE_TIMEOUT)
-      return true
+      return false
     } catch {
-      console.error('event probe failed')
+      console.error('Helene: Event Probe Failed')
       this.emit(HeleneEvents.EVENT_PROBE_FAILED)
       await this.close()
-      return false
+      return true
     }
   }
 
@@ -341,18 +283,8 @@ export class Client extends ClientChannel {
     this.emit(ClientEvents.CONTEXT_CHANGED)
   }
 
-  async connectWebSocket() {
-    if (this.clientSocket.isOpen && (await this.probeConnection())) {
-      return
-    }
-
-    await this.clientSocket.connect()
-
-    return await this.isConnected()
-  }
-
   async close() {
-    clearTimeout(this.idleTimeout)
+    this.emit(ClientEvents.CLOSE)
 
     this.clientHttp.close()
 
@@ -410,6 +342,10 @@ export class Client extends ClientChannel {
     this.initializing = false
 
     await this.resubscribeAllChannels()
+
+    if (this.mode.websocket || this.mode.eventsource) {
+      this.keepAlive.start()
+    }
 
     this.emit(ClientEvents.INITIALIZED, result)
   }
@@ -479,6 +415,8 @@ export class Client extends ClientChannel {
     params?: MethodParams,
     { timeout = 20000, ws, http, httpFallback = true }: CallOptions = {},
   ): Promise<any> {
+    // @todo perhaps should probe the connection here and reconnect if necessary?
+
     // It should wait for the client to initialize before calling any method.
     if (!this.initialized && method !== Methods.RPC_INIT) {
       try {
@@ -494,7 +432,7 @@ export class Client extends ClientChannel {
       const payload = { uuid, method, params }
 
       // It should call the method via HTTP if the socket is not ready or the initialization did not occur yet.
-      if (http || (!this.clientSocket?.ready && httpFallback)) {
+      if (http || (!this.clientSocket.ready && httpFallback)) {
         return this.clientHttp.request(payload, resolve, reject)
       }
 
@@ -615,10 +553,6 @@ export class Client extends ClientChannel {
 
       this.once(ClientEvents.INITIALIZED, () => resolve(true))
     })
-  }
-
-  get connected() {
-    return this.initialized && this.clientSocket?.ready
   }
 
   async attachDevTools() {

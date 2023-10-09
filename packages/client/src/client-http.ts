@@ -1,9 +1,10 @@
 import { Client } from './client'
-import { Reject, Resolve } from './promise-queue'
 import {
   CLIENT_ID_HEADER_KEY,
   ClientEvents,
   Presentation,
+  Reject,
+  Resolve,
   TOKEN_HEADER_KEY,
 } from '@helenejs/utils'
 import { EJSON } from 'ejson2'
@@ -39,11 +40,11 @@ export class ClientHttp {
   // @todo Recreate event source on token change.
   createEventSource() {
     return new Promise(resolve => {
-      this.client.emit(ClientEvents.EVENTSOURCE_CREATE)
-
-      if (!this.client.options.eventSource) {
+      if (!this.client.mode.eventsource) {
         return resolve(null)
       }
+
+      console.log('Helene: Creating event source')
 
       this.clientEventSource = new EventSource(this.uri, {
         headers: {
@@ -57,6 +58,8 @@ export class ClientHttp {
         heartbeatTimeout: 600000,
       }) as EventSource
 
+      this.client.emit(ClientEvents.EVENTSOURCE_CREATE)
+
       this.clientEventSource.onmessage = (event: MessageEvent) => {
         this.client.emit(ClientEvents.INBOUND_MESSAGE, event.data)
 
@@ -67,14 +70,15 @@ export class ClientHttp {
 
       this.clientEventSource.onopen = () => {
         defer(() => {
-          this.client.emit(ClientEvents.EVENTSOURCE_OPEN)
           resolve(this.clientEventSource)
+          this.client.emit(ClientEvents.EVENTSOURCE_OPEN)
+          this.client.init().catch(console.error)
         })
       }
 
       this.clientEventSource.onerror = (error: any) => {
+        this.client.emit(ClientEvents.EVENTSOURCE_ERROR)
         if (error.message) {
-          this.client.emit(ClientEvents.EVENTSOURCE_ERROR)
           console.error(error.message)
         }
       }

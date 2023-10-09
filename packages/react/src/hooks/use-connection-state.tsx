@@ -22,7 +22,6 @@ export const useConnectionState = () => {
     client,
     [
       ClientEvents.INITIALIZED,
-      ClientEvents.OPEN,
       ClientEvents.WEBSOCKET_CLOSED,
       ClientEvents.CONNECTING,
     ],
