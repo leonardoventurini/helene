@@ -1,11 +1,10 @@
 import React, { PropsWithChildren } from 'react'
+import useCreation from 'ahooks/lib/useCreation'
 import { Client, ClientOptions } from '@helenejs/client'
 
 export const ClientContext = React.createContext(undefined)
 
 ClientContext.displayName = 'HeleneClientContext'
-
-let client: Client
 
 export const ClientProvider = ({
   clientInstance = null,
@@ -15,9 +14,10 @@ export const ClientProvider = ({
   clientOptions?: ClientOptions
   clientInstance?: Client
 }>) => {
-  if (!client) {
-    client = clientInstance ?? new Client(clientOptions)
-  }
+  const client = useCreation(() => {
+    console.log('Helene: Creating client instance in provider')
+    return clientInstance ?? new Client(clientOptions)
+  }, [])
 
   return (
     <ClientContext.Provider value={client}>

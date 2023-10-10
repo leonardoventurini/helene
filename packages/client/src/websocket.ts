@@ -132,8 +132,6 @@ export function connectWebSocketWithPersistentReconnect(
   let ws = connections.get(url)
 
   async function connect() {
-    console.trace()
-
     while (!state.stopped) {
       try {
         client.emit(ClientEvents.WEBSOCKET_CONNECT_ATTEMPT)
