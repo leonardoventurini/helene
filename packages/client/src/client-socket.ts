@@ -1,15 +1,15 @@
 import { Client, WebSocketOptions } from './client'
 import {
   ClientEvents,
-  ClientSocketEvent,
   HELENE_WS_PATH,
   Presentation,
-  sleep,
   WebSocketEvents,
   WebSocketState,
 } from '@helenejs/utils'
-import { connectWebSocketWithPersistentReconnect, Socket } from './websocket'
 import { EventEmitter2 } from 'eventemitter2'
+import SockJS from 'sockjs-client'
+
+export type Socket = typeof SockJS.constructor.prototype
 
 export class ClientSocket extends EventEmitter2 {
   client: Client
@@ -25,6 +25,8 @@ export class ClientSocket extends EventEmitter2 {
     path: HELENE_WS_PATH,
   }
 
+  closed = true
+
   get ready() {
     return Boolean(this.socket?.readyState === WebSocketState.OPEN)
   }
@@ -33,8 +35,6 @@ export class ClientSocket extends EventEmitter2 {
     super()
 
     this.client = client
-
-    this.client.on(ClientEvents.WEBSOCKET_CONNECTED, this.handleOpen.bind(this))
 
     Object.assign(this.options, options ?? {})
 
@@ -48,14 +48,54 @@ export class ClientSocket extends EventEmitter2 {
   }
 
   async connect() {
+    const self = this
+
+    this.closed = false
+
+    const timeFn = (i: number) =>
+      Math.min(100 * Math.pow(i, 2), 60000) * (0.9 + 0.2 * Math.random())
+
     this.connecting = true
     this.client.emit(ClientEvents.CONNECTING)
 
-    connectWebSocketWithPersistentReconnect(
-      `${this.uri}?uuid=${this.client.uuid}`,
-      this.client,
-      this,
-    )
+    let recInterval = null
+    let attempt = 0
+
+    const conn = () => {
+      self.socket = new SockJS(`${this.uri}?uuid=${this.client.uuid}`)
+
+      clearInterval(recInterval)
+
+      self.socket.onopen = () => {
+        self.client.emit(ClientEvents.WEBSOCKET_CONNECTED)
+
+        self.socket.addEventListener(
+          WebSocketEvents.MESSAGE,
+          this.handleMessage.bind(self),
+        )
+
+        self.connecting = false
+        self.client.init().catch(console.error)
+      }
+
+      this.socket.onclose = () => {
+        self.connecting = false
+        self.socket = null
+        self.client.emit(ClientEvents.WEBSOCKET_CLOSED)
+
+        if (self.closed) return
+
+        recInterval = setInterval(conn, timeFn(attempt++))
+      }
+
+      this.socket.onerror = err => {
+        self.connecting = false
+        console.error(err)
+        self.client.emit(ClientEvents.ERROR, err)
+      }
+    }
+
+    conn()
 
     await this.client.waitFor(ClientEvents.WEBSOCKET_CONNECTED)
   }
@@ -74,13 +114,13 @@ export class ClientSocket extends EventEmitter2 {
 
   public close() {
     return new Promise<void>(resolve => {
-      // @ts-ignore
-      if (this._events.disconnect) {
-        this.client.once(ClientEvents.WEBSOCKET_CLOSED, resolve)
-        this.emit(ClientSocketEvent.DISCONNECT)
-      } else {
-        resolve()
-      }
+      this.closed = true
+
+      if (!this.socket) return resolve()
+
+      this.client.once(ClientEvents.WEBSOCKET_CLOSED, resolve)
+
+      this.socket?.close()
 
       this.connecting = false
 
@@ -94,48 +134,5 @@ export class ClientSocket extends EventEmitter2 {
     this.client.emit(ClientEvents.OUTBOUND_MESSAGE, payload)
 
     this.socket.send(payload)
-  }
-
-  async handleOpen(ws: Socket): Promise<void> {
-    if (ws.readyState === WebSocketState.CONNECTING) {
-      await sleep(10)
-
-      return this.handleOpen(ws)
-    }
-
-    this.socket = ws
-
-    this.socket.addEventListener(
-      WebSocketEvents.ERROR,
-      this.handleError.bind(this),
-    )
-    this.socket.addEventListener(
-      WebSocketEvents.MESSAGE,
-      this.handleMessage.bind(this),
-    )
-    this.socket.addEventListener(
-      WebSocketEvents.CLOSE,
-      this.handleClose.bind(this),
-    )
-
-    this.connecting = false
-
-    this.client.init().catch(console.error)
-  }
-
-  /**
-   * This runs if the connection is interrupted or if the server fails to establish a new connection.
-   */
-  private handleClose = () => {
-    this.connecting = false
-    this.socket = undefined
-
-    this.client.emit(ClientEvents.WEBSOCKET_CLOSED)
-  }
-
-  private handleError = error => {
-    this.connecting = false
-    console.error(error)
-    this.client.emit(ClientEvents.ERROR, error)
   }
 }

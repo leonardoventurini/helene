@@ -34,7 +34,7 @@ describe('WebSockets', function () {
   })
 
   it('should attempt connection more than once while the server is not accepting connections', async () => {
-    let attemptCount = 0
+    const attemptCount = 0
 
     const client = await test.createClient()
 
@@ -42,19 +42,17 @@ describe('WebSockets', function () {
 
     test.server.acceptConnections = false
 
-    client.on(ClientEvents.WEBSOCKET_RECONNECTING, () => {
-      attemptCount++
-    })
-
     defer(() => {
       client.connect().catch(console.error)
     })
 
-    await sleep(3000)
+    await sleep(1000)
 
     test.server.acceptConnections = true
 
-    expect(attemptCount).to.be.greaterThan(1)
+    await sleep(3000)
+
+    expect(client.clientSocket.ready).to.be.true
 
     await client.disconnect()
   }).timeout(10000)

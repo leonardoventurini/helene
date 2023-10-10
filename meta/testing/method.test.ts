@@ -255,7 +255,9 @@ describe('Methods', function () {
       return 42
     })
 
-    const stub = sinon.stub(Client.prototype, 'init')
+    const stub = sinon
+      .stub(Client.prototype, 'init')
+      .returns(new Promise(() => {}))
 
     const client = new Client({
       host: test.server.host,

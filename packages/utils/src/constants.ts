@@ -48,9 +48,7 @@ export enum ClientEvents {
   INBOUND_MESSAGE = 'inbound:message',
   CONNECTING = 'connecting',
 
-  WEBSOCKET_CONNECT_ATTEMPT = 'websocket:connect:attempt',
   WEBSOCKET_CONNECTED = 'websocket:connected',
-  WEBSOCKET_RECONNECTING = 'websocket:reconnecting',
   WEBSOCKET_CLOSED = 'websocket:closed',
 
   EVENTSOURCE_CREATE = 'eventsource:create',
