@@ -1,4 +1,3 @@
-import WebSocket from 'ws'
 import { RedisClientOptions } from 'redis'
 import { HttpTransport, RedisTransport, WebSocketTransport } from './transports'
 import { Method, MethodFunction, MethodOptions, MethodParams } from './method'
@@ -20,6 +19,7 @@ import isString from 'lodash/isString'
 import { ServerChannel } from './server-channel'
 import { DefaultMethods } from './default-methods'
 import { Event } from './event'
+import sockjs from 'sockjs'
 
 declare global {
   // eslint-disable-next-line no-var
@@ -46,7 +46,7 @@ export type ServerOptions = {
   auth?: AuthFunction
   origins?: string[]
   debug?: boolean
-  ws?: WebSocket.ServerOptions
+  ws?: sockjs.ServerOptions
   redis?: RedisClientOptions | boolean
   requestListener?: RequestListener
   globalInstance?: boolean
@@ -122,10 +122,7 @@ export class Server extends ServerChannel {
 
     this.httpTransport = new HttpTransport(this, origins, this.rateLimit)
 
-    this.webSocketTransport = new WebSocketTransport(this, {
-      host: this.host,
-      ...ws,
-    })
+    this.webSocketTransport = new WebSocketTransport(this, ws)
 
     this.httpTransport.http.listen(this.port, this.host, () => {
       console.log(

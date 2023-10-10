@@ -1,4 +1,4 @@
-import { MethodParams, WebSocketMessageOptions } from '@helenejs/server'
+import { MethodParams } from '@helenejs/server'
 import {
   ClientEvents,
   Environment,
@@ -79,7 +79,6 @@ export type ClientOptions = {
 export type CallOptions = {
   http?: boolean
   timeout?: number
-  ws?: WebSocketMessageOptions
   httpFallback?: boolean
 }
 
@@ -380,7 +379,7 @@ export class Client extends ClientChannel {
   void(
     method: string,
     params?: MethodParams,
-    { ws, http, httpFallback = true }: CallOptions = {},
+    { http, httpFallback = true }: CallOptions = {},
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       const uuid = Presentation.uuid()
@@ -396,7 +395,7 @@ export class Client extends ClientChannel {
         return this.clientHttp.request(payload, null, reject)
       }
 
-      this.clientSocket.send(Presentation.Inbound.call(payload), ws)
+      this.clientSocket.send(Presentation.Inbound.call(payload))
 
       resolve()
     })
@@ -408,7 +407,7 @@ export class Client extends ClientChannel {
   async call(
     method: string,
     params?: MethodParams,
-    { timeout = 20000, ws, http, httpFallback = true }: CallOptions = {},
+    { timeout = 20000, http, httpFallback = true }: CallOptions = {},
   ): Promise<any> {
     // @todo perhaps should probe the connection here and reconnect if necessary?
 
@@ -431,7 +430,7 @@ export class Client extends ClientChannel {
         return this.clientHttp.request(payload, resolve, reject)
       }
 
-      this.clientSocket.send(Presentation.Inbound.call(payload), ws)
+      this.clientSocket.send(Presentation.Inbound.call(payload))
 
       const timeoutId = setTimeout(() => {
         const promise = this.queue.dequeue(uuid)

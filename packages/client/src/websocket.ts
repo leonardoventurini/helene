@@ -5,13 +5,14 @@ import {
   Environment,
   sleep,
   WebSocketEvent,
+  WebSocketState,
 } from '@helenejs/utils'
-import IsomorphicWebSocket from 'isomorphic-ws'
 import { Client } from './client'
 import defer from 'lodash/defer'
 import { ClientSocket } from './client-socket'
+import SockJS from 'sockjs-client'
 
-export type GenericWebSocket = IsomorphicWebSocket
+export type Socket = typeof SockJS.constructor.prototype
 
 export const isHidden = () => {
   return Boolean(
@@ -37,7 +38,7 @@ export function off(emitter: any, event: string, listener: AnyFunction) {
   }
 }
 
-export const once = async (ws: IsomorphicWebSocket, event: string) =>
+export const once = async (ws: Socket, event: string) =>
   new Promise<void>(resolve => {
     const _once = () => {
       resolve()
@@ -64,12 +65,12 @@ export const waitUntilVisible = () => {
   })
 }
 
-export function connectWebSocket(url: string): Promise<GenericWebSocket> {
+export function connectWebSocket(url: string): Promise<Socket> {
   return new Promise((resolve, reject) => {
-    const ws = new IsomorphicWebSocket(url)
+    const ws = new SockJS(url)
 
     const timeout = setTimeout(() => {
-      if (ws.readyState !== IsomorphicWebSocket.CLOSED) {
+      if (ws.readyState !== WebSocketState.CLOSED) {
         ws.close()
       }
     }, 1000)
@@ -115,7 +116,7 @@ export function connectWebSocket(url: string): Promise<GenericWebSocket> {
 
 export const MAX_DELAY = 60000
 
-const connections = new Map<string, IsomorphicWebSocket>()
+const connections = new Map<string, Socket>()
 
 export function connectWebSocketWithPersistentReconnect(
   url: string,
@@ -136,7 +137,7 @@ export function connectWebSocketWithPersistentReconnect(
       try {
         client.emit(ClientEvents.WEBSOCKET_CONNECT_ATTEMPT)
 
-        if (!ws || ws.readyState === IsomorphicWebSocket.CLOSED) {
+        if (!ws || ws.readyState === WebSocketState.CLOSED) {
           connections.set(url, await connectWebSocket(url))
           ws = connections.get(url)
         } else {
@@ -184,9 +185,8 @@ export function connectWebSocketWithPersistentReconnect(
   clientSocket.once(ClientSocketEvent.DISCONNECT, () => {
     state.stopped = true
 
-    if (ws && ws.readyState !== IsomorphicWebSocket.CLOSED) {
+    if (ws && ws.readyState !== WebSocketState.CLOSED) {
       ws?.close?.(1000)
-      ws?.terminate?.()
     } else {
       client.emit(ClientEvents.WEBSOCKET_CLOSED)
     }

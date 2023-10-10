@@ -14,6 +14,7 @@ export enum HeleneEvents {
 export enum WebSocketEvents {
   OPEN = 'open',
   MESSAGE = 'message',
+  DATA = 'data',
   CONNECTION = 'connection',
   CLOSE = 'close',
   ERROR = 'error',
@@ -62,6 +63,13 @@ export enum ClientEvents {
 
 export enum ClientSocketEvent {
   DISCONNECT = 'disconnect',
+}
+
+export enum WebSocketState {
+  CONNECTING = 0,
+  OPEN = 1,
+  CLOSING = 2,
+  CLOSED = 3,
 }
 
 export enum WebSocketEvent {

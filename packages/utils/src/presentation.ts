@@ -72,7 +72,8 @@ export namespace Presentation {
   export function decode<T = Payload>(
     payload: string | ArrayBuffer | Buffer | Buffer[] | MessageEvent,
   ): T {
-    if (payload.constructor?.name === 'MessageEvent') {
+    // @ts-ignore
+    if (!isString(payload) && isString(payload?.data)) {
       payload = (payload as MessageEvent).data
     }
 

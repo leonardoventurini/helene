@@ -6,24 +6,15 @@ import {
   Presentation,
   sleep,
   WebSocketEvents,
+  WebSocketState,
 } from '@helenejs/utils'
-import { WebSocketMessageOptions } from '@helenejs/server'
-import {
-  connectWebSocketWithPersistentReconnect,
-  GenericWebSocket,
-} from './websocket'
+import { connectWebSocketWithPersistentReconnect, Socket } from './websocket'
 import { EventEmitter2 } from 'eventemitter2'
-
-export const WebSocketState = {
-  CONNECTING: 0,
-  OPEN: 1,
-  CLOSING: 2,
-  CLOSED: 3,
-}
 
 export class ClientSocket extends EventEmitter2 {
   client: Client
-  socket: GenericWebSocket
+
+  socket: Socket
 
   protocol: string
   uri: string
@@ -47,7 +38,7 @@ export class ClientSocket extends EventEmitter2 {
 
     Object.assign(this.options, options ?? {})
 
-    this.protocol = this.client.options.secure ? `wss://` : `ws://`
+    this.protocol = this.client.options.secure ? `https://` : `http://`
 
     if (this.client.options.port) {
       this.uri = `${this.protocol}${this.client.options.host}:${this.client.options.port}${this.options.path}`
@@ -97,15 +88,15 @@ export class ClientSocket extends EventEmitter2 {
     })
   }
 
-  public send(payload: string, opts?: WebSocketMessageOptions) {
+  public send(payload: string) {
     if (!this.ready) return console.warn('Not Ready')
 
     this.client.emit(ClientEvents.OUTBOUND_MESSAGE, payload)
 
-    this.socket.send(payload, opts)
+    this.socket.send(payload)
   }
 
-  async handleOpen(ws: GenericWebSocket): Promise<void> {
+  async handleOpen(ws: Socket): Promise<void> {
     if (ws.readyState === WebSocketState.CONNECTING) {
       await sleep(10)
 

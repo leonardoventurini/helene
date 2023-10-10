@@ -42,7 +42,7 @@ erDiagram
 
     ClientSocket {
         Client client
-        IsomorphicWebSocket socket
+        WebSocket socket
         string protocol
         string uri
 
@@ -78,7 +78,7 @@ erDiagram
         Client[] clients
     }
 
-    WebSocketTransport ||--|| IsomorphicWebSocket: has
+    WebSocketTransport ||--|| WebSocket: has
 
     HttpTransport ||--|| HttpServer: has
 
