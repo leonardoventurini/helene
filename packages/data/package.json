@@ -12,7 +12,8 @@
     "bun:test": "nodemon --watch 'src/**/*' -e ts,tsx --exec 'bun run bun:test:mocha'",
     "bun:test:mocha": "bun --bun run mocha --extension ts,tsx --file ../../node_modules/@helenejs/testing --exit 'src/**/*.test.*'",
     "node:test": "nodemon --watch 'src/**/*' -e ts,tsx --exec 'bun run node:test:mocha'",
-    "node:test:mocha": "mocha -r ts-node/register/transpile-only --file ../../node_modules/@helenejs/testing --extension js,jsx,ts,tsx  --exit 'src/**/*.test.*'"
+    "node:test:mocha": "mocha -r ts-node/register/transpile-only --file ../../node_modules/@helenejs/testing --extension js,jsx,ts,tsx  --exit 'src/**/*.test.*'",
+    "prepublishOnly": "yarn run rebuild"
   },
   "dependencies": {
     "eventemitter2": "^6.4.7",

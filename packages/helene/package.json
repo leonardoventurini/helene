@@ -9,7 +9,8 @@
     "build": "tsc",
     "watch": "tsc --watch",
     "clean": "rimraf common* data* index* react* tsconfig.tsbuildinfo",
-    "rebuild": "yarn run clean && yarn run build"
+    "rebuild": "yarn run clean && yarn run build",
+    "prepublishOnly": "yarn run rebuild"
   },
   "dependencies": {
     "@helenejs/client": "^1.3.0-alpha.4",

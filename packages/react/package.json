@@ -12,7 +12,8 @@
     "bun:test": "nodemon --watch 'src/**/*' -e ts,tsx --exec 'yarn run bun:test:mocha'",
     "bun:test:mocha": "bun --bun run mocha -r setup-tests.js --extensions ts,tsx --file ../../node_modules/@helenejs/testing --exit 'src/**/*.test.*'",
     "node:test": "nodemon --watch 'src/**/*' -e ts,tsx --exec 'bun run node:test:mocha'",
-    "node:test:mocha": "mocha -r ts-node/register/transpile-only -r setup-tests.js --file ../../node_modules/@helenejs/testing --extension ts,tsx  --exit 'src/**/*.test.*'"
+    "node:test:mocha": "mocha -r ts-node/register/transpile-only -r setup-tests.js --file ../../node_modules/@helenejs/testing --extension ts,tsx  --exit 'src/**/*.test.*'",
+    "prepublishOnly": "yarn run rebuild"
   },
   "dependencies": {
     "ahooks": "^3.7.7",
