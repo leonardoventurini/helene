@@ -115,6 +115,8 @@ export function connectWebSocket(url: string): Promise<GenericWebSocket> {
 
 export const MAX_DELAY = 60000
 
+const connections = new Map<string, IsomorphicWebSocket>()
+
 export function connectWebSocketWithPersistentReconnect(
   url: string,
   client: Client,
@@ -127,14 +129,21 @@ export function connectWebSocketWithPersistentReconnect(
     attempts: 0,
   }
 
-  let ws = null
+  let ws = connections.get(url)
 
   async function connect() {
+    console.trace()
+
     while (!state.stopped) {
       try {
         client.emit(ClientEvents.WEBSOCKET_CONNECT_ATTEMPT)
 
-        ws = await connectWebSocket(url)
+        if (!ws || ws.readyState === IsomorphicWebSocket.CLOSED) {
+          connections.set(url, await connectWebSocket(url))
+          ws = connections.get(url)
+        } else {
+          console.log('Helene: WebSocket already connected')
+        }
 
         state.attempts = 0
 
@@ -148,8 +157,9 @@ export function connectWebSocketWithPersistentReconnect(
         })
 
         await once(ws, 'close')
-
+        connections.delete(url)
         ws = null
+        console.log('Helene: WebSocket closed')
 
         await waitUntilVisible()
       } catch (error) {
