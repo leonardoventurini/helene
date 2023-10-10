@@ -24,7 +24,6 @@ import { ClientChannel } from './client-channel'
 import qs from 'query-string'
 import { EJSON } from 'ejson2'
 import { IdleTimeout } from './idle-timeout'
-import isNumber from 'lodash/isNumber'
 import { KeepAlive } from './keep-alive'
 import Timeout = NodeJS.Timeout
 
@@ -32,6 +31,11 @@ export type ErrorHandler = (error: Presentation.ErrorPayload) => any
 
 export type WebSocketOptions = {
   path?: string
+
+  /**
+   * Workaround for Safari not reconnecting after the app is brought back to the foreground.
+   */
+  disconnectOnPageHide?: boolean
 }
 
 export type WebSocketRequestParams = {
@@ -112,8 +116,7 @@ export class Client extends ClientChannel {
 
   initializing: boolean
 
-  keepAlive: KeepAlive = new KeepAlive(this)
-
+  keepAlive: KeepAlive = null
   idleTimeout: IdleTimeout = null
 
   static KEEP_ALIVE_INTERVAL = 10000
@@ -160,12 +163,8 @@ export class Client extends ClientChannel {
 
     this.connect().catch(console.error)
 
-    if (
-      isNumber(this.options.idlenessTimeout) &&
-      (Environment.isBrowser || Environment.isTest)
-    ) {
-      this.idleTimeout = new IdleTimeout(this.options.idlenessTimeout, this)
-    }
+    this.keepAlive = new KeepAlive(this)
+    this.idleTimeout = new IdleTimeout(this)
   }
 
   mode = {
@@ -342,10 +341,6 @@ export class Client extends ClientChannel {
     this.initializing = false
 
     await this.resubscribeAllChannels()
-
-    if (this.mode.websocket || this.mode.eventsource) {
-      this.keepAlive.start()
-    }
 
     this.emit(ClientEvents.INITIALIZED, result)
   }

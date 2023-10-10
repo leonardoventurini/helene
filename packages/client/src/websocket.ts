@@ -187,8 +187,8 @@ export function connectWebSocketWithPersistentReconnect(
     state.stopped = true
 
     if (ws && ws.readyState !== IsomorphicWebSocket.CLOSED) {
+      ws?.close?.(1000)
       ws?.terminate?.()
-      ws?.close?.()
     } else {
       client.emit(ClientEvents.WEBSOCKET_CLOSED)
     }

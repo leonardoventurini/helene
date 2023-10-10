@@ -106,13 +106,13 @@ export class ClientSocket extends EventEmitter2 {
   }
 
   async handleOpen(ws: GenericWebSocket): Promise<void> {
-    this.socket = ws
-
     if (ws.readyState === WebSocketState.CONNECTING) {
       await sleep(10)
 
       return this.handleOpen(ws)
     }
+
+    this.socket = ws
 
     this.socket.addEventListener(
       WebSocketEvents.ERROR,

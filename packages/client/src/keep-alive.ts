@@ -4,7 +4,12 @@ import { Client } from './client'
 export class KeepAlive {
   keepAliveTimeout: NodeJS.Timeout = null
 
-  constructor(public client: Client) {}
+  /**
+   * The server sends the keep alive and not the client.
+   */
+  constructor(public client: Client) {
+    this.start()
+  }
 
   start() {
     // If the server stops sending the keep alive event we should disconnect.
