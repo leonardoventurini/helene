@@ -67,29 +67,33 @@ export function useData({
 
       setLoading(true)
 
-      let response
+      try {
+        let response
 
-      if (count && selectiveSync) {
-        const [{ updatedAt: lastUpdatedAt = null } = {}] = (await collection
-          .find({})
-          .projection({ updatedAt: 1 })
-          .sort({ updatedAt: -1 })) ?? [{}]
+        if (count && selectiveSync) {
+          const [{ updatedAt: lastUpdatedAt = null } = {}] = (await collection
+            .find({})
+            .projection({ updatedAt: 1 })
+            .sort({ updatedAt: -1 })) ?? [{}]
 
-        response = await client.call(method, { ...params, lastUpdatedAt })
+          response = await client.call(method, { ...params, lastUpdatedAt })
 
-        for (const datum of Array.isArray(response) ? response : [response]) {
-          if (await collection.findOne({ _id: datum._id })) {
-            await collection.remove({ _id: datum._id })
+          for (const datum of Array.isArray(response) ? response : [response]) {
+            if (await collection.findOne({ _id: datum._id })) {
+              await collection.remove({ _id: datum._id })
+            }
           }
+        } else {
+          response = await client.call(method, params)
+
+          await collection.remove({}, { multi: true })
         }
-      } else {
-        response = await client.call(method, params)
 
-        await collection.remove({}, { multi: true })
-      }
-
-      if (response) {
-        await collection.insert(response)
+        if (response) {
+          await collection.insert(response)
+        }
+      } catch (error) {
+        console.error(error)
       }
 
       setLoading(false)
