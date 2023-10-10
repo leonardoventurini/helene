@@ -7,7 +7,7 @@ import {
   WebSocketState,
 } from '@helenejs/utils'
 import { EventEmitter2 } from 'eventemitter2'
-import SockJS from 'sockjs-client'
+import SockJS from 'sockjs-client/dist/sockjs'
 
 export type Socket = typeof SockJS.constructor.prototype
 
