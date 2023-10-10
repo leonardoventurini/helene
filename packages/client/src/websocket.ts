@@ -171,7 +171,7 @@ export function connectWebSocketWithPersistentReconnect(
     }
   }
 
-  connect()
+  connect().catch(console.error)
 
   clientSocket.once(ClientSocketEvent.DISCONNECT, () => {
     state.stopped = true
