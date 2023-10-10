@@ -9,15 +9,6 @@ import {
 import { EventEmitter2 } from 'eventemitter2'
 import SockJS from 'sockjs-client'
 
-/**
- * Workaround for sockjs-client
- * https://github.com/sockjs/sockjs-client/issues/439
- */
-if (typeof window !== 'undefined') {
-  // eslint-disable-next-line no-var
-  var global = window
-}
-
 export type Socket = typeof SockJS.constructor.prototype
 
 export class ClientSocket extends EventEmitter2 {
