@@ -1,0 +1,51 @@
+{
+  "name": "@helenejs/mongo",
+  "description": "Real-time Web Apps for Node.js and Bun",
+  "version": "1.3.0-alpha.9",
+  "main": "lib/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "clean": "rimraf lib",
+    "rebuild": "yarn run clean && yarn run build",
+    "prepublishOnly": "yarn run rebuild"
+  },
+  "dependencies": {
+    "@lukeed/uuid": "^2.0.1",
+    "ejson2": "^1.1.0",
+    "eventemitter2": "^6.4.7",
+    "lodash": "^4.17.21",
+    "mongodb": "^6.1.0",
+    "sift": "^17.0.1"
+  },
+  "devDependencies": {
+    "rimraf": "^5.0.5",
+    "typescript": "^5.2.2"
+  },
+  "author": "Leonardo Venturini",
+  "license": "MIT",
+  "repository": "https://github.com/leonardoventurini/helene",
+  "keywords": [
+    "websockets",
+    "rpc",
+    "react",
+    "reactjs",
+    "methods",
+    "events",
+    "node",
+    "nodejs",
+    "bun"
+  ],
+  "bugs": {
+    "url": "https://github.com/leonardoventurini/helene/issues"
+  },
+  "volta": {
+    "node": "20.8.0",
+    "yarn": "1.22.19"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}
