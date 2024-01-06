@@ -13,7 +13,7 @@
     Helene Server
   </h1>
   <p>
-    <a href="https://helene.leonardoventurini.tech" target="_blank">📘 Documentation</a>
+    <a href="https://helene.techster.tech" target="_blank">📘 Documentation</a>
   </p>
 </div>
 
