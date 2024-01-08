@@ -9,6 +9,7 @@ import { useFind } from './use-find'
 import { useThrottledEvents } from './use-throttled-events'
 import { ClientEvents, HeleneEvents } from '@helenejs/utils'
 import { BrowserStorage } from '@helenejs/data/lib/browser'
+import { Document } from '@helenejs/data'
 
 const browserStorage = new BrowserStorage()
 
@@ -68,7 +69,7 @@ export function useData({
       setLoading(true)
 
       try {
-        let response
+        let response: Document | Document[]
 
         if (count && selectiveSync) {
           const [{ updatedAt: lastUpdatedAt = null } = {}] = (await collection

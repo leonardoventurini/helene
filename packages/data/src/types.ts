@@ -1,7 +1,7 @@
 export interface IStorage {
-  read(name): Promise<string>
+  read(name: string): Promise<string>
 
-  write(name, data): Promise<void>
+  write(name: string, data: string): Promise<void>
 
-  append(name, data): Promise<void>
+  append(name: string, data: string): Promise<void>
 }

@@ -5,6 +5,7 @@ import {
   ClientProvider,
   useAuth,
   useConnectionState,
+  useData,
   useLocalEvent,
   useMethod,
   useObject,
@@ -17,6 +18,7 @@ import omit from 'lodash/omit'
 import { EventEmitter2 } from 'eventemitter2'
 import { TestUtility } from '@helenejs/testing/test-utility'
 import { sleep } from '@helenejs/utils'
+import { pick } from 'lodash'
 
 describe('React Hooks', () => {
   const test = new TestUtility()
@@ -476,6 +478,87 @@ describe('React Hooks', () => {
 
       await waitFor(() => {
         expect(capture1).to.not.equal(capture3)
+      })
+    })
+  })
+
+  describe('useData', () => {
+    let localStorageMock: Storage
+    let sandbox: sinon.SinonSandbox
+
+    beforeEach(function () {
+      sandbox = sinon.createSandbox()
+
+      localStorageMock = {
+        getItem: sandbox.stub(),
+        setItem: sandbox.stub(),
+        removeItem: sandbox.stub(),
+        clear: sandbox.stub(),
+        length: 0,
+        key: sandbox.stub(),
+      }
+
+      global.localStorage = localStorageMock
+    })
+
+    afterEach(function () {
+      sandbox.restore()
+    })
+
+    it('should return the data', async () => {
+      test.server.addMethod('count', () => [{ value: 42 }])
+
+      const { result } = renderHook(() => useData({ method: 'count' }), {
+        wrapper,
+      })
+
+      await waitFor(() => {
+        expect(pick(result.current, ['data', 'loading'])).to.containSubset({
+          data: [
+            {
+              value: 42,
+            },
+          ],
+          loading: false,
+        })
+      })
+    })
+
+    it('should persist the data after it refreshes', async () => {
+      let value = 42
+
+      test.server.addMethod('count', () => [{ value }])
+
+      const { result } = renderHook(() => useData({ method: 'count' }), {
+        wrapper,
+      })
+
+      await waitFor(() => {
+        expect(pick(result.current, ['data', 'loading'])).to.containSubset({
+          data: [
+            {
+              value: 42,
+            },
+          ],
+          loading: false,
+        })
+      })
+
+      value = 43
+
+      await sleep(100)
+
+      test.server.refresh('count')
+
+      await waitFor(() => {
+        expect(pick(result.current, ['data', 'loading'])).to.containSubset({
+          data: [
+            {
+              value: 43,
+            },
+          ],
+          loading: false,
+        })
       })
     })
   })

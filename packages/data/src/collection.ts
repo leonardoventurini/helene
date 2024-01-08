@@ -32,6 +32,7 @@ export type UpdateTransformerHookFunction = <T = any>(
   newDoc: T,
   oldDoc: T,
 ) => Promise<T>
+export type Document = Record<string, any>
 
 export type CollectionOptions = {
   name?: string
@@ -343,7 +344,7 @@ export class Collection extends EventEmitter2 {
     return await removeExpiredDocuments.call(this, docs, dontExpireStaleDocs)
   }
 
-  async insert(newDoc) {
+  async insert(newDoc: Document | Document[]) {
     const preparedDoc = await this.prepareDocumentForInsertion(newDoc)
 
     this._insertInCache(preparedDoc)
