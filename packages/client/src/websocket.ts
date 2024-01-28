@@ -158,6 +158,7 @@ export function connectWebSocketWithPersistentReconnect(
         connections.delete(url)
         ws = null
         console.log('Helene: WebSocket closed')
+        console.trace()
 
         await waitUntilVisible()
       } catch (error) {

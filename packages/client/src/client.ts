@@ -283,6 +283,8 @@ export class Client extends ClientChannel {
   }
 
   async close() {
+    console.trace()
+
     this.emit(ClientEvents.CLOSE)
 
     this.clientHttp.close()
