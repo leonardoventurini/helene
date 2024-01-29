@@ -1,6 +1,6 @@
 {
   "name": "@helenejs/react",
-  "version": "1.3.0-alpha.11",
+  "version": "1.3.0-alpha.12",
   "description": "Real-time Web Apps for Node.js and Bun",
   "main": "lib/index.js",
   "type": "commonjs",
@@ -25,7 +25,7 @@
     "use-debounce": "^7.0.1"
   },
   "devDependencies": {
-    "@helenejs/client": "^1.3.0-alpha.11",
+    "@helenejs/client": "^1.3.0-alpha.12",
     "@helenejs/data": "^1.3.0-alpha.11",
     "@helenejs/testing": "^1.3.0-alpha.9",
     "@testing-library/dom": "^9.3.1",
