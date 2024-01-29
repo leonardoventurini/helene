@@ -91,6 +91,6 @@ export class IdleTimeout {
     this.stop()
     this.start()
 
-    await this.client.connect()
+    return this.client.connect()
   }
 }

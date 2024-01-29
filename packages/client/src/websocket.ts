@@ -132,6 +132,8 @@ export function connectWebSocketWithPersistentReconnect(
   let ws = connections.get(url)
 
   async function connect() {
+    state.attempts = 0
+
     while (!state.stopped) {
       try {
         client.emit(ClientEvents.WEBSOCKET_CONNECT_ATTEMPT)
@@ -141,13 +143,19 @@ export function connectWebSocketWithPersistentReconnect(
           (ws.readyState !== IsomorphicWebSocket.OPEN &&
             ws.readyState !== IsomorphicWebSocket.CONNECTING)
         ) {
+          if (ws) {
+            // prevent concurrent connections
+            ws.close()
+            connections.delete(url)
+          }
+
           connections.set(url, await connectWebSocket(url))
           ws = connections.get(url)
+
+          client.emit(ClientEvents.WEBSOCKET_CREATE)
         } else {
           console.log('Helene: WebSocket already connected')
         }
-
-        state.attempts = 0
 
         if (state.stopped) {
           ws.close()
@@ -187,7 +195,6 @@ export function connectWebSocketWithPersistentReconnect(
   connect().catch(console.error)
 
   clientSocket.once(ClientSocketEvent.DISCONNECT, () => {
-    console.log('Helene: Stopping WebSocket reconnects')
     state.stopped = true
 
     if (

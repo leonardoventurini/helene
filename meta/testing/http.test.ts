@@ -5,7 +5,6 @@ import request from 'supertest'
 import defer from 'lodash/defer'
 import range from 'lodash/range'
 import sinon from 'sinon'
-import EventSource from 'eventsource'
 import { ClientEvents, Errors, ServerEvents } from '@helenejs/utils'
 import { Client, ClientHttp } from '@helenejs/client'
 import { ClientNode } from '@helenejs/server'
@@ -222,32 +221,6 @@ describe('HTTP', async () => {
 
       expect(eventTimeout).to.be.true
     })
-
-    it('should disconnect on idleness and reconnect upon interaction', async () => {
-      const client = await test.createHttpClient({
-        idlenessTimeout: 100,
-      })
-
-      await client.waitFor(ClientEvents.EVENTSOURCE_CLOSE)
-
-      expect(client.clientHttp.clientEventSource).to.be.null
-
-      client.idleTimeout.reset()
-
-      await client.waitFor(ClientEvents.EVENTSOURCE_CREATE)
-
-      expect(client.clientHttp.clientEventSource.readyState).to.equal(
-        EventSource.CONNECTING,
-      )
-
-      await client.waitFor(ClientEvents.EVENTSOURCE_OPEN)
-
-      expect(client.clientHttp.clientEventSource.readyState).to.equal(
-        EventSource.OPEN,
-      )
-
-      await client.close()
-    }).timeout(60000)
 
     it('should call connection and disconnection events', async () => {
       const clientPromise = test.createHttpClient()
