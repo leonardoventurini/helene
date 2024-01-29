@@ -9,6 +9,12 @@ export class KeepAlive {
    */
   constructor(public client: Client) {
     this.start()
+
+    this.client.on(ClientEvents.WEBSOCKET_CONNECTED, this.start.bind(this))
+    this.client.on(ClientEvents.EVENTSOURCE_OPEN, this.start.bind(this))
+
+    this.client.on(ClientEvents.WEBSOCKET_CLOSED, this.stop.bind(this))
+    this.client.on(ClientEvents.EVENTSOURCE_CLOSE, this.stop.bind(this))
   }
 
   start() {
@@ -27,17 +33,6 @@ export class KeepAlive {
 
       return this.client.call(Methods.KEEP_ALIVE)
     })
-
-    this.client.on(
-      [
-        ClientEvents.CLOSE,
-        ClientEvents.WEBSOCKET_CLOSED,
-        ClientEvents.EVENTSOURCE_CLOSE,
-      ],
-      () => {
-        this.stop()
-      },
-    )
   }
 
   stop() {

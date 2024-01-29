@@ -136,7 +136,11 @@ export function connectWebSocketWithPersistentReconnect(
       try {
         client.emit(ClientEvents.WEBSOCKET_CONNECT_ATTEMPT)
 
-        if (!ws || ws.readyState === IsomorphicWebSocket.CLOSED) {
+        if (
+          !ws ||
+          (ws.readyState !== IsomorphicWebSocket.OPEN &&
+            ws.readyState !== IsomorphicWebSocket.CONNECTING)
+        ) {
           connections.set(url, await connectWebSocket(url))
           ws = connections.get(url)
         } else {
@@ -183,13 +187,18 @@ export function connectWebSocketWithPersistentReconnect(
   connect().catch(console.error)
 
   clientSocket.once(ClientSocketEvent.DISCONNECT, () => {
+    console.log('Helene: Stopping WebSocket reconnects')
     state.stopped = true
 
-    if (ws && ws.readyState !== IsomorphicWebSocket.CLOSED) {
+    if (
+      ws &&
+      (ws.readyState === IsomorphicWebSocket.OPEN ||
+        ws.readyState === IsomorphicWebSocket.CONNECTING)
+    ) {
       ws?.close?.(1000)
       ws?.terminate?.()
-    } else {
-      client.emit(ClientEvents.WEBSOCKET_CLOSED)
     }
+
+    client.emit(ClientEvents.WEBSOCKET_CLOSED)
   })
 }
