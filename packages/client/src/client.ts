@@ -379,9 +379,9 @@ export class Client extends ClientChannel {
   /**
    * Calls a method without expecting a return value.
    */
-  void(
+  void<T = any>(
     method: string,
-    params?: MethodParams,
+    params?: MethodParams<T>,
     { ws, http, httpFallback = true }: CallOptions = {},
   ): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -407,11 +407,11 @@ export class Client extends ClientChannel {
   /**
    * Calls a method and wait asynchronously for a value.
    */
-  async call(
+  async call<T = any, R = any>(
     method: string,
-    params?: MethodParams,
+    params?: MethodParams<T>,
     { timeout = 20000, ws, http, httpFallback = true }: CallOptions = {},
-  ): Promise<any> {
+  ): Promise<R> {
     // @todo perhaps should probe the connection here and reconnect if necessary?
 
     // It should wait for the client to initialize before calling any method.

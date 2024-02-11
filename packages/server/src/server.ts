@@ -202,7 +202,7 @@ export class Server extends ServerChannel {
     if (this.debug) console.debug(...args)
   }
 
-  async call(method: string, params?: MethodParams): Promise<any> {
+  async call<T = any>(method: string, params?: MethodParams<T>): Promise<any> {
     this.debugger(`[server] Calling ${method}`, params)
 
     const methodInstance = this.methods.get(method)
@@ -239,7 +239,11 @@ export class Server extends ServerChannel {
     })
   }
 
-  addMethod(method: string, fn: MethodFunction, opts?: MethodOptions) {
+  addMethod<T = any, R = any>(
+    method: string,
+    fn: MethodFunction<T, R>,
+    opts?: MethodOptions,
+  ) {
     this.methods.set(method, new Method(this, method, fn, opts))
   }
 

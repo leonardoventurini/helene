@@ -15,8 +15,11 @@ import { EJSON } from 'ejson2'
 import perf_hooks from 'perf_hooks'
 import { Server } from './server'
 
-export type MethodParams = any
-export type MethodFunction = (this: ClientNode, params?: MethodParams) => any
+export type MethodParams<T = any> = T
+export type MethodFunction<T = any, R = any> = (
+  this: ClientNode,
+  params?: MethodParams<T>,
+) => Promise<R> | R
 
 /**
  * @todo Add support for timeout monitoring.

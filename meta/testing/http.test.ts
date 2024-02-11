@@ -30,7 +30,7 @@ describe('HTTP', async () => {
   it('should call an rpc method through http and get the right result', async () => {
     let capture = null
 
-    test.server.addMethod('sum', async function ([a, b, c]) {
+    test.server.addMethod<number[], number>('sum', async function ([a, b, c]) {
       capture = this.req?.path
 
       return a + b + c
