@@ -1,4 +1,4 @@
-import { MethodParams, WebSocketMessageOptions } from '@helenejs/server'
+import { MethodParams } from '@helenejs/server'
 import {
   ClientEvents,
   Environment,
@@ -24,7 +24,6 @@ import { ClientChannel } from './client-channel'
 import qs from 'query-string'
 import { EJSON } from 'ejson2'
 import { IdleTimeout } from './idle-timeout'
-import { KeepAlive } from './keep-alive'
 import Timeout = NodeJS.Timeout
 
 export type ErrorHandler = (error: Presentation.ErrorPayload) => any
@@ -79,7 +78,6 @@ export type ClientOptions = {
 export type CallOptions = {
   http?: boolean
   timeout?: number
-  ws?: WebSocketMessageOptions
   httpFallback?: boolean
 }
 
@@ -116,10 +114,8 @@ export class Client extends ClientChannel {
 
   initializing: boolean
 
-  keepAlive: KeepAlive = null
   idleTimeout: IdleTimeout = null
 
-  static KEEP_ALIVE_INTERVAL = 10000
   static EVENT_PROBE_TIMEOUT = 2000
 
   constructor(options: ClientOptions = {}) {
@@ -163,7 +159,6 @@ export class Client extends ClientChannel {
 
     this.connect().catch(console.error)
 
-    this.keepAlive = new KeepAlive(this)
     this.idleTimeout = new IdleTimeout(this)
   }
 
@@ -200,10 +195,14 @@ export class Client extends ClientChannel {
   }
 
   async connect() {
-    if (!(await this.shouldConnect())) {
+    const shouldConnect = await this.shouldConnect()
+
+    if (!shouldConnect) {
       console.log('Helene: Already connected')
       return
     }
+
+    console.log({ shouldConnect })
 
     if (this.mode.eventsource) {
       await this.clientHttp.createEventSource()
@@ -211,6 +210,7 @@ export class Client extends ClientChannel {
     }
 
     if (this.mode.websocket) {
+      console.log('Helene: Connecting')
       await this.clientSocket.connect()
       return
     }
@@ -221,6 +221,8 @@ export class Client extends ClientChannel {
 
   /**
    * Workaround for Safari not reconnecting after the app is brought back to the foreground.
+   *
+   * @todo Remove this since we are using SockJS now.
    */
   async shouldConnect() {
     if (this.mode.eventsource && !this.clientHttp.isEventSourceConnected)
@@ -283,8 +285,6 @@ export class Client extends ClientChannel {
   }
 
   async close() {
-    console.trace()
-
     this.emit(ClientEvents.CLOSE)
 
     this.clientHttp.close()
@@ -300,11 +300,13 @@ export class Client extends ClientChannel {
       channel.emit(HeleneEvents.COMMIT_PENDING_UNSUBSCRIPTIONS, {})
     })
 
-    await this.clientSocket.close()
+    this.clientSocket.close()
   }
 
   async init() {
     if (this.initializing) return
+
+    console.log('Helene: Initializing')
 
     this.initializing = true
 
@@ -382,7 +384,7 @@ export class Client extends ClientChannel {
   void<T = any>(
     method: string,
     params?: MethodParams<T>,
-    { ws, http, httpFallback = true }: CallOptions = {},
+    { http, httpFallback = true }: CallOptions = {},
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       const uuid = Presentation.uuid()
@@ -398,7 +400,7 @@ export class Client extends ClientChannel {
         return this.clientHttp.request(payload, null, reject)
       }
 
-      this.clientSocket.send(Presentation.Inbound.call(payload), ws)
+      this.clientSocket.send(Presentation.Inbound.call(payload))
 
       resolve()
     })
@@ -410,7 +412,7 @@ export class Client extends ClientChannel {
   async call<T = any, R = any>(
     method: string,
     params?: MethodParams<T>,
-    { timeout = 20000, ws, http, httpFallback = true }: CallOptions = {},
+    { timeout = 20000, http, httpFallback = true }: CallOptions = {},
   ): Promise<R> {
     // @todo perhaps should probe the connection here and reconnect if necessary?
 
@@ -433,7 +435,7 @@ export class Client extends ClientChannel {
         return this.clientHttp.request(payload, resolve, reject)
       }
 
-      this.clientSocket.send(Presentation.Inbound.call(payload), ws)
+      this.clientSocket.send(Presentation.Inbound.call(payload))
 
       const timeoutId = setTimeout(() => {
         const promise = this.queue.dequeue(uuid)

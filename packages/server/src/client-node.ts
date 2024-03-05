@@ -1,14 +1,12 @@
-import IsomorphicWebSocket from 'isomorphic-ws'
-import { WebSocketMessageOptions } from './transports'
 import http from 'http'
-import url from 'url'
 import isString from 'lodash/isString'
-import { HeleneEvents, Presentation, ServerEvents } from '@helenejs/utils'
+import { Presentation, ServerEvents } from '@helenejs/utils'
 import { Request, Response } from 'express'
 import { HeleneAsyncLocalStorage } from './helene-async-local-storage'
 import { RateLimiter } from 'limiter'
 import { RateLimit, Server } from './server'
 import { EventEmitter2 } from 'eventemitter2'
+import sockjs from 'sockjs'
 
 export type ClientNodeContext = Record<string, any>
 
@@ -19,7 +17,7 @@ export class ClientNode extends EventEmitter2 {
   context: ClientNodeContext = {}
   userId: any = null
   user: Record<string, any> = null
-  socket?: IsomorphicWebSocket
+  socket?: sockjs.Connection
   isEventSource = false
   req?: Request = {} as Request
   res?: Response = {} as Response
@@ -29,16 +27,14 @@ export class ClientNode extends EventEmitter2 {
   headers: Record<string, string> = {}
   remoteAddress: string | string[]
   userAgent: string
-  keepAliveInterval: NodeJS.Timeout
   terminationTimeout: NodeJS.Timeout
   eventSourceDataId = 0
 
   static KEEP_ALIVE_INTERVAL = 10000
-  static ENABLE_KEEP_ALIVE = true
 
   constructor(
     server: Server,
-    socket?: IsomorphicWebSocket,
+    socket?: sockjs.Connection,
     req?: Request,
     res?: Response,
     limit?: RateLimit,
@@ -63,27 +59,6 @@ export class ClientNode extends EventEmitter2 {
             },
       )
     }
-
-    if (socket) {
-      this.keepAliveInterval = setInterval(() => {
-        if (
-          ClientNode.ENABLE_KEEP_ALIVE &&
-          socket.readyState === IsomorphicWebSocket.OPEN
-        ) {
-          this.sendEvent(HeleneEvents.KEEP_ALIVE)
-
-          this.terminationTimeout = setTimeout(() => {
-            clearInterval(this.keepAliveInterval)
-
-            if (socket.readyState === IsomorphicWebSocket.OPEN) {
-              socket?.terminate?.()
-              socket?.close?.()
-              this.emit(HeleneEvents.KEEP_ALIVE_DISCONNECT)
-            }
-          }, ClientNode.KEEP_ALIVE_INTERVAL / 2)
-        }
-      }, ClientNode.KEEP_ALIVE_INTERVAL)
-    }
   }
 
   get storage() {
@@ -102,10 +77,8 @@ export class ClientNode extends EventEmitter2 {
     return this.socket?.readyState
   }
 
-  setId(request: http.IncomingMessage) {
-    const { query } = url.parse(request.url, true)
-
-    this.uuid = (query?.uuid as string) ?? Presentation.uuid()
+  setId(uuid: string) {
+    this.uuid = uuid
   }
 
   setContext(context: ClientNodeContext) {
@@ -148,7 +121,7 @@ export class ClientNode extends EventEmitter2 {
     )
   }
 
-  send(payload: Presentation.Payload | string, opts?: WebSocketMessageOptions) {
+  send(payload: Presentation.Payload | string) {
     if (!this.socket) {
       const clientNode = this.server.httpTransport.eventSourceClients.get(
         this.uuid,
@@ -157,43 +130,32 @@ export class ClientNode extends EventEmitter2 {
       return
     }
 
-    this.socket?.send(
+    this.socket?.write(
       isString(payload) ? payload : Presentation.encode(payload),
-      opts,
     )
   }
 
-  result(
-    payload: Presentation.MethodResultPayloadPartial,
-    opts?: WebSocketMessageOptions,
-  ) {
-    this.socket.send(Presentation.Outbound.result(payload), opts)
+  result(payload: Presentation.MethodResultPayloadPartial) {
+    this.socket.write(Presentation.Outbound.result(payload))
   }
 
   /**
    * @warning There is an `event` property already in the super class.
    */
-  sendEvent(event: string, params?: any, opts?: WebSocketMessageOptions) {
-    return this.send(
-      {
-        uuid: Presentation.uuid(),
-        type: Presentation.PayloadType.EVENT,
-        event,
-        params,
-      },
-      opts,
-    )
+  sendEvent(event: string, params?: any) {
+    return this.send({
+      uuid: Presentation.uuid(),
+      type: Presentation.PayloadType.EVENT,
+      event,
+      params,
+    })
   }
 
-  error(
-    payload: Presentation.ErrorPayloadPartial,
-    opts?: WebSocketMessageOptions,
-  ) {
-    this.socket?.send(Presentation.Outbound.error(payload), opts)
+  error(payload: Presentation.ErrorPayloadPartial) {
+    this.socket?.write(Presentation.Outbound.error(payload))
   }
 
   close() {
-    this.socket?.terminate?.()
     this.socket?.close?.()
 
     if (this.isEventSource) {

@@ -183,13 +183,23 @@ export class Server extends ServerChannel {
     this.channels.forEach(channel => channel.clear())
     this.channels.clear()
 
+    console.log('Closing Helene Server')
+
     await this.redisTransport?.close()
+
+    console.log('Closing Helene WebSocket Server')
+
     await this.webSocketTransport?.close()
+
+    console.log('Closing Helene HTTP Server')
+
     await this.httpTransport?.close()
 
     delete global.Helene
 
     this.emit(ServerEvents.CLOSED)
+
+    console.log('Helene Server Closed')
 
     return true
   }

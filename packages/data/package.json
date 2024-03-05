@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "eventemitter2": "^6.4.7",
+    "immutable": "^4.3.5",
     "lodash": "^4.17.21",
     "mkdirp": "^2.1.6"
   },

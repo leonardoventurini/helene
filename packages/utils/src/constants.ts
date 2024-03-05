@@ -47,8 +47,6 @@ export enum ClientEvents {
   INBOUND_MESSAGE = 'inbound:message',
   CONNECTING = 'connecting',
 
-  WEBSOCKET_CREATE = 'websocket:create',
-  WEBSOCKET_CONNECT_ATTEMPT = 'websocket:connect:attempt',
   WEBSOCKET_CONNECTED = 'websocket:connected',
   WEBSOCKET_RECONNECTING = 'websocket:reconnecting',
   WEBSOCKET_CLOSED = 'websocket:closed',
@@ -59,17 +57,6 @@ export enum ClientEvents {
   EVENTSOURCE_ERROR = 'eventsource:error',
 
   CLOSE = 'client:close',
-}
-
-export enum ClientSocketEvent {
-  DISCONNECT = 'disconnect',
-}
-
-export enum WebSocketEvent {
-  OPEN = 'open',
-  CLOSE = 'close',
-  MESSAGE = 'message',
-  ERROR = 'error',
 }
 
 export enum RedisListeners {

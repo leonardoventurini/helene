@@ -10,10 +10,10 @@ import {
   ServerEvents,
   WebSocketEvents,
 } from '@helenejs/utils'
-import http from 'http'
 import { ClientNode } from '../client-node'
 import IsomorphicWebSocket from 'isomorphic-ws'
-import MethodCallPayload = Presentation.MethodCallPayload
+import sockjs from 'sockjs'
+import Payload = Presentation.Payload
 
 export enum WebSocketTransportEvents {
   WEBSOCKET_SERVER_ERROR = 'websocket:server:error',
@@ -24,7 +24,7 @@ export type WebSocketMessageOptions = Parameters<IsomorphicWebSocket['send']>[1]
 
 export class WebSocketTransport {
   server: Server
-  wss: WebSocket.Server
+  wss: sockjs.Server
   options: WebSocket.ServerOptions = {
     noServer: true,
     path: HELENE_WS_PATH,
@@ -35,56 +35,43 @@ export class WebSocketTransport {
 
     Object.assign(this.options, opts ?? {})
 
-    this.wss = new WebSocket.Server(this.options)
+    this.wss = sockjs.createServer()
 
     this.wss.on(WebSocketEvents.CONNECTION, this.handleConnection)
 
-    this.wss.on(WebSocketEvents.ERROR, error =>
+    this.wss.on(WebSocketEvents.ERROR, (error: any) =>
       server.emit(WebSocketTransportEvents.WEBSOCKET_SERVER_ERROR, error),
     )
 
-    this.server.httpTransport.http.on(
-      ServerEvents.UPGRADE,
-      (request, socket, head) => {
-        // Allows other upgrade requests to work alongside Helene, e.g. NextJS HMR.
-        if (!request.url.startsWith(this.options.path)) return
-        if (!this.server.acceptConnections) {
-          socket.write(
-            `HTTP/${request.httpVersion} 503 Service Unavailable\r\n\r\n`,
-          )
-          socket.destroy()
-          console.log('Helene: Upgrade Connection Refused')
-          return
-        }
-
-        this.wss.handleUpgrade(request, socket, head, socket => {
-          this.wss.emit(WebSocketEvents.CONNECTION, socket, request)
-        })
-      },
-    )
+    this.wss.installHandlers(this.server.httpTransport.http, {
+      prefix: this.options.path,
+    })
   }
 
-  handleConnection = (socket: WebSocket, request: http.IncomingMessage) => {
+  handleConnection = (conn: sockjs.Connection) => {
+    if (!this.server.acceptConnections) {
+      conn.destroy()
+      console.log('Helene: Connection Refused')
+      return
+    }
+
     const node = new ClientNode(
       this.server,
-      socket,
+      conn,
       undefined,
       undefined,
       this.server.rateLimit,
     )
 
-    node.setId(request)
-    node.setTrackingProperties(request)
+    // node.setTrackingProperties(request)
 
-    this.server.addClient(node)
+    conn.on('close', this.handleClose(node))
 
-    socket.on(WebSocketEvents.CLOSE, this.handleClose(node))
-
-    socket.on(WebSocketEvents.ERROR, error =>
-      this.server.emit(ServerEvents.SOCKET_ERROR, socket, error),
+    conn.on('error', (error: any) =>
+      this.server.emit(ServerEvents.SOCKET_ERROR, conn, error),
     )
 
-    socket.on(WebSocketEvents.MESSAGE, this.handleMessage(node))
+    conn.on('data', this.handleMessage(node))
 
     this.server.emit(ServerEvents.CONNECTION, node)
   }
@@ -94,33 +81,27 @@ export class WebSocketTransport {
     this.server.deleteClient(node)
   }
 
-  handleMessage = (node: ClientNode) => async (data: WebSocket.Data) => {
-    if (Buffer.isBuffer(data)) data = data.toString()
-
-    const opts = {
-      binary: data instanceof ArrayBuffer,
-    }
-
+  handleMessage = (node: ClientNode) => async (data: { data: string }) => {
     try {
-      if (node.readyState !== 1) {
-        console.warn(`Socket Not Ready`, node.readyState, node.uuid)
-        return
+      const parsedData = Presentation.decode<Payload>(data)
+
+      if (parsedData.type === Presentation.PayloadType.SETUP) {
+        node.setId(parsedData.uuid)
+
+        this.server.addClient(node)
       }
 
-      const parsedData = Presentation.decode<MethodCallPayload>(data)
+      if (parsedData.type !== Presentation.PayloadType.METHOD) return
 
       if (parsedData.method !== Methods.KEEP_ALIVE)
         this.server.debugger(`Message Received`, parsedData)
 
       await this.execute(parsedData, node)
     } catch (error) {
-      return node.error(
-        {
-          message: Errors.PARSE_ERROR,
-          stack: error.stack,
-        },
-        opts,
-      )
+      return node.error({
+        message: Errors.PARSE_ERROR,
+        stack: error.stack,
+      })
     }
   }
 
@@ -199,24 +180,14 @@ export class WebSocketTransport {
   }
 
   close() {
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<void>(resolve => {
       if (!this.wss) return resolve()
 
-      this.wss.clients.forEach(socket => {
-        socket.terminate()
+      this.server.allClients.forEach(node => {
+        if (node.socket) node.close()
       })
 
-      /**
-       * @todo Clean all client nodes from namespace and events.
-       */
-
-      this.wss.close(err => {
-        if (err) return reject(err)
-
-        this.wss = undefined
-        this.server.emit(WebSocketTransportEvents.WEBSOCKET_SERVER_CLOSED)
-        resolve()
-      })
+      resolve()
     })
   }
 }

@@ -1,8 +1,8 @@
 import identity from 'lodash/identity'
-import isString from 'lodash/isString'
-import { Environment, Errors, Helpers } from './index'
+import { Errors, Helpers } from './index'
 import { EJSON } from 'ejson2'
 import { v4 } from '@lukeed/uuid'
+import isString from 'lodash/isString'
 
 export namespace Presentation {
   export type Params = Record<string, any> | any[] | any
@@ -14,6 +14,12 @@ export namespace Presentation {
     RESULT = 'result',
     EVENT = 'event',
     ERROR = 'error',
+    SETUP = 'setup',
+  }
+
+  export type SetupPayload = {
+    uuid: string
+    type: PayloadType.SETUP
   }
 
   export type MethodCallPayload = {
@@ -68,41 +74,10 @@ export namespace Presentation {
     | MethodResultPayload
     | EventPayload
     | ErrorPayload
+    | SetupPayload
 
-  export function decode<T = Payload>(
-    payload: string | ArrayBuffer | Buffer | Buffer[] | MessageEvent,
-  ): T {
-    if (payload.constructor?.name === 'MessageEvent') {
-      payload = (payload as MessageEvent).data
-    }
-
-    // Seen this happen in tests on Bun 1.0, but not sure why
-    if (payload === 'undefined') {
-      return undefined as any
-    }
-
-    if (Environment.isBrowser && !Environment.isTest) {
-      return EJSON.parse(payload as string)
-    }
-
-    const isArrayBuffer = ArrayBuffer.isView(payload)
-    const isBuffer = Buffer.isBuffer(payload)
-
-    let decoded: string
-
-    if (isString(payload)) {
-      decoded = payload as string
-    } else if (isBuffer || isArrayBuffer) {
-      decoded = Buffer.from(payload as ArrayBuffer | Buffer).toString()
-    }
-
-    if (!decoded) {
-      console.log('Helene: Could not decode payload', payload)
-      console.trace()
-      return null
-    }
-
-    return EJSON.parse(decoded)
+  export function decode<T = Payload>(payload: string | { data: string }): T {
+    return EJSON.parse(isString(payload) ? payload : payload.data)
   }
 
   export function encode<T = Payload>(payload: T): string {

@@ -1,18 +1,13 @@
 import { Client, WebSocketOptions } from './client'
 import {
   ClientEvents,
-  ClientSocketEvent,
   HELENE_WS_PATH,
   Presentation,
-  sleep,
   WebSocketEvents,
 } from '@helenejs/utils'
-import { WebSocketMessageOptions } from '@helenejs/server'
-import {
-  connectWebSocketWithPersistentReconnect,
-  GenericWebSocket,
-} from './websocket'
 import { EventEmitter2 } from 'eventemitter2'
+import { connectSockJS } from './sockjs'
+import PayloadType = Presentation.PayloadType
 
 export const WebSocketState = {
   CONNECTING: 0,
@@ -23,7 +18,7 @@ export const WebSocketState = {
 
 export class ClientSocket extends EventEmitter2 {
   client: Client
-  socket: GenericWebSocket
+  socket: WebSocket
 
   protocol: string
   uri: string
@@ -43,11 +38,9 @@ export class ClientSocket extends EventEmitter2 {
 
     this.client = client
 
-    this.client.on(ClientEvents.WEBSOCKET_CONNECTED, this.handleOpen.bind(this))
-
     Object.assign(this.options, options ?? {})
 
-    this.protocol = this.client.options.secure ? `wss://` : `ws://`
+    this.protocol = this.client.options.secure ? 'https://' : 'http://'
 
     if (this.client.options.port) {
       this.uri = `${this.protocol}${this.client.options.host}:${this.client.options.port}${this.options.path}`
@@ -60,18 +53,12 @@ export class ClientSocket extends EventEmitter2 {
     this.connecting = true
     this.client.emit(ClientEvents.CONNECTING)
 
-    connectWebSocketWithPersistentReconnect(
-      `${this.uri}?uuid=${this.client.uuid}`,
-      this.client,
-      this,
-    )
+    connectSockJS(this.uri, this)
 
     await this.client.waitFor(ClientEvents.WEBSOCKET_CONNECTED)
   }
 
-  public handleMessage(
-    data: string | ArrayBuffer | Buffer | Buffer[] | MessageEvent,
-  ) {
+  public handleMessage(data: { data: string }) {
     const payload = Presentation.decode(data)
 
     this.client.emit(ClientEvents.INBOUND_MESSAGE, data)
@@ -82,37 +69,28 @@ export class ClientSocket extends EventEmitter2 {
   }
 
   public close() {
-    return new Promise<void>(resolve => {
-      // @ts-ignore
-      if (this._events.disconnect) {
-        this.client.once(ClientEvents.WEBSOCKET_CLOSED, resolve)
-        this.emit(ClientSocketEvent.DISCONNECT)
-      } else {
-        resolve()
-      }
-
-      this.connecting = false
-
-      this.socket = undefined
-    })
+    this.socket?.close()
+    this.connecting = false
+    this.socket = undefined
   }
 
-  public send(payload: string, opts?: WebSocketMessageOptions) {
+  public send(payload: string) {
     if (!this.ready) return console.warn('Not Ready')
 
     this.client.emit(ClientEvents.OUTBOUND_MESSAGE, payload)
 
-    this.socket.send(payload, opts)
+    this.socket.send(payload)
   }
 
-  async handleOpen(ws: GenericWebSocket): Promise<void> {
-    if (ws.readyState === WebSocketState.CONNECTING) {
-      await sleep(10)
+  async handleOpen(): Promise<void> {
+    this.send(
+      Presentation.encode({
+        type: PayloadType.SETUP,
+        uuid: this.client.uuid,
+      }),
+    )
 
-      return this.handleOpen(ws)
-    }
-
-    this.socket = ws
+    this.client.emit(ClientEvents.WEBSOCKET_CONNECTED)
 
     this.socket.addEventListener(
       WebSocketEvents.ERROR,
@@ -136,6 +114,7 @@ export class ClientSocket extends EventEmitter2 {
    * This runs if the connection is interrupted or if the server fails to establish a new connection.
    */
   private handleClose = () => {
+    console.log('Closed')
     this.connecting = false
     this.socket = undefined
 

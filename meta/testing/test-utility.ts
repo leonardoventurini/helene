@@ -99,6 +99,7 @@ export class TestUtility {
       })
 
       client.once(ClientEvents.INITIALIZED, () => {
+        console.log('Test Utility: Client Initialized')
         resolve(client)
       })
 
