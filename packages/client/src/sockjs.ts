@@ -1,4 +1,5 @@
 import { ClientSocket } from './client-socket'
+import SockJS from '@helenejs/isosockjs'
 
 export async function connectSockJS(
   url: string,
@@ -13,20 +14,7 @@ export async function connectSockJS(
     console.log('Helene: Reconnecting...')
   }
 
-  let sock
-
-  if (typeof window === 'undefined') {
-    const { default: NodeSockJS } = await import('sockjs-client')
-
-    // @ts-ignore
-    sock = new NodeSockJS(url)
-  } else {
-    const { default: BrowserSockJS } = await import(
-      'sockjs-client/dist/sockjs.min.js'
-    )
-
-    sock = new BrowserSockJS(url)
-  }
+  const sock = new SockJS(url)
 
   clientSocket.socket = sock
 
