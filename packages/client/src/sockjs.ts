@@ -1,7 +1,6 @@
-import SockJS from 'sockjs-client'
 import { ClientSocket } from './client-socket'
 
-export function connectSockJS(
+export async function connectSockJS(
   url: string,
   clientSocket: ClientSocket,
   attempt = 1,
@@ -14,7 +13,20 @@ export function connectSockJS(
     console.log('Helene: Reconnecting...')
   }
 
-  const sock = new SockJS(url)
+  let sock
+
+  if (typeof window === 'undefined') {
+    const { default: NodeSockJS } = await import('sockjs-client')
+
+    // @ts-ignore
+    sock = new NodeSockJS(url)
+  } else {
+    const { default: BrowserSockJS } = await import(
+      'sockjs-client/dist/sockjs.min.js'
+    )
+
+    sock = new BrowserSockJS(url)
+  }
 
   clientSocket.socket = sock
 
