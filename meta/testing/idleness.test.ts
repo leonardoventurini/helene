@@ -31,7 +31,7 @@ describe('idleness', () => {
     )
 
     await client.close()
-  }).timeout(60000)
+  }).timeout(10000)
 
   it('should disconnect on idleness and reconnect upon interaction (websocket)', async () => {
     const client = await test.createClient({
@@ -54,5 +54,5 @@ describe('idleness', () => {
     expect(client.clientSocket.socket.readyState).to.equal(WebSocket.OPEN)
 
     await client.close()
-  }).timeout(60000)
+  }).timeout(10000)
 })

@@ -63,7 +63,7 @@ export class WebSocketTransport {
       this.server.rateLimit,
     )
 
-    // node.setTrackingProperties(request)
+    node.setTrackingProperties(conn)
 
     conn.on('close', this.handleClose(node))
 

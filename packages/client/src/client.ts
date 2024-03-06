@@ -202,15 +202,12 @@ export class Client extends ClientChannel {
       return
     }
 
-    console.log({ shouldConnect })
-
     if (this.mode.eventsource) {
       await this.clientHttp.createEventSource()
       return
     }
 
     if (this.mode.websocket) {
-      console.log('Helene: Connecting')
       await this.clientSocket.connect()
       return
     }
@@ -300,13 +297,11 @@ export class Client extends ClientChannel {
       channel.emit(HeleneEvents.COMMIT_PENDING_UNSUBSCRIPTIONS, {})
     })
 
-    this.clientSocket.close()
+    await this.clientSocket.close()
   }
 
   async init() {
     if (this.initializing) return
-
-    console.log('Helene: Initializing')
 
     this.initializing = true
 

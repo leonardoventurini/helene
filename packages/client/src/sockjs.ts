@@ -6,6 +6,10 @@ export function connectSockJS(
   clientSocket: ClientSocket,
   attempt = 1,
 ) {
+  if (clientSocket.stopped) {
+    return
+  }
+
   if (attempt > 1) {
     console.log('Helene: Reconnecting...')
   }

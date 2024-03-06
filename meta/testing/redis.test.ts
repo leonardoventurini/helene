@@ -47,12 +47,8 @@ describe('Redis Pub/Sub', function () {
   })
 
   it('should emit an event in one server and both clients should fire (server sent events)', async () => {
-    console.log('before create http client')
-
     const client1 = await test1.createHttpClient()
     const client2 = await test2.createHttpClient()
-
-    console.log('after create http client')
 
     expect(client1.clientHttp.clientEventSource.readyState).to.be.equal(1)
     expect(client2.clientHttp.clientEventSource.readyState).to.be.equal(1)

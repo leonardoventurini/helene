@@ -22,6 +22,7 @@ export class ClientSocket extends EventEmitter2 {
 
   protocol: string
   uri: string
+  stopped = false
 
   connecting = false
 
@@ -50,6 +51,7 @@ export class ClientSocket extends EventEmitter2 {
   }
 
   async connect() {
+    this.stopped = false
     this.connecting = true
     this.client.emit(ClientEvents.CONNECTING)
 
@@ -68,21 +70,32 @@ export class ClientSocket extends EventEmitter2 {
     this.client.payloadRouter(payload)
   }
 
-  public close() {
-    this.socket?.close()
+  async close() {
+    this.stopped = true
     this.connecting = false
+
+    if (!this.socket) return
+
+    this.socket.close()
     this.socket = undefined
+
+    await this.client.waitFor(ClientEvents.WEBSOCKET_CLOSED)
   }
 
   public send(payload: string) {
-    if (!this.ready) return console.warn('Not Ready')
+    if (!this.ready) {
+      console.trace()
+      return console.warn('Not Ready')
+    }
 
     this.client.emit(ClientEvents.OUTBOUND_MESSAGE, payload)
 
     this.socket.send(payload)
   }
 
-  async handleOpen(): Promise<void> {
+  handleOpen() {
+    if (!this.socket) return
+
     this.send(
       Presentation.encode({
         type: PayloadType.SETUP,
@@ -107,14 +120,13 @@ export class ClientSocket extends EventEmitter2 {
 
     this.connecting = false
 
-    this.client.init().catch(console.error)
+    this.client.init()
   }
 
   /**
    * This runs if the connection is interrupted or if the server fails to establish a new connection.
    */
   private handleClose = () => {
-    console.log('Closed')
     this.connecting = false
     this.socket = undefined
 

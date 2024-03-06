@@ -3,7 +3,7 @@ import { expect } from 'chai'
 import { TestUtility } from './test-utility'
 import { ClientEvents } from '@helenejs/utils'
 
-describe.only('WebSockets', function () {
+describe('WebSockets', function () {
   const test = new TestUtility()
 
   it('should close and reconnect', async () => {
@@ -30,9 +30,7 @@ describe.only('WebSockets', function () {
     expect(test.client.clientSocket.ready).to.be.true
   })
 
-  it.only('should call init even after it abnormally reconnects', async () => {
-    console.log(test.client.uuid)
-
+  it('should call init even after it abnormally reconnects', async () => {
     test.server.allClients.get(test.client.uuid).socket.close()
 
     await test.client.waitFor(ClientEvents.WEBSOCKET_CLOSED)

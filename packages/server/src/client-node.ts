@@ -1,4 +1,3 @@
-import http from 'http'
 import isString from 'lodash/isString'
 import { Presentation, ServerEvents } from '@helenejs/utils'
 import { Request, Response } from 'express'
@@ -7,6 +6,7 @@ import { RateLimiter } from 'limiter'
 import { RateLimit, Server } from './server'
 import { EventEmitter2 } from 'eventemitter2'
 import sockjs from 'sockjs'
+import http from 'http'
 
 export type ClientNodeContext = Record<string, any>
 
@@ -87,11 +87,16 @@ export class ClientNode extends EventEmitter2 {
     this.setUserId()
   }
 
-  setTrackingProperties(request: http.IncomingMessage) {
-    this.headers = request.headers as any
-    this.remoteAddress =
-      request.headers['x-forwarded-for'] || request.socket.remoteAddress
-    this.userAgent = request.headers['user-agent']
+  setTrackingProperties(conn: sockjs.Connection | http.IncomingMessage) {
+    if (conn instanceof http.IncomingMessage) {
+      this.remoteAddress =
+        conn.headers['x-forwarded-for'] || conn.socket.remoteAddress
+    } else {
+      this.remoteAddress = conn.headers['x-forwarded-for'] || conn.remoteAddress
+    }
+
+    this.headers = conn.headers as any
+    this.userAgent = conn.headers['user-agent']
   }
 
   // The user ID is used for authorizing the user's channel.
