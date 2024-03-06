@@ -72,8 +72,6 @@ export class WebSocketTransport {
     )
 
     conn.on('data', this.handleMessage(node))
-
-    this.server.emit(ServerEvents.CONNECTION, node)
   }
 
   handleClose = (node: ClientNode) => () => {
@@ -89,6 +87,8 @@ export class WebSocketTransport {
         node.setId(parsedData.uuid)
 
         this.server.addClient(node)
+
+        this.server.emit(ServerEvents.CONNECTION, node)
       }
 
       if (parsedData.type !== Presentation.PayloadType.METHOD) return
