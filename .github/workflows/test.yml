@@ -20,6 +20,7 @@ jobs:
         with:
           node-version: 20
           cache: yarn
+      - run: bun upgrade
       - run: yarn install --frozen-lockfile
       - run: lerna run build
       - run: lerna run bun:test:mocha
