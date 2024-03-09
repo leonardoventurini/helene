@@ -21,8 +21,8 @@ steps:
     commands:
       - echo "$DOCKER_TOKEN" | docker login -u "$DOCKER_ORG" --password-stdin
       - cd demo
-      - docker build -t ${DOCKER_ORG}/helene:latest .
-      - docker push ${DOCKER_ORG}/helene:latest
+      - docker build -t $DOCKER_ORG/helene:latest .
+      - docker push $DOCKER_ORG/helene:latest
 
   - name: deploy
     image: bitnami/kubectl
