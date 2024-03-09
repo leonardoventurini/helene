@@ -11,20 +11,16 @@ import {
   WebSocketEvents,
 } from '@helenejs/utils'
 import { ClientNode } from '../client-node'
-import IsomorphicWebSocket from 'isomorphic-ws'
-import sockjs from 'sockjs'
+import io from 'socket.io'
 import Payload = Presentation.Payload
 
 export enum WebSocketTransportEvents {
   WEBSOCKET_SERVER_ERROR = 'websocket:server:error',
-  WEBSOCKET_SERVER_CLOSED = 'websocket:server:closed',
 }
-
-export type WebSocketMessageOptions = Parameters<IsomorphicWebSocket['send']>[1]
 
 export class WebSocketTransport {
   server: Server
-  wss: sockjs.Server
+  wss: io.Server
   options: WebSocket.ServerOptions = {
     noServer: true,
     path: HELENE_WS_PATH,
@@ -35,43 +31,47 @@ export class WebSocketTransport {
 
     Object.assign(this.options, opts ?? {})
 
-    this.wss = sockjs.createServer()
+    this.wss = new io.Server(this.server.httpTransport.http, {
+      path: this.options.path,
+    })
 
     this.wss.on(WebSocketEvents.CONNECTION, this.handleConnection)
 
     this.wss.on(WebSocketEvents.ERROR, (error: any) =>
       server.emit(WebSocketTransportEvents.WEBSOCKET_SERVER_ERROR, error),
     )
-
-    this.wss.installHandlers(this.server.httpTransport.http, {
-      prefix: this.options.path,
-    })
   }
 
-  handleConnection = (conn: sockjs.Connection) => {
+  handleConnection = (socket: io.Socket) => {
     if (!this.server.acceptConnections) {
-      conn.destroy()
+      socket.disconnect()
       console.log('Helene: Connection Refused')
       return
     }
 
     const node = new ClientNode(
       this.server,
-      conn,
+      socket,
       undefined,
       undefined,
       this.server.rateLimit,
     )
 
-    node.setTrackingProperties(conn)
+    node.setId(socket.handshake.query.uuid as string)
 
-    conn.on('close', this.handleClose(node))
+    this.server.addClient(node)
 
-    conn.on('error', (error: any) =>
-      this.server.emit(ServerEvents.SOCKET_ERROR, conn, error),
+    this.server.emit(ServerEvents.CONNECTION, node)
+
+    node.setTrackingProperties(socket)
+
+    socket.on('disconnect', this.handleClose(node))
+
+    socket.on('error', (error: any) =>
+      this.server.emit(ServerEvents.SOCKET_ERROR, socket, error),
     )
 
-    conn.on('data', this.handleMessage(node))
+    socket.on('message', this.handleMessage(node))
   }
 
   handleClose = (node: ClientNode) => () => {
@@ -83,18 +83,9 @@ export class WebSocketTransport {
     try {
       const parsedData = Presentation.decode<Payload>(data)
 
-      if (parsedData.type === Presentation.PayloadType.SETUP) {
-        node.setId(parsedData.uuid)
-
-        this.server.addClient(node)
-
-        this.server.emit(ServerEvents.CONNECTION, node)
-      }
-
       if (parsedData.type !== Presentation.PayloadType.METHOD) return
 
-      if (parsedData.method !== Methods.KEEP_ALIVE)
-        this.server.debugger(`Message Received`, parsedData)
+      this.server.debugger(`Message Received`, parsedData)
 
       await this.execute(parsedData, node)
     } catch (error) {

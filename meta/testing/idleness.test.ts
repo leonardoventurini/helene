@@ -2,7 +2,6 @@ import { ClientEvents, sleep } from '@helenejs/utils'
 import EventSource from 'eventsource'
 import { TestUtility } from './test-utility'
 import { expect } from 'chai'
-import WebSocket from 'ws'
 
 describe('idleness', () => {
   const test = new TestUtility()
@@ -44,14 +43,14 @@ describe('idleness', () => {
 
     await client.idleTimeout.reset()
 
-    expect(client.clientSocket.socket.readyState).to.equal(WebSocket.OPEN)
+    expect(client.clientSocket.socket.connected).to.equal(true)
 
     for (let i = 0; i < 20; i++) {
       await sleep(50)
       await client.idleTimeout.reset()
     }
 
-    expect(client.clientSocket.socket.readyState).to.equal(WebSocket.OPEN)
+    expect(client.clientSocket.socket.connected).to.equal(true)
 
     await client.close()
   }).timeout(10000)
