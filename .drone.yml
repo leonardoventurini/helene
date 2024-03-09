@@ -29,9 +29,6 @@ steps:
     environment:
       K8S_CONFIG:
         from_secret: kubeconfig
-    when:
-      branch:
-        - staging
     commands:
       - echo "$K8S_CONFIG" > /.kube/config
       - kubectl rollout restart deployment/helene-app
