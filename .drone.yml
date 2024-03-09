@@ -16,7 +16,7 @@ steps:
       DOCKER_TOKEN:
         from_secret: docker
     commands:
-      - echo "$DOCKER_TOKEN" | docker login -u ${DOCKER_ORG} --password-stdin
+      - echo "$DOCKER_TOKEN" | docker login -u "$DOCKER_ORG" --password-stdin
       - cd demo
       - docker build -t ${DOCKER_ORG}/helene:latest .
       - docker push ${DOCKER_ORG}/helene:latest
