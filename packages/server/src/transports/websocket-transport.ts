@@ -1,4 +1,3 @@
-import WebSocket from 'ws'
 import { Server } from '../server'
 import {
   Errors,
@@ -21,18 +20,17 @@ export enum WebSocketTransportEvents {
 export class WebSocketTransport {
   server: Server
   wss: io.Server
-  options: WebSocket.ServerOptions = {
-    noServer: true,
+  options: Partial<io.ServerOptions> = {
     path: HELENE_WS_PATH,
   }
 
-  constructor(server: Server, opts: WebSocket.ServerOptions) {
+  constructor(server: Server, opts: Partial<io.ServerOptions>) {
     this.server = server
 
     Object.assign(this.options, opts ?? {})
 
     this.wss = new io.Server(this.server.httpTransport.http, {
-      path: this.options.path,
+      ...this.options,
     })
 
     this.wss.on(WebSocketEvents.CONNECTION, this.handleConnection)
