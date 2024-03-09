@@ -6,8 +6,8 @@ import {
   WebSocketEvents,
 } from '@helenejs/utils'
 import { EventEmitter2 } from 'eventemitter2'
-import { connectSockJS } from './sockjs'
-import PayloadType = Presentation.PayloadType
+import { io, Socket } from 'socket.io-client'
+import defer from 'lodash/defer'
 
 export const WebSocketState = {
   CONNECTING: 0,
@@ -18,7 +18,7 @@ export const WebSocketState = {
 
 export class ClientSocket extends EventEmitter2 {
   client: Client
-  socket: WebSocket
+  socket: Socket
 
   protocol: string
   uri: string
@@ -31,7 +31,7 @@ export class ClientSocket extends EventEmitter2 {
   }
 
   get ready() {
-    return Boolean(this.socket?.readyState === WebSocketState.OPEN)
+    return this.socket?.connected ?? false
   }
 
   constructor(client: Client, options: WebSocketOptions = {}) {
@@ -44,9 +44,9 @@ export class ClientSocket extends EventEmitter2 {
     this.protocol = this.client.options.secure ? 'https://' : 'http://'
 
     if (this.client.options.port) {
-      this.uri = `${this.protocol}${this.client.options.host}:${this.client.options.port}${this.options.path}`
+      this.uri = `${this.protocol}${this.client.options.host}:${this.client.options.port}`
     } else {
-      this.uri = `${this.protocol}${this.client.options.host}${this.options.path}`
+      this.uri = `${this.protocol}${this.client.options.host}`
     }
   }
 
@@ -55,7 +55,21 @@ export class ClientSocket extends EventEmitter2 {
     this.connecting = true
     this.client.emit(ClientEvents.CONNECTING)
 
-    connectSockJS(this.uri, this)
+    this.socket = io(this.uri, {
+      path: this.options.path,
+      query: {
+        uuid: this.client.uuid,
+      },
+      reconnection: true,
+      reconnectionDelay: 100,
+      reconnectionDelayMax: 30000,
+    })
+
+    this.socket.on(WebSocketEvents.CONNECT, this.handleOpen.bind(this))
+    this.socket.on(WebSocketEvents.RECONNECT, this.handleOpen.bind(this))
+    this.socket.on(WebSocketEvents.ERROR, this.handleError.bind(this))
+    this.socket.on(WebSocketEvents.MESSAGE, this.handleMessage.bind(this))
+    this.socket.on(WebSocketEvents.DISCONNECT, this.handleClose.bind(this))
 
     await this.client.waitFor(ClientEvents.WEBSOCKET_CONNECTED)
   }
@@ -96,27 +110,7 @@ export class ClientSocket extends EventEmitter2 {
   handleOpen() {
     if (!this.socket) return
 
-    this.send(
-      Presentation.encode({
-        type: PayloadType.SETUP,
-        uuid: this.client.uuid,
-      }),
-    )
-
     this.client.emit(ClientEvents.WEBSOCKET_CONNECTED)
-
-    this.socket.addEventListener(
-      WebSocketEvents.ERROR,
-      this.handleError.bind(this),
-    )
-    this.socket.addEventListener(
-      WebSocketEvents.MESSAGE,
-      this.handleMessage.bind(this),
-    )
-    this.socket.addEventListener(
-      WebSocketEvents.CLOSE,
-      this.handleClose.bind(this),
-    )
 
     this.connecting = false
 
@@ -128,9 +122,10 @@ export class ClientSocket extends EventEmitter2 {
    */
   private handleClose = () => {
     this.connecting = false
-    this.socket = undefined
 
-    this.client.emit(ClientEvents.WEBSOCKET_CLOSED)
+    defer(() => {
+      this.client.emit(ClientEvents.WEBSOCKET_CLOSED)
+    })
   }
 
   private handleError = error => {

@@ -68,7 +68,7 @@ describe('Database', function () {
 
       // Check the loadDatabase generated an error
       function onload(err) {
-        err.errorType.should.equal('uniqueViolated')
+        err?.errorType.should.equal('uniqueViolated')
       }
 
       const db = new Collection({

@@ -17,11 +17,6 @@ export namespace Presentation {
     SETUP = 'setup',
   }
 
-  export type SetupPayload = {
-    uuid: string
-    type: PayloadType.SETUP
-  }
-
   export type MethodCallPayload = {
     uuid: string
     type: PayloadType.METHOD
@@ -74,7 +69,6 @@ export namespace Presentation {
     | MethodResultPayload
     | EventPayload
     | ErrorPayload
-    | SetupPayload
 
   export function decode<T = Payload>(payload: string | { data: string }): T {
     return EJSON.parse(isString(payload) ? payload : payload.data)
