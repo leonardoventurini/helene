@@ -10,6 +10,9 @@ trigger:
 steps:
   - name: build
     image: docker
+    volumes:
+      - name: docker-socket
+        path: /var/run/docker.sock
     environment:
       DOCKER_ORG:
         from_secret: docker_org
@@ -41,3 +44,8 @@ steps:
     settings:
       channel: cicd
       webhook: ${SLACK_WEBHOOK}
+
+volumes:
+  - name: docker-socket
+    host:
+      path: /var/run/docker.sock
