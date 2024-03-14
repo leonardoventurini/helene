@@ -56,6 +56,8 @@ describe('idleness', () => {
   }).timeout(10000)
 
   it('should disconnect on idleness and reconnect upon interaction keeping authentication (websocket)', async () => {
+    await test.client.close()
+
     test.server.setAuth({
       auth(context: any) {
         return context?.token ? { ...context, user: { _id: '42' } } : false
@@ -84,6 +86,8 @@ describe('idleness', () => {
     await client.waitFor(ClientEvents.WEBSOCKET_CLOSED)
 
     expect(client.clientSocket.socket).to.be.undefined
+
+    expect(test.server.allClients.size).to.equal(0)
 
     await client.idleTimeout.reset()
 

@@ -229,6 +229,11 @@ export class Server extends ServerChannel {
   }
 
   addClient(node: ClientNode) {
+    if (this.allClients.has(node.uuid)) {
+      console.log('Helene: Client already exists, closing old connection')
+      this.allClients.get(node.uuid).close()
+    }
+
     this.allClients.set(node.uuid, node)
   }
 
