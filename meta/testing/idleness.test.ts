@@ -54,4 +54,50 @@ describe('idleness', () => {
 
     await client.close()
   }).timeout(10000)
+
+  it('should disconnect on idleness and reconnect upon interaction keeping authentication (websocket)', async () => {
+    test.server.setAuth({
+      auth(context: any) {
+        return context?.token ? { ...context, user: { _id: '42' } } : false
+      },
+      async logIn({ email, password }) {
+        if (email === 'test@helene.test' && password === '123456') {
+          return {
+            token: 'test',
+          }
+        }
+      },
+    })
+
+    test.server.addMethod('protected:method', async function () {
+      return this.userId
+    })
+
+    const client = await test.createClient({
+      idlenessTimeout: 100,
+    })
+
+    await client.login({ email: 'test@helene.test', password: '123456' })
+
+    expect(await client.call('protected:method')).to.equal('42')
+
+    await client.waitFor(ClientEvents.WEBSOCKET_CLOSED)
+
+    expect(client.clientSocket.socket).to.be.undefined
+
+    await client.idleTimeout.reset()
+
+    expect(client.clientSocket.socket.connected).to.be.true
+
+    for (let i = 0; i < 20; i++) {
+      await sleep(50)
+      await client.idleTimeout.reset()
+    }
+
+    expect(client.clientSocket.socket.connected).to.be.true
+
+    expect(await client.call('protected:method')).to.equal('42')
+
+    await client.close()
+  }).timeout(10000)
 })
