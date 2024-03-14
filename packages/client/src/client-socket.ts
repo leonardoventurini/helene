@@ -66,7 +66,6 @@ export class ClientSocket extends EventEmitter2 {
     })
 
     this.socket.on(WebSocketEvents.CONNECT, this.handleOpen.bind(this))
-    this.socket.on(WebSocketEvents.RECONNECT, this.handleOpen.bind(this))
     this.socket.on(WebSocketEvents.ERROR, this.handleError.bind(this))
     this.socket.on(WebSocketEvents.MESSAGE, this.handleMessage.bind(this))
     this.socket.on(WebSocketEvents.DISCONNECT, this.handleClose.bind(this))
