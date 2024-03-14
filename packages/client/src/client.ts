@@ -344,8 +344,14 @@ export class Client extends ClientChannel {
     this.emit(ClientEvents.INITIALIZED, result)
   }
 
+  /**
+   * The login method is always called via http so a http-only cookie can be set if the user so prefers.
+   */
   async login(params: WebSocketRequestParams, opts?: CallOptions) {
-    const response = await this.call(Methods.RPC_LOGIN, params, opts)
+    const response = await this.call(Methods.RPC_LOGIN, params, {
+      ...opts,
+      http: true,
+    })
 
     if (!response || isEmpty(response)) {
       throw new Error(Errors.AUTHENTICATION_FAILED)
