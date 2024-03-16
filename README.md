@@ -28,9 +28,6 @@
 ### Quickstart
 
 ```bash
-bun add @helenejs/server @helenejs/client
-```
-```bash
 npm install @helenejs/server @helenejs/client
 ```
 
