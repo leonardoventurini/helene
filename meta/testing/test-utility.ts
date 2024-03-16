@@ -45,7 +45,7 @@ export class TestUtility {
 
   async createSrv(opts?: ServerOptions) {
     return new Promise<Server>((resolve, reject) => {
-      let server = null
+      let server: Server = null
 
       while (!server) {
         try {
@@ -66,9 +66,7 @@ export class TestUtility {
       }
 
       afterEach(async () => {
-        setTimeout(() => {
-          server.close()
-        }, 200)
+        await server.close()
       })
 
       server.once(ServerEvents.READY, () => resolve(server))
