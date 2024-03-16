@@ -40,7 +40,10 @@ export class ClientHttp {
   // @todo Recreate event source on token change.
   createEventSource() {
     return new Promise(resolve => {
-      if (this.ready) return resolve(this.clientEventSource)
+      if (this.ready) {
+        console.log('Helene: Event source already open')
+        return resolve(this.clientEventSource)
+      }
 
       if (!this.client.mode.eventsource) {
         return resolve(null)
@@ -74,6 +77,7 @@ export class ClientHttp {
         defer(() => {
           resolve(this.clientEventSource)
           this.client.emit(ClientEvents.EVENTSOURCE_OPEN)
+          this.client.initialize().catch(console.error)
         })
       }
 

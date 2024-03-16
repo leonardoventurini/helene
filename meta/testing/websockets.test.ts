@@ -9,8 +9,6 @@ describe('WebSockets', function () {
   it('should close and reconnect', async () => {
     await test.client.close()
 
-    console.log('After Closed')
-
     expect(test.client.clientSocket.ready).to.be.false
 
     await test.client.connect()
@@ -30,17 +28,15 @@ describe('WebSockets', function () {
     await test.client.connect()
 
     expect(test.client.clientSocket.ready).to.be.true
-
-    await test.client.close()
   })
 
-  it('should call init even after it abnormally reconnects', async () => {
+  it('should call init even after it abnormally reconnects (websockets)', async () => {
     expect(test.client.clientSocket.ready).to.be.true
 
     test.server.allClients.get(test.client.uuid).socket.conn.close(true)
 
     await test.client.waitFor(ClientEvents.WEBSOCKET_CLOSED)
 
-    await test.client.waitFor(ClientEvents.WEBSOCKET_CONNECTED)
+    await test.client.waitFor(ClientEvents.INITIALIZED)
   }).timeout(5000)
 })

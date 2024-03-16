@@ -71,9 +71,11 @@ export class ClientSocket extends EventEmitter2 {
       })
 
       this.socket.on(WebSocketEvents.CONNECT, () => {
-        if (!this.socket) return
-        this.connecting = false
-        resolve(this.socket)
+        defer(() => {
+          resolve(this.socket)
+          this.connecting = false
+          this.client.initialize().catch(console.error)
+        })
       })
 
       this.socket.on(WebSocketEvents.ERROR, error => {

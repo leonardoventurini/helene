@@ -201,7 +201,14 @@ export class Client extends ClientChannel {
       await this.clientSocket.connect()
     }
 
-    await this.initialize()
+    if (this.mode.http) {
+      this.initialize().catch(console.error)
+    }
+
+    // This method can be called when the client is already initialized, the previous calls already handle this well.
+    if (this.initialized) return
+
+    await this.waitFor(ClientEvents.INITIALIZED, 5000)
   }
 
   debugger(...args) {
@@ -282,6 +289,11 @@ export class Client extends ClientChannel {
     )
   }
 
+  /**
+   * Initializes the client. It should be called before any other method.
+   *
+   * It should be called whenever a transport is connected, either on reconnection or from calling `connect`.
+   */
   async initialize() {
     if (this.initializing) {
       console.log('Helene: Already initializing')

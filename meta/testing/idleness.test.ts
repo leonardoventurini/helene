@@ -2,6 +2,7 @@ import { ClientEvents, sleep } from '@helenejs/utils'
 import EventSource from 'eventsource'
 import { TestUtility } from './test-utility'
 import { expect } from 'chai'
+import defer from 'lodash/defer'
 
 describe('idleness', () => {
   const test = new TestUtility()
@@ -15,7 +16,9 @@ describe('idleness', () => {
 
     expect(client.clientHttp.clientEventSource).to.be.null
 
-    client.idleTimeout.reset()
+    defer(() => {
+      client.idleTimeout.reset()
+    })
 
     await client.waitFor(ClientEvents.EVENTSOURCE_CREATE)
 
@@ -46,7 +49,7 @@ describe('idleness', () => {
     expect(client.clientSocket.socket.connected).to.equal(true)
 
     for (let i = 0; i < 20; i++) {
-      await sleep(50)
+      await sleep(20)
       await client.idleTimeout.reset()
     }
 

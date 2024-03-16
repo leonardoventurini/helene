@@ -7,6 +7,7 @@ import { RateLimit, Server } from './server'
 import { EventEmitter2 } from 'eventemitter2'
 import http from 'http'
 import io from 'socket.io'
+import defer from 'lodash/defer'
 
 export type ClientNodeContext = Record<string, any>
 
@@ -164,15 +165,19 @@ export class ClientNode extends EventEmitter2 {
   }
 
   close() {
-    this.socket?.disconnect()
-
     if (this.isEventSource) {
       // If we don't destroy the request, we have to force to terminate the HTTP server,
       // and it takes a ton of idle time to do so.
-      this.req?.destroy()
-      this.res?.end()
-      this.server.httpTransport.eventSourceClients.delete(this.uuid)
+      this.res.write('event: close\ndata: Server-side termination\n\n')
+
+      defer(() => {
+        this.res?.end()
+        this.req?.destroy()
+        this.server.httpTransport.eventSourceClients.delete(this.uuid)
+      })
     }
+
+    this.socket?.disconnect()
 
     this.emit(ServerEvents.DISCONNECT)
     this.server.emit(ServerEvents.DISCONNECTION, this)

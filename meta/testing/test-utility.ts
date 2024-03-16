@@ -1,6 +1,6 @@
 import { EventOptions, Server, ServerOptions } from '@helenejs/server'
 import { Client, ClientOptions, TransportMode } from '@helenejs/client'
-import { ClientEvents, NO_CHANNEL, ServerEvents } from '@helenejs/utils'
+import { ClientEvents, NO_CHANNEL, ServerEvents, sleep } from '@helenejs/utils'
 
 export class TestUtility {
   server: Server
@@ -37,6 +37,8 @@ export class TestUtility {
       this.servers.forEach(server => server.close())
       this.clients = []
       this.servers = []
+
+      await sleep(100)
     })
   }
 
