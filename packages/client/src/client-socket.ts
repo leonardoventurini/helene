@@ -50,37 +50,56 @@ export class ClientSocket extends EventEmitter2 {
     }
   }
 
-  async connect() {
-    this.stopped = false
-    this.connecting = true
-    this.client.emit(ClientEvents.CONNECTING)
+  connect() {
+    return new Promise((resolve, reject) => {
+      if (this.ready) {
+        return resolve(this.socket)
+      }
 
-    this.socket = io(this.uri, {
-      path: this.options.path,
-      query: {
-        uuid: this.client.uuid,
-      },
-      reconnection: true,
-      reconnectionDelay: 100,
-      reconnectionDelayMax: 30000,
+      this.stopped = false
+      this.connecting = true
+      this.client.emit(ClientEvents.CONNECTING)
+
+      this.socket = io(this.uri, {
+        path: this.options.path,
+        query: {
+          uuid: this.client.uuid,
+        },
+        reconnection: true,
+        reconnectionDelay: 100,
+        reconnectionDelayMax: 30000,
+      })
+
+      this.socket.on(WebSocketEvents.CONNECT, () => {
+        if (!this.socket) return
+        this.connecting = false
+        resolve(this.socket)
+      })
+
+      this.socket.on(WebSocketEvents.ERROR, error => {
+        this.connecting = false
+        console.error(error)
+        reject(error)
+      })
+
+      this.socket.on(WebSocketEvents.MESSAGE, (data: { data: string }) => {
+        const payload = Presentation.decode(data)
+
+        this.client.emit(ClientEvents.INBOUND_MESSAGE, data)
+
+        if (!payload) return
+
+        this.client.payloadRouter(payload)
+      })
+
+      this.socket.on(WebSocketEvents.DISCONNECT, () => {
+        this.connecting = false
+
+        defer(() => {
+          this.client.emit(ClientEvents.WEBSOCKET_CLOSED)
+        })
+      })
     })
-
-    this.socket.on(WebSocketEvents.CONNECT, this.handleOpen.bind(this))
-    this.socket.on(WebSocketEvents.ERROR, this.handleError.bind(this))
-    this.socket.on(WebSocketEvents.MESSAGE, this.handleMessage.bind(this))
-    this.socket.on(WebSocketEvents.DISCONNECT, this.handleClose.bind(this))
-
-    await this.client.waitFor(ClientEvents.WEBSOCKET_CONNECTED)
-  }
-
-  public handleMessage(data: { data: string }) {
-    const payload = Presentation.decode(data)
-
-    this.client.emit(ClientEvents.INBOUND_MESSAGE, data)
-
-    if (!payload) return
-
-    this.client.payloadRouter(payload)
   }
 
   async close() {
@@ -112,34 +131,5 @@ export class ClientSocket extends EventEmitter2 {
     this.client.emit(ClientEvents.OUTBOUND_MESSAGE, payload)
 
     this.socket.send(payload)
-  }
-
-  handleOpen() {
-    if (!this.socket) return
-
-    this.client.emit(ClientEvents.WEBSOCKET_CONNECTED)
-
-    this.connecting = false
-
-    defer(() => {
-      this.client.initialize().catch(console.error)
-    })
-  }
-
-  /**
-   * This runs if the connection is interrupted or if the server fails to establish a new connection.
-   */
-  private handleClose = () => {
-    this.connecting = false
-
-    defer(() => {
-      this.client.emit(ClientEvents.WEBSOCKET_CLOSED)
-    })
-  }
-
-  private handleError = error => {
-    this.connecting = false
-    console.error(error)
-    this.client.emit(ClientEvents.ERROR, error)
   }
 }

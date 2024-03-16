@@ -1,7 +1,5 @@
 import { expect } from 'chai'
-import defer from 'lodash/defer'
-import { ClientEvents, NO_CHANNEL } from '@helenejs/utils'
-import { Client } from '@helenejs/client'
+import { NO_CHANNEL } from '@helenejs/utils'
 import { TestUtility } from './test-utility'
 
 describe('Events', function () {
@@ -42,9 +40,7 @@ describe('Events', function () {
 
     await test.client.close()
 
-    test.client.connect()
-
-    await test.client.waitFor(ClientEvents.INITIALIZED, 1000)
+    await test.client.connect()
 
     expect(test.client.events).to.have.length(1)
 
@@ -122,36 +118,6 @@ describe('Events', function () {
     expect(params.event).to.equal('open:event')
     expect(params.channel).to.equal(NO_CHANNEL)
   })
-
-  it('should ask for probing event after visibility context changes', async () => {
-    Client.EVENT_PROBE_TIMEOUT = 100
-
-    const client = await test.createHttpClient({
-      idlenessTimeout: 100,
-    })
-
-    const probe1 = await client.shouldConnect()
-
-    expect(probe1).to.be.false
-
-    defer(() => {
-      client.clientHttp.close()
-    })
-
-    await client.waitFor(ClientEvents.EVENTSOURCE_CLOSE)
-
-    const probe2 = await client.shouldConnect()
-
-    expect(probe2).to.be.true
-
-    client.connect()
-
-    await client.waitFor(ClientEvents.EVENTSOURCE_OPEN)
-
-    const probe3 = await client.shouldConnect()
-
-    expect(probe3).to.be.false
-  }).timeout(10000)
 
   it('should support iterating with for await', async () => {
     await test.createEvent('test:event')

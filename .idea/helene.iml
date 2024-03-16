@@ -16,6 +16,7 @@
       <excludeFolder url="file://$MODULE_DIR$/packages/react/lib" />
       <excludeFolder url="file://$MODULE_DIR$/packages/server/lib" />
       <excludeFolder url="file://$MODULE_DIR$/demo" />
+      <excludeFolder url="file://$MODULE_DIR$/packages/utils/lib" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

@@ -116,8 +116,6 @@ export class Client extends ClientChannel {
 
   idleTimeout: IdleTimeout = null
 
-  static EVENT_PROBE_TIMEOUT = 2000
-
   constructor(options: ClientOptions = {}) {
     super(NO_CHANNEL)
 
@@ -195,48 +193,15 @@ export class Client extends ClientChannel {
   }
 
   async connect() {
-    const shouldConnect = await this.shouldConnect()
-
-    if (!shouldConnect) {
-      console.log('Helene: Already connected')
-      return
-    }
-
     if (this.mode.eventsource) {
       await this.clientHttp.createEventSource()
-      return
     }
 
     if (this.mode.websocket) {
       await this.clientSocket.connect()
-      return
     }
 
-    // Init is called automatically once the respective connection mode is ready, we only call here if it is HTTP only.
     await this.initialize()
-  }
-
-  /**
-   * Workaround for Safari not reconnecting after the app is brought back to the foreground.
-   *
-   * @todo Remove this since we are using SockJS now.
-   */
-  async shouldConnect() {
-    if (this.mode.eventsource && !this.clientHttp.isEventSourceConnected)
-      return true
-    if (this.mode.websocket && !this.clientSocket.ready) return true
-    if (this.mode.http) return true
-
-    try {
-      this.call(Methods.EVENT_PROBE).catch(console.error)
-      await this.waitFor(HeleneEvents.EVENT_PROBE, Client.EVENT_PROBE_TIMEOUT)
-      return false
-    } catch {
-      console.error('Helene: Event Probe Failed')
-      this.emit(HeleneEvents.EVENT_PROBE_FAILED)
-      await this.close()
-      return true
-    }
   }
 
   debugger(...args) {
@@ -319,6 +284,7 @@ export class Client extends ClientChannel {
 
   async initialize() {
     if (this.initializing) {
+      console.log('Helene: Already initializing')
       await this.waitFor(ClientEvents.INITIALIZED)
       return
     }

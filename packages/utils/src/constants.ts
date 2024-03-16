@@ -3,9 +3,6 @@ export enum HeleneEvents {
   KEEP_ALIVE = 'keep:alive',
   KEEP_ALIVE_DISCONNECT = 'keep:alive:disconnect',
   SERVER_SENT_EVENTS_CONNECTED = 'server:sent:events:connected',
-  EVENT_PROBE = 'event:probe',
-
-  EVENT_PROBE_FAILED = 'event:probe:failed',
 
   COMMIT_PENDING_SUBSCRIPTIONS = 'commit:pending:subscriptions',
   COMMIT_PENDING_UNSUBSCRIPTIONS = 'commit:pending:unsubscriptions',
@@ -50,8 +47,6 @@ export enum ClientEvents {
   INBOUND_MESSAGE = 'inbound:message',
   CONNECTING = 'connecting',
 
-  WEBSOCKET_CONNECTED = 'websocket:connected',
-  WEBSOCKET_RECONNECTING = 'websocket:reconnecting',
   WEBSOCKET_CLOSED = 'websocket:closed',
 
   EVENTSOURCE_CREATE = 'eventsource:create',
@@ -83,5 +78,4 @@ export enum Methods {
   RPC_OFF = 'rpc:off',
   LIST_METHODS = 'list:methods',
   KEEP_ALIVE = 'keep:alive',
-  EVENT_PROBE = 'event:probe',
 }

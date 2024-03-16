@@ -33,13 +33,15 @@ export class ClientHttp {
     this.uri = `${this.host}/__h`
   }
 
-  get isEventSourceConnected() {
+  get ready() {
     return Boolean(this.clientEventSource?.readyState === EventSource.OPEN)
   }
 
   // @todo Recreate event source on token change.
   createEventSource() {
     return new Promise(resolve => {
+      if (this.ready) return resolve(this.clientEventSource)
+
       if (!this.client.mode.eventsource) {
         return resolve(null)
       }
@@ -72,7 +74,6 @@ export class ClientHttp {
         defer(() => {
           resolve(this.clientEventSource)
           this.client.emit(ClientEvents.EVENTSOURCE_OPEN)
-          this.client.initialize().catch(console.error)
         })
       }
 
