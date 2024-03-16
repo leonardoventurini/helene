@@ -301,6 +301,22 @@ export class Client extends ClientChannel {
     await this.clientSocket.close()
   }
 
+  #callInit(token: string, context: Record<string, any> = {}) {
+    return this.call(
+      Methods.RPC_INIT,
+      {
+        token,
+        meta: this.options.meta,
+        ...context,
+      },
+      {
+        httpFallback: [TransportMode.HttpSSE, TransportMode.HttpOnly].includes(
+          this.options.mode,
+        ),
+      },
+    )
+  }
+
   async initialize() {
     if (this.initializing) {
       await this.waitFor(ClientEvents.INITIALIZED)
@@ -323,19 +339,12 @@ export class Client extends ClientChannel {
       ? pick(this.context ?? {}, this.options.allowedContextKeys)
       : {}
 
-    const result = await this.call(
-      Methods.RPC_INIT,
-      {
-        token,
-        meta: this.options.meta,
-        ...context,
-      },
-      {
-        httpFallback: [TransportMode.HttpSSE, TransportMode.HttpOnly].includes(
-          this.options.mode,
-        ),
-      },
-    )
+    let result = await this.#callInit(token, context)
+
+    if (token && !result) {
+      console.log('Helene: Initialization failed, trying again')
+      result = await this.#callInit(token, context)
+    }
 
     /**
      * It needs to validate the token first as it can be invalid
