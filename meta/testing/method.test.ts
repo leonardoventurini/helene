@@ -255,27 +255,32 @@ describe('Methods', function () {
       return 42
     })
 
-    const stub = sinon.stub(Client.prototype, 'init')
+    const stub = sinon.stub(Client.prototype, 'initialize')
+    stub.returns(Promise.resolve(true))
 
-    const client = new Client({
-      host: test.server.host,
-      port: test.server.port,
-    })
+    try {
+      const client = new Client({
+        host: test.server.host,
+        port: test.server.port,
+      })
 
-    await expect(
-      client.call('test:method', 1, { timeout: 200 }),
-    ).to.rejectedWith(/client not initialized/)
+      await expect(
+        client.call('test:method', 1, { timeout: 200 }),
+      ).to.rejectedWith(/client not initialized/)
 
-    expect(calls).to.deep.equal([])
+      expect(calls).to.deep.equal([])
 
-    stub.restore()
+      stub.restore()
 
-    setTimeout(() => client.init(), 100)
+      setTimeout(() => client.initialize(), 100)
 
-    await client.call('test:method', 1, { timeout: 400 })
+      await client.call('test:method', 1, { timeout: 400 })
 
-    expect(calls).to.deep.equal([1])
+      expect(calls).to.deep.equal([1])
 
-    await client.close()
+      await client.close()
+    } finally {
+      stub.restore()
+    }
   })
 })
