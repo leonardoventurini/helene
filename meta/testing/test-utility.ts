@@ -8,6 +8,9 @@ export class TestUtility {
   host = '127.0.0.1'
   port: number
 
+  clients: Client[] = []
+  servers: Server[] = []
+
   constructor({
     debug = false,
     globalInstance = true,
@@ -30,8 +33,10 @@ export class TestUtility {
     })
 
     afterEach(async () => {
-      await this.client.close()
-      await this.server.close()
+      this.clients.forEach(client => client.close())
+      this.servers.forEach(server => server.close())
+      this.clients = []
+      this.servers = []
     })
   }
 
@@ -65,11 +70,10 @@ export class TestUtility {
         }
       }
 
-      afterEach(async () => {
-        await server.close()
+      server.once(ServerEvents.READY, () => {
+        this.servers.push(server)
+        resolve(server)
       })
-
-      server.once(ServerEvents.READY, () => resolve(server))
       server.once(Server.ERROR_EVENT, error => reject(error))
     })
   }
@@ -92,11 +96,8 @@ export class TestUtility {
         ...opts,
       })
 
-      afterEach(async () => {
-        if (client.connected) await client.close()
-      })
-
       client.once(ClientEvents.INITIALIZED, () => {
+        this.clients.push(client)
         resolve(client)
       })
 
