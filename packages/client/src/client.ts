@@ -208,7 +208,12 @@ export class Client extends ClientChannel {
     // This method can be called when the client is already initialized, the previous calls already handle this well.
     if (this.initialized) return
 
-    await this.waitFor(ClientEvents.INITIALIZED, 5000)
+    try {
+      await this.waitFor(ClientEvents.INITIALIZED, 5000)
+    } catch {
+      console.error('Helene: Initialization timeout')
+      console.trace()
+    }
   }
 
   debugger(...args) {

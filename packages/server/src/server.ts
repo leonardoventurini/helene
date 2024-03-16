@@ -131,9 +131,7 @@ export class Server extends ServerChannel {
     })
 
     this.httpTransport.http.listen(this.port, this.host, () => {
-      console.log(
-        `Helene HTTP server started on http://${this.host}:${this.port}`,
-      )
+      console.log(`Helene: Listening on http://${this.host}:${this.port}`)
       defer(() => {
         this.server.emit(ServerEvents.HTTP_LISTENING)
       })
