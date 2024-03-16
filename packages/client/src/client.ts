@@ -213,7 +213,7 @@ export class Client extends ClientChannel {
     }
 
     // Init is called automatically once the respective connection mode is ready, we only call here if it is HTTP only.
-    await this.init()
+    await this.initialize()
   }
 
   /**
@@ -225,6 +225,7 @@ export class Client extends ClientChannel {
     if (this.mode.eventsource && !this.clientHttp.isEventSourceConnected)
       return true
     if (this.mode.websocket && !this.clientSocket.ready) return true
+    if (this.mode.http) return true
 
     try {
       this.call(Methods.EVENT_PROBE).catch(console.error)
@@ -262,7 +263,7 @@ export class Client extends ClientChannel {
   async setContextAndReInit(context: Record<string, any>) {
     this.setContext(context)
 
-    await this.init()
+    await this.initialize()
   }
 
   updateContext(context) {
@@ -300,8 +301,11 @@ export class Client extends ClientChannel {
     await this.clientSocket.close()
   }
 
-  async init() {
-    if (this.initializing) return
+  async initialize() {
+    if (this.initializing) {
+      await this.waitFor(ClientEvents.INITIALIZED)
+      return
+    }
 
     this.initializing = true
 
@@ -319,11 +323,19 @@ export class Client extends ClientChannel {
       ? pick(this.context ?? {}, this.options.allowedContextKeys)
       : {}
 
-    const result = await this.call(Methods.RPC_INIT, {
-      token,
-      meta: this.options.meta,
-      ...context,
-    })
+    const result = await this.call(
+      Methods.RPC_INIT,
+      {
+        token,
+        meta: this.options.meta,
+        ...context,
+      },
+      {
+        httpFallback: [TransportMode.HttpSSE, TransportMode.HttpOnly].includes(
+          this.options.mode,
+        ),
+      },
+    )
 
     /**
      * It needs to validate the token first as it can be invalid
@@ -342,6 +354,8 @@ export class Client extends ClientChannel {
     await this.resubscribeAllChannels()
 
     this.emit(ClientEvents.INITIALIZED, result)
+
+    return true
   }
 
   /**
@@ -420,6 +434,7 @@ export class Client extends ClientChannel {
     // It should wait for the client to initialize before calling any method.
     if (!this.initialized && method !== Methods.RPC_INIT) {
       try {
+        console.log('Helene: Waiting for initialization')
         await this.waitFor(ClientEvents.INITIALIZED, Math.floor(timeout / 2))
       } catch {
         throw new Error('client not initialized')

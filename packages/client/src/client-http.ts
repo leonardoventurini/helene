@@ -72,7 +72,7 @@ export class ClientHttp {
         defer(() => {
           resolve(this.clientEventSource)
           this.client.emit(ClientEvents.EVENTSOURCE_OPEN)
-          this.client.init().catch(console.error)
+          this.client.initialize().catch(console.error)
         })
       }
 

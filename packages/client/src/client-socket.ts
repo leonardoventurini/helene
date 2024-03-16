@@ -97,8 +97,16 @@ export class ClientSocket extends EventEmitter2 {
 
   public send(payload: string) {
     if (!this.ready) {
+      console.warn('Helene: Not Ready')
+      console.log({
+        ready: this.ready,
+        connecting: this.connecting,
+        payload,
+        uuid: this.client.uuid,
+        options: this.client.options,
+      })
       console.trace()
-      return console.warn('Not Ready')
+      return
     }
 
     this.client.emit(ClientEvents.OUTBOUND_MESSAGE, payload)
@@ -113,7 +121,9 @@ export class ClientSocket extends EventEmitter2 {
 
     this.connecting = false
 
-    this.client.init()
+    defer(() => {
+      this.client.initialize().catch(console.error)
+    })
   }
 
   /**

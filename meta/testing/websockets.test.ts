@@ -30,6 +30,8 @@ describe('WebSockets', function () {
     await test.client.connect()
 
     expect(test.client.clientSocket.ready).to.be.true
+
+    await test.client.close()
   })
 
   it('should call init even after it abnormally reconnects', async () => {
