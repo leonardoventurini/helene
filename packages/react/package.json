@@ -1,7 +1,7 @@
 {
   "name": "@helenejs/react",
   "version": "1.3.0-alpha.20",
-  "description": "Real-time Web Apps for Node.js and Bun",
+  "description": "Real-time Web Apps for Node.js",
   "main": "lib/index.js",
   "type": "commonjs",
   "scripts": {
@@ -47,8 +47,7 @@
     "methods",
     "events",
     "node",
-    "nodejs",
-    "bun"
+    "nodejs"
   ],
   "bugs": {
     "url": "https://github.com/leonardoventurini/helene/issues"

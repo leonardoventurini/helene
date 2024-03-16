@@ -17,7 +17,7 @@
   </p>
 </div>
 
-In-memory database for the browser, Node.js and Bun with syntax similar to MongoDB
+In-memory database for the browser, Node.js with syntax similar to MongoDB
 
 ```bash
 npm install @helenejs/data

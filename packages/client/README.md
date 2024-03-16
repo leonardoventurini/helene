@@ -17,7 +17,7 @@
   </p>
 </div>
 
-Connect to your Helene server from the browser, Node.js or Bun
+Connect to your Helene server from the browser and Node.js
 
 ```bash
 npm install @helenejs/client

@@ -12,7 +12,7 @@
 	<br>
 	<br>
   <p>
-    Real-time Web Apps for Node.js and Bun
+    Real-time Web Apps for Node.js
   </p>
   <p>
     <a href="https://helene.techster.tech" target="_blank">📘 Documentation</a>
@@ -20,7 +20,7 @@
   <br>
 </div>
 
-- ⚡️ **Real-time** - Helene is a real-time framework for Node.js, Bun and the browser.
+- ⚡️ **Real-time** - Helene is a real-time framework for Node.js and the browser.
 - 🦾 **Event-driven** - Helene is event-driven, which means that it uses events to communicate between the server and the client.
 - 🪝 **React Hooks** - Helene provides a set of React Hooks to easily integrate your React application with the server.
 <hr/>
@@ -36,9 +36,9 @@ npm install @helenejs/server @helenejs/client
 
 ### Core Packages
 
-- [@helenejs/server](packages/server/README.md) - Create a Helene server in Node.js or Bun
-- [@helenejs/client](packages/client/README.md) - Connect to your Helene server from the browser, Node.js or Bun
-- [@helenejs/data](packages/data/README.md) - In-memory database for the browser, Node.js and Bun with syntax similar to MongoDB
+- [@helenejs/server](packages/server/README.md) - Create a Helene server in Node.js
+- [@helenejs/client](packages/client/README.md) - Connect to your Helene server from the browser or Node.js
+- [@helenejs/data](packages/data/README.md) - In-memory database for the browser and Node.js with syntax similar to MongoDB
 - [@helenejs/react](packages/react/README.md) - A set of React hooks and utilities to easily integrate your React application with Helene
 - [@helenejs/utils](packages/utils/README.md) - A set of utilities used by Helene or its extensions
 

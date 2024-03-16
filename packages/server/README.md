@@ -17,7 +17,7 @@
   </p>
 </div>
 
-Create a Helene server in Node.js or Bun
+Create a Helene server in Node.js
 
 ```bash
 npm install @helenejs/server
