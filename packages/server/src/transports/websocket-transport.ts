@@ -33,6 +33,14 @@ export class WebSocketTransport {
       ...this.options,
     })
 
+    this.wss.use((socket, next) => {
+      if (!this.server.acceptConnections) {
+        console.log('Helene: Connection Refused')
+        return next(new Error('Helene: Connection Refused'))
+      }
+      next()
+    })
+
     this.wss.on(WebSocketEvents.CONNECTION, this.handleConnection)
 
     this.wss.on(WebSocketEvents.ERROR, (error: any) =>
@@ -41,12 +49,6 @@ export class WebSocketTransport {
   }
 
   handleConnection = (socket: io.Socket) => {
-    if (!this.server.acceptConnections) {
-      socket.disconnect()
-      console.log('Helene: Connection Refused')
-      return
-    }
-
     const node = new ClientNode(
       this.server,
       socket,

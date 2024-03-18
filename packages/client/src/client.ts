@@ -24,6 +24,7 @@ import { ClientChannel } from './client-channel'
 import qs from 'query-string'
 import { EJSON } from 'ejson2'
 import { IdleTimeout } from './idle-timeout'
+import { KeepAlive } from './keep-alive'
 import Timeout = NodeJS.Timeout
 
 export type ErrorHandler = (error: Presentation.ErrorPayload) => any
@@ -114,7 +115,10 @@ export class Client extends ClientChannel {
 
   initializing: boolean
 
+  keepAlive: KeepAlive = null
   idleTimeout: IdleTimeout = null
+
+  static KEEP_ALIVE_INTERVAL = 10000
 
   constructor(options: ClientOptions = {}) {
     super(NO_CHANNEL)
@@ -157,6 +161,7 @@ export class Client extends ClientChannel {
 
     this.connect().catch(console.error)
 
+    this.keepAlive = new KeepAlive(this)
     this.idleTimeout = new IdleTimeout(this)
   }
 
@@ -429,7 +434,7 @@ export class Client extends ClientChannel {
         console.log('Helene: Waiting for initialization')
         await this.waitFor(ClientEvents.INITIALIZED, Math.floor(timeout / 2))
       } catch {
-        throw new Error('client not initialized')
+        throw new Error('Helene: Client not initialized')
       }
     }
 

@@ -266,7 +266,7 @@ describe('Methods', function () {
 
       await expect(
         client.call('test:method', 1, { timeout: 200 }),
-      ).to.rejectedWith(/client not initialized/)
+      ).to.rejectedWith(/Helene: Client not initialized/)
 
       expect(calls).to.deep.equal([])
 

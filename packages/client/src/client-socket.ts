@@ -1,10 +1,5 @@
 import { Client, WebSocketOptions } from './client'
-import {
-  ClientEvents,
-  HELENE_WS_PATH,
-  Presentation,
-  WebSocketEvents,
-} from '@helenejs/utils'
+import { ClientEvents, HELENE_WS_PATH, Presentation } from '@helenejs/utils'
 import { EventEmitter2 } from 'eventemitter2'
 import { io, Socket } from 'socket.io-client'
 import defer from 'lodash/defer'
@@ -29,6 +24,10 @@ export class ClientSocket extends EventEmitter2 {
   options: WebSocketOptions = {
     path: HELENE_WS_PATH,
   }
+
+  baseAttemptDelay = 1000
+  maxAttemptDelay = 10000
+  attempts = 0
 
   get ready() {
     return this.socket?.connected ?? false
@@ -65,26 +64,33 @@ export class ClientSocket extends EventEmitter2 {
         query: {
           uuid: this.client.uuid,
         },
-        reconnection: true,
-        reconnectionDelay: 100,
-        reconnectionDelayMax: 30000,
+        reconnection: false,
       })
 
-      this.socket.on(WebSocketEvents.CONNECT, () => {
+      this.socket.on('connect', () => {
         defer(() => {
+          console.log('Helene: WebSocket Connected')
           resolve(this.socket)
           this.connecting = false
+          this.attempts = 0
+          this.client.emit(ClientEvents.WEBSOCKET_CONNECTED)
           this.client.initialize().catch(console.error)
         })
       })
 
-      this.socket.on(WebSocketEvents.ERROR, error => {
-        this.connecting = false
-        console.error(error)
-        reject(error)
+      this.socket.on('connect_error', error => {
+        console.log('Helene: WebSocket Connect Error', error)
+        this.socket = undefined
+        this.reconnect()
       })
 
-      this.socket.on(WebSocketEvents.MESSAGE, (data: { data: string }) => {
+      this.socket.on('error', error => {
+        console.error('Helene: WebSocket Error', error)
+        this.socket = undefined
+        this.reconnect()
+      })
+
+      this.socket.on('message', (data: { data: string }) => {
         const payload = Presentation.decode(data)
 
         this.client.emit(ClientEvents.INBOUND_MESSAGE, data)
@@ -94,14 +100,36 @@ export class ClientSocket extends EventEmitter2 {
         this.client.payloadRouter(payload)
       })
 
-      this.socket.on(WebSocketEvents.DISCONNECT, () => {
+      this.socket.on('disconnect', () => {
+        console.log('Helene: WebSocket Disconnected')
+
         this.connecting = false
 
         defer(() => {
+          this.socket = undefined
           this.client.emit(ClientEvents.WEBSOCKET_CLOSED)
+
+          if (!this.stopped) {
+            this.reconnect()
+          }
         })
       })
     })
+  }
+
+  reconnect() {
+    this.attempts++
+
+    setTimeout(
+      () => {
+        if (this.stopped) return
+
+        this.client.emit(ClientEvents.WEBSOCKET_RECONNECTING)
+
+        this.connect().catch(console.error)
+      },
+      Math.min(this.baseAttemptDelay * this.attempts, this.maxAttemptDelay),
+    )
   }
 
   async close() {
@@ -110,7 +138,7 @@ export class ClientSocket extends EventEmitter2 {
 
     if (!this.socket) return
 
-    this.socket.close()
+    this.socket.disconnect()
     this.socket = undefined
 
     await this.client.waitFor(ClientEvents.WEBSOCKET_CLOSED)

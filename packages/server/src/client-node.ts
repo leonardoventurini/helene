@@ -1,5 +1,5 @@
 import isString from 'lodash/isString'
-import { Presentation, ServerEvents } from '@helenejs/utils'
+import { HeleneEvents, Presentation, ServerEvents } from '@helenejs/utils'
 import { Request, Response } from 'express'
 import { HeleneAsyncLocalStorage } from './helene-async-local-storage'
 import { RateLimiter } from 'limiter'
@@ -30,8 +30,10 @@ export class ClientNode extends EventEmitter2 {
   userAgent: string
   terminationTimeout: NodeJS.Timeout
   eventSourceDataId = 0
+  keepAliveInterval: NodeJS.Timeout
 
   static KEEP_ALIVE_INTERVAL = 10000
+  static ENABLE_KEEP_ALIVE = true
 
   constructor(
     server: Server,
@@ -59,6 +61,23 @@ export class ClientNode extends EventEmitter2 {
               interval: limit.interval,
             },
       )
+    }
+
+    if (socket) {
+      this.keepAliveInterval = setInterval(() => {
+        if (ClientNode.ENABLE_KEEP_ALIVE && socket.connected) {
+          this.sendEvent(HeleneEvents.KEEP_ALIVE)
+
+          this.terminationTimeout = setTimeout(() => {
+            clearInterval(this.keepAliveInterval)
+
+            if (socket.connected) {
+              socket?.disconnect(true)
+              this.emit(HeleneEvents.KEEP_ALIVE_DISCONNECT)
+            }
+          }, ClientNode.KEEP_ALIVE_INTERVAL / 2)
+        }
+      }, ClientNode.KEEP_ALIVE_INTERVAL)
     }
   }
 
