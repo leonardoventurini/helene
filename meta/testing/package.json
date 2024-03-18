@@ -1,6 +1,6 @@
 {
   "name": "@helenejs/testing",
-  "version": "1.3.0-alpha.21",
+  "version": "1.3.0-alpha.22",
   "main": "index.ts",
   "scripts": {
     "node:test": "nodemon --watch 'node_modules/**/*' -e ts,tsx --exec 'yarn run node:test:mocha'",
