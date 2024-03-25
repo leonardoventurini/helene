@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { TestUtility } from './test-utility'
+import { TestUtility } from '../test-utility'
 import path from 'path'
 import request from 'supertest'
 import defer from 'lodash/defer'

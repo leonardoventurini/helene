@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { TestUtility } from './test-utility'
+import { TestUtility } from '../test-utility'
 
 describe('Caching', function () {
   const test = new TestUtility()

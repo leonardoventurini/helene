@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { TestUtility } from './test-utility'
+import { TestUtility } from '../test-utility'
 import defer from 'lodash/defer'
 import { Presentation } from '@helenejs/utils'
 

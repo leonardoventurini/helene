@@ -12,7 +12,7 @@ import {
   sleep,
 } from '@helenejs/utils'
 import { ClientNode, HeleneAsyncLocalStorage } from '@helenejs/server'
-import { TestUtility } from './test-utility'
+import { TestUtility } from '../test-utility'
 import { Client, TransportMode } from '@helenejs/client'
 
 describe('Methods', function () {

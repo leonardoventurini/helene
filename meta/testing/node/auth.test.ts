@@ -1,4 +1,4 @@
-import { TestUtility } from './test-utility'
+import { TestUtility } from '../test-utility'
 import { Errors } from '@helenejs/utils'
 import { expect } from 'chai'
 

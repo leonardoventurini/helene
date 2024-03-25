@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { EJSON } from 'ejson2'
 import { HttpTransport, Server, WebSocketTransport } from '@helenejs/server'
-import { TestUtility } from './test-utility'
+import { TestUtility } from '../test-utility'
 import { ServerEvents } from '@helenejs/utils'
 
 describe('Server', function () {

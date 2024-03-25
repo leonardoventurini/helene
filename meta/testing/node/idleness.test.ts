@@ -1,6 +1,6 @@
 import { ClientEvents, sleep } from '@helenejs/utils'
 import EventSource from 'eventsource'
-import { TestUtility } from './test-utility'
+import { TestUtility } from '../test-utility'
 import { expect } from 'chai'
 import defer from 'lodash/defer'
 

@@ -1,6 +1,6 @@
 import { describe, it } from 'mocha'
 import { expect } from 'chai'
-import { TestUtility } from './test-utility'
+import { TestUtility } from '../test-utility'
 import defer from 'lodash/defer'
 import { ClientEvents, HeleneEvents, sleep } from '@helenejs/utils'
 import { ClientNode } from '@helenejs/server'
