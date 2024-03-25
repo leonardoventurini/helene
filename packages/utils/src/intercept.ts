@@ -8,14 +8,14 @@ import isPlainObject from 'lodash/isPlainObject'
  * @param func
  */
 export function intercept(func: AnyFunction) {
-  return async function (params) {
+  return async function (params: any) {
     let result = func.call(this, params)
 
     if (func.constructor.name === 'AsyncFunction' || result instanceof Promise)
       result = await result
 
-    if (!isNil(result) && !isPlainObject(result)) {
-      return result
+    if (isNil(result) || !isPlainObject(result)) {
+      return params
     }
 
     return Object.assign({}, params, result ?? {})
