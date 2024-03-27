@@ -4,7 +4,7 @@ import isArray from 'lodash/isArray'
 import isNumber from 'lodash/isNumber'
 import isString from 'lodash/isString'
 import { Persistence } from './persistence'
-import { Cursor } from './cursor'
+import { Cursor, Query } from './cursor'
 import { uid } from './custom-utils'
 import { checkObject, deepCopy, match, modify } from './model'
 import { pluck } from './utils'
@@ -14,6 +14,7 @@ import {
   removeExpiredDocuments,
 } from './_get-candidates'
 import { IStorage } from './types'
+import { LastStepModifierFunctions } from './last-step-modifier-functions'
 
 export const CollectionEvent = {
   READY: 'ready',
@@ -32,7 +33,6 @@ export type UpdateTransformerHookFunction = <T = any>(
   newDoc: T,
   oldDoc: T,
 ) => Promise<T>
-export type Document = Record<string, any>
 
 export type CollectionOptions = {
   name?: string
@@ -60,7 +60,33 @@ export type CollectionOptions = {
   afterRemove?: HookFunction
 }
 
-export class Collection extends EventEmitter2 {
+export type UpdateQuery = Partial<{
+  [key in keyof typeof LastStepModifierFunctions]: any
+}> &
+  Record<string, any>
+
+export type UpdateOptions = {
+  multi?: boolean
+  upsert?: boolean
+  returnUpdatedDocs?: boolean
+  [key: string]: any
+}
+
+export type IndexOptions = {
+  fieldName: string
+  unique?: boolean
+  sparse?: boolean
+  expireAfterSeconds?: number
+}
+
+export type BaseDocument = {
+  _id?: string | number
+  [key: string]: any
+}
+
+export class Collection<
+  CT extends BaseDocument = BaseDocument,
+> extends EventEmitter2 {
   name: string | null
   inMemoryOnly: boolean
   autoload: boolean
@@ -204,7 +230,7 @@ export class Collection extends EventEmitter2 {
   /**
    * Reset all currently defined indexes
    */
-  resetIndexes(newData?) {
+  resetIndexes(newData?: any[]) {
     Object.keys(this.indexes).forEach(i => {
       this.indexes[i].reset(newData)
     })
@@ -214,30 +240,25 @@ export class Collection extends EventEmitter2 {
    * Ensure an index is kept for this field. Same parameters as lib/indexes
    * For now this function is synchronous, we need to test how much time it takes
    * We use an async API for consistency with the rest of the code
-   * @param {String} options.fieldName
-   * @param {Boolean} options.unique
-   * @param {Boolean} options.sparse
-   * @param {Number} options.expireAfterSeconds - Optional, if set this index becomes a TTL index (only works on Date fields, not arrays of Date)
-   * @param options
    */
-  async ensureIndex(options) {
-    let err
-
-    options = options || {}
+  async ensureIndex(options: IndexOptions) {
+    let err: Error & { missingFieldName?: boolean }
 
     if (!options.fieldName) {
       err = new Error('Cannot create an index without a fieldName')
       err.missingFieldName = true
       throw err
     }
+
     if (this.indexes[options.fieldName]) {
       return null
     }
 
     this.indexes[options.fieldName] = new Index(options)
+
     if (options.expireAfterSeconds !== undefined) {
       this.ttlIndexes[options.fieldName] = options.expireAfterSeconds
-    } // With this implementation index creation is not necessary to ensure TTL but we stick with MongoDB's API here
+    } // With this implementation, index creation is not necessary to ensure TTL, but we stick with MongoDB's API here
 
     try {
       this.indexes[options.fieldName].insert(this.getAllData())
@@ -262,8 +283,8 @@ export class Collection extends EventEmitter2 {
   /**
    * Add one or several document(s) to all indexes
    */
-  addToIndexes(doc) {
-    let i, failingIndex, error
+  addToIndexes(doc: any) {
+    let i: number, failingIndex: number, error: Error
     const keys = Object.keys(this.indexes)
     for (i = 0; i < keys.length; i += 1) {
       try {
@@ -275,7 +296,7 @@ export class Collection extends EventEmitter2 {
       }
     }
 
-    // If an error happened, we need to rollback the insert on all other indexes
+    // If an error happened, we need to roll back the insert on all other indexes
     if (error) {
       for (i = 0; i < failingIndex; i += 1) {
         this.indexes[keys[i]].remove(doc)
@@ -303,7 +324,9 @@ export class Collection extends EventEmitter2 {
    */
   updateIndexes(oldDoc, newDoc?) {
     let i, failingIndex, error
+
     const keys = Object.keys(this.indexes)
+
     for (i = 0; i < keys.length; i += 1) {
       try {
         this.indexes[keys[i]].update(oldDoc, newDoc)
@@ -344,7 +367,11 @@ export class Collection extends EventEmitter2 {
     return await removeExpiredDocuments.call(this, docs, dontExpireStaleDocs)
   }
 
-  async insert(newDoc: Document | Document[]) {
+  async insert(newDoc: CT): Promise<CT> {
+    if (Array.isArray(newDoc)) {
+      throw new Error('insert cannot be called with an array')
+    }
+
     const preparedDoc = await this.prepareDocumentForInsertion(newDoc)
 
     this._insertInCache(preparedDoc)
@@ -361,7 +388,7 @@ export class Collection extends EventEmitter2 {
   /**
    * Create a new _id that's not already in use
    */
-  createNewId() {
+  createNewId(): string {
     let tentativeId = uid(16)
     // Try as many times as needed to get an unused _id. As explained in customUtils, the probability of this ever happening is tiny, so this is O(1)
     if (this.indexes._id.getMatching(tentativeId).length > 0) {
@@ -491,9 +518,13 @@ export class Collection extends EventEmitter2 {
     return (await cursor) as any
   }
 
-  async update(query, updateQuery, options?): Promise<any> {
+  async update(
+    query: Query,
+    updateQuery: UpdateQuery,
+    options?: UpdateOptions,
+  ): Promise<any> {
     let numReplaced = 0,
-      i
+      i: number
 
     const multi = Boolean(options?.multi)
     const upsert = Boolean(options?.upsert)
@@ -504,12 +535,12 @@ export class Collection extends EventEmitter2 {
       const docs = await cursor.limit(1)
 
       if (docs.length !== 1) {
-        let toBeInserted
+        let toBeInserted: CT
 
         try {
           checkObject(updateQuery)
           // updateQuery is a simple object with no modifier, use it as the document to insert
-          toBeInserted = updateQuery
+          toBeInserted = updateQuery as CT
         } catch (e) {
           // updateQuery contains modifiers, use the find query as the base,
           // strip it from all operators and update it according to updateQuery
@@ -529,7 +560,7 @@ export class Collection extends EventEmitter2 {
     }
 
     // Perform the update
-    let modifiedDoc, createdAt
+    let modifiedDoc: { createdAt: Date; updatedAt: Date }, createdAt: Date
 
     const modifications = []
 
@@ -586,7 +617,29 @@ export class Collection extends EventEmitter2 {
     }
   }
 
-  async remove(query, options?) {
+  async updateOne(
+    query: Query,
+    updateQuery: UpdateQuery,
+    options?: Omit<UpdateOptions, 'multi'>,
+  ) {
+    return this.update(query, updateQuery, {
+      ...options,
+      multi: false,
+    })
+  }
+
+  async updateMany(
+    query: Query,
+    updateQuery: UpdateQuery,
+    options?: Omit<UpdateOptions, 'multi'>,
+  ) {
+    return this.update(query, updateQuery, {
+      ...options,
+      multi: true,
+    })
+  }
+
+  async remove(query: Query, options?: { multi?: boolean }) {
     let numRemoved = 0
 
     const self = this
@@ -611,13 +664,23 @@ export class Collection extends EventEmitter2 {
 
     return numRemoved
   }
+
+  async deleteOne(query: Query) {
+    return this.remove(query, { multi: false })
+  }
+
+  async deleteMany(query: Query) {
+    return this.remove(query, { multi: true })
+  }
 }
 
 /**
  * Creates a new collection and waits until it is ready.
  */
-export async function createCollection(options: CollectionOptions) {
-  const collection = new Collection(options)
+export async function createCollection<CT extends BaseDocument = BaseDocument>(
+  options: CollectionOptions,
+) {
+  const collection = new Collection<CT>(options)
 
   collection.on(CollectionEvent.ERROR, err => {
     throw err

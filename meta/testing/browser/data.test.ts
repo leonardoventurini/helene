@@ -2,14 +2,16 @@ import { Collection, createCollection } from '@helenejs/data'
 import { BrowserStorage } from '@helenejs/data/lib/browser'
 import { expect } from 'chai'
 
+type Test = { _id: number; name: string }
+
 describe('Helene Data', function () {
   describe('Local Storage', () => {
-    let collection: Collection
+    let collection: Collection<Test>
 
     before(async () => {
       Error.stackTraceLimit = Infinity
 
-      collection = await createCollection({
+      collection = await createCollection<Test>({
         name: 'test',
         storage: new BrowserStorage(),
       })
@@ -25,7 +27,7 @@ describe('Helene Data', function () {
       expect(data).to.include('test_0')
       expect(data).to.include('test_9')
 
-      const collection2 = await createCollection({
+      const collection2 = await createCollection<Test>({
         name: 'test',
         storage: new BrowserStorage(),
         autoload: true,

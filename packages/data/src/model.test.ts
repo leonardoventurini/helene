@@ -282,7 +282,7 @@ describe('Model', function () {
         a: 4,
         nested: { yes: 1 },
         array: [{}, { yes: true }, {}],
-      })
+      } as any)
     })
   }) // ==== End of 'Deep copying' ==== //
 

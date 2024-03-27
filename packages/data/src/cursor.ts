@@ -1,14 +1,18 @@
 import { compareThings, getDotValue, match, modify } from './model'
-
-/**
- * Manage access to data, be it to find, update or remove it
- */
 import isEmpty from 'lodash/isEmpty'
 import omit from 'lodash/omit'
 import { Collection } from './collection'
 
 export type Query = {
   [key: string]: any
+}
+
+export type SortQuery = {
+  [key: string]: 1 | -1
+}
+
+export type Projection = {
+  [key: string]: 0 | 1
 }
 
 export type ExecFn = (data: any) => Promise<any>
@@ -28,13 +32,7 @@ export class Cursor implements PromiseLike<any[]> {
 
   _projection: any
 
-  /**
-   * Create a new cursor for this collection
-   * @param {Collection} db - The datastore this cursor is bound to
-   * @param {Query} query - The query this cursor will operate on
-   * @param {Function} execFn - Handler to be executed after cursor has found the results and before the callback passed to find/findOne/update/remove
-   */
-  constructor(db, query?: Query, execFn?: ExecFn) {
+  constructor(db: Collection, query?: Query, execFn?: ExecFn) {
     this.db = db
     this.query = query || {}
     if (execFn) {
@@ -42,47 +40,30 @@ export class Cursor implements PromiseLike<any[]> {
     }
   }
 
-  /**
-   * Set a limit to the number of results
-   */
-  limit(limit) {
+  limit(limit: number) {
     this._limit = limit
     return this
   }
 
-  /**
-   * Skip the number of results
-   */
-  skip(skip) {
+  skip(skip: number) {
     this._skip = skip
     return this
   }
 
-  /**
-   * Sort results of the query
-   * @param {SortQuery} sortQuery - SortQuery is { field: order }, field can use the dot-notation, order is 1 for ascending and -1 for descending
-   */
-  sort(sortQuery) {
+  sort(sortQuery: SortQuery) {
     this._sort = sortQuery
     return this
   }
 
-  /**
-   * Add the use of a projection
-   * @param {Object} projection - MongoDB-style projection. {} means take all fields. Then it's { key1: 1, key2: 1 } to take only key1 and key2
-   *                              { key1: 0, key2: 0 } to omit only key1 and key2. Except _id, you can't mix takes and omits
-   */
-  projection(projection) {
+  projection(projection: Projection) {
     this._projection = projection
     return this
   }
 
-  /**
-   * Apply the projection
-   */
-  project(candidates) {
+  project(candidates: any[]) {
     const res = []
-    let action
+
+    let action: number
 
     if (isEmpty(this._projection)) {
       return candidates
@@ -104,7 +85,7 @@ export class Cursor implements PromiseLike<any[]> {
 
     // Do the actual projection
     for (const candidate of candidates) {
-      let toPush
+      let toPush: { $set?: any; $unset?: any; _id?: any }
 
       if (action === 1) {
         // pick-type projection
@@ -138,11 +119,6 @@ export class Cursor implements PromiseLike<any[]> {
     return res
   }
 
-  /**
-   * Get all matching elements
-   * Will return pointers to matched elements (shallow copies), returning full copies is the role of find or findOne
-   * This is an internal function, use exec which uses the executor
-   */
   async exec(): Promise<any[]> {
     let res = [],
       added = 0,
@@ -187,7 +163,9 @@ export class Cursor implements PromiseLike<any[]> {
       }
 
       res.sort(function (a, b) {
-        let criterion, compare, i
+        let criterion: { direction: number; key: any },
+          compare: number,
+          i: number
         for (i = 0; i < criteria.length; i++) {
           criterion = criteria[i]
           compare =

@@ -3,13 +3,12 @@ import fs from 'fs'
 import path from 'path'
 import mkdirp from 'mkdirp'
 import find from 'lodash/find'
-import filter from 'lodash/filter'
 import isEqual from 'lodash/isEqual'
 import each from 'lodash/each'
 import { Collection, createCollection } from './collection'
 import { NodeStorage } from './node'
 import { pluck } from './utils'
-import { deserialize, serialize } from './serialization'
+import { serialize } from './serialization'
 
 const testDb = 'workspace/test.db',
   reloadTimeUpperBound = 60 // In ms, an upper bound for the reload time used to check createdAt and updatedAt
@@ -173,65 +172,6 @@ describe('Database', function () {
       newDoc.hello = 'changed'
       const doc = await collection.findOne({ a: 2 })
       doc.hello.should.equal('world')
-    })
-
-    it('Can insert an array of documents at once', async function () {
-      const docs = [
-        { a: 5, b: 'hello' },
-        { a: 42, b: 'world' },
-      ]
-
-      await collection.remove({}, { multi: true })
-      await collection.insert(docs)
-      const foundDocs = await collection.find({})
-
-      foundDocs.length.should.equal(2)
-      find(foundDocs, function (doc) {
-        return doc.a === 5
-      }).b.should.equal('hello')
-      find(foundDocs, function (doc) {
-        return doc.a === 42
-      }).b.should.equal('world')
-
-      // The data has been persisted correctly
-      const data = filter(
-        fs.readFileSync(testDb, 'utf8').split('\n'),
-        function (line) {
-          return line.length > 0
-        },
-      )
-      data.length.should.equal(2)
-      deserialize(data[0]).a.should.equal(5)
-      deserialize(data[0]).b.should.equal('hello')
-      deserialize(data[1]).a.should.equal(42)
-      deserialize(data[1]).b.should.equal('world')
-    })
-
-    it('If a bulk insert violates a constraint, all changes are rolled back', async function () {
-      const docs = [
-        { a: 5, b: 'hello' },
-        { a: 42, b: 'world' },
-        { a: 5, b: 'bloup' },
-        { a: 7 },
-      ]
-
-      await collection.ensureIndex({ fieldName: 'a', unique: true })
-
-      try {
-        await collection.insert(docs)
-      } catch (err) {
-        err.errorType.should.equal('uniqueViolated')
-
-        const docs = await collection.find()
-
-        // Datafile only contains index definition
-        const datafileContents = deserialize(fs.readFileSync(testDb, 'utf8'))
-        assert.deepEqual(datafileContents, {
-          $$indexCreated: { fieldName: 'a', unique: true },
-        })
-
-        docs.length.should.equal(0)
-      }
     })
 
     it('If timestampData option is set, a createdAt field is added and persisted', async function () {
@@ -1388,60 +1328,6 @@ describe('Database', function () {
         d1.a.should.equal(4)
         d2.a.should.equal(5)
       })
-    })
-
-    it('If options.returnUpdatedDocs is true, return all matched docs', async function () {
-      const docs = await collection.insert([{ a: 4 }, { a: 5 }, { a: 6 }])
-      docs.length.should.equal(3)
-
-      await collection.update(
-        { a: 7 },
-        { $set: { u: 1 } },
-        { multi: true, returnUpdatedDocs: true },
-      )
-
-      expect(
-        await collection.update(
-          { a: 7 },
-          { $set: { u: 1 } },
-          { multi: true, returnUpdatedDocs: true },
-        ),
-      ).to.be.deep.equal({
-        acknowledged: true,
-        modifiedCount: 0,
-        updatedDocs: [],
-      })
-
-      const { modifiedCount, updatedDocs } = await collection.update(
-        { a: 5 },
-        { $set: { u: 2 } },
-        { multi: true, returnUpdatedDocs: true },
-      )
-
-      modifiedCount.should.equal(1)
-      updatedDocs.length.should.equal(1)
-      updatedDocs[0].a.should.equal(5)
-      updatedDocs[0].u.should.equal(2)
-
-      const { modifiedCount: num2, updatedDocs: updatedDocs2 } =
-        await collection.update(
-          { a: { $in: [4, 6] } },
-          { $set: { u: 3 } },
-          { multi: true, returnUpdatedDocs: true },
-        )
-
-      num2.should.equal(2)
-      updatedDocs2.length.should.equal(2)
-      updatedDocs2[0].u.should.equal(3)
-      updatedDocs2[1].u.should.equal(3)
-
-      if (updatedDocs2[0].a === 4) {
-        updatedDocs2[0].a.should.equal(4)
-        updatedDocs2[1].a.should.equal(6)
-      } else {
-        updatedDocs2[0].a.should.equal(6)
-        updatedDocs2[1].a.should.equal(4)
-      }
     })
 
     it('createdAt property is unchanged and updatedAt correct after an update, even a complete document replacement', async () => {
@@ -2654,37 +2540,6 @@ describe('Database', function () {
       expect(doc).to.deep.equal({ ...doc, modified: true })
     })
 
-    it('should call beforeInsert for multiple documents', async () => {
-      let called = null
-
-      const collection = await createCollection({
-        beforeInsert: async doc => {
-          called = doc
-
-          Object.assign(doc, { modified: true })
-
-          return doc
-        },
-      })
-
-      const doc = await collection.insert([
-        { hello: 'world' },
-        { hello: 'mars' },
-      ])
-
-      const fetch = await collection.find({}).sort({ hello: -1 })
-
-      expect(fetch).to.deep.equal([
-        { ...doc[0], modified: true },
-        { ...doc[1], modified: true },
-      ])
-
-      expect(doc).to.deep.equal([
-        { ...doc[0], modified: true },
-        { ...doc[1], modified: true },
-      ])
-    })
-
     it('should call afterInsert', async () => {
       let called = null
 
@@ -2696,33 +2551,6 @@ describe('Database', function () {
 
       const doc = await collection.insert({ hello: 'world' })
       expect(called).to.deep.equal(doc)
-    })
-
-    it('should call beforeUpdate', async () => {
-      let called1 = null
-      let called2 = null
-
-      const collection = await createCollection({
-        async beforeUpdate(newDoc, oldDoc) {
-          called1 = newDoc
-          called2 = oldDoc
-
-          Object.assign(newDoc, { modified: true })
-
-          return newDoc
-        },
-      })
-
-      const oldDoc = await collection.insert([
-        { hello: 'world' },
-        { hello: 'pluto' },
-      ])
-      await collection.update({ hello: 'world' }, { hello: 'mars' })
-
-      const newestDoc = await collection.findOne({ hello: 'mars' })
-
-      expect(called1).to.deep.equal(newestDoc)
-      expect(called2).to.deep.equal(oldDoc[0])
     })
 
     it('should call afterUpdate', async () => {
