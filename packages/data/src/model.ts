@@ -25,28 +25,28 @@ const modifierFunctions = {},
 
 /**
  * Check a key, throw an error if the key is non valid
- * @param {String} k key
- * @param {Model} v value, needed to treat the Date edge case
+ * @param {String} key key
+ * @param {Model} value value, needed to treat the Date edge case
  * Non-treatable edge cases here: if part of the object if of the form { $$date: number } or { $$deleted: true }
  * Its serialized-then-deserialized version it will transformed into a Date object
  * But you really need to want it to trigger such behaviour, even when warned not to use '$' at the beginning of the field names...
  */
-export function checkKey(k, v) {
-  if (typeof k === 'number') {
-    k = k.toString()
+export function checkKey(key: number | string, value: any) {
+  if (typeof key === 'number') {
+    key = key.toString()
   }
 
   if (
-    k[0] === '$' &&
-    !(k === '$$date' && typeof v === 'number') &&
-    !(k === '$$deleted' && v === true) &&
-    !(k === '$$indexCreated') &&
-    !(k === '$$indexRemoved')
+    key[0] === '$' &&
+    !(key === '$$date' && typeof value === 'number') &&
+    !(key === '$$deleted' && value === true) &&
+    !(key === '$$indexCreated') &&
+    !(key === '$$indexRemoved')
   ) {
     throw new Error('Field names cannot begin with the $ character')
   }
 
-  if (k.indexOf('.') !== -1) {
+  if (key.indexOf('.') !== -1) {
     throw new Error('Field names cannot contain a .')
   }
 }
@@ -55,7 +55,7 @@ export function checkKey(k, v) {
  * Check a DB object and throw an error if it's not valid
  * Works by applying the above checkKey function to all fields recursively
  */
-export function checkObject(obj) {
+export function checkObject(obj: Record<string, any>[] | Record<string, any>) {
   if (isArray(obj)) {
     obj.forEach(function (o) {
       checkObject(o)
@@ -75,8 +75,8 @@ export function checkObject(obj) {
  * The optional strictKeys flag (defaulting to false) indicates whether to copy everything or only fields
  * where the keys are valid, i.e. don't begin with $ and don't contain a .
  */
-export function deepCopy(obj, strictKeys = false) {
-  let res
+export function deepCopy(obj: Record<string, any>, strictKeys = false) {
+  let res: Record<string, any> | Record<string, any>[]
 
   if (
     typeof obj === 'boolean' ||

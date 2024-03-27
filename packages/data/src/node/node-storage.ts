@@ -24,7 +24,7 @@ export class NodeStorage implements IStorage {
   /**
    * Fully write or rewrite the datafile, immune to crashes during the write operation (data will not be lost)
    */
-  async write(name, data) {
+  async write(name: string, data: string) {
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     const tempFilename = name + '~'
 
@@ -51,7 +51,7 @@ export class NodeStorage implements IStorage {
     })
   }
 
-  async append(name, data) {
+  async append(name: string, data: string) {
     await fs.promises.appendFile(name, data, 'utf8')
   }
 }

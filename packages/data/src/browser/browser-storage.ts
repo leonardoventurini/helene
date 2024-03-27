@@ -10,17 +10,21 @@ import { IStorage } from '../types'
 
 export class BrowserStorage implements IStorage {
   async read(name: string) {
+    name = `helene:data:${name}`
     return localStorage.getItem(name)
   }
 
   /**
    * Fully write or rewrite the datafile, immune to crashes during the write operation (data will not be lost)
    */
-  async write(name, data) {
+  async write(name: string, data: string) {
+    name = `helene:data:${name}`
     localStorage.setItem(name, data)
   }
 
-  async append(name, data) {
+  async append(name: string, data: string) {
+    name = `helene:data:${name}`
+
     const existingData = localStorage.getItem(name)
 
     if (existingData) {

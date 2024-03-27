@@ -222,7 +222,7 @@ export class Persistence {
    * From a database's raw data, return the corresponding
    * machine understandable collection
    */
-  treatRawData(rawData) {
+  treatRawData(rawData: string) {
     const data = rawData?.split('\n') || [],
       dataById = {},
       tdata = [],
@@ -231,11 +231,11 @@ export class Persistence {
     let corruptItems = -1 // Last line of every data file is usually blank so not really corrupt
 
     for (let i = 0; i < data.length; i += 1) {
-      let doc
+      let doc: Record<string, any>
 
       try {
         doc = deserialize(this.beforeDeserialization(data[i]))
-        if (doc._id) {
+        if (doc._id !== undefined) {
           if (doc.$$deleted === true) {
             delete dataById[doc._id]
           } else {

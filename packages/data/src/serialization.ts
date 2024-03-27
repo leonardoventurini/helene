@@ -8,7 +8,7 @@ import { checkKey } from './model'
  * Accepted primitive types: Number, String, Boolean, Date, null
  * Accepted secondary types: Objects, Arrays
  */
-export function serialize(obj) {
+export function serialize(obj: Record<string, any>) {
   return JSON.stringify(obj, function (k, v) {
     checkKey(k, v)
 
@@ -33,7 +33,7 @@ export function serialize(obj) {
  * From a one-line representation of an object generate by the serialize function
  * Return the object itself
  */
-export function deserialize(rawData) {
+export function deserialize(rawData: string) {
   return JSON.parse(rawData, function (k, v) {
     if (k === '$$date') {
       return new Date(v)
