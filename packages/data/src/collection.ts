@@ -4,7 +4,7 @@ import isArray from 'lodash/isArray'
 import isNumber from 'lodash/isNumber'
 import isString from 'lodash/isString'
 import { Persistence } from './persistence'
-import { Cursor, Query } from './cursor'
+import { Cursor, Projection, Query } from './cursor'
 import { uid } from './custom-utils'
 import { checkObject, deepCopy, match, modify } from './model'
 import { pluck } from './utils'
@@ -283,7 +283,7 @@ export class Collection<
   /**
    * Add one or several document(s) to all indexes
    */
-  addToIndexes(doc: any) {
+  addToIndexes(doc: CT) {
     let i: number, failingIndex: number, error: Error
     const keys = Object.keys(this.indexes)
     for (i = 0; i < keys.length; i += 1) {
@@ -309,7 +309,7 @@ export class Collection<
   /**
    * Remove one or several document(s) from all indexes
    */
-  removeFromIndexes(doc) {
+  removeFromIndexes(doc: CT) {
     const self = this
 
     Object.keys(this.indexes).forEach(function (i) {
@@ -322,7 +322,7 @@ export class Collection<
    * To update multiple documents, oldDoc must be an array of { oldDoc, newDoc } pairs
    * If one update violates a constraint, all changes are rolled back
    */
-  updateIndexes(oldDoc, newDoc?) {
+  updateIndexes(oldDoc: Record<string, any>, newDoc?: Record<string, any>) {
     let i, failingIndex, error
 
     const keys = Object.keys(this.indexes)
@@ -472,40 +472,22 @@ export class Collection<
     }
   }
 
-  /**
-   * Count all documents matching the query
-   * @param {Object} query MongoDB-style query
-   */
-  async count(query) {
-    const cursor = new Cursor(this, query, async function (docs) {
-      return docs.length
-    })
+  async count(query: Query) {
+    const cursor = new Cursor(this, query)
 
-    return (await cursor) as unknown as number
+    const docs = await cursor
+
+    return docs.length
   }
 
-  /**
-   * Find all documents matching the query
-   * If no callback is passed, we return the cursor so that user can limit, skip and finally exec
-   * @param {Object} query MongoDB-style query
-   * @param {Object} projection MongoDB-style projection
-   */
-  find(query?, projection?) {
-    const cursor = new Cursor(this, query, async function (docs) {
-      const res = []
-
-      for (let i = 0; i < docs.length; i += 1) {
-        res.push(deepCopy(docs[i]))
-      }
-
-      return res
-    })
+  find(query?: Query, projection?: Projection) {
+    const cursor = new Cursor<CT>(this, query, async docs => docs.map(deepCopy))
 
     return cursor.projection(projection)
   }
 
-  async findOne(query, projection?) {
-    const cursor = new Cursor(this, query, async function (docs) {
+  findOne(query: Query, projection?: Projection) {
+    const cursor = new Cursor<CT>(this, query, async docs => {
       if (docs.length === 1) {
         return deepCopy(docs[0])
       } else {
@@ -513,9 +495,7 @@ export class Collection<
       }
     })
 
-    cursor.projection(projection).limit(1)
-
-    return (await cursor) as any
+    return cursor.projection(projection).limit(1)
   }
 
   async update(

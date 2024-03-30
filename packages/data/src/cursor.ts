@@ -1,7 +1,7 @@
 import { compareThings, getDotValue, match, modify } from './model'
 import isEmpty from 'lodash/isEmpty'
 import omit from 'lodash/omit'
-import { Collection } from './collection'
+import { BaseDocument, Collection } from './collection'
 
 export type Query = {
   [key: string]: any
@@ -17,7 +17,9 @@ export type Projection = {
 
 export type ExecFn = (data: any) => Promise<any>
 
-export class Cursor implements PromiseLike<any[]> {
+export class Cursor<T extends BaseDocument = BaseDocument>
+  implements PromiseLike<T[]>
+{
   db: Collection
 
   query: Query
@@ -210,7 +212,7 @@ export class Cursor implements PromiseLike<any[]> {
     return ret
   }
 
-  then<TResult1 = any[], TResult2 = never>(
+  then<TResult1 = T[], TResult2 = never>(
     onfulfilled?:
       | ((value: any[]) => PromiseLike<TResult1> | TResult1)
       | undefined
