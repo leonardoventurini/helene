@@ -14,8 +14,11 @@ export function intercept(func: AnyFunction) {
     if (func.constructor.name === 'AsyncFunction' || result instanceof Promise)
       result = await result
 
-    if (isNil(result) || !isPlainObject(result)) {
-      return params
+    /**
+     * If the result is not an object, return it as is. We need to support primitives.
+     */
+    if (!isNil(result) && !isPlainObject(result)) {
+      return result
     }
 
     return Object.assign({}, params, result ?? {})

@@ -88,6 +88,8 @@ describe('idleness', () => {
 
     await client.waitFor(ClientEvents.WEBSOCKET_CLOSED)
 
+    await sleep(10)
+
     expect(client.clientSocket.socket).to.be.undefined
 
     expect(test.server.allClients.size).to.equal(0)
