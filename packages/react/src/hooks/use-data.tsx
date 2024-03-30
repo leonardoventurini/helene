@@ -1,15 +1,16 @@
-import useAsyncEffect from 'ahooks/lib/useAsyncEffect'
 import useCreation from 'ahooks/lib/useCreation'
 import useDebounceFn from 'ahooks/lib/useDebounceFn'
-import { useClient, useCollection, useRemoteEvent } from './index'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import isEmpty from 'lodash/isEmpty'
 import set from 'lodash/set'
-import { useFind } from './use-find'
-import { useThrottledEvents } from './use-throttled-events'
 import { ClientEvents, HeleneEvents } from '@helenejs/utils'
 import { BrowserStorage } from '@helenejs/data/lib/browser'
-import { Document } from '@helenejs/data'
+import { BaseDocument, Collection } from '@helenejs/data'
+import { useClient } from './use-client'
+import { useFind } from './use-find'
+import { useObject } from './use-object'
+import { useThrottledEvents } from './use-throttled-events'
+import { useRemoteEvent } from './use-event'
 
 const browserStorage = new BrowserStorage()
 
@@ -17,83 +18,144 @@ type Props = {
   method: string
   channel?: string
   params?: any
+
+  /**
+   * Scope the data to a specific filter.
+   */
   filter?: Record<string, any>
   sort?: Record<string, 1 | -1>
   projection?: Record<string, 0 | 1>
   selectiveSync?: boolean
   authenticated?: boolean
   collectionName?: string
+  collection?: Collection
+  single?: boolean
 }
 
 export function useData({
   method,
   channel,
   params,
-  filter,
+  filter = {},
   sort,
   projection,
   selectiveSync = false,
   authenticated = false,
   collectionName = null,
+  collection = null,
+  single = false,
 }: Props) {
   const name = useCreation(
-    () => collectionName ?? `collection:${method}`,
+    () => collection?.name ?? collectionName ?? `collection:${method}`,
     [method, collectionName],
   )
 
-  const collection = useCollection({
-    name,
-    storage: browserStorage,
-    timestamps: true,
-    autoload: true,
-  })
+  const innerCollection = useCreation(
+    () =>
+      collection ??
+      new Collection({
+        name,
+        storage: browserStorage,
+        timestamps: true,
+        autoload: true,
+      }),
+    [name, collection],
+  )
 
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(() => true)
 
   const client = useClient()
 
   const result: any = useCreation(() => ({}), [])
 
-  const data = useFind(collection, filter, sort, projection)
+  const data = useFind(innerCollection, filter, sort, projection)
 
   const refresh = useDebounceFn(
     async () => {
-      if (!collection) return
+      if (!innerCollection) return
       if (authenticated && !client.authenticated) {
         setLoading(false)
         return
       }
 
-      const count = await collection.count({})
-
       setLoading(true)
 
-      try {
-        let response: Document | Document[]
+      const count = await innerCollection.count({})
 
+      try {
+        let response: BaseDocument | BaseDocument[]
+
+        /**
+         * @todo Create method utility that checks if ids are still present in the collection to sync deletions.
+         */
         if (count && selectiveSync) {
-          const [{ updatedAt: lastUpdatedAt = null } = {}] = (await collection
-            .find({})
-            .projection({ updatedAt: 1 })
-            .sort({ updatedAt: -1 })) ?? [{}]
+          const [{ updatedAt: lastUpdatedAt = null } = {}] =
+            (await innerCollection
+              .find(filter)
+              .projection({ updatedAt: 1 })
+              .sort({ updatedAt: -1 })) ?? [{}]
 
           response = await client.call(method, { ...params, lastUpdatedAt })
 
           for (const datum of Array.isArray(response) ? response : [response]) {
-            if (await collection.findOne({ _id: datum._id })) {
-              await collection.remove({ _id: datum._id })
+            if (
+              await innerCollection.findOne({
+                ...filter,
+                _id: datum._id,
+              })
+            ) {
+              await innerCollection.remove({
+                ...filter,
+                _id: datum._id,
+              })
             }
           }
         } else {
           response = await client.call(method, params)
-
-          await collection.remove({}, { multi: true })
         }
 
         if (response) {
-          await collection.insert(response)
+          const existingIds = (
+            await innerCollection.find(filter).projection({ _id: 1 })
+          ).map((datum: BaseDocument) => datum._id)
+
+          if (!Array.isArray(response)) {
+            response = [response]
+          }
+
+          const retrievedIds = response.map((datum: BaseDocument) => datum._id)
+
+          for (const datum of response as BaseDocument[]) {
+            if (existingIds.includes(datum._id)) {
+              const existing = await innerCollection.findOne({ _id: datum._id })
+
+              const removedFields = Object.keys(existing).filter(
+                key => !(key in datum),
+              )
+
+              await innerCollection.update(
+                { ...filter, _id: datum._id },
+                {
+                  $set: datum,
+                  $unset: removedFields.reduce((acc, key) => {
+                    acc[key] = ''
+                    return acc
+                  }, {}),
+                },
+              )
+            } else {
+              await innerCollection.insert(datum)
+            }
+          }
+
+          for (const id of existingIds) {
+            if (!retrievedIds.includes(id)) {
+              await innerCollection.remove({ ...filter, _id: id })
+            }
+          }
         }
       } catch (error) {
+        await innerCollection.remove(filter, { multi: true })
         console.error(error)
       }
 
@@ -102,11 +164,11 @@ export function useData({
     { wait: 100, leading: false, trailing: true },
   )
 
-  useAsyncEffect(async () => {
-    set(window, `collections.${method}`, collection)
-
-    await refresh.run()
-  }, [collection])
+  useEffect(() => {
+    set(window, `collections.${innerCollection.name}`, innerCollection)
+    setLoading(true)
+    refresh.run()
+  }, [innerCollection, useObject(filter), useObject(params)])
 
   useThrottledEvents(
     client,
@@ -127,8 +189,8 @@ export function useData({
     [refresh.run],
   )
 
-  result.collection = collection
-  result.data = data
+  result.collection = innerCollection
+  result.data = single ? data[0] : data
   result.loading = isEmpty(data) && loading
   result.client = client
   result.refresh = refresh.run

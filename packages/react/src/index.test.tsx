@@ -546,9 +546,9 @@ describe('React Hooks', () => {
 
       value = 43
 
-      await sleep(100)
-
       test.server.refresh('count')
+
+      await sleep(100)
 
       await waitFor(() => {
         expect(pick(result.current, ['data', 'loading'])).to.containSubset({
