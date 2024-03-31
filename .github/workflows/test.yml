@@ -7,8 +7,13 @@ on:
     branches:
       - main
 jobs:
-  setup:
-    name: Node.js Setup
+  test_node:
+    name: Node.js Tests
+    services:
+      redis:
+        image: redis:7.2-alpine
+        ports:
+          - 6379:6379
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -18,34 +23,20 @@ jobs:
           cache: yarn
       - run: yarn install --frozen-lockfile
       - run: lerna run build
-  test_node:
-    name: Node.js Tests
-    services:
-      redis:
-        image: redis:7.2-alpine
-        ports:
-          - 6379:6379
-    runs-on: ubuntu-latest
-    needs: setup
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 20
-          cache: yarn
       - run: lerna run node:test:mocha
         env:
           CI: true
   test_browser:
     name: Browser Tests
     runs-on: ubuntu-latest
-    needs: setup
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v3
         with:
           node-version: 20
           cache: yarn
+      - run: yarn install --frozen-lockfile
+      - run: lerna run build
       - run: lerna run browser:test
         env:
           CI: true
