@@ -8,10 +8,14 @@ on:
       - main
 jobs:
   test_node:
-    name: Node.js
+    name: Node.js Tests
+    services:
+      redis:
+        image: redis:7.2-alpine
+        ports:
+          - 6379:6379
     runs-on: ubuntu-latest
     steps:
-      - uses: supercharge/redis-github-action@1.4.0
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v3
         with:
@@ -22,3 +26,18 @@ jobs:
       - run: lerna run node:test:mocha
         env:
           CI: true
+  test_browser:
+    name: Browser Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 20
+          cache: yarn
+      - run: yarn install --frozen-lockfile
+      - run: lerna run build
+      - run: lerna run browser:test
+        env:
+          CI: true
+
