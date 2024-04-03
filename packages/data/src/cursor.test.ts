@@ -530,12 +530,29 @@ describe('Cursor', () => {
       assert.deepEqual(docs[4], { age: 89 }) // No problems if one field to take doesn't exist
     })
 
+    it('Can pick only the expected fields', async function () {
+      const cursor = new Cursor(collection, {})
+      cursor.sort({ age: 1 }) // For easier finding
+      cursor.projection({ _id: 1 })
+
+      const docs = await cursor
+
+      docs.length.should.equal(5)
+
+      assert.deepEqual(docs[0], { _id: doc0._id })
+      assert.deepEqual(docs[1], { _id: doc3._id })
+      assert.deepEqual(docs[2], { _id: doc2._id })
+      assert.deepEqual(docs[3], { _id: doc1._id })
+      assert.deepEqual(docs[4], { _id: doc4._id })
+    })
+
     it('Can omit only the expected fields', async function () {
       const cursor = new Cursor(collection, {})
       cursor.sort({ age: 1 }) // For easier finding
       cursor.projection({ age: 0, name: 0 })
 
       let docs = await cursor
+
       docs.length.should.equal(5)
 
       // Takes the _id by default

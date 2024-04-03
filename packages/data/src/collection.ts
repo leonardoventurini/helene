@@ -483,7 +483,11 @@ export class Collection<
   find(query?: Query, projection?: Projection) {
     const cursor = new Cursor<CT>(this, query, async docs => docs.map(deepCopy))
 
-    return cursor.projection(projection)
+    if (projection) {
+      return cursor.projection(projection)
+    }
+
+    return cursor
   }
 
   findOne(query: Query, projection?: Projection) {

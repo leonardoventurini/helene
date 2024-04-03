@@ -30,9 +30,9 @@ export class Cursor<T extends BaseDocument = BaseDocument>
 
   _skip: number
 
-  _sort: any
+  _sort: SortQuery
 
-  _projection: any
+  _projection: Projection
 
   constructor(db: Collection, query?: Query, execFn?: ExecFn) {
     this.db = db
@@ -65,18 +65,18 @@ export class Cursor<T extends BaseDocument = BaseDocument>
   project(candidates: any[]) {
     const res = []
 
-    let action: number
-
     if (isEmpty(this._projection)) {
       return candidates
     }
 
-    const keepId = this._projection._id !== 0
+    const keepId =
+      this._projection._id === 1 || this._projection._id === undefined
 
     this._projection = omit(this._projection, '_id')
 
-    // Check for consistency
     const keys = Object.keys(this._projection)
+
+    let action: number = keys.length === 0 ? 1 : undefined
 
     for (const k of keys) {
       if (action !== undefined && this._projection[k] !== action) {
@@ -85,37 +85,32 @@ export class Cursor<T extends BaseDocument = BaseDocument>
       action = this._projection[k]
     }
 
-    // Do the actual projection
-    for (const candidate of candidates) {
-      let toPush: { $set?: any; $unset?: any; _id?: any }
-
-      if (action === 1) {
-        // pick-type projection
-        toPush = { $set: {} }
+    if (action === 1) {
+      for (const candidate of candidates) {
+        const modifier = { $set: {} }
         for (const k of keys) {
           const value = getDotValue(candidate, k)
-
           if (value !== undefined) {
-            toPush.$set[k] = value
+            modifier.$set[k] = value
           }
         }
-        toPush = modify({}, toPush)
-      } else {
-        // omit-type projection
-        toPush = { $unset: {} }
+        res.push(
+          modify(
+            {
+              ...(keepId && { _id: candidate._id }),
+            },
+            modifier,
+          ),
+        )
+      }
+    } else if (action === 0) {
+      for (const candidate of candidates) {
+        const modifier = { $unset: {} }
         for (const k of keys) {
-          toPush.$unset[k] = true
+          modifier.$unset[k] = true
         }
-        toPush = modify(candidate, toPush)
+        res.push(modify(keepId ? candidate : omit(candidate, '_id'), modifier))
       }
-
-      if (keepId) {
-        toPush._id = candidate._id
-      } else {
-        delete toPush._id
-      }
-
-      res.push(toPush)
     }
 
     return res
@@ -200,7 +195,7 @@ export class Cursor<T extends BaseDocument = BaseDocument>
     return res
   }
 
-  async map(fn) {
+  async map(fn: (item: T) => Promise<any> | any) {
     const res = await this.exec()
 
     const ret = []
@@ -212,7 +207,7 @@ export class Cursor<T extends BaseDocument = BaseDocument>
     return ret
   }
 
-  then<TResult1 = T[], TResult2 = never>(
+  then<TResult1 = T, TResult2 = never>(
     onfulfilled?:
       | ((value: any[]) => PromiseLike<TResult1> | TResult1)
       | undefined
