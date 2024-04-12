@@ -1,4 +1,4 @@
-import { compareThings, getDotValue, match, modify } from './model'
+import { compareThings, deepCopy, getDotValue, match, modify } from './model'
 import isEmpty from 'lodash/isEmpty'
 import omit from 'lodash/omit'
 import { BaseDocument, Collection } from './collection'
@@ -15,16 +15,12 @@ export type Projection = {
   [key: string]: 0 | 1
 }
 
-export type ExecFn = (data: any) => Promise<any>
-
 export class Cursor<T extends BaseDocument = BaseDocument>
   implements PromiseLike<T[]>
 {
   db: Collection
 
   query: Query
-
-  execFn: ExecFn
 
   _limit: number
 
@@ -34,12 +30,9 @@ export class Cursor<T extends BaseDocument = BaseDocument>
 
   _projection: Projection
 
-  constructor(db: Collection, query?: Query, execFn?: ExecFn) {
+  constructor(db: Collection, query?: Query) {
     this.db = db
     this.query = query || {}
-    if (execFn) {
-      this.execFn = execFn
-    }
   }
 
   limit(limit: number) {
@@ -53,7 +46,9 @@ export class Cursor<T extends BaseDocument = BaseDocument>
   }
 
   sort(sortQuery: SortQuery) {
-    this._sort = sortQuery
+    if (sortQuery) {
+      this._sort = sortQuery
+    }
     return this
   }
 
@@ -62,7 +57,7 @@ export class Cursor<T extends BaseDocument = BaseDocument>
     return this
   }
 
-  project(candidates: any[]) {
+  project(candidates: T[]) {
     const res = []
 
     if (isEmpty(this._projection)) {
@@ -116,7 +111,7 @@ export class Cursor<T extends BaseDocument = BaseDocument>
     return res
   }
 
-  async exec(): Promise<any[]> {
+  async exec(): Promise<T[]> {
     let res = [],
       added = 0,
       skipped = 0,
@@ -188,9 +183,7 @@ export class Cursor<T extends BaseDocument = BaseDocument>
 
     res = self.project(res)
 
-    if (this.execFn) {
-      res = await this.execFn(res)
-    }
+    res = res.map(doc => deepCopy(doc))
 
     return res
   }
@@ -207,9 +200,9 @@ export class Cursor<T extends BaseDocument = BaseDocument>
     return ret
   }
 
-  then<TResult1 = T, TResult2 = never>(
+  then<TResult1 = T[], TResult2 = never>(
     onfulfilled?:
-      | ((value: any[]) => PromiseLike<TResult1> | TResult1)
+      | ((value: T[]) => PromiseLike<TResult1> | TResult1)
       | undefined
       | null,
     onrejected?:

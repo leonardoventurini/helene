@@ -4,7 +4,7 @@ import isArray from 'lodash/isArray'
 import isNumber from 'lodash/isNumber'
 import isString from 'lodash/isString'
 import { Persistence } from './persistence'
-import { Cursor, Projection, Query } from './cursor'
+import { Cursor, Projection, Query, SortQuery } from './cursor'
 import { uid } from './custom-utils'
 import { checkObject, deepCopy, match, modify } from './model'
 import { pluck } from './utils'
@@ -481,7 +481,7 @@ export class Collection<
   }
 
   find(query?: Query, projection?: Projection) {
-    const cursor = new Cursor<CT>(this, query, async docs => docs.map(deepCopy))
+    const cursor = new Cursor<CT>(this, query)
 
     if (projection) {
       return cursor.projection(projection)
@@ -490,16 +490,16 @@ export class Collection<
     return cursor
   }
 
-  findOne(query: Query, projection?: Projection) {
-    const cursor = new Cursor<CT>(this, query, async docs => {
-      if (docs.length === 1) {
-        return deepCopy(docs[0])
-      } else {
-        return null
-      }
-    })
+  async findOne(
+    query: Query,
+    projection?: Projection,
+    sort?: SortQuery,
+  ): Promise<CT> {
+    const cursor = new Cursor<CT>(this, query)
 
-    return cursor.projection(projection).limit(1)
+    const result = await cursor.projection(projection).sort(sort).limit(1)
+
+    return result[0] ?? null
   }
 
   async update(
