@@ -172,17 +172,31 @@ describe('Methods', function () {
       return HeleneAsyncLocalStorage.getStore()
     })
 
-    test.server.addMethod('get:async:ls:this', function () {
-      return this.storage
-    })
-
     const result1 = await test.client.call('get:async:ls')
-    const result2 = await test.client.call('get:async:ls:this')
 
     expect(result1).to.have.property('executionId').that.is.a('string')
-    expect(result2).to.have.property('executionId').that.is.a('string')
     expect(result1).to.have.property('context').that.is.an('object')
-    expect(result2).to.have.property('context').that.is.an('object')
+  })
+
+  it('should have async local storage in middleware', async () => {
+    test.server.addMethod(
+      'get:async:ls',
+      function (store) {
+        return store
+      },
+      {
+        middleware: [
+          async function () {
+            return HeleneAsyncLocalStorage.getStore()
+          },
+        ],
+      },
+    )
+
+    const result1 = await test.client.call('get:async:ls')
+
+    expect(result1).to.have.property('executionId').that.is.a('string')
+    expect(result1).to.have.property('context').that.is.an('object')
   })
 
   it('should call a method in the server', async () => {

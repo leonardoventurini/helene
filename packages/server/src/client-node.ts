@@ -1,7 +1,6 @@
 import isString from 'lodash/isString'
 import { HeleneEvents, Presentation, ServerEvents } from '@helenejs/utils'
 import { Request, Response } from 'express'
-import { HeleneAsyncLocalStorage } from './helene-async-local-storage'
 import { RateLimiter } from 'limiter'
 import { RateLimit, Server } from './server'
 import { EventEmitter2 } from 'eventemitter2'
@@ -79,10 +78,6 @@ export class ClientNode extends EventEmitter2 {
         }
       }, ClientNode.KEEP_ALIVE_INTERVAL)
     }
-  }
-
-  get storage() {
-    return HeleneAsyncLocalStorage.getStore()
   }
 
   get authenticated() {

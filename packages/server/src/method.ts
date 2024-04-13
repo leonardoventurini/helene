@@ -98,11 +98,13 @@ export class Method {
       }
     }
 
-    let result = await this.runMiddleware(cleanParams, node)
-
-    result = await HeleneAsyncLocalStorage.run(
+    const result = await HeleneAsyncLocalStorage.run(
       { executionId: Presentation.uuid(), context: node.context },
-      async () => this.fn.call(node, result),
+      async () => {
+        const middlewareResult = await this.runMiddleware(cleanParams, node)
+
+        return this.fn.call(node, middlewareResult)
+      },
     )
 
     const end = perf_hooks.performance.now()
