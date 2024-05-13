@@ -101,13 +101,10 @@ export class HttpTransport {
   }
 
   async getServerContext(clientNode: ClientNode, context: any = {}) {
-    const token = (clientNode.req.headers[TOKEN_HEADER_KEY] as string)?.replace(
-      'Bearer ',
-      '',
-    )
+    const token = clientNode.req.headers[TOKEN_HEADER_KEY] as string
 
-    if (token) {
-      context.token = token
+    if (isString(token) && token.length && token !== 'undefined') {
+      context.token = token.replace('Bearer ', '')
     }
 
     if (this.server.auth instanceof Function) {
