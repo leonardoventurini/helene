@@ -15,6 +15,7 @@ import {
 } from './_get-candidates'
 import { IStorage } from './types'
 import { LastStepModifierFunctions } from './last-step-modifier-functions'
+import { queueOperation } from './op-queue'
 
 export const CollectionEvent = {
   READY: 'ready',
@@ -368,21 +369,23 @@ export class Collection<
   }
 
   async insert(newDoc: CT): Promise<CT> {
-    if (Array.isArray(newDoc)) {
-      throw new Error('insert cannot be called with an array')
-    }
+    return queueOperation(async () => {
+      if (Array.isArray(newDoc)) {
+        throw new Error('insert cannot be called with an array')
+      }
 
-    const preparedDoc = await this.prepareDocumentForInsertion(newDoc)
+      const preparedDoc = await this.prepareDocumentForInsertion(newDoc)
 
-    this._insertInCache(preparedDoc)
+      this._insertInCache(preparedDoc)
 
-    const docs = isArray(preparedDoc) ? preparedDoc : [preparedDoc]
+      const docs = isArray(preparedDoc) ? preparedDoc : [preparedDoc]
 
-    await this.persistence.persistNewState(docs)
+      await this.persistence.persistNewState(docs)
 
-    await Promise.all(docs.map(doc => this.afterInsert(doc)))
+      await Promise.all(docs.map(doc => this.afterInsert(doc)))
 
-    return deepCopy(preparedDoc)
+      return deepCopy(preparedDoc)
+    })
   }
 
   /**
@@ -507,98 +510,100 @@ export class Collection<
     updateQuery: UpdateQuery,
     options?: UpdateOptions,
   ): Promise<any> {
-    let numReplaced = 0,
-      i: number
+    return queueOperation(async () => {
+      let numReplaced = 0,
+        i: number
 
-    const multi = Boolean(options?.multi)
-    const upsert = Boolean(options?.upsert)
+      const multi = Boolean(options?.multi)
+      const upsert = Boolean(options?.upsert)
 
-    // If an upsert option is set, check whether we need to insert the doc
-    if (upsert) {
-      const cursor = new Cursor(this, query)
-      const docs = await cursor.limit(1)
+      // If an upsert option is set, check whether we need to insert the doc
+      if (upsert) {
+        const cursor = new Cursor(this, query)
+        const docs = await cursor.limit(1)
 
-      if (docs.length !== 1) {
-        let toBeInserted: CT
+        if (docs.length !== 1) {
+          let toBeInserted: CT
 
-        try {
-          checkObject(updateQuery)
-          // updateQuery is a simple object with no modifier, use it as the document to insert
-          toBeInserted = updateQuery as CT
-        } catch (e) {
-          // updateQuery contains modifiers, use the find query as the base,
-          // strip it from all operators and update it according to updateQuery
-          toBeInserted = modify(deepCopy(query, true), updateQuery)
+          try {
+            checkObject(updateQuery)
+            // updateQuery is a simple object with no modifier, use it as the document to insert
+            toBeInserted = updateQuery as CT
+          } catch (e) {
+            // updateQuery contains modifiers, use the find query as the base,
+            // strip it from all operators and update it according to updateQuery
+            toBeInserted = modify(deepCopy(query, true), updateQuery)
+          }
+
+          const newDoc = await this.insert(toBeInserted)
+
+          return {
+            acknowledged: true,
+            insertedIds: [newDoc._id],
+            insertedDocs: [newDoc],
+            insertedCount: 1,
+            upsert: true,
+          }
         }
+      }
 
-        const newDoc = await this.insert(toBeInserted)
+      // Perform the update
+      let modifiedDoc: { createdAt: Date; updatedAt: Date }, createdAt: Date
+
+      const modifications = []
+
+      const candidates = await this.getCandidates(query)
+
+      for (i = 0; i < candidates.length; i += 1) {
+        if (match(candidates[i], query) && (multi || numReplaced === 0)) {
+          numReplaced += 1
+
+          if (this.timestampData) {
+            createdAt = candidates[i].createdAt
+          }
+
+          modifiedDoc = modify(candidates[i], updateQuery)
+
+          modifiedDoc = await this.beforeUpdate(modifiedDoc, candidates[i])
+
+          if (this.timestampData) {
+            modifiedDoc.createdAt = createdAt
+            modifiedDoc.updatedAt = new Date()
+          }
+
+          await this.afterUpdate(modifiedDoc, candidates[i])
+
+          modifications.push({
+            oldDoc: candidates[i],
+            newDoc: modifiedDoc,
+          })
+        }
+      }
+
+      // Change the docs in memory
+      this.updateIndexes(modifications)
+
+      // Update the datafile
+      const updatedDocs = pluck(modifications, 'newDoc')
+
+      await this.persistence.persistNewState(updatedDocs)
+
+      if (options?.returnUpdatedDocs) {
+        const updatedDocsDC = []
+        updatedDocs.forEach(doc => updatedDocsDC.push(deepCopy(doc)))
 
         return {
           acknowledged: true,
-          insertedIds: [newDoc._id],
-          insertedDocs: [newDoc],
-          insertedCount: 1,
-          upsert: true,
+          modifiedCount: numReplaced,
+          updatedDocs: updatedDocsDC,
+        }
+      } else {
+        return {
+          acknowledged: true,
+          modifiedCount: numReplaced,
         }
       }
-    }
-
-    // Perform the update
-    let modifiedDoc: { createdAt: Date; updatedAt: Date }, createdAt: Date
-
-    const modifications = []
-
-    const candidates = await this.getCandidates(query)
-
-    for (i = 0; i < candidates.length; i += 1) {
-      if (match(candidates[i], query) && (multi || numReplaced === 0)) {
-        numReplaced += 1
-
-        if (this.timestampData) {
-          createdAt = candidates[i].createdAt
-        }
-
-        modifiedDoc = modify(candidates[i], updateQuery)
-
-        modifiedDoc = await this.beforeUpdate(modifiedDoc, candidates[i])
-
-        if (this.timestampData) {
-          modifiedDoc.createdAt = createdAt
-          modifiedDoc.updatedAt = new Date()
-        }
-
-        await this.afterUpdate(modifiedDoc, candidates[i])
-
-        modifications.push({
-          oldDoc: candidates[i],
-          newDoc: modifiedDoc,
-        })
-      }
-    }
-
-    // Change the docs in memory
-    this.updateIndexes(modifications)
-
-    // Update the datafile
-    const updatedDocs = pluck(modifications, 'newDoc')
-
-    await this.persistence.persistNewState(updatedDocs)
-
-    if (options?.returnUpdatedDocs) {
-      const updatedDocsDC = []
-      updatedDocs.forEach(doc => updatedDocsDC.push(deepCopy(doc)))
-
-      return {
-        acknowledged: true,
-        modifiedCount: numReplaced,
-        updatedDocs: updatedDocsDC,
-      }
-    } else {
-      return {
-        acknowledged: true,
-        modifiedCount: numReplaced,
-      }
-    }
+    })
   }
 
   async updateOne(
@@ -624,29 +629,31 @@ export class Collection<
   }
 
   async remove(query: Query, options?: { multi?: boolean }) {
-    let numRemoved = 0
+    return queueOperation(async () => {
+      let numRemoved = 0
 
-    const self = this
-    const removedDocs = []
+      const self = this
+      const removedDocs = []
 
-    const multi = Boolean(options?.multi)
+      const multi = Boolean(options?.multi)
 
-    const candidates = await this.getCandidates(query, true)
+      const candidates = await this.getCandidates(query, true)
 
-    for (const candidate of candidates) {
-      if (match(candidate, query) && (multi || numRemoved === 0)) {
-        await this.beforeRemove(candidate)
-        numRemoved += 1
-        removedDocs.push({ $$deleted: true, _id: candidate._id })
-        self.removeFromIndexes(candidate)
+      for (const candidate of candidates) {
+        if (match(candidate, query) && (multi || numRemoved === 0)) {
+          await this.beforeRemove(candidate)
+          numRemoved += 1
+          removedDocs.push({ $$deleted: true, _id: candidate._id })
+          self.removeFromIndexes(candidate)
+        }
       }
-    }
 
-    await self.persistence.persistNewState(removedDocs)
+      await self.persistence.persistNewState(removedDocs)
 
-    await Promise.all(candidates.map(doc => self.afterRemove(doc)))
+      await Promise.all(candidates.map(doc => self.afterRemove(doc)))
 
-    return numRemoved
+      return numRemoved
+    })
   }
 
   async deleteOne(query: Query) {
