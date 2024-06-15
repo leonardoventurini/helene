@@ -11,7 +11,7 @@ setInterval(async () => {
   running = true
   await operation()
   running = false
-}, 1000 / 30)
+}, 1000 / 60)
 
 export function queueOperation<T>(callback: () => Promise<T>): Promise<T> {
   let resolve: (value: T | PromiseLike<T>) => void

@@ -510,43 +510,43 @@ export class Collection<
     updateQuery: UpdateQuery,
     options?: UpdateOptions,
   ): Promise<any> {
-    return queueOperation(async () => {
-      let numReplaced = 0,
-        i: number
+    let numReplaced = 0,
+      i: number
 
-      const multi = Boolean(options?.multi)
-      const upsert = Boolean(options?.upsert)
+    const multi = Boolean(options?.multi)
+    const upsert = Boolean(options?.upsert)
 
-      // If an upsert option is set, check whether we need to insert the doc
-      if (upsert) {
-        const cursor = new Cursor(this, query)
-        const docs = await cursor.limit(1)
+    // If an upsert option is set, check whether we need to insert the doc
+    if (upsert) {
+      const cursor = new Cursor(this, query)
+      const docs = await cursor.limit(1)
 
-        if (docs.length !== 1) {
-          let toBeInserted: CT
+      if (docs.length !== 1) {
+        let toBeInserted: CT
 
-          try {
-            checkObject(updateQuery)
-            // updateQuery is a simple object with no modifier, use it as the document to insert
-            toBeInserted = updateQuery as CT
-          } catch (e) {
-            // updateQuery contains modifiers, use the find query as the base,
-            // strip it from all operators and update it according to updateQuery
-            toBeInserted = modify(deepCopy(query, true), updateQuery)
-          }
+        try {
+          checkObject(updateQuery)
+          // updateQuery is a simple object with no modifier, use it as the document to insert
+          toBeInserted = updateQuery as CT
+        } catch (e) {
+          // updateQuery contains modifiers, use the find query as the base,
+          // strip it from all operators and update it according to updateQuery
+          toBeInserted = modify(deepCopy(query, true), updateQuery)
+        }
 
-          const newDoc = await this.insert(toBeInserted)
+        const newDoc = await this.insert(toBeInserted)
 
-          return {
-            acknowledged: true,
-            insertedIds: [newDoc._id],
-            insertedDocs: [newDoc],
-            insertedCount: 1,
-            upsert: true,
-          }
+        return {
+          acknowledged: true,
+          insertedIds: [newDoc._id],
+          insertedDocs: [newDoc],
+          insertedCount: 1,
+          upsert: true,
         }
       }
+    }
 
+    return queueOperation(async () => {
       // Perform the update
       let modifiedDoc: { createdAt: Date; updatedAt: Date }, createdAt: Date
 
