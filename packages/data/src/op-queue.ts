@@ -2,16 +2,19 @@ const operations: (() => Promise<void>)[] = []
 
 let running = false
 
-setInterval(async () => {
+function handleOperations() {
   if (operations.length === 0) return
   if (running) return
 
   const operation = operations.shift()
 
   running = true
-  await operation()
-  running = false
-}, 1000 / 60)
+
+  operation().then(() => {
+    running = false
+    handleOperations()
+  })
+}
 
 export function queueOperation<T>(callback: () => Promise<T>): Promise<T> {
   let resolve: (value: T | PromiseLike<T>) => void
@@ -29,6 +32,8 @@ export function queueOperation<T>(callback: () => Promise<T>): Promise<T> {
       reject(error)
     }
   })
+
+  handleOperations()
 
   return wait
 }
