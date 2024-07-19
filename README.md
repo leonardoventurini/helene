@@ -5,14 +5,8 @@
 ![GitHub Repo stars](https://img.shields.io/github/stars/leonardoventurini/helene?style=social)
 
 <div align="center">
-	<br>
-	<div>
-		<img src="https://raw.githubusercontent.com/leonardoventurini/helene/main/assets/ocean-sphere-header.jpg" width='60%' alt='Helene'>
-	</div>
-	<br>
-	<br>
   <p>
-    Real-time Web Apps for Node.js
+    <h3>Helene: The Next Evolution in Real-Time Web Development</h3>
   </p>
   <p>
     <a href="https://helene.techster.tech" target="_blank">📘 Documentation</a>
@@ -20,15 +14,27 @@
   <br>
 </div>
 
-- ⚡️ **Real-time** - Helene is a real-time framework for Node.js and the browser.
-- 🦾 **Event-driven** - Helene is event-driven, which means that it uses events to communicate between the server and the client.
-- 🪝 **React Hooks** - Helene provides a set of React Hooks to easily integrate your React application with the server.
-<hr/>
+Building on the legacy of Meteor.js, Helene is the cutting-edge Node.js real-time framework designed to elevate your web applications. Just as Meteor revolutionized the ease of building real-time applications, Helene continues this tradition with enhanced performance and scalability.
+
+Inspired by Light, Built for Speed
+
+The name Helene, derived from the Greek word for "torch" or "light," reflects our commitment to illuminating the path for developers. Like Meteor.js, Helene is crafted with the philosophy of simplicity and efficiency, ensuring you can build powerful real-time applications without the usual complexities.
+
+### Why Helene?
+
+- Real-Time Brilliance: With Helene, enjoy the seamless real-time data handling that Meteor.js is known for, but with optimized performance for modern web demands.
+- Developer-Friendly: Helene maintains the ease-of-use and rapid development cycle that Meteor developers love, making it intuitive for both newcomers and seasoned professionals.
+- Unified Ecosystem: Just as Meteor.js offered an integrated stack, Helene provides a cohesive environment, leveraging the strengths of Node.js while introducing innovative tools to streamline your workflow.
+- Scalability and Performance: Helene enhances the scalability features of Meteor.js, ensuring your applications can grow and perform under increased loads.
+
+Join the Helene Revolution
+
+By embracing the foundational principles of Meteor.js and pushing the boundaries further, Helene offers a familiar yet revolutionary platform for real-time web development. Illuminate your projects with Helene, where the legacy of Meteor meets the future of web applications.
 
 ### Quickstart
 
 ```bash
-npm install @helenejs/server @helenejs/client
+yarn install @helenejs/server @helenejs/client
 ```
 
 ### Core Packages
@@ -38,60 +44,6 @@ npm install @helenejs/server @helenejs/client
 - [@helenejs/data](packages/data/README.md) - In-memory database for the browser and Node.js with syntax similar to MongoDB
 - [@helenejs/react](packages/react/README.md) - A set of React hooks and utilities to easily integrate your React application with Helene
 - [@helenejs/utils](packages/utils/README.md) - A set of utilities used by Helene or its extensions
-
----
-```js
-// server.js
-
-import { createServer } from '@helenejs/server'
-
-createServer({
-  host: 'localhost',
-  port: 3000,
-})
-
-// Methods
-
-Helene.addMethod('hello', () => 'Hello World!')
-
-// Events
-
-Helene.addEvent('event')
-
-Helene.addMethod('emit:event', () => {
-  Helene.emit('event', { message: 'Hello World!' })
-})
-```
-
-```js
-// client.js
-
-import { Client } from '@helenejs/client'
-
-const client = new Client({
-  host: 'localhost:3000',
-})
-
-// Methods
-
-const result = await client.call('hello')
-
-console.log(result) // Hello World!
-
-// Events
-
-await client.subscribe('event')
-
-client.on('event', (data) => {
-  console.log(data) // { message: 'Hello World!' }
-})
-
-await client.call('emit:event')
-```
-
-### Stats
-
-![Alt](https://repobeats.axiom.co/api/embed/2a323b2903ef389fb1e55b4b49b97a7d455640bb.svg "Repobeats analytics image")
 
 ### License
 

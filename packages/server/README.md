@@ -3,12 +3,6 @@
 ![Tests](https://github.com/leonardoventurini/helene/actions/workflows/test.yml/badge.svg)
 
 <div align="center">
-	<br>
-	<div>
-		<img src="https://raw.githubusercontent.com/leonardoventurini/helene/main/assets/ocean-sphere-header.jpg" width='60%' alt='Helene'>
-	</div>
-	<br>
-	<br>
   <h1>
     Helene Server
   </h1>
@@ -22,10 +16,6 @@ Create a Helene server in Node.js
 ```bash
 npm install @helenejs/server
 ```
-
-### Stats
-
-![Alt](https://repobeats.axiom.co/api/embed/2a323b2903ef389fb1e55b4b49b97a7d455640bb.svg "Repobeats analytics image")
 
 ### License
 
