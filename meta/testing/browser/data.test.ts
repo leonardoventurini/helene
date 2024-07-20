@@ -2,6 +2,7 @@ import { Collection, createCollection } from '@helenejs/data'
 import { BrowserStorage, IDBStorage } from '@helenejs/data/lib/browser'
 import { expect } from 'chai'
 import { get } from 'idb-keyval'
+import { sleep } from '@helenejs/utils'
 
 type Test = { _id: number; name: string }
 
@@ -56,6 +57,8 @@ describe('Helene Data', function () {
       for (let i = 0; i <= 9; i++) {
         await collection.insert({ _id: i, name: `test_${i}` })
       }
+
+      await sleep(100)
 
       const data = await get('helene:data:test')
 
