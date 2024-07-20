@@ -7,6 +7,7 @@ import { Collection } from './collection'
 import { NodeStorage } from './node'
 import { Cursor } from './cursor'
 import { pluck } from './utils'
+import { sleep } from '@helenejs/utils'
 
 const testDb = 'workspace/test.db'
 
@@ -18,6 +19,8 @@ describe('Cursor', () => {
       name: testDb,
       storage: new NodeStorage(),
     })
+
+    await sleep(100)
 
     collection.name.should.equal(testDb)
     collection.inMemoryOnly.should.equal(false)

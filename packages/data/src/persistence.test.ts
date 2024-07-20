@@ -11,6 +11,7 @@ import { ensureDatafileIntegrity, ensureFileDoesntExist } from './node/utils'
 import { NodeStorage } from './node'
 import find from 'lodash/find'
 import isEqual from 'lodash/isEqual'
+import { sleep } from '@helenejs/utils'
 
 const testDb = 'workspace/test.db'
 
@@ -190,6 +191,8 @@ describe('Persistence', function () {
     await d.insert({ a: 4 })
     await d.remove({ a: 2 }, {})
 
+    await sleep(100)
+
     // Here, the underlying file is 3 lines long for only one document
     const data = fs.readFileSync(d.name, 'utf8').split('\n')
 
@@ -269,6 +272,8 @@ describe('Persistence', function () {
     data.length.should.equal(2)
     doc1.a.should.equal(1)
     doc2.a.should.equal(2)
+
+    await sleep(100)
 
     await fs.promises.writeFile(testDb, '{"a":3,"_id":"aaa"}', 'utf8')
 
@@ -397,6 +402,8 @@ describe('Persistence', function () {
 
       await d.insert({ hello: 'world' })
 
+      await sleep(100)
+
       let _data = fs.readFileSync(hookTestFilename, 'utf8')
 
       let data = _data.split('\n')
@@ -413,6 +420,9 @@ describe('Persistence', function () {
       assert.equal(doc0.hello, 'world')
 
       await d.insert({ p: 'Mars' })
+
+      await sleep(100)
+
       _data = fs.readFileSync(hookTestFilename, 'utf8')
       data = _data.split('\n')
 
