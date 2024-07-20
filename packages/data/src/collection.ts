@@ -380,7 +380,9 @@ export class Collection<
 
       const docs = isArray(preparedDoc) ? preparedDoc : [preparedDoc]
 
-      await this.persistence.persistNewState(docs)
+      queueOperation(async () => this.persistence.persistNewState(docs)).catch(
+        console.error,
+      )
 
       await Promise.all(docs.map(doc => this.afterInsert(doc)))
 
@@ -586,7 +588,9 @@ export class Collection<
       // Update the datafile
       const updatedDocs = pluck(modifications, 'newDoc')
 
-      await this.persistence.persistNewState(updatedDocs)
+      queueOperation(async () =>
+        this.persistence.persistNewState(updatedDocs),
+      ).catch(console.error)
 
       if (options?.returnUpdatedDocs) {
         const updatedDocsDC = []
@@ -648,7 +652,9 @@ export class Collection<
         }
       }
 
-      await self.persistence.persistNewState(removedDocs)
+      queueOperation(async () =>
+        self.persistence.persistNewState(removedDocs),
+      ).catch(console.error)
 
       await Promise.all(candidates.map(doc => self.afterRemove(doc)))
 
