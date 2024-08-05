@@ -25,6 +25,7 @@ import qs from 'query-string'
 import { EJSON } from 'ejson2'
 import { IdleTimeout } from './idle-timeout'
 import { KeepAlive } from './keep-alive'
+import { callMethodProxy } from './call-method-proxy'
 import Timeout = NodeJS.Timeout
 
 export type ErrorHandler = (error: Presentation.ErrorPayload) => any
@@ -82,6 +83,14 @@ export type CallOptions = {
   httpFallback?: boolean
 }
 
+export type ProxyMethodCall = { [key: string]: ProxyMethodCall } & (<
+  T = any,
+  R = any,
+>(
+  params?: MethodParams<T>,
+  options?: CallOptions,
+) => Promise<R>)
+
 /**
  * When working with Next.js, it is probably a good idea to not run this in the
  * server side by using it inside a `useEffect` hook.
@@ -118,10 +127,14 @@ export class Client extends ClientChannel {
   keepAlive: KeepAlive = null
   idleTimeout: IdleTimeout = null
 
+  m: ProxyMethodCall
+
   static KEEP_ALIVE_INTERVAL = 10000
 
   constructor(options: ClientOptions = {}) {
     super(NO_CHANNEL)
+
+    this.m = callMethodProxy(this)
 
     this.uuid = Presentation.uuid()
 

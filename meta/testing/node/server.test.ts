@@ -142,4 +142,14 @@ describe('Server', function () {
 
     expect(node.remoteAddress).to.be.a('string').and.not.be.empty
   })
+
+  it('should create and call method using proxy syntax', async function () {
+    test.server.m.test.proxy = async num => num * 2
+
+    const result = await test.client.m.test.proxy(4, {
+      http: true,
+    })
+
+    expect(result).to.equal(8)
+  })
 })

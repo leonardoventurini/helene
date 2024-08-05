@@ -20,6 +20,7 @@ import { ServerChannel } from './server-channel'
 import { DefaultMethods } from './default-methods'
 import { Event } from './event'
 import io from 'socket.io'
+import { createMethodProxy } from './create-method-proxy'
 
 declare global {
   // eslint-disable-next-line no-var
@@ -55,6 +56,10 @@ export type ServerOptions = {
   shouldAllowChannelSubscribe?: ChannelChecker
 }
 
+export type ProxyMethodCreation = {
+  [key: string]: ProxyMethodCreation
+} & any
+
 export class Server extends ServerChannel {
   uuid: string
   httpTransport: HttpTransport
@@ -73,6 +78,8 @@ export class Server extends ServerChannel {
   allClients: Map<string, ClientNode> = new Map()
   channels: Map<string, ServerChannel> = new Map()
   events: Map<string, Event> = new Map()
+
+  m: ProxyMethodCreation
 
   acceptConnections = true
 
@@ -95,6 +102,8 @@ export class Server extends ServerChannel {
     rateLimit = false,
   }: ServerOptions = {}) {
     super(NO_CHANNEL)
+
+    this.m = createMethodProxy(this)
 
     this.setServer(this)
     this.createDefaultMethods()
