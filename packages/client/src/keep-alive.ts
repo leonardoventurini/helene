@@ -18,6 +18,8 @@ export class KeepAlive {
   }
 
   start() {
+    this.client.removeAllListeners(HeleneEvents.KEEP_ALIVE)
+
     // If the server stops sending the keep alive event we should disconnect.
     this.client.on(HeleneEvents.KEEP_ALIVE, () => {
       clearTimeout(this.keepAliveTimeout)
