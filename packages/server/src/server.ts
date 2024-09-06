@@ -19,8 +19,8 @@ import isString from 'lodash/isString'
 import { ServerChannel } from './server-channel'
 import { DefaultMethods } from './default-methods'
 import { Event } from './event'
-import io from 'socket.io'
 import { createMethodProxy } from './create-method-proxy'
+import WebSocket from 'ws'
 
 declare global {
   // eslint-disable-next-line no-var
@@ -47,7 +47,7 @@ export type ServerOptions = {
   auth?: AuthFunction
   origins?: string[]
   debug?: boolean
-  ws?: Partial<io.ServerOptions>
+  ws?: Partial<WebSocket.ServerOptions>
   redis?: RedisClientOptions | boolean
   requestListener?: RequestListener
   globalInstance?: boolean
@@ -132,10 +132,6 @@ export class Server extends ServerChannel {
     this.httpTransport = new HttpTransport(this, origins, this.rateLimit)
 
     this.webSocketTransport = new WebSocketTransport(this, {
-      cors: {
-        origin: origins,
-        ...ws?.cors,
-      },
       ...ws,
     })
 

@@ -78,3 +78,10 @@ export enum Methods {
   LIST_METHODS = 'list:methods',
   KEEP_ALIVE = 'keep:alive',
 }
+
+export const WebSocketState = {
+  CONNECTING: 0,
+  OPEN: 1,
+  CLOSING: 2,
+  CLOSED: 3,
+}

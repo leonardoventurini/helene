@@ -33,6 +33,7 @@ export class ServerChannel extends EventEmitter2 {
 
       if (this.server.events.has(event as string)) {
         const eventObject = this.server.events.get(event as string)
+
         eventObject.handler(this, value)
       }
     })

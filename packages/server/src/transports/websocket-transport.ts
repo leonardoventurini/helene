@@ -12,6 +12,7 @@ import {
 import { ClientNode } from '../client-node'
 import IsomorphicWebSocket from 'isomorphic-ws'
 import sockjs from 'sockjs'
+import WebSocket from 'ws'
 import Payload = Presentation.Payload
 
 export enum WebSocketTransportEvents {
@@ -29,12 +30,15 @@ export class WebSocketTransport {
     path: HELENE_WS_PATH,
   }
 
-  constructor(server: Server, opts: Partial<io.ServerOptions>) {
+  constructor(server: Server, opts: Partial<WebSocket.ServerOptions>) {
     this.server = server
 
     Object.assign(this.options, opts ?? {})
 
-    this.wss = sockjs.createServer()
+    this.wss = sockjs.createServer({
+      heartbeat_delay: 45 * 1000,
+      disconnect_delay: 60 * 1000,
+    })
 
     this.wss.on(WebSocketEvents.CONNECTION, this.handleConnection)
 

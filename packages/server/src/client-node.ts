@@ -1,5 +1,10 @@
 import isString from 'lodash/isString'
-import { HeleneEvents, Presentation, ServerEvents } from '@helenejs/utils'
+import {
+  HeleneEvents,
+  Presentation,
+  ServerEvents,
+  WebSocketState,
+} from '@helenejs/utils'
 import { Request, Response } from 'express'
 import { RateLimiter } from 'limiter'
 import { RateLimit, Server } from './server'
@@ -64,14 +69,17 @@ export class ClientNode extends EventEmitter2 {
 
     if (socket) {
       this.keepAliveInterval = setInterval(() => {
-        if (ClientNode.ENABLE_KEEP_ALIVE && socket.connected) {
+        if (
+          ClientNode.ENABLE_KEEP_ALIVE &&
+          socket.readyState === WebSocketState.OPEN
+        ) {
           this.sendEvent(HeleneEvents.KEEP_ALIVE)
 
           this.terminationTimeout = setTimeout(() => {
             clearInterval(this.keepAliveInterval)
 
-            if (socket.connected) {
-              socket?.disconnect(true)
+            if (socket.readyState === WebSocketState.OPEN) {
+              socket?.close()
               this.emit(HeleneEvents.KEEP_ALIVE_DISCONNECT)
             }
           }, ClientNode.KEEP_ALIVE_INTERVAL / 2)
@@ -190,7 +198,7 @@ export class ClientNode extends EventEmitter2 {
       })
     }
 
-    this.socket?.disconnect()
+    this.socket?.close()
 
     this.emit(ServerEvents.DISCONNECT)
     this.server.emit(ServerEvents.DISCONNECTION, this)

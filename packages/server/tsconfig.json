@@ -13,10 +13,11 @@
     "outDir": "lib",
     "skipLibCheck": true,
     "sourceMap": true,
-    "target": "es2021"
+    "target": "es2021",
+    "baseUrl": "./",
   },
   "include": [
-    "./src/**/*"
+    "./src/**/*.ts"
   ],
   "exclude": [
     "./src/**/*.test.*"

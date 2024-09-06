@@ -18,7 +18,7 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "lerna": "^7.3.0",
     "prettier": "^3.0.3",
-    "typescript": "^5.1.3"
+    "typescript": "^5.5.4"
   },
   "author": "Leonardo Venturini",
   "license": "MIT",
@@ -37,7 +37,8 @@
     "url": "https://github.com/leonardoventurini/helene/issues"
   },
   "volta": {
-    "node": "20.6.1"
+    "node": "20.17.0",
+    "yarn": "1.22.22"
   },
   "workspaces": [
     "packages/*",

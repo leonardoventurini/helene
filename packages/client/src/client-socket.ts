@@ -1,15 +1,14 @@
 import { Client, WebSocketOptions } from './client'
-import { ClientEvents, HELENE_WS_PATH, Presentation } from '@helenejs/utils'
+import {
+  ClientEvents,
+  HELENE_WS_PATH,
+  Presentation,
+  WebSocketEvents,
+  WebSocketState,
+} from '@helenejs/utils'
 import { EventEmitter2 } from 'eventemitter2'
-import { connectSockJS } from './sockjs'
+import SockJS from '@helenejs/isosockjs'
 import PayloadType = Presentation.PayloadType
-
-export const WebSocketState = {
-  CONNECTING: 0,
-  OPEN: 1,
-  CLOSING: 2,
-  CLOSED: 3,
-}
 
 export class ClientSocket extends EventEmitter2 {
   client: Client
@@ -50,69 +49,22 @@ export class ClientSocket extends EventEmitter2 {
   }
 
   connect() {
-    return new Promise((resolve, reject) => {
-      if (this.ready) {
-        return resolve(this.socket)
-      }
+    if (this.ready) {
+      console.warn('Helene: Already Connected')
+      return
+    }
 
-      this.stopped = false
-      this.connecting = true
-      this.client.emit(ClientEvents.CONNECTING)
+    this.stopped = false
+    this.connecting = true
+    this.client.emit(ClientEvents.CONNECTING)
 
-    connectSockJS(this.uri, this)
+    this.socket = new SockJS(this.uri)
 
-      this.socket.on('connect_error', error => {
-        console.log('Helene: WebSocket Connect Error', error)
-        this.socket = undefined
-        this.reconnect()
-      })
+    this.socket.onopen = this.handleOpen.bind(this)
 
-      this.socket.on('error', error => {
-        console.error('Helene: WebSocket Error', error)
-        this.socket = undefined
-        this.reconnect()
-      })
-
-      this.socket.on('message', (data: { data: string }) => {
-        const payload = Presentation.decode(data)
-
-        this.client.emit(ClientEvents.INBOUND_MESSAGE, data)
-
-        if (!payload) return
-
-        this.client.payloadRouter(payload)
-      })
-
-      this.socket.on('disconnect', () => {
-        console.log('Helene: WebSocket Disconnected')
-
-        this.connecting = false
-
-        defer(() => {
-          this.socket = undefined
-          this.client.emit(ClientEvents.WEBSOCKET_CLOSED)
-
-          if (!this.stopped) {
-            this.reconnect()
-          }
-        })
-      })
-    })
-  }
-
-  reconnect() {
-    this.attempts++
-
-    setTimeout(
-      () => {
-        if (this.stopped) return
-
-        this.client.emit(ClientEvents.WEBSOCKET_RECONNECTING)
-
-        this.connect().catch(console.error)
-      },
-      Math.min(this.baseAttemptDelay * this.attempts, this.maxAttemptDelay),
-    )
+    this.socket.onclose = function () {
+      console.log('Helene: Connection Closed')
+    }
   }
 
   async close() {
@@ -121,7 +73,7 @@ export class ClientSocket extends EventEmitter2 {
 
     if (!this.socket) return
 
-    this.socket.disconnect()
+    this.socket.close()
     this.socket = undefined
 
     await this.client.waitFor(ClientEvents.WEBSOCKET_CLOSED)
@@ -173,7 +125,17 @@ export class ClientSocket extends EventEmitter2 {
 
     this.connecting = false
 
-    this.client.init()
+    this.client.initialize()
+  }
+
+  public handleMessage(data: { data: string }) {
+    const payload = Presentation.decode(data)
+
+    this.client.emit(ClientEvents.INBOUND_MESSAGE, data)
+
+    if (!payload) return
+
+    this.client.payloadRouter(payload)
   }
 
   /**

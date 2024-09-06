@@ -216,18 +216,15 @@ export class Client extends ClientChannel {
     }
 
     if (this.mode.websocket) {
-      await this.clientSocket.connect()
+      this.clientSocket.connect()
     }
 
     if (this.mode.http) {
       this.initialize().catch(console.error)
     }
 
-    // This method can be called when the client is already initialized, the previous calls already handle this well.
-    if (this.initialized) return
-
     try {
-      await this.waitFor(ClientEvents.INITIALIZED, 5000)
+      await this.waitFor(ClientEvents.INITIALIZED, 10000)
     } catch {
       console.error('Helene: Initialization timeout')
       console.trace()
