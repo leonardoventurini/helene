@@ -14,9 +14,6 @@ export enum WebSocketEvents {
   CONNECTION = 'connection',
   CLOSE = 'close',
   ERROR = 'error',
-  CONNECT = 'connect',
-  DISCONNECT = 'disconnect',
-  RECONNECT = 'reconnect',
 }
 
 export enum ServerEvents {

@@ -1,8 +1,8 @@
 import { Client, WebSocketOptions } from './client'
 import { ClientEvents, HELENE_WS_PATH, Presentation } from '@helenejs/utils'
 import { EventEmitter2 } from 'eventemitter2'
-import { io, Socket } from 'socket.io-client'
-import defer from 'lodash/defer'
+import { connectSockJS } from './sockjs'
+import PayloadType = Presentation.PayloadType
 
 export const WebSocketState = {
   CONNECTING: 0,
@@ -13,7 +13,7 @@ export const WebSocketState = {
 
 export class ClientSocket extends EventEmitter2 {
   client: Client
-  socket: Socket
+  socket: WebSocket
 
   protocol: string
   uri: string
@@ -30,7 +30,7 @@ export class ClientSocket extends EventEmitter2 {
   attempts = 0
 
   get ready() {
-    return this.socket?.connected ?? false
+    return Boolean(this.socket?.readyState === WebSocketState.OPEN)
   }
 
   constructor(client: Client, options: WebSocketOptions = {}) {
@@ -43,9 +43,9 @@ export class ClientSocket extends EventEmitter2 {
     this.protocol = this.client.options.secure ? 'https://' : 'http://'
 
     if (this.client.options.port) {
-      this.uri = `${this.protocol}${this.client.options.host}:${this.client.options.port}`
+      this.uri = `${this.protocol}${this.client.options.host}:${this.client.options.port}${this.options.path}`
     } else {
-      this.uri = `${this.protocol}${this.client.options.host}`
+      this.uri = `${this.protocol}${this.client.options.host}${this.options.path}`
     }
   }
 
@@ -59,24 +59,7 @@ export class ClientSocket extends EventEmitter2 {
       this.connecting = true
       this.client.emit(ClientEvents.CONNECTING)
 
-      this.socket = io(this.uri, {
-        path: this.options.path,
-        query: {
-          uuid: this.client.uuid,
-        },
-        reconnection: false,
-      })
-
-      this.socket.on('connect', () => {
-        defer(() => {
-          console.log('Helene: WebSocket Connected')
-          resolve(this.socket)
-          this.connecting = false
-          this.attempts = 0
-          this.client.emit(ClientEvents.WEBSOCKET_CONNECTED)
-          this.client.initialize().catch(console.error)
-        })
-      })
+    connectSockJS(this.uri, this)
 
       this.socket.on('connect_error', error => {
         console.log('Helene: WebSocket Connect Error', error)
@@ -161,5 +144,51 @@ export class ClientSocket extends EventEmitter2 {
     this.client.emit(ClientEvents.OUTBOUND_MESSAGE, payload)
 
     this.socket.send(payload)
+  }
+
+  handleOpen() {
+    if (!this.socket) return
+
+    this.send(
+      Presentation.encode({
+        type: PayloadType.SETUP,
+        uuid: this.client.uuid,
+      }),
+    )
+
+    this.client.emit(ClientEvents.WEBSOCKET_CONNECTED)
+
+    this.socket.addEventListener(
+      WebSocketEvents.ERROR,
+      this.handleError.bind(this),
+    )
+    this.socket.addEventListener(
+      WebSocketEvents.MESSAGE,
+      this.handleMessage.bind(this),
+    )
+    this.socket.addEventListener(
+      WebSocketEvents.CLOSE,
+      this.handleClose.bind(this),
+    )
+
+    this.connecting = false
+
+    this.client.init()
+  }
+
+  /**
+   * This runs if the connection is interrupted or if the server fails to establish a new connection.
+   */
+  private handleClose = () => {
+    this.connecting = false
+    this.socket = undefined
+
+    this.client.emit(ClientEvents.WEBSOCKET_CLOSED)
+  }
+
+  private handleError = error => {
+    this.connecting = false
+    console.error(error)
+    this.client.emit(ClientEvents.ERROR, error)
   }
 }
