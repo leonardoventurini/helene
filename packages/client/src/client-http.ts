@@ -70,6 +70,8 @@ export class ClientHttp {
 
         const payload = Presentation.decode(event.data)
 
+        this.client.emit(ClientEvents.INBOUND_MESSAGE, payload)
+
         this.client.payloadRouter(payload)
       }
 
@@ -104,6 +106,8 @@ export class ClientHttp {
     reject: Reject,
   ) {
     try {
+      this.client.emit(ClientEvents.OUTBOUND_MESSAGE, payload)
+
       // @ts-ignore
       const data = await fetch(this.uri, {
         method: 'POST',
@@ -136,6 +140,8 @@ export class ClientHttp {
       const decoded = Presentation.decode<MethodResultPayload | ErrorPayload>(
         response,
       )
+
+      this.client.emit(ClientEvents.INBOUND_MESSAGE, decoded)
 
       if (decoded.type === Presentation.PayloadType.ERROR)
         return reject(decoded)
