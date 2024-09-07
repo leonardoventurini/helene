@@ -112,15 +112,21 @@ export class ClientSocket extends EventEmitter2 {
     this.socket.send(payload)
   }
 
+  sendSetup() {
+    const setup = {
+      type: PayloadType.SETUP,
+      uuid: this.client.uuid,
+    }
+
+    this.send(Presentation.encode(setup))
+
+    this.client.emit(ClientEvents.OUTBOUND_MESSAGE, setup)
+  }
+
   handleOpen() {
     if (!this.socket) return
 
-    this.send(
-      Presentation.encode({
-        type: PayloadType.SETUP,
-        uuid: this.client.uuid,
-      }),
-    )
+    this.sendSetup()
 
     this.client.emit(ClientEvents.WEBSOCKET_CONNECTED)
 
