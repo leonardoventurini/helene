@@ -9,3 +9,5 @@ yarn-error.log
 
 /tsconfig.tsbuildinfo
 workspace
+
+lerna-debug.log
