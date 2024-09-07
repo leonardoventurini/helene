@@ -132,6 +132,8 @@ export class Collection<
   }: CollectionOptions = {}) {
     super()
 
+    this.setMaxListeners(1024)
+
     this.autoload = autoload
     this.timestampData = timestamps
 
