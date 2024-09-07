@@ -12,7 +12,7 @@
     "prepublishOnly": "yarn run rebuild"
   },
   "dependencies": {
-    "@helenejs/isosockjs": "^1.4.1",
+    "@helenejs/isosockjs": "^1.4.4",
     "@helenejs/utils": "^1.4.4",
     "@sanity/eventsource": "^5.0.0",
     "ejson2": "^1.1.0",
@@ -52,5 +52,5 @@
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
-  "gitHead": "70979ea1153084884ce78ef3a53e97930d0cbfb7"
+  "gitHead": "bfcde8edd923308371a1c937345f850be56d247a"
 }
