@@ -2,6 +2,7 @@ import { Client } from './client'
 import {
   CLIENT_ID_HEADER_KEY,
   ClientEvents,
+  PayloadType,
   Presentation,
   Reject,
   Resolve,
@@ -66,11 +67,7 @@ export class ClientHttp {
       this.client.emit(ClientEvents.EVENTSOURCE_CREATE)
 
       this.clientEventSource.onmessage = (event: MessageEvent) => {
-        this.client.emit(ClientEvents.INBOUND_MESSAGE, event.data)
-
         const payload = Presentation.decode(event.data)
-
-        this.client.emit(ClientEvents.INBOUND_MESSAGE, payload)
 
         this.client.payloadRouter(payload)
       }
@@ -106,8 +103,6 @@ export class ClientHttp {
     reject: Reject,
   ) {
     try {
-      this.client.emit(ClientEvents.OUTBOUND_MESSAGE, payload)
-
       // @ts-ignore
       const data = await fetch(this.uri, {
         method: 'POST',
@@ -135,6 +130,10 @@ export class ClientHttp {
         )
       }
 
+      if (!resolve) {
+        return
+      }
+
       const response = await data.text()
 
       const decoded = Presentation.decode<MethodResultPayload | ErrorPayload>(
@@ -143,10 +142,9 @@ export class ClientHttp {
 
       this.client.emit(ClientEvents.INBOUND_MESSAGE, decoded)
 
-      if (decoded.type === Presentation.PayloadType.ERROR)
-        return reject(decoded)
+      if (decoded.type === PayloadType.ERROR) return reject(decoded)
 
-      if (resolve) resolve(decoded.result)
+      resolve(decoded.result)
     } catch (error) {
       return reject(error)
     }

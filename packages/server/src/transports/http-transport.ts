@@ -6,6 +6,7 @@ import {
   CLIENT_ID_HEADER_KEY,
   Errors,
   HeleneEvents,
+  PayloadType,
   Presentation,
   PublicError,
   SchemaValidationError,
@@ -181,13 +182,11 @@ export class HttpTransport {
         req.body && isString(req.body) ? EJSON.parse(req.body) : {}
 
       if (!transport.payload) {
-        return res.json(
-          Presentation.Outbound.error(
-            {
-              message: Errors.INVALID_REQUEST,
-            },
-            true,
-          ),
+        return res.send(
+          Presentation.encode({
+            type: PayloadType.ERROR,
+            message: Errors.INVALID_REQUEST,
+          }),
         )
       }
 
@@ -200,14 +199,12 @@ export class HttpTransport {
       clientNode.uuid = clientId
 
       if (!method) {
-        return res.json(
-          Presentation.Outbound.error(
-            {
-              message: Errors.METHOD_NOT_FOUND,
-              method: payload.method,
-            },
-            true,
-          ),
+        return res.send(
+          Presentation.encode({
+            type: PayloadType.ERROR,
+            message: Errors.METHOD_NOT_FOUND,
+            method: payload.method,
+          }),
         )
       }
 
@@ -220,14 +217,12 @@ export class HttpTransport {
       clientNode.setContext(serverContext)
 
       if (method.isProtected && !clientNode.authenticated) {
-        return res.json(
-          Presentation.Outbound.error(
-            {
-              message: Errors.METHOD_FORBIDDEN,
-              method: payload.method,
-            },
-            true,
-          ),
+        return res.send(
+          Presentation.encode({
+            type: PayloadType.ERROR,
+            message: Errors.METHOD_FORBIDDEN,
+            method: payload.method,
+          }),
         )
       }
 
@@ -236,7 +231,8 @@ export class HttpTransport {
       const result = await method.exec(payload.params, clientNode)
 
       res.send(
-        Presentation.Outbound.result({
+        Presentation.encode({
+          type: PayloadType.RESULT,
           uuid: payload.uuid,
           method: payload.method,
           result,
@@ -249,7 +245,8 @@ export class HttpTransport {
 
       if (error instanceof PublicError) {
         return res.send(
-          Presentation.Outbound.error({
+          Presentation.encode({
+            type: PayloadType.ERROR,
             message: error.message,
             stack: error.stack,
             ...uuid,
@@ -259,7 +256,8 @@ export class HttpTransport {
 
       if (error instanceof SchemaValidationError) {
         return res.send(
-          Presentation.Outbound.error({
+          Presentation.encode({
+            type: PayloadType.ERROR,
             message: error.message,
             errors: error.errors,
             ...uuid,
@@ -268,7 +266,8 @@ export class HttpTransport {
       }
 
       return res.send(
-        Presentation.Outbound.error({
+        Presentation.encode({
+          type: PayloadType.ERROR,
           message: Errors.INTERNAL_ERROR,
           stack: error.stack,
           ...uuid,

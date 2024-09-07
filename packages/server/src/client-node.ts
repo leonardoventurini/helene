@@ -1,6 +1,7 @@
 import isString from 'lodash/isString'
 import {
   HeleneEvents,
+  PayloadType,
   Presentation,
   ServerEvents,
   WebSocketState,
@@ -164,7 +165,7 @@ export class ClientNode extends EventEmitter2 {
   }
 
   result(payload: Presentation.MethodResultPayloadPartial) {
-    this.socket.write(Presentation.Outbound.result(payload))
+    this.socket.write(Presentation.encode(payload))
   }
 
   /**
@@ -173,14 +174,19 @@ export class ClientNode extends EventEmitter2 {
   sendEvent(event: string, params?: any) {
     return this.send({
       uuid: Presentation.uuid(),
-      type: Presentation.PayloadType.EVENT,
+      type: PayloadType.EVENT,
       event,
       params,
     })
   }
 
   error(payload: Presentation.ErrorPayloadPartial) {
-    this.socket?.write(Presentation.Outbound.error(payload))
+    this.socket?.write(
+      Presentation.encode({
+        type: PayloadType.ERROR,
+        ...payload,
+      }),
+    )
   }
 
   close() {

@@ -1,21 +1,20 @@
-import identity from 'lodash/identity'
 import { Errors, Helpers } from './index'
 import { EJSON } from 'ejson2'
 import { v4 } from '@lukeed/uuid'
 import isString from 'lodash/isString'
 
+export enum PayloadType {
+  METHOD = 'method',
+  RESULT = 'result',
+  EVENT = 'event',
+  ERROR = 'error',
+  SETUP = 'setup',
+}
+
 export namespace Presentation {
   export type Params = Record<string, any> | any[] | any
 
   export const uuid = v4
-
-  export enum PayloadType {
-    METHOD = 'method',
-    RESULT = 'result',
-    EVENT = 'event',
-    ERROR = 'error',
-    SETUP = 'setup',
-  }
 
   export type SetupPayload = {
     uuid: string
@@ -82,38 +81,5 @@ export namespace Presentation {
 
   export function encode<T = Payload>(payload: T): string {
     return EJSON.stringify(payload)
-  }
-
-  export namespace Inbound {
-    export function call(payload: MethodCallPayloadPartial, raw = false) {
-      return (raw ? identity : encode)({
-        type: PayloadType.METHOD,
-        ...payload,
-      })
-    }
-  }
-
-  export namespace Outbound {
-    export function event(payload: EventPayloadPartial, raw = false) {
-      return (raw ? identity : encode)({
-        uuid: uuid(),
-        type: PayloadType.EVENT,
-        ...payload,
-      })
-    }
-
-    export function result(payload: MethodResultPayloadPartial, raw = false) {
-      return (raw ? identity : encode)({
-        type: PayloadType.RESULT,
-        ...payload,
-      })
-    }
-
-    export function error(payload: ErrorPayloadPartial, raw = false) {
-      return (raw ? identity : encode)({
-        type: PayloadType.ERROR,
-        ...payload,
-      })
-    }
   }
 }

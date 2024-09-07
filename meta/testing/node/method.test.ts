@@ -6,7 +6,7 @@ import sinon from 'sinon'
 import {
   Errors,
   getPromise,
-  Presentation,
+  PayloadType,
   PublicError,
   ServerEvents,
   sleep,
@@ -47,9 +47,7 @@ describe('Methods', function () {
 
     const error = await test.catchError(test.client.call('test:error'))
 
-    expect(error)
-      .to.have.property('type')
-      .that.equals(Presentation.PayloadType.ERROR)
+    expect(error).to.have.property('type').that.equals(PayloadType.ERROR)
 
     expect(error).to.have.property('message').that.equals(Errors.INTERNAL_ERROR)
 

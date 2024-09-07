@@ -2,13 +2,13 @@ import { Client, WebSocketOptions } from './client'
 import {
   ClientEvents,
   HELENE_WS_PATH,
+  PayloadType,
   Presentation,
   WebSocketEvents,
   WebSocketState,
 } from '@helenejs/utils'
 import { EventEmitter2 } from 'eventemitter2'
 import SockJS from '@helenejs/isosockjs'
-import PayloadType = Presentation.PayloadType
 
 export class ClientSocket extends EventEmitter2 {
   client: Client
@@ -109,8 +109,6 @@ export class ClientSocket extends EventEmitter2 {
       return
     }
 
-    this.client.emit(ClientEvents.OUTBOUND_MESSAGE, payload)
-
     this.socket.send(payload)
   }
 
@@ -146,8 +144,6 @@ export class ClientSocket extends EventEmitter2 {
 
   public async handleMessage(data: { data: string }) {
     const payload = Presentation.decode(data)
-
-    this.client.emit(ClientEvents.INBOUND_MESSAGE, data)
 
     if (!payload) return
 

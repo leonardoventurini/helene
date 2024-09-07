@@ -1,5 +1,5 @@
 import { Server } from './server'
-import { Presentation } from '@helenejs/utils'
+import { PayloadType, Presentation } from '@helenejs/utils'
 import { ClientNode } from './client-node'
 import { ServerChannel } from './server-channel'
 
@@ -71,7 +71,9 @@ export class Event {
   }
 
   handler(channel: ServerChannel, params: Presentation.Params) {
-    const payload = Presentation.Outbound.event({
+    const payload = Presentation.encode({
+      uuid: Presentation.uuid(),
+      type: PayloadType.EVENT,
       event: this.name,
       channel: channel.channelName,
       params,

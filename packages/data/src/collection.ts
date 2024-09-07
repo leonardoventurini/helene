@@ -132,8 +132,6 @@ export class Collection<
   }: CollectionOptions = {}) {
     super()
 
-    this.setMaxListeners(1024)
-
     this.autoload = autoload
     this.timestampData = timestamps
 
@@ -207,7 +205,7 @@ export class Collection<
     this.beforeRemove = beforeRemove.bind(this)
     this.afterRemove = afterRemove.bind(this)
 
-    this.setMaxListeners(100)
+    this.setMaxListeners(1024)
   }
 
   deferEmit(event: string, ...args: any[]) {

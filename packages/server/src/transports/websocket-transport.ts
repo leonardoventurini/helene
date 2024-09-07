@@ -3,6 +3,7 @@ import {
   Errors,
   HELENE_WS_PATH,
   Methods,
+  PayloadType,
   Presentation,
   PublicError,
   SchemaValidationError,
@@ -86,7 +87,7 @@ export class WebSocketTransport {
     try {
       const parsedData = Presentation.decode<Payload>(data)
 
-      if (parsedData.type === Presentation.PayloadType.SETUP) {
+      if (parsedData.type === PayloadType.SETUP) {
         node.setId(parsedData.uuid)
 
         this.server.addClient(node)
@@ -94,7 +95,7 @@ export class WebSocketTransport {
         this.server.emit(ServerEvents.CONNECTION, node)
       }
 
-      if (parsedData.type !== Presentation.PayloadType.METHOD) return
+      if (parsedData.type !== PayloadType.METHOD) return
 
       if (parsedData.method !== Methods.KEEP_ALIVE)
         this.server.debugger(`Message Received`, parsedData)

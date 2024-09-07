@@ -6,6 +6,7 @@ import {
   HeleneEvents,
   Methods,
   NO_CHANNEL,
+  PayloadType,
   Presentation,
   PromiseQueue,
   TOKEN_HEADER_KEY,
@@ -416,17 +417,20 @@ export class Client extends ClientChannel {
       const uuid = Presentation.uuid()
 
       const payload = {
+        type: PayloadType.METHOD,
         uuid,
         method,
         params,
         void: true,
       }
 
+      this.emit(ClientEvents.OUTBOUND_MESSAGE, payload)
+
       if (http || (!this.clientSocket.ready && httpFallback)) {
         return this.clientHttp.request(payload, null, reject)
       }
 
-      this.clientSocket.send(Presentation.Inbound.call(payload))
+      this.clientSocket.send(Presentation.encode(payload))
 
       resolve()
     })
@@ -453,14 +457,16 @@ export class Client extends ClientChannel {
     return new Promise((resolve, reject) => {
       const uuid = Presentation.uuid()
 
-      const payload = { uuid, method, params }
+      const payload = { uuid, type: PayloadType.METHOD, method, params }
+
+      this.emit(ClientEvents.OUTBOUND_MESSAGE, payload)
 
       // It should call the method via HTTP if the socket is not ready or the initialization did not occur yet.
       if (http || (!this.clientSocket.ready && httpFallback)) {
         return this.clientHttp.request(payload, resolve, reject)
       }
 
-      this.clientSocket.send(Presentation.Inbound.call(payload))
+      this.clientSocket.send(Presentation.encode(payload))
 
       const timeoutId = setTimeout(() => {
         const promise = this.queue.dequeue(uuid)
@@ -519,12 +525,14 @@ export class Client extends ClientChannel {
   }
 
   payloadRouter(payload: Presentation.Payload) {
+    this.emit(ClientEvents.INBOUND_MESSAGE, payload)
+
     switch (payload.type) {
-      case Presentation.PayloadType.ERROR:
+      case PayloadType.ERROR:
         return this.handleError(payload)
-      case Presentation.PayloadType.EVENT:
+      case PayloadType.EVENT:
         return this.handleEvent(payload)
-      case Presentation.PayloadType.RESULT:
+      case PayloadType.RESULT:
         return this.handleResult(payload)
     }
   }
@@ -582,11 +590,13 @@ export class Client extends ClientChannel {
   async attachDevTools() {
     const generateId = () => (Date.now() + Math.random()).toString(36)
 
+    console.log('DevTools Attached')
+
     this.on(ClientEvents.OUTBOUND_MESSAGE, content => {
       // @ts-ignore
       window.__helene_devtools_log_message?.({
         id: generateId(),
-        content,
+        content: EJSON.stringify(content),
         isOutbound: true,
         timestamp: Date.now(),
       })
@@ -596,7 +606,7 @@ export class Client extends ClientChannel {
       // @ts-ignore
       window.__helene_devtools_log_message?.({
         id: generateId(),
-        content,
+        content: EJSON.stringify(content),
         isInbound: true,
         timestamp: Date.now(),
       })
