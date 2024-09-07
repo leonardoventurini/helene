@@ -1,7 +1,7 @@
 {
   "name": "@helenejs/isosockjs",
   "description": "Real-time Web Apps for Node.js and Bun",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "main": "lib/index.js",
   "browser": "lib/index.browser.js",
   "type": "commonjs",
