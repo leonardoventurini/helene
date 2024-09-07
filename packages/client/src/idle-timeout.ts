@@ -83,9 +83,6 @@ export class IdleTimeout {
   }
 
   async reset() {
-    console.log('eventsource', { ...this.client.mode })
-    console.log(this.client.clientHttp.clientEventSource)
-
     this.stop()
     this.start()
 
