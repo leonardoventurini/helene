@@ -83,14 +83,26 @@ export class IdleTimeout {
   }
 
   async reset() {
-    // If we don't wait for the client to initialize, it will cause a race condition when using WebSocket
-    if (!this.client.initialized) {
-      return
-    }
-
     this.stop()
     this.start()
 
-    return this.client.connect()
+    if (this.client.mode.eventsource) {
+      if (this.client.clientHttp.ready) {
+        return
+      }
+
+      await this.client.clientHttp.createEventSource()
+
+      await this.client.waitFor(ClientEvents.EVENTSOURCE_OPEN, 10000)
+      return
+    }
+
+    if (this.client.clientSocket.ready) {
+      return
+    }
+
+    this.client.clientSocket.connect()
+
+    await this.client.waitFor(ClientEvents.WEBSOCKET_CONNECTED, 10000)
   }
 }

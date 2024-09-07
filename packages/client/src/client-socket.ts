@@ -25,7 +25,6 @@ export class ClientSocket extends EventEmitter2 {
   }
 
   baseAttemptDelay = 1000
-  maxAttemptDelay = 10000
   attempts = 0
 
   get ready() {
@@ -60,10 +59,27 @@ export class ClientSocket extends EventEmitter2 {
 
     this.socket = new SockJS(this.uri)
 
-    this.socket.onopen = this.handleOpen.bind(this)
+    this.socket.onopen = () => {
+      this.attempts = 0
+      this.handleOpen()
+    }
 
-    this.socket.onclose = function () {
+    this.socket.onclose = () => {
       console.log('Helene: Connection Closed')
+      if (this.stopped) return
+      this.socket = undefined
+      setTimeout(
+        () => {
+          this.attempts++
+          this.client.emit(ClientEvents.WEBSOCKET_RECONNECTING)
+          this.connect()
+        },
+        Math.random() * this.baseAttemptDelay + 500,
+      )
+    }
+
+    this.socket.onerror = error => {
+      console.error(error)
     }
   }
 

@@ -50,9 +50,7 @@ describe('WebSockets', function () {
       client.connect().catch(console.error)
     })
 
-    client.clientSocket.baseAttemptDelay = 100
-
-    await sleep(1000)
+    await sleep(5000)
 
     test.server.acceptConnections = true
 
