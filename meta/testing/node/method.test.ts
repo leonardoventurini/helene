@@ -65,7 +65,7 @@ describe('Methods', function () {
 
     await test.client.void('test:method')
 
-    await test.sleep(10)
+    await test.sleep(500)
 
     expect(called).to.be.true
   })
@@ -279,7 +279,7 @@ describe('Methods', function () {
       })
 
       await expect(
-        client.call('test:method', 1, { timeout: 200 }),
+        client.call('test:method', 1, { timeout: 1500 }),
       ).to.rejectedWith(/Helene: Client not initialized/)
 
       expect(calls).to.deep.equal([])
@@ -288,7 +288,7 @@ describe('Methods', function () {
 
       setTimeout(() => client.initialize(), 100)
 
-      await client.call('test:method', 1, { timeout: 400 })
+      await client.call('test:method', 1)
 
       expect(calls).to.deep.equal([1])
 

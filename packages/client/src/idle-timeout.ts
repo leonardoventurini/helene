@@ -1,7 +1,7 @@
 import throttle from 'lodash/throttle'
 import defer from 'lodash/defer'
 import { Client } from './client'
-import { ClientEvents, Environment } from '@helenejs/utils'
+import { ClientEvents, Environment, WebSocketState } from '@helenejs/utils'
 import isNumber from 'lodash/isNumber'
 import Timeout = NodeJS.Timeout
 
@@ -83,11 +83,18 @@ export class IdleTimeout {
   }
 
   async reset() {
+    console.log('eventsource', { ...this.client.mode })
+    console.log(this.client.clientHttp.clientEventSource)
+
     this.stop()
     this.start()
 
     if (this.client.mode.eventsource) {
-      if (this.client.clientHttp.ready) {
+      if (
+        this.client.clientHttp.clientEventSource &&
+        this.client.clientHttp.clientEventSource.readyState !==
+          WebSocketState.CLOSED
+      ) {
         return
       }
 
@@ -97,7 +104,10 @@ export class IdleTimeout {
       return
     }
 
-    if (this.client.clientSocket.ready) {
+    if (
+      this.client.clientSocket.socket &&
+      this.client.clientSocket.socket.readyState !== WebSocketState.CLOSED
+    ) {
       return
     }
 

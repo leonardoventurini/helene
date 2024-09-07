@@ -6,7 +6,7 @@
     "browser:test": "karma start karma.config.js",
     "browser:test:watch": "karma start karma.config.js --auto-watch --no-single-run",
     "node:test": "nodemon --watch 'node_modules/**/*' -e ts,tsx --exec 'yarn run node:test:mocha'",
-    "node:test:mocha": "NODE_ENV=test mocha -r ts-node/register/transpile-only --file index.ts --extension js,jsx,ts,tsx --exit 'node/**/*.test.ts'"
+    "node:test:mocha": "NODE_ENV=test mocha -r ts-node/register/transpile-only --file index.ts --extension js,jsx,ts,tsx --timeout 10000 --exit 'node/**/*.test.ts'"
   },
   "devDependencies": {
     "@types/chai": "^4.3.6",

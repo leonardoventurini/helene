@@ -37,7 +37,7 @@ describe('idleness', () => {
 
   it('should disconnect on idleness and reconnect upon interaction (websocket)', async () => {
     const client = await test.createClient({
-      idlenessTimeout: 200,
+      idlenessTimeout: 1000,
     })
 
     await client.waitFor(ClientEvents.WEBSOCKET_CLOSED)
@@ -79,7 +79,7 @@ describe('idleness', () => {
     })
 
     const client = await test.createClient({
-      idlenessTimeout: 200,
+      idlenessTimeout: 1000,
     })
 
     await client.login({ email: 'test@helene.test', password: '123456' })

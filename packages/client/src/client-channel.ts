@@ -166,7 +166,7 @@ export class ClientChannel extends EventEmitter2 {
   /**
    * Returns true if the event was not fired within a given timeout.
    */
-  timeout(event: string, timeoutMs = 50) {
+  timeout(event: string, timeoutMs = 1000) {
     return new Promise(resolve => {
       const timeout = setTimeout(() => resolve(true), timeoutMs)
 

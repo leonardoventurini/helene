@@ -207,7 +207,11 @@ export class Client extends ClientChannel {
   }
 
   get connected() {
-    return this.initialized && this.clientSocket?.ready
+    return (
+      (this.mode.eventsource && this.clientHttp.ready) ||
+      (this.mode.websocket && this.clientSocket.ready) ||
+      this.mode.http
+    )
   }
 
   async connect() {
@@ -436,8 +440,6 @@ export class Client extends ClientChannel {
     params?: MethodParams<T>,
     { timeout = 20000, http, httpFallback = true }: CallOptions = {},
   ): Promise<R> {
-    // @todo perhaps should probe the connection here and reconnect if necessary?
-
     // It should wait for the client to initialize before calling any method.
     if (!this.initialized && method !== Methods.RPC_INIT) {
       try {

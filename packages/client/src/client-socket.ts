@@ -144,7 +144,7 @@ export class ClientSocket extends EventEmitter2 {
     this.client.initialize()
   }
 
-  public handleMessage(data: { data: string }) {
+  public async handleMessage(data: { data: string }) {
     const payload = Presentation.decode(data)
 
     this.client.emit(ClientEvents.INBOUND_MESSAGE, data)
