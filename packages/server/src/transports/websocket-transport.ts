@@ -97,9 +97,6 @@ export class WebSocketTransport {
 
       if (parsedData.type !== PayloadType.METHOD) return
 
-      if (parsedData.method !== Methods.KEEP_ALIVE)
-        this.server.debugger(`Message Received`, parsedData)
-
       await this.execute(parsedData, node)
     } catch (error) {
       return node.error({

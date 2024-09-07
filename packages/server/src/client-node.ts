@@ -165,7 +165,12 @@ export class ClientNode extends EventEmitter2 {
   }
 
   result(payload: Presentation.MethodResultPayloadPartial) {
-    this.socket.write(Presentation.encode(payload))
+    this.socket.write(
+      Presentation.encode({
+        type: PayloadType.RESULT,
+        ...payload,
+      }),
+    )
   }
 
   /**
