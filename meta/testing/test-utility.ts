@@ -2,6 +2,8 @@ import { EventOptions, Server, ServerOptions } from '@helenejs/server'
 import { Client, ClientOptions, TransportMode } from '@helenejs/client'
 import { ClientEvents, NO_CHANNEL, ServerEvents, sleep } from '@helenejs/utils'
 
+const PORTS = new Set()
+
 export class TestUtility {
   server: Server
   client: Client
@@ -47,7 +49,17 @@ export class TestUtility {
   }
 
   get randomPort() {
-    return Math.floor(Math.random() * (65536 - 40001) + 40000)
+    const gen = () => Math.floor(Math.random() * (65536 - 40001) + 40000)
+
+    let port = gen()
+
+    while (PORTS.has(port)) {
+      port = gen()
+    }
+
+    PORTS.add(port)
+
+    return port
   }
 
   async createSrv(opts?: ServerOptions) {

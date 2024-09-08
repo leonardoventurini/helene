@@ -4,7 +4,6 @@ import {
   PayloadType,
   Presentation,
   ServerEvents,
-  WebSocketState,
 } from '@helenejs/utils'
 import { Request, Response } from 'express'
 import { RateLimiter } from 'limiter'
@@ -13,6 +12,7 @@ import { EventEmitter2 } from 'eventemitter2'
 import sockjs from 'sockjs'
 import http from 'http'
 import defer from 'lodash/defer'
+import { Heartbeat } from './heartbeat'
 
 export type ClientNodeContext = Record<string, any>
 
@@ -33,12 +33,8 @@ export class ClientNode extends EventEmitter2 {
   headers: Record<string, string> = {}
   remoteAddress: string | string[]
   userAgent: string
-  terminationTimeout: NodeJS.Timeout
   eventSourceDataId = 0
-  keepAliveInterval: NodeJS.Timeout
-
-  static KEEP_ALIVE_INTERVAL = 10000
-  static ENABLE_KEEP_ALIVE = true
+  heartbeat: Heartbeat
 
   constructor(
     server: Server,
@@ -69,23 +65,17 @@ export class ClientNode extends EventEmitter2 {
     }
 
     if (socket) {
-      this.keepAliveInterval = setInterval(() => {
-        if (
-          ClientNode.ENABLE_KEEP_ALIVE &&
-          socket.readyState === WebSocketState.OPEN
-        ) {
-          this.sendEvent(HeleneEvents.KEEP_ALIVE)
+      this.heartbeat = new Heartbeat({
+        sendPing: () => {
+          this.send({ type: PayloadType.HEARTBEAT })
+        },
+        onTimeout: () => {
+          this.emit(HeleneEvents.HEARTBEAT_DISCONNECT)
+          this.socket.close()
+        },
+      })
 
-          this.terminationTimeout = setTimeout(() => {
-            clearInterval(this.keepAliveInterval)
-
-            if (socket.readyState === WebSocketState.OPEN) {
-              console.log('Helene: Keep Alive Failed', this.uuid)
-              this.emit(HeleneEvents.KEEP_ALIVE_DISCONNECT)
-            }
-          }, ClientNode.KEEP_ALIVE_INTERVAL / 2)
-        }
-      }, ClientNode.KEEP_ALIVE_INTERVAL)
+      this.heartbeat.start()
     }
   }
 
@@ -150,7 +140,7 @@ export class ClientNode extends EventEmitter2 {
     )
   }
 
-  send(payload: Presentation.Payload | string) {
+  send(payload: Record<string, any> | string) {
     if (!this.socket) {
       const clientNode = this.server.httpTransport.eventSourceClients.get(
         this.uuid,
@@ -164,7 +154,7 @@ export class ClientNode extends EventEmitter2 {
     )
   }
 
-  result(payload: Presentation.MethodResultPayloadPartial) {
+  result(payload: Record<string, any>) {
     this.socket.write(
       Presentation.encode({
         type: PayloadType.RESULT,
@@ -185,7 +175,7 @@ export class ClientNode extends EventEmitter2 {
     })
   }
 
-  error(payload: Presentation.ErrorPayloadPartial) {
+  error(payload: Record<string, any>) {
     this.socket?.write(
       Presentation.encode({
         type: PayloadType.ERROR,
@@ -195,7 +185,7 @@ export class ClientNode extends EventEmitter2 {
   }
 
   close() {
-    this.socket?.close?.()
+    this.socket?.close()
 
     if (this.isEventSource) {
       // If we don't destroy the request, we have to force to terminate the HTTP server,
@@ -213,5 +203,7 @@ export class ClientNode extends EventEmitter2 {
 
     this.emit(ServerEvents.DISCONNECT)
     this.server.emit(ServerEvents.DISCONNECTION, this)
+
+    this.heartbeat?.stop()
   }
 }

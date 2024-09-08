@@ -1,4 +1,3 @@
-export * from './keep-alive'
 export * from './list-methods'
 export * from './rpc-init'
 export * from './rpc-off'

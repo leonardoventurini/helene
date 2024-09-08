@@ -11,8 +11,6 @@ import {
 import { EJSON } from 'ejson2'
 import EventSource from '@sanity/eventsource'
 import defer from 'lodash/defer'
-import MethodResultPayload = Presentation.MethodResultPayload
-import ErrorPayload = Presentation.ErrorPayload
 
 export class ClientHttp {
   client: Client
@@ -136,9 +134,7 @@ export class ClientHttp {
 
       const response = await data.text()
 
-      const decoded = Presentation.decode<MethodResultPayload | ErrorPayload>(
-        response,
-      )
+      const decoded = Presentation.decode(response)
 
       this.client.emit(ClientEvents.INBOUND_MESSAGE, decoded)
 

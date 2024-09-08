@@ -70,7 +70,7 @@ export class Event {
     this.cluster = Boolean(opts?.cluster)
   }
 
-  handler(channel: ServerChannel, params: Presentation.Params) {
+  handler(channel: ServerChannel, params: Record<string, any>) {
     const payload = Presentation.encode({
       uuid: Presentation.uuid(),
       type: PayloadType.EVENT,

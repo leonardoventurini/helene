@@ -215,7 +215,7 @@ describe('HTTP', async () => {
 
       expect(result).to.have.property('protected:event').that.is.false
 
-      test.server.defer('protected:event', true)
+      test.server.defer('protected:event')
 
       const eventTimeout = await test.client.timeout('protected:event')
 

@@ -25,11 +25,10 @@ import { ClientChannel } from './client-channel'
 import qs from 'query-string'
 import { EJSON } from 'ejson2'
 import { IdleTimeout } from './idle-timeout'
-import { KeepAlive } from './keep-alive'
 import { callMethodProxy } from './call-method-proxy'
 import Timeout = NodeJS.Timeout
 
-export type ErrorHandler = (error: Presentation.ErrorPayload) => any
+export type ErrorHandler = (error: Record<string, any>) => any
 
 export type WebSocketOptions = {
   path?: string
@@ -126,12 +125,11 @@ export class Client extends ClientChannel {
 
   initializing: boolean
 
-  keepAlive: KeepAlive = null
   idleTimeout: IdleTimeout = null
 
   m: ProxyMethodCall
 
-  static KEEP_ALIVE_INTERVAL = 10000
+  static ENABLE_HEARTBEAT = true
 
   constructor(options: ClientOptions = {}) {
     super(NO_CHANNEL)
@@ -176,7 +174,6 @@ export class Client extends ClientChannel {
 
     this.connect().catch(console.error)
 
-    this.keepAlive = new KeepAlive(this)
     this.idleTimeout = new IdleTimeout(this)
   }
 
@@ -451,11 +448,7 @@ export class Client extends ClientChannel {
     }: CallOptions = {},
   ): Promise<R> {
     // It should wait for the client to initialize before calling any method.
-    if (
-      !ignoreInit &&
-      !this.initialized &&
-      ![Methods.RPC_INIT, Methods.KEEP_ALIVE].includes(method as Methods)
-    ) {
+    if (!ignoreInit && !this.initialized && method !== Methods.RPC_INIT) {
       try {
         console.log('Helene: Waiting for initialization')
         await this.waitFor(ClientEvents.INITIALIZED, Math.floor(timeout / 2))
@@ -500,7 +493,7 @@ export class Client extends ClientChannel {
     })
   }
 
-  handleError(payload: Presentation.ErrorPayload) {
+  handleError(payload: Presentation.Payload) {
     if (payload.uuid) {
       const promise = this.queue.dequeue(payload.uuid)
 
@@ -518,12 +511,12 @@ export class Client extends ClientChannel {
     }
   }
 
-  handleEvent(payload: Presentation.EventPayload) {
+  handleEvent(payload: Presentation.Payload) {
     this.debugger('Event Received', payload)
     return this.channel(payload.channel).emit(payload.event, payload.params)
   }
 
-  handleResult(payload: Presentation.MethodResultPayload) {
+  handleResult(payload: Presentation.Payload) {
     const promise = this.queue.dequeue(payload.uuid)
 
     if (!promise) return

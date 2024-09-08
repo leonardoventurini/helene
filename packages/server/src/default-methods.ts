@@ -1,13 +1,6 @@
 import { Method } from './method'
 import { Server } from './server'
-import {
-  keepAlive,
-  listMethods,
-  rpcInit,
-  rpcLogout,
-  rpcOff,
-  rpcOn,
-} from './methods'
+import { listMethods, rpcInit, rpcLogout, rpcOff, rpcOn } from './methods'
 import { Methods } from '@helenejs/utils'
 
 type MethodBuilder = (server: Server, name: string) => Method
@@ -15,7 +8,6 @@ type MethodBuilder = (server: Server, name: string) => Method
 export const DefaultMethods: {
   [key: string]: MethodBuilder
 } = {
-  [Methods.KEEP_ALIVE]: keepAlive,
   [Methods.LIST_METHODS]: listMethods,
   [Methods.RPC_ON]: rpcOn,
   [Methods.RPC_OFF]: rpcOff,

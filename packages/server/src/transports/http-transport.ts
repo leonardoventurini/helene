@@ -21,7 +21,7 @@ import { EJSON } from 'ejson2'
 import isString from 'lodash/isString'
 
 import 'express-async-errors'
-import MethodCallPayload = Presentation.MethodCallPayload
+import { Heartbeat } from '../heartbeat'
 
 declare module 'express' {
   interface Request {
@@ -37,7 +37,7 @@ export enum HttpTransportEvents {
 
 export type RequestTransport = {
   context: any
-  payload?: MethodCallPayload
+  payload?: Record<string, any>
 }
 
 export class HttpTransport {
@@ -161,7 +161,7 @@ export class HttpTransport {
 
     const keepAliveInterval = setInterval(() => {
       res.write(': keep-alive\n')
-    }, ClientNode.KEEP_ALIVE_INTERVAL)
+    }, Heartbeat.HEARTBEAT_INTERVAL)
 
     req.on('close', () => {
       clientNode.close()

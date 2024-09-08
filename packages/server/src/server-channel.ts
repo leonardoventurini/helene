@@ -1,6 +1,6 @@
 import { EventEmitter2 } from 'eventemitter2'
 import { Server } from './server'
-import { HeleneEvents, Presentation, ServerEvents } from '@helenejs/utils'
+import { HeleneEvents, ServerEvents } from '@helenejs/utils'
 import { HttpTransportEvents, WebSocketTransportEvents } from './transports'
 import { Event, EventOptions } from './event'
 import { ClientNode } from './client-node'
@@ -58,7 +58,7 @@ export class ServerChannel extends EventEmitter2 {
     }
   }
 
-  defer(event: string, params?: Presentation.Params) {
+  defer(event: string, params?: Record<string, any>) {
     process.nextTick(() => {
       this.emit(event, params)
     })

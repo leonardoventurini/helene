@@ -2,7 +2,6 @@ import { Server } from '../server'
 import {
   Errors,
   HELENE_WS_PATH,
-  Methods,
   PayloadType,
   Presentation,
   PublicError,
@@ -85,6 +84,8 @@ export class WebSocketTransport {
 
   handleMessage = (node: ClientNode) => async (data: { data: string }) => {
     try {
+      node.heartbeat.messageReceived()
+
       const parsedData = Presentation.decode<Payload>(data)
 
       if (parsedData.type === PayloadType.SETUP) {
@@ -106,10 +107,7 @@ export class WebSocketTransport {
     }
   }
 
-  async execute(
-    payload: Presentation.MethodCallPayload,
-    node: ClientNode,
-  ): Promise<void> {
+  async execute(payload: Record<string, any>, node: ClientNode): Promise<void> {
     if (node.limiter && !node.limiter.tryRemoveTokens(1)) {
       return node.error({
         uuid: payload.uuid,
@@ -119,9 +117,6 @@ export class WebSocketTransport {
     }
 
     const uuid = payload?.uuid ? { uuid: payload.uuid } : null
-
-    if (payload.method !== Methods.KEEP_ALIVE)
-      this.server.debugger(`Executing`, payload)
 
     const method = this.server.methods.get(payload.method)
 

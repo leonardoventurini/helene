@@ -1,7 +1,7 @@
 export enum HeleneEvents {
   METHOD_REFRESH = 'helene:method:refresh',
-  KEEP_ALIVE = 'keep:alive',
-  KEEP_ALIVE_DISCONNECT = 'keep:alive:disconnect',
+  HEARTBEAT = 'heartbeat',
+  HEARTBEAT_DISCONNECT = 'heartbeat:disconnect',
   SERVER_SENT_EVENTS_CONNECTED = 'server:sent:events:connected',
 
   COMMIT_PENDING_SUBSCRIPTIONS = 'commit:pending:subscriptions',
@@ -76,7 +76,6 @@ export enum Methods {
   RPC_ON = 'rpc:on',
   RPC_OFF = 'rpc:off',
   LIST_METHODS = 'list:methods',
-  KEEP_ALIVE = 'keep:alive',
 }
 
 export const WebSocketState = {

@@ -2,6 +2,7 @@ import { Client, WebSocketOptions } from './client'
 import {
   ClientEvents,
   HELENE_WS_PATH,
+  HeleneEvents,
   PayloadType,
   Presentation,
   WebSocketEvents,
@@ -154,6 +155,12 @@ export class ClientSocket extends EventEmitter2 {
     const payload = Presentation.decode(data)
 
     if (!payload) return
+
+    if (payload.type === PayloadType.HEARTBEAT && Client.ENABLE_HEARTBEAT) {
+      this.send(Presentation.encode({ type: PayloadType.HEARTBEAT }))
+      this.client.emit(HeleneEvents.HEARTBEAT)
+      return
+    }
 
     this.client.payloadRouter(payload)
   }

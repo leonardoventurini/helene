@@ -3,11 +3,16 @@ import { expect } from 'chai'
 import { TestUtility } from '../test-utility'
 import defer from 'lodash/defer'
 import { ClientEvents, HeleneEvents, sleep } from '@helenejs/utils'
-import { ClientNode } from '@helenejs/server'
 import { Client } from '@helenejs/client'
+import { Heartbeat } from '@helenejs/server/lib/heartbeat'
 
 describe('WebSockets', function () {
   const test = new TestUtility()
+
+  afterEach(() => {
+    Client.ENABLE_HEARTBEAT = true
+    Heartbeat.HEARTBEAT_INTERVAL = 10000
+  })
 
   it('should close and reconnect', async () => {
     await test.client.close()
@@ -62,7 +67,7 @@ describe('WebSockets', function () {
   it('should detect disconnection using keep alive on the server', async () => {
     await test.client.close()
 
-    ClientNode.KEEP_ALIVE_INTERVAL = 10
+    Heartbeat.HEARTBEAT_INTERVAL = 10
 
     const client = await test.createClient()
 
@@ -72,7 +77,7 @@ describe('WebSockets', function () {
 
     let keepAliveCount = 0
 
-    client.on(HeleneEvents.KEEP_ALIVE, () => {
+    client.on(HeleneEvents.HEARTBEAT, () => {
       keepAliveCount++
     })
 
@@ -80,42 +85,18 @@ describe('WebSockets', function () {
 
     expect(client.connected).to.be.true
 
-    expect(keepAliveCount).to.be.within(8, 12)
+    expect(keepAliveCount).to.be.within(2, 6)
 
-    client.removeAllListeners(HeleneEvents.KEEP_ALIVE)
+    Client.ENABLE_HEARTBEAT = false
+    client.removeAllListeners(HeleneEvents.HEARTBEAT)
 
     // It is normal for there to be an `ECONNREFUSED` error here
 
-    await clientNode.waitFor(HeleneEvents.KEEP_ALIVE_DISCONNECT, 200)
+    await clientNode.waitFor(HeleneEvents.HEARTBEAT_DISCONNECT, 100)
+
+    await sleep(0)
 
     // We disabled auto disconnection due to Safari iOS issues
-    expect(client.connected).to.be.true
-  }).timeout(10000)
-
-  it('should detect disconnection using keep alive on the client', async () => {
-    await test.client.close()
-
-    ClientNode.KEEP_ALIVE_INTERVAL = 10
-    Client.KEEP_ALIVE_INTERVAL = 10
-
-    const client = await test.createClient()
-
-    let keepAliveCount = 0
-
-    client.on(HeleneEvents.KEEP_ALIVE, () => {
-      keepAliveCount++
-    })
-
-    await sleep(100)
-
-    expect(client.connected).to.be.true
-
-    expect(keepAliveCount).to.be.within(9, 11)
-
-    ClientNode.ENABLE_KEEP_ALIVE = false
-
-    await client.waitFor(HeleneEvents.KEEP_ALIVE_DISCONNECT, 100)
-
     expect(client.connected).to.be.false
   }).timeout(10000)
 
