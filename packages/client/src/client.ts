@@ -82,6 +82,7 @@ export type CallOptions = {
   http?: boolean
   timeout?: number
   httpFallback?: boolean
+  ignoreInit?: boolean
 }
 
 export type ProxyMethodCall = { [key: string]: ProxyMethodCall } & (<
@@ -444,10 +445,16 @@ export class Client extends ClientChannel {
   async call<T = any, R = any>(
     method: string,
     params?: MethodParams<T>,
-    { timeout = 20000, http, httpFallback = true }: CallOptions = {},
+    {
+      timeout = 20000,
+      http,
+      httpFallback = true,
+      ignoreInit = false,
+    }: CallOptions = {},
   ): Promise<R> {
     // It should wait for the client to initialize before calling any method.
     if (
+      !ignoreInit &&
       !this.initialized &&
       ![Methods.RPC_INIT, Methods.KEEP_ALIVE].includes(method as Methods)
     ) {
