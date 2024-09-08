@@ -1,6 +1,6 @@
 {
   "name": "@helenejs/react",
-  "version": "1.4.6",
+  "version": "1.4.7",
   "description": "Real-time Web Apps for Node.js",
   "main": "lib/index.js",
   "type": "commonjs",
@@ -23,7 +23,7 @@
     "use-debounce": "^7.0.1"
   },
   "devDependencies": {
-    "@helenejs/client": "^1.4.6",
+    "@helenejs/client": "^1.4.7",
     "@helenejs/data": "^1.4.5",
     "@helenejs/testing": "^1.4.4",
     "@testing-library/dom": "^9.3.1",
