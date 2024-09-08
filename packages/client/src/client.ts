@@ -320,6 +320,8 @@ export class Client extends ClientChannel {
    * It should be called whenever a transport is connected, either on reconnection or from calling `connect`.
    */
   async initialize() {
+    console.trace()
+
     if (this.initializing) {
       console.log('Helene: Already initializing')
       await this.waitFor(ClientEvents.INITIALIZED)
@@ -445,7 +447,10 @@ export class Client extends ClientChannel {
     { timeout = 20000, http, httpFallback = true }: CallOptions = {},
   ): Promise<R> {
     // It should wait for the client to initialize before calling any method.
-    if (!this.initialized && method !== Methods.RPC_INIT) {
+    if (
+      !this.initialized &&
+      ![Methods.RPC_INIT, Methods.KEEP_ALIVE].includes(method as Methods)
+    ) {
       try {
         console.log('Helene: Waiting for initialization')
         await this.waitFor(ClientEvents.INITIALIZED, Math.floor(timeout / 2))

@@ -66,6 +66,7 @@ export class ClientSocket extends EventEmitter2 {
 
     this.socket.onclose = () => {
       console.log('Helene: Connection Closed')
+      this.client.initialized = false
       if (this.stopped) return
       this.socket = undefined
       setTimeout(
