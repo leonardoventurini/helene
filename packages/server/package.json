@@ -1,6 +1,6 @@
 {
   "name": "@helenejs/server",
-  "version": "1.4.6",
+  "version": "1.4.8",
   "description": "Real-time Web Apps for Node.js",
   "main": "lib/index.js",
   "type": "commonjs",
