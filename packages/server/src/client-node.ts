@@ -80,8 +80,7 @@ export class ClientNode extends EventEmitter2 {
             clearInterval(this.keepAliveInterval)
 
             if (socket.readyState === WebSocketState.OPEN) {
-              console.log('Helene: Keep Alive Failed, Closing Socket')
-              socket?.close()
+              console.log('Helene: Keep Alive Failed', this.uuid)
               this.emit(HeleneEvents.KEEP_ALIVE_DISCONNECT)
             }
           }, ClientNode.KEEP_ALIVE_INTERVAL / 2)

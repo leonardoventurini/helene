@@ -88,9 +88,8 @@ describe('WebSockets', function () {
 
     await clientNode.waitFor(HeleneEvents.KEEP_ALIVE_DISCONNECT, 200)
 
-    await client.waitFor(ClientEvents.WEBSOCKET_CLOSED, 200)
-
-    expect(client.connected).to.be.false
+    // We disabled auto disconnection due to Safari iOS issues
+    expect(client.connected).to.be.true
   }).timeout(10000)
 
   it('should detect disconnection using keep alive on the client', async () => {

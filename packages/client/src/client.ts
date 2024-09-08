@@ -321,8 +321,6 @@ export class Client extends ClientChannel {
    * It should be called whenever a transport is connected, either on reconnection or from calling `connect`.
    */
   async initialize() {
-    console.trace()
-
     if (this.initializing) {
       console.log('Helene: Already initializing')
       await this.waitFor(ClientEvents.INITIALIZED)

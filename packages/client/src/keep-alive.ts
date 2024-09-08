@@ -33,7 +33,10 @@ export class KeepAlive {
         Client.KEEP_ALIVE_INTERVAL * 2,
       )
 
-      return this.client.call(Methods.KEEP_ALIVE)
+      return this.client.call(Methods.KEEP_ALIVE, null, {
+        ignoreInit: true,
+        httpFallback: false,
+      })
     })
   }
 
