@@ -44,8 +44,6 @@ export class IDBStorage implements IStorage {
 
       chunks.sort((a, b) => a.chunkIndex - b.chunkIndex)
 
-      console.log({ chunks })
-
       return chunks.map(chunk => chunk.content).join('')
     } catch (error) {
       console.error('Error reading from IndexedDB:', error)
