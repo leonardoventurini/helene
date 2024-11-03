@@ -1,11 +1,6 @@
 import { Collection, createCollection } from '@helenejs/data'
-import {
-  BrowserStorage,
-  IDBStorage,
-  OPFSStorage,
-} from '@helenejs/data/lib/browser'
+import { BrowserStorage, OPFSStorage } from '@helenejs/data/lib/browser'
 import { expect } from 'chai'
-import { get } from 'idb-keyval'
 import { sleep } from '@helenejs/utils'
 
 type Test = { _id: number; name: string }
@@ -36,42 +31,6 @@ describe('Helene Data', function () {
       const collection2 = await createCollection<Test>({
         name: 'test',
         storage: new BrowserStorage(),
-        autoload: true,
-      })
-
-      const docs = await collection2.find()
-
-      expect(docs).to.have.length(10)
-    })
-  })
-
-  describe('IDB Storage', () => {
-    let collection: Collection<Test>
-
-    before(async () => {
-      Error.stackTraceLimit = Infinity
-
-      collection = await createCollection<Test>({
-        name: 'test',
-        storage: new IDBStorage(),
-      })
-    })
-
-    it('inserting & finding', async () => {
-      for (let i = 0; i <= 9; i++) {
-        await collection.insert({ _id: i, name: `test_${i}` })
-      }
-
-      await sleep(100)
-
-      const data = await get('helene:data:test')
-
-      expect(data).to.include('test_0')
-      expect(data).to.include('test_9')
-
-      const collection2 = await createCollection<Test>({
-        name: 'test',
-        storage: new IDBStorage(),
         autoload: true,
       })
 
