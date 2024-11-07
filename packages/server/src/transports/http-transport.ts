@@ -1,7 +1,3 @@
-import http from 'http'
-import express, { Request, Response } from 'express'
-import cors from 'cors'
-import { RateLimit, Server } from '../server'
 import {
   CLIENT_ID_HEADER_KEY,
   Errors,
@@ -13,14 +9,17 @@ import {
   ServerEvents,
   TOKEN_HEADER_KEY,
 } from '@helenejs/utils'
-import { ClientNode } from '../client-node'
+import cors from 'cors'
+import express, { Request, Response } from 'express'
+import http from 'http'
 import { createHttpTerminator, HttpTerminator } from 'http-terminator'
+import { ClientNode } from '../client-node'
+import { RateLimit, Server } from '../server'
 
-import rateLimit from 'express-rate-limit'
 import { EJSON } from 'ejson2'
+import rateLimit from 'express-rate-limit'
 import isString from 'lodash/isString'
 
-import 'express-async-errors'
 import { Heartbeat } from '../heartbeat'
 
 declare module 'express' {
@@ -306,7 +305,7 @@ export class HttpTransport {
     this.express.use('/', middleware)
 
     if (catchAll) {
-      this.express.use('*', middleware)
+      this.express.use(/(.*)/, middleware)
     }
   }
 

@@ -16,7 +16,7 @@
     "target": "es2021"
   },
   "include": [
-    "./src/**/*"
+    "**/*"
   ],
   "exclude": [
     "./src/tests/**/*"
