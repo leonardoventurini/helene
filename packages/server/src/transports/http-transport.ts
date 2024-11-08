@@ -10,7 +10,7 @@ import {
   TOKEN_HEADER_KEY,
 } from '@helenejs/utils'
 import cors from 'cors'
-import express, { Request, Response } from 'express'
+import express from 'express'
 import http from 'http'
 import { createHttpTerminator, HttpTerminator } from 'http-terminator'
 import { ClientNode } from '../client-node'
@@ -118,7 +118,7 @@ export class HttpTransport {
     return false
   }
 
-  eventSourceHandler = async (req: express.Request, res: express.Response) => {
+  eventSourceHandler = async (req, res) => {
     const clientId = req.headers[CLIENT_ID_HEADER_KEY] as string
 
     if (!clientId) {
@@ -172,7 +172,7 @@ export class HttpTransport {
     })
   }
 
-  requestHandler = async (req: Request, res: Response) => {
+  requestHandler = async (req, res) => {
     let uuid
     let payload
 
