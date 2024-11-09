@@ -1,4 +1,3 @@
-import { Server } from '../server'
 import {
   Errors,
   HELENE_WS_PATH,
@@ -9,10 +8,11 @@ import {
   ServerEvents,
   WebSocketEvents,
 } from '@helenejs/utils'
-import { ClientNode } from '../client-node'
 import IsomorphicWebSocket from 'isomorphic-ws'
 import sockjs from 'sockjs'
 import WebSocket from 'ws'
+import { ClientNode } from '../client-node'
+import { Server } from '../server'
 import Payload = Presentation.Payload
 
 export enum WebSocketTransportEvents {
@@ -38,6 +38,7 @@ export class WebSocketTransport {
     this.wss = sockjs.createServer({
       heartbeat_delay: 45 * 1000,
       disconnect_delay: 60 * 1000,
+      log: () => {},
     })
 
     this.wss.on(WebSocketEvents.CONNECTION, this.handleConnection)
