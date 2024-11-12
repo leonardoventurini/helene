@@ -190,7 +190,6 @@ export class Server extends ServerChannel {
 
     await this.redisTransport?.close()
     await this.webSocketTransport?.close()
-
     await this.httpTransport?.close()
 
     delete global.Helene

@@ -1,8 +1,8 @@
+import { HttpTransport, Server, WebSocketTransport } from '@helenejs/server'
+import { ServerEvents } from '@helenejs/utils'
 import { expect } from 'chai'
 import { EJSON } from 'ejson2'
-import { HttpTransport, Server, WebSocketTransport } from '@helenejs/server'
 import { TestUtility } from '../test-utility'
-import { ServerEvents } from '@helenejs/utils'
 
 describe('Server', function () {
   const test = new TestUtility()
@@ -49,10 +49,23 @@ describe('Server', function () {
     expect(global).to.not.have.property('Helene')
   })
 
-  it('should throw an error when trying to create a second instance', function () {
-    expect(() => new Server()).to.throw(
-      'There can only be one instance of Helene.',
-    )
+  it('should throw an error when trying to create a second instance', async function () {
+    await test.server.close()
+
+    const srv = new Server({
+      globalInstance: true,
+      port: test.randomPort,
+    })
+
+    expect(
+      () =>
+        new Server({
+          globalInstance: true,
+          port: test.randomPort,
+        }),
+    ).to.throw('There can only be one instance of Helene.')
+
+    await srv.close()
   })
 
   it('should create a server instance with a custom request listener', async () => {

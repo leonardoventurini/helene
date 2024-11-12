@@ -12,7 +12,6 @@ import {
 import cors from 'cors'
 import express from 'express'
 import http from 'http'
-import { createHttpTerminator, HttpTerminator } from 'http-terminator'
 import { ClientNode } from '../client-node'
 import { RateLimit, Server } from '../server'
 
@@ -42,7 +41,6 @@ export type RequestTransport = {
 export class HttpTransport {
   server: Server
   http: http.Server
-  httpTerminator: HttpTerminator
   express: express.Express
 
   eventSourceClients: Map<string, ClientNode> = new Map()
@@ -51,9 +49,6 @@ export class HttpTransport {
     this.server = server
     this.express = express()
     this.http = http.createServer(this.express)
-    this.httpTerminator = createHttpTerminator({
-      server: this.http,
-    })
 
     this.express.use('/__h', express.urlencoded({ extended: true }))
     this.express.use('/__h', express.text({ type: 'text/plain' }))
@@ -318,16 +313,14 @@ export class HttpTransport {
         client.close()
       }
 
-      if (!this.httpTerminator) resolve()
+      this.http.closeAllConnections()
 
-      this.httpTerminator
-        .terminate()
-        .then(() => {
-          this.http = undefined
-          this.server.emit(HttpTransportEvents.HTTP_SERVER_CLOSED)
-          resolve()
-        })
-        .catch(reject)
+      this.http.close(() => {
+        this.http.unref()
+        this.http = undefined
+        this.server.emit(HttpTransportEvents.HTTP_SERVER_CLOSED)
+        resolve()
+      })
     })
   }
 }
