@@ -313,6 +313,11 @@ export class HttpTransport {
         client.close()
       }
 
+      if (!this.http) {
+        this.server.emit(HttpTransportEvents.HTTP_SERVER_CLOSED)
+        return resolve()
+      }
+
       this.http.closeAllConnections()
 
       this.http.close(() => {

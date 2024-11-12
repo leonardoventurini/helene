@@ -33,20 +33,32 @@ describe('Server', function () {
   })
 
   it('should return a new instance', async () => {
+    const srv = await test.createRandomSrv({
+      globalInstance: true,
+    })
+
     expect(test.server).to.be.an.instanceOf(Server)
 
     expect(global)
       .to.have.property('Helene')
       .that.is.an('object')
       .and.is.instanceOf(Server)
+
+    await srv.close()
   })
 
   it('should close the server and remove the global instance', async () => {
+    const srv = await test.createRandomSrv({
+      globalInstance: true,
+    })
+
     expect(global).to.have.property('Helene').that.is.not.undefined
 
     await Helene.close()
 
     expect(global).to.not.have.property('Helene')
+
+    await srv.close()
   })
 
   it('should throw an error when trying to create a second instance', async function () {
