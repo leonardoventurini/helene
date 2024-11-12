@@ -1,7 +1,3 @@
-import { RedisClientOptions } from 'redis'
-import { HttpTransport, RedisTransport, WebSocketTransport } from './transports'
-import { Method, MethodFunction, MethodOptions, MethodParams } from './method'
-import { ClientNode } from './client-node'
 import {
   HeleneEvents,
   Methods,
@@ -10,17 +6,21 @@ import {
   ServerEvents,
   waitForAll,
 } from '@helenejs/utils'
-import { RequestListener } from 'http'
 import * as assert from 'assert'
+import { RequestListener } from 'http'
 import defer from 'lodash/defer'
 import isFunction from 'lodash/isFunction'
 import isObject from 'lodash/isObject'
 import isString from 'lodash/isString'
-import { ServerChannel } from './server-channel'
+import { RedisClientOptions } from 'redis'
+import WebSocket from 'ws'
+import { ClientNode } from './client-node'
+import { createMethodProxy } from './create-method-proxy'
 import { DefaultMethods } from './default-methods'
 import { Event } from './event'
-import { createMethodProxy } from './create-method-proxy'
-import WebSocket from 'ws'
+import { Method, MethodFunction, MethodOptions, MethodParams } from './method'
+import { ServerChannel } from './server-channel'
+import { HttpTransport, RedisTransport, WebSocketTransport } from './transports'
 
 declare global {
   // eslint-disable-next-line no-var
@@ -136,7 +136,6 @@ export class Server extends ServerChannel {
     })
 
     this.httpTransport.http.listen(this.port, this.host, () => {
-      console.log(`Helene: Listening on http://${this.host}:${this.port}`)
       defer(() => {
         this.server.emit(ServerEvents.HTTP_LISTENING)
       })

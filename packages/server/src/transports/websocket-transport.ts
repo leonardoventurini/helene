@@ -8,37 +8,41 @@ import {
   ServerEvents,
   WebSocketEvents,
 } from '@helenejs/utils'
-import IsomorphicWebSocket from 'isomorphic-ws'
-import sockjs from 'sockjs'
-import WebSocket from 'ws'
+import io from 'socket.io'
 import { ClientNode } from '../client-node'
 import { Server } from '../server'
 import Payload = Presentation.Payload
 
 export enum WebSocketTransportEvents {
   WEBSOCKET_SERVER_ERROR = 'websocket:server:error',
-  WEBSOCKET_SERVER_CLOSED = 'websocket:server:closed',
 }
-
-export type WebSocketMessageOptions = Parameters<IsomorphicWebSocket['send']>[1]
 
 export class WebSocketTransport {
   server: Server
-  wss: sockjs.Server
-  options: WebSocket.ServerOptions = {
-    noServer: true,
+  wss: io.Server
+  options: Partial<io.ServerOptions> = {
     path: HELENE_WS_PATH,
   }
 
-  constructor(server: Server, opts: Partial<WebSocket.ServerOptions>) {
+  constructor(server: Server, opts: Partial<io.ServerOptions>) {
     this.server = server
 
     Object.assign(this.options, opts ?? {})
 
-    this.wss = sockjs.createServer({
-      heartbeat_delay: 45 * 1000,
-      disconnect_delay: 60 * 1000,
-      log: () => {},
+    this.wss = new io.Server(this.server.httpTransport.http, {
+      connectionStateRecovery: {
+        maxDisconnectionDuration: 2 * 60 * 1000,
+        skipMiddlewares: true,
+      },
+      ...this.options,
+    })
+
+    this.wss.use((socket, next) => {
+      if (!this.server.acceptConnections) {
+        console.log('Helene: Connection Refused')
+        return next(new Error('Helene: Connection Refused'))
+      }
+      next()
     })
 
     this.wss.on(WebSocketEvents.CONNECTION, this.handleConnection)
@@ -46,36 +50,32 @@ export class WebSocketTransport {
     this.wss.on(WebSocketEvents.ERROR, (error: any) =>
       server.emit(WebSocketTransportEvents.WEBSOCKET_SERVER_ERROR, error),
     )
-
-    this.wss.installHandlers(this.server.httpTransport.http, {
-      prefix: this.options.path,
-    })
   }
 
-  handleConnection = (conn: sockjs.Connection) => {
-    if (!this.server.acceptConnections) {
-      conn.destroy()
-      console.log('Helene: Connection Refused')
-      return
-    }
-
+  handleConnection = (socket: io.Socket) => {
     const node = new ClientNode(
       this.server,
-      conn,
+      socket,
       undefined,
       undefined,
       this.server.rateLimit,
     )
 
-    node.setTrackingProperties(conn)
+    node.setId(socket.handshake.query.uuid as string)
 
-    conn.on('close', this.handleClose(node))
+    this.server.addClient(node)
 
-    conn.on('error', (error: any) =>
-      this.server.emit(ServerEvents.SOCKET_ERROR, conn, error),
+    this.server.emit(ServerEvents.CONNECTION, node)
+
+    node.setTrackingProperties(socket)
+
+    socket.on('disconnect', this.handleClose(node))
+
+    socket.on('error', (error: any) =>
+      this.server.emit(ServerEvents.SOCKET_ERROR, socket, error),
     )
 
-    conn.on('data', this.handleMessage(node))
+    socket.on('message', this.handleMessage(node))
   }
 
   handleClose = (node: ClientNode) => () => {

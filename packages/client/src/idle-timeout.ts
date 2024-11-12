@@ -1,8 +1,8 @@
-import throttle from 'lodash/throttle'
-import defer from 'lodash/defer'
-import { Client } from './client'
 import { ClientEvents, Environment, WebSocketState } from '@helenejs/utils'
+import defer from 'lodash/defer'
 import isNumber from 'lodash/isNumber'
+import throttle from 'lodash/throttle'
+import { Client } from './client'
 import Timeout = NodeJS.Timeout
 
 export class IdleTimeout {
@@ -20,12 +20,8 @@ export class IdleTimeout {
       (Environment.isBrowser || Environment.isTest)
     ) {
       this.idleTimeout = setTimeout(() => {
-        this.client
-          .close()
-          .then(() => {
-            console.log('Helene: Disconnected due to inactivity')
-          })
-          .catch(console.error)
+        this.client.close()
+        console.log('Helene: Disconnected due to inactivity')
       }, this.timeout)
     }
   }
@@ -65,12 +61,8 @@ export class IdleTimeout {
         this.reset()
       } else {
         if (this.client.options?.ws?.disconnectOnPageHide) {
-          this.client.close().then(() => {
-            console.log(
-              'Helene: Disconnected on page hide',
-              this.client.clientSocket?.ready,
-            )
-          })
+          this.client.close()
+          console.log('Helene: Disconnected on page hide')
         }
       }
     })
@@ -101,10 +93,7 @@ export class IdleTimeout {
       return
     }
 
-    if (
-      this.client.clientSocket.socket &&
-      this.client.clientSocket.socket.readyState !== WebSocketState.CLOSED
-    ) {
+    if (this.client.clientSocket.socket?.active) {
       return
     }
 

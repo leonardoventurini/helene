@@ -11,21 +11,21 @@ import {
   PromiseQueue,
   TOKEN_HEADER_KEY,
 } from '@helenejs/utils'
-import { ClientSocket } from './client-socket'
+import { EJSON } from 'ejson2'
 import isEmpty from 'lodash/isEmpty'
+import isFunction from 'lodash/isFunction'
+import isObject from 'lodash/isObject'
 import isPlainObject from 'lodash/isPlainObject'
 import isString from 'lodash/isString'
+import last from 'lodash/last'
 import merge from 'lodash/merge'
 import pick from 'lodash/pick'
-import last from 'lodash/last'
-import isObject from 'lodash/isObject'
-import isFunction from 'lodash/isFunction'
-import { ClientHttp } from './client-http'
-import { ClientChannel } from './client-channel'
 import qs from 'query-string'
-import { EJSON } from 'ejson2'
-import { IdleTimeout } from './idle-timeout'
 import { callMethodProxy } from './call-method-proxy'
+import { ClientChannel } from './client-channel'
+import { ClientHttp } from './client-http'
+import { ClientSocket } from './client-socket'
+import { IdleTimeout } from './idle-timeout'
 import Timeout = NodeJS.Timeout
 
 export type ErrorHandler = (error: Record<string, any>) => any

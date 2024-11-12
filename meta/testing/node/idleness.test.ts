@@ -1,8 +1,8 @@
-import { ClientEvents, sleep, WebSocketState } from '@helenejs/utils'
-import EventSource from 'eventsource'
-import { TestUtility } from '../test-utility'
+import { ClientEvents, sleep } from '@helenejs/utils'
 import { expect } from 'chai'
+import EventSource from 'eventsource'
 import defer from 'lodash/defer'
+import { TestUtility } from '../test-utility'
 
 describe('idleness', () => {
   const test = new TestUtility()
@@ -46,14 +46,14 @@ describe('idleness', () => {
 
     await client.idleTimeout.reset()
 
-    expect(client.clientSocket.socket.readyState).to.equal(WebSocketState.OPEN)
+    expect(client.clientSocket.socket.connected).to.be.true
 
     for (let i = 0; i < 20; i++) {
       await sleep(20)
       await client.idleTimeout.reset()
     }
 
-    expect(client.clientSocket.socket.readyState).to.equal(WebSocketState.OPEN)
+    expect(client.clientSocket.socket.connected).to.be.true
 
     await client.close()
   }).timeout(10000)
@@ -96,16 +96,14 @@ describe('idleness', () => {
 
     await client.idleTimeout.reset()
 
-    expect(client.clientSocket.socket.readyState === WebSocketState.OPEN).to.be
-      .true
+    expect(client.clientSocket.socket.connected).to.be.true
 
     for (let i = 0; i < 20; i++) {
       await sleep(50)
       await client.idleTimeout.reset()
     }
 
-    expect(client.clientSocket.socket.readyState === WebSocketState.OPEN).to.be
-      .true
+    expect(client.clientSocket.socket.connected).to.be.true
 
     expect(await client.call('protected:method')).to.equal('42')
 

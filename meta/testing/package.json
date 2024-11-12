@@ -32,7 +32,8 @@
     "sinon": "^16.0.0",
     "sinon-chai": "^3.7.0",
     "supertest": "^6.3.3",
-    "ts-node": "^10.9.1"
+    "ts-node": "^10.9.1",
+    "lodash": "^4.17.21"
   },
   "peerDependencies": {
     "@helenejs/client": "*",

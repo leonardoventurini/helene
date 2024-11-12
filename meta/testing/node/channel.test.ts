@@ -1,7 +1,7 @@
-import { expect } from 'chai'
-import { TestUtility } from '../test-utility'
-import defer from 'lodash/defer'
 import { Presentation } from '@helenejs/utils'
+import { expect } from 'chai'
+import defer from 'lodash/defer'
+import { TestUtility } from '../test-utility'
 
 describe('Channel', () => {
   const test = new TestUtility()

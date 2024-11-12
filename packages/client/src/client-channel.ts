@@ -1,14 +1,14 @@
-import { EventEmitter2 } from 'eventemitter2'
-import { Client } from './client'
-import castArray from 'lodash/castArray'
-import isEmpty from 'lodash/isEmpty'
-import isString from 'lodash/isString'
 import {
   AnyFunction,
   createIterator,
   HeleneEvents,
   Methods,
 } from '@helenejs/utils'
+import { EventEmitter2 } from 'eventemitter2'
+import castArray from 'lodash/castArray'
+import isEmpty from 'lodash/isEmpty'
+import isString from 'lodash/isString'
+import { Client } from './client'
 
 export class ClientChannel extends EventEmitter2 {
   client: Client
@@ -172,6 +172,7 @@ export class ClientChannel extends EventEmitter2 {
 
       this.wait(event).then(res => {
         if (timeout) {
+          console.log('clearing timeout')
           clearTimeout(timeout)
         }
         resolve(false)

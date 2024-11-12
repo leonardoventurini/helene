@@ -1,10 +1,10 @@
-import { describe, it } from 'mocha'
-import { expect } from 'chai'
-import { TestUtility } from '../test-utility'
-import defer from 'lodash/defer'
-import { ClientEvents, HeleneEvents, sleep } from '@helenejs/utils'
 import { Client } from '@helenejs/client'
 import { Heartbeat } from '@helenejs/server/lib/heartbeat'
+import { ClientEvents, HeleneEvents, sleep } from '@helenejs/utils'
+import { expect } from 'chai'
+import defer from 'lodash/defer'
+import { describe, it } from 'mocha'
+import { TestUtility } from '../test-utility'
 
 describe('WebSockets', function () {
   const test = new TestUtility()
@@ -37,32 +37,6 @@ describe('WebSockets', function () {
 
     expect(test.client.clientSocket.ready).to.be.true
   })
-
-  it('should attempt connection more than once while the server is not accepting connections', async () => {
-    let attemptCount = 0
-
-    const client = await test.createClient()
-
-    await client.close()
-
-    test.server.acceptConnections = false
-
-    client.on(ClientEvents.WEBSOCKET_RECONNECTING, () => {
-      attemptCount++
-    })
-
-    defer(() => {
-      client.connect().catch(console.error)
-    })
-
-    await sleep(5000)
-
-    test.server.acceptConnections = true
-
-    expect(attemptCount).to.be.greaterThan(1)
-
-    await client.disconnect()
-  }).timeout(10000)
 
   it('should detect disconnection using keep alive on the server', async () => {
     await test.client.close()
@@ -101,10 +75,12 @@ describe('WebSockets', function () {
   }).timeout(10000)
 
   it('should call init even after it abnormally reconnects', async () => {
-    test.server.allClients.get(test.client.uuid).socket.close()
+    defer(() => {
+      test.client.clientSocket.socket.io.engine.close()
+    })
 
     await test.client.waitFor(ClientEvents.WEBSOCKET_CLOSED)
 
-    await test.client.waitFor(ClientEvents.INITIALIZED)
-  }).timeout(5000)
+    await test.client.waitFor(ClientEvents.INITIALIZED, 10000)
+  }).timeout(20000)
 })

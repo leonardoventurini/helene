@@ -1,4 +1,3 @@
-import { Client } from './client'
 import {
   CLIENT_ID_HEADER_KEY,
   ClientEvents,
@@ -8,9 +7,10 @@ import {
   Resolve,
   TOKEN_HEADER_KEY,
 } from '@helenejs/utils'
-import { EJSON } from 'ejson2'
 import EventSource from '@sanity/eventsource'
+import { EJSON } from 'ejson2'
 import defer from 'lodash/defer'
+import { Client } from './client'
 
 export class ClientHttp {
   client: Client
@@ -40,15 +40,12 @@ export class ClientHttp {
   createEventSource() {
     return new Promise(resolve => {
       if (this.ready) {
-        console.log('Helene: Event source already open')
         return resolve(this.clientEventSource)
       }
 
       if (!this.client.mode.eventsource) {
         return resolve(null)
       }
-
-      console.log('Helene: Creating event source')
 
       this.clientEventSource = new EventSource(this.uri, {
         headers: {

@@ -1,19 +1,18 @@
-import { Client, WebSocketOptions } from './client'
 import {
   ClientEvents,
   HELENE_WS_PATH,
   HeleneEvents,
   PayloadType,
   Presentation,
-  WebSocketEvents,
-  WebSocketState,
 } from '@helenejs/utils'
 import { EventEmitter2 } from 'eventemitter2'
-import SockJS from '@helenejs/isosockjs'
+import defer from 'lodash/defer'
+import { io, Socket } from 'socket.io-client'
+import { Client, WebSocketOptions } from './client'
 
 export class ClientSocket extends EventEmitter2 {
   client: Client
-  socket: WebSocket
+  socket: Socket
 
   protocol: string
   uri: string
@@ -29,7 +28,7 @@ export class ClientSocket extends EventEmitter2 {
   attempts = 0
 
   get ready() {
-    return Boolean(this.socket?.readyState === WebSocketState.OPEN)
+    return this.socket?.connected ?? false
   }
 
   constructor(client: Client, options: WebSocketOptions = {}) {
@@ -42,9 +41,9 @@ export class ClientSocket extends EventEmitter2 {
     this.protocol = this.client.options.secure ? 'https://' : 'http://'
 
     if (this.client.options.port) {
-      this.uri = `${this.protocol}${this.client.options.host}:${this.client.options.port}${this.options.path}`
+      this.uri = `${this.protocol}${this.client.options.host}:${this.client.options.port}`
     } else {
-      this.uri = `${this.protocol}${this.client.options.host}${this.options.path}`
+      this.uri = `${this.protocol}${this.client.options.host}`
     }
   }
 
@@ -58,42 +57,48 @@ export class ClientSocket extends EventEmitter2 {
     this.connecting = true
     this.client.emit(ClientEvents.CONNECTING)
 
-    this.socket = new SockJS(this.uri)
+    this.socket = io(this.uri, {
+      path: this.options.path,
+      query: {
+        uuid: this.client.uuid,
+      },
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 500,
+      reconnectionDelayMax: 10000,
+      randomizationFactor: 0.5,
+    })
 
-    this.socket.onopen = () => {
+    this.socket.on('connect', () => {
       this.attempts = 0
       this.handleOpen()
-    }
+    })
 
-    this.socket.onclose = () => {
-      console.log('Helene: Connection Closed')
+    this.socket.on('disconnect', reason => {
       this.client.initialized = false
       this.client.initializing = false
-      if (this.stopped) return
-      this.socket = undefined
-      setTimeout(
-        () => {
-          this.attempts++
-          this.client.emit(ClientEvents.WEBSOCKET_RECONNECTING)
-          this.connect()
-        },
-        Math.random() * this.baseAttemptDelay + 500,
-      )
-    }
 
-    this.socket.onerror = error => {
-      console.error(error)
-    }
+      this.client.emit(ClientEvents.WEBSOCKET_CLOSED)
+
+      if (this.stopped) {
+        this.socket = undefined
+        return
+      }
+    })
   }
 
   async close() {
     this.stopped = true
     this.connecting = false
 
-    if (!this.socket) return
-
-    this.socket.close()
-    this.socket = undefined
+    defer(() => {
+      if (!this.socket) {
+        this.client.emit(ClientEvents.WEBSOCKET_CLOSED)
+        return
+      }
+      this.socket.close()
+      this.socket = undefined
+    })
 
     await this.client.waitFor(ClientEvents.WEBSOCKET_CLOSED)
   }
@@ -133,18 +138,8 @@ export class ClientSocket extends EventEmitter2 {
 
     this.client.emit(ClientEvents.WEBSOCKET_CONNECTED)
 
-    this.socket.addEventListener(
-      WebSocketEvents.ERROR,
-      this.handleError.bind(this),
-    )
-    this.socket.addEventListener(
-      WebSocketEvents.MESSAGE,
-      this.handleMessage.bind(this),
-    )
-    this.socket.addEventListener(
-      WebSocketEvents.CLOSE,
-      this.handleClose.bind(this),
-    )
+    this.socket.on('error', this.handleError.bind(this))
+    this.socket.on('message', this.handleMessage.bind(this))
 
     this.connecting = false
 
@@ -163,16 +158,6 @@ export class ClientSocket extends EventEmitter2 {
     }
 
     this.client.payloadRouter(payload)
-  }
-
-  /**
-   * This runs if the connection is interrupted or if the server fails to establish a new connection.
-   */
-  private handleClose = () => {
-    this.connecting = false
-    this.socket = undefined
-
-    this.client.emit(ClientEvents.WEBSOCKET_CLOSED)
   }
 
   private handleError = error => {

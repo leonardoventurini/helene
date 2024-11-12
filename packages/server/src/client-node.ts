@@ -1,18 +1,18 @@
-import isString from 'lodash/isString'
 import {
   HeleneEvents,
   PayloadType,
   Presentation,
   ServerEvents,
 } from '@helenejs/utils'
-import { Request, Response } from 'express'
-import { RateLimiter } from 'limiter'
-import { RateLimit, Server } from './server'
 import { EventEmitter2 } from 'eventemitter2'
-import sockjs from 'sockjs'
+import { Request, Response } from 'express'
 import http from 'http'
+import { RateLimiter } from 'limiter'
 import defer from 'lodash/defer'
+import isString from 'lodash/isString'
+import io from 'socket.io'
 import { Heartbeat } from './heartbeat'
+import { RateLimit, Server } from './server'
 
 export type ClientNodeContext = Record<string, any>
 
@@ -23,7 +23,7 @@ export class ClientNode extends EventEmitter2 {
   context: ClientNodeContext = {}
   userId: any = null
   user: Record<string, any> = null
-  socket?: sockjs.Connection
+  socket?: io.Socket
   isEventSource = false
   req?: Request = {} as Request
   res?: Response = {} as Response
@@ -38,7 +38,7 @@ export class ClientNode extends EventEmitter2 {
 
   constructor(
     server: Server,
-    socket?: sockjs.Connection,
+    socket?: io.Socket,
     req?: Request,
     res?: Response,
     limit?: RateLimit,
@@ -71,7 +71,7 @@ export class ClientNode extends EventEmitter2 {
         },
         onTimeout: () => {
           this.emit(HeleneEvents.HEARTBEAT_DISCONNECT)
-          this.socket.close()
+          this.socket.disconnect()
         },
       })
 
@@ -88,7 +88,7 @@ export class ClientNode extends EventEmitter2 {
   }
 
   get readyState() {
-    return this.socket?.readyState
+    return this.socket?.conn.readyState
   }
 
   setId(uuid: string) {
@@ -101,16 +101,19 @@ export class ClientNode extends EventEmitter2 {
     this.setUserId()
   }
 
-  setTrackingProperties(conn: sockjs.Connection | http.IncomingMessage) {
-    if (conn instanceof http.IncomingMessage) {
+  setTrackingProperties(socket: io.Socket | http.IncomingMessage) {
+    if (socket instanceof http.IncomingMessage) {
+      this.headers = socket.headers as any
+      this.userAgent = socket.headers['user-agent']
       this.remoteAddress =
-        conn.headers['x-forwarded-for'] || conn.socket.remoteAddress
+        socket.headers['x-forwarded-for'] || socket.socket.remoteAddress
     } else {
-      this.remoteAddress = conn.headers['x-forwarded-for'] || conn.remoteAddress
+      this.headers = socket.conn.request.headers as any
+      this.userAgent = socket.conn.request.headers['user-agent']
+      this.remoteAddress =
+        socket.conn.request.headers['x-forwarded-for'] ||
+        socket.conn.remoteAddress
     }
-
-    this.headers = conn.headers as any
-    this.userAgent = conn.headers['user-agent']
   }
 
   // The user ID is used for authorizing the user's channel.
@@ -185,8 +188,6 @@ export class ClientNode extends EventEmitter2 {
   }
 
   close() {
-    this.socket?.close()
-
     if (this.isEventSource) {
       // If we don't destroy the request, we have to force to terminate the HTTP server,
       // and it takes a ton of idle time to do so.
@@ -199,7 +200,7 @@ export class ClientNode extends EventEmitter2 {
       })
     }
 
-    this.socket?.close()
+    this.socket?.disconnect()
 
     this.emit(ServerEvents.DISCONNECT)
     this.server.emit(ServerEvents.DISCONNECTION, this)
