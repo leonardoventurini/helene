@@ -1,5 +1,5 @@
-import { EventOptions, Server, ServerOptions } from '@helenejs/server'
 import { Client, ClientOptions, TransportMode } from '@helenejs/client'
+import { EventOptions, Server, ServerOptions } from '@helenejs/server'
 import { ClientEvents, NO_CHANNEL, ServerEvents, sleep } from '@helenejs/utils'
 
 const PORTS = new Set()
@@ -15,7 +15,7 @@ export class TestUtility {
 
   constructor({
     debug = false,
-    globalInstance = true,
+    globalInstance = false,
     redis = undefined,
   } = {}) {
     beforeEach(async () => {
