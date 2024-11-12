@@ -34,7 +34,10 @@ By embracing the foundational principles of Meteor.js and pushing the boundaries
 ### Quickstart
 
 ```bash
-yarn install @helenejs/server @helenejs/client
+bun add @helenejs/server @helenejs/client
+```
+```bash
+npm install @helenejs/server @helenejs/client
 ```
 
 ### Core Packages
