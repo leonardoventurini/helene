@@ -1,7 +1,8 @@
 import { Collection, createCollection } from '@helenejs/data'
-import { BrowserStorage, OPFSStorage } from '@helenejs/data/lib/browser'
-import { expect } from 'chai'
+import { BrowserStorage } from '@helenejs/data/lib/browser/browser-storage'
+import { OPFSStorage } from '@helenejs/data/lib/browser/opfs-storage'
 import { sleep } from '@helenejs/utils'
+import { expect } from 'chai'
 
 type Test = { _id: number; name: string }
 
