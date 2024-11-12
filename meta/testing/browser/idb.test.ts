@@ -1,8 +1,8 @@
 import { Collection, createCollection } from '@helenejs/data'
-import { CHUNK_SIZE, IDBStorage } from '@helenejs/data/lib/browser'
+import { CHUNK_SIZE, IDBStorage } from '@helenejs/data/lib/browser/idb-storage'
+import { sleep } from '@helenejs/utils'
 import { expect } from 'chai'
 import { openDB } from 'idb'
-import { sleep } from '@helenejs/utils'
 
 type Test = { _id: number; name: string }
 
