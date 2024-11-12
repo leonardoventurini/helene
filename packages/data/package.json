@@ -1,6 +1,6 @@
 {
   "name": "@helenejs/data",
-  "version": "1.4.10-alpha.2",
+  "version": "1.4.10-alpha.7",
   "description": "Real-time Web Apps for Node.js",
   "main": "lib/index.js",
   "type": "commonjs",
