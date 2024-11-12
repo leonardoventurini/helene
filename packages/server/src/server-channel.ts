@@ -1,9 +1,9 @@
-import { EventEmitter2 } from 'eventemitter2'
-import { Server } from './server'
 import { HeleneEvents, ServerEvents } from '@helenejs/utils'
-import { HttpTransportEvents, WebSocketTransportEvents } from './transports'
-import { Event, EventOptions } from './event'
+import { EventEmitter2 } from 'eventemitter2'
 import { ClientNode } from './client-node'
+import { Event, EventOptions } from './event'
+import { Server } from './server'
+import { HttpTransportEvents, WebSocketTransportEvents } from './transports'
 
 const SystemEvents: string[] = [
   ...Object.values(HttpTransportEvents),
@@ -58,7 +58,7 @@ export class ServerChannel extends EventEmitter2 {
     }
   }
 
-  defer(event: string, params?: Record<string, any>) {
+  defer<T = any>(event: string, params?: T) {
     process.nextTick(() => {
       this.emit(event, params)
     })

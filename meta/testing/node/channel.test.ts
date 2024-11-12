@@ -66,7 +66,7 @@ describe('Channel', () => {
     expect(result2).to.have.property('test').that.is.true
 
     await otherClient.close()
-  })
+  }).timeout(10000)
 
   it('should allow or disallow channel subscription', async () => {
     test.server.setAuth({

@@ -172,7 +172,6 @@ export class ClientChannel extends EventEmitter2 {
 
       this.wait(event).then(res => {
         if (timeout) {
-          console.log('clearing timeout')
           clearTimeout(timeout)
         }
         resolve(false)

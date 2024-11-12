@@ -1,6 +1,13 @@
-import React from 'react'
-import { expect } from 'chai'
+import { TestUtility } from '@helenejs/testing/test-utility'
+import { sleep } from '@helenejs/utils'
 import { render, renderHook, screen, waitFor } from '@testing-library/react'
+import { expect } from 'chai'
+import { EventEmitter2 } from 'eventemitter2'
+import noop from 'lodash/noop'
+import omit from 'lodash/omit'
+import pick from 'lodash/pick'
+import React from 'react'
+import sinon from 'sinon'
 import {
   ClientProvider,
   useAuth,
@@ -12,13 +19,6 @@ import {
   useRemoteEvent,
   useThrottledEvents,
 } from '.'
-import sinon from 'sinon'
-import noop from 'lodash/noop'
-import omit from 'lodash/omit'
-import { EventEmitter2 } from 'eventemitter2'
-import { TestUtility } from '@helenejs/testing/test-utility'
-import { sleep } from '@helenejs/utils'
-import { pick } from 'lodash'
 
 describe('React Hooks', () => {
   const test = new TestUtility()

@@ -1,5 +1,3 @@
-import memoize from 'memoizee'
-import { ClientNode } from './client-node'
 import {
   AnyFunction,
   Errors,
@@ -8,11 +6,12 @@ import {
   SchemaValidationError,
   ServerEvents,
 } from '@helenejs/utils'
-import { HeleneAsyncLocalStorage } from './helene-async-local-storage'
-import isEmpty from 'lodash/isEmpty'
-import { AnyObjectSchema, ObjectSchema } from 'yup'
 import { EJSON } from 'ejson2'
+import isEmpty from 'lodash/isEmpty'
 import perf_hooks from 'perf_hooks'
+import { AnyObjectSchema, ObjectSchema } from 'yup'
+import { ClientNode } from './client-node'
+import { HeleneAsyncLocalStorage } from './helene-async-local-storage'
 import { Server } from './server'
 
 export type MethodParams<T = any> = T
@@ -30,6 +29,32 @@ export interface MethodOptions {
   protected?: boolean
   middleware?: AnyFunction[]
   schema?: AnyObjectSchema
+}
+
+interface MemoizeOptions {
+  maxAge?: number
+}
+
+function customMemoize<T extends (...args: any[]) => any>(
+  fn: T,
+  options: MemoizeOptions = {},
+): T {
+  const cache = new Map<string, { value: any; timestamp: number }>()
+  const { maxAge = 60000 } = options
+
+  return function (this: any, ...args: Parameters<T>): ReturnType<T> {
+    const key = EJSON.stringify(args[0]) // Normalize first argument (params)
+    const now = Date.now()
+    const cached = cache.get(key)
+
+    if (cached && now - cached.timestamp < maxAge) {
+      return cached.value
+    }
+
+    const result = fn.apply(this, args)
+    cache.set(key, { value: result, timestamp: now })
+    return result
+  } as T
 }
 
 export class Method {
@@ -54,14 +79,7 @@ export class Method {
     this.uuid = Presentation.uuid()
     this.isProtected = opts?.protected
     this.middleware = opts?.middleware
-    this.fn = cache
-      ? memoize(fn, {
-          maxAge,
-          normalizer: function ([params]) {
-            return EJSON.stringify(params)
-          },
-        })
-      : fn
+    this.fn = cache ? customMemoize(fn, { maxAge }) : fn
 
     this.schema = schema
   }
