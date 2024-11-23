@@ -131,9 +131,7 @@ export class Server extends ServerChannel {
 
     this.httpTransport = new HttpTransport(this, origins, this.rateLimit)
 
-    this.webSocketTransport = new WebSocketTransport(this, {
-      ...ws,
-    })
+    this.webSocketTransport = new WebSocketTransport(this, origins, ws)
 
     this.httpTransport.http.listen(this.port, this.host, () => {
       defer(() => {

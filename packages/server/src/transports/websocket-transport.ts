@@ -24,17 +24,27 @@ export class WebSocketTransport {
     path: HELENE_WS_PATH,
   }
 
-  constructor(server: Server, opts: Partial<io.ServerOptions>) {
+  constructor(
+    server: Server,
+    origins: string[],
+    opts: Partial<io.ServerOptions>,
+  ) {
     this.server = server
 
     Object.assign(this.options, opts ?? {})
 
     this.wss = new io.Server(this.server.httpTransport.http, {
+      ...this.options,
       connectionStateRecovery: {
         maxDisconnectionDuration: 2 * 60 * 1000,
         skipMiddlewares: true,
+        ...this.options?.connectionStateRecovery,
       },
-      ...this.options,
+      cors: {
+        credentials: true,
+        origin: origins ?? '*',
+        ...this.options?.cors,
+      },
     })
 
     this.wss.use((socket, next) => {
