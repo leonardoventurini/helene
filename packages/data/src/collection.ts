@@ -1,21 +1,21 @@
-import { Index } from './indexes'
+import { EventEmitter2 } from 'eventemitter2'
 import defer from 'lodash/defer'
 import isArray from 'lodash/isArray'
 import isNumber from 'lodash/isNumber'
 import isString from 'lodash/isString'
-import { Persistence } from './persistence'
-import { Cursor, Projection, Query, SortQuery } from './cursor'
-import { uid } from './custom-utils'
-import { checkObject, deepCopy, match, modify } from './model'
-import { pluck } from './utils'
-import { EventEmitter2 } from 'eventemitter2'
 import {
   checkIndexesFromMostToLeast,
   removeExpiredDocuments,
 } from './_get-candidates'
-import { IStorage } from './types'
+import { Cursor, Projection, Query, SortQuery } from './cursor'
+import { uid } from './custom-utils'
+import { Index } from './indexes'
 import { LastStepModifierFunctions } from './last-step-modifier-functions'
+import { checkObject, deepCopy, match, modify } from './model'
 import { queueOperation } from './op-queue'
+import { Persistence } from './persistence'
+import { IStorage } from './types'
+import { pluck } from './utils'
 
 export const CollectionEvent = {
   READY: 'ready',
@@ -192,8 +192,10 @@ export class Collection<
           this.deferEmit(CollectionEvent.READY)
         })
     } else {
-      this.ready = true
-      this.deferEmit(CollectionEvent.READY)
+      defer(() => {
+        this.ready = true
+        this.emit(CollectionEvent.READY)
+      })
     }
 
     this.beforeInsert = beforeInsert.bind(this)
@@ -477,7 +479,15 @@ export class Collection<
     }
   }
 
+  async ensureReady() {
+    if (!this.ready) {
+      await this.waitFor(CollectionEvent.READY)
+    }
+  }
+
   async count(query: Query) {
+    await this.ensureReady()
+
     const cursor = new Cursor(this, query)
 
     const docs = await cursor
@@ -500,6 +510,8 @@ export class Collection<
     projection?: Projection,
     sort?: SortQuery,
   ): Promise<CT> {
+    await this.ensureReady()
+
     const cursor = new Cursor<CT>(this, query)
 
     const result = await cursor.projection(projection).sort(sort).limit(1)
@@ -512,6 +524,8 @@ export class Collection<
     updateQuery: UpdateQuery,
     options?: UpdateOptions,
   ): Promise<any> {
+    await this.ensureReady()
+
     let numReplaced = 0,
       i: number
 
@@ -633,6 +647,8 @@ export class Collection<
   }
 
   async remove(query: Query, options?: { multi?: boolean }) {
+    await this.ensureReady()
+
     return queueOperation(async () => {
       let numRemoved = 0
 

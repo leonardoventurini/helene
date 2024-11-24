@@ -1,7 +1,7 @@
-import { compareThings, deepCopy, getDotValue, match, modify } from './model'
 import isEmpty from 'lodash/isEmpty'
 import omit from 'lodash/omit'
 import { BaseDocument, Collection } from './collection'
+import { compareThings, deepCopy, getDotValue, match, modify } from './model'
 
 export type Query = {
   [key: string]: any
@@ -112,6 +112,8 @@ export class Cursor<T extends BaseDocument = BaseDocument>
   }
 
   async exec(): Promise<T[]> {
+    await this.db.ensureReady()
+
     let res = [],
       added = 0,
       skipped = 0,

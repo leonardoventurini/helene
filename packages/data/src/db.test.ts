@@ -1,14 +1,14 @@
 import { assert, expect } from 'chai'
 import fs from 'fs'
-import path from 'path'
-import mkdirp from 'mkdirp'
+import each from 'lodash/each'
 import find from 'lodash/find'
 import isEqual from 'lodash/isEqual'
-import each from 'lodash/each'
-import { Collection, createCollection } from './collection'
+import mkdirp from 'mkdirp'
+import path from 'path'
+import { Collection, CollectionEvent, createCollection } from './collection'
 import { NodeStorage } from './node'
-import { pluck } from './utils'
 import { serialize } from './serialization'
+import { pluck } from './utils'
 
 const testDb = 'workspace/test.db',
   reloadTimeUpperBound = 60 // In ms, an upper bound for the reload time used to check createdAt and updatedAt
@@ -2601,6 +2601,43 @@ describe('Database', function () {
       await collection.remove({ hello: 'world' })
 
       expect(called).to.deep.equal(doc)
+    })
+  })
+
+  describe('Ready State', function () {
+    it('should wait for collection to be ready before executing operations', async () => {
+      const collection = new Collection({})
+
+      expect(collection.ready).to.be.false
+
+      await collection.ensureReady()
+
+      expect(collection.ready).to.be.true
+
+      collection.ready = false
+
+      // Start operations before ready
+      const insertPromise = collection.insert({ test: 1 })
+      const findPromise = collection.find({ test: 1 }).exec()
+      const updatePromise = collection.update({ test: 1 }, { test: 2 })
+      const removePromise = collection.remove({ test: 2 })
+
+      expect(insertPromise).to.be.an.instanceOf(Promise)
+      expect(findPromise).to.be.an.instanceOf(Promise)
+      expect(updatePromise).to.be.an.instanceOf(Promise)
+      expect(removePromise).to.be.an.instanceOf(Promise)
+
+      // Trigger ready state
+      collection.emit(CollectionEvent.READY)
+      collection.ready = true
+
+      // Operations should complete successfully after ready
+      await insertPromise
+      await findPromise
+      await updatePromise
+      await removePromise
+
+      expect(collection.ready).to.be.true
     })
   })
 })
