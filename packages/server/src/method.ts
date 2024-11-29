@@ -10,6 +10,7 @@ import { EJSON } from 'ejson2'
 import isEmpty from 'lodash/isEmpty'
 import perf_hooks from 'perf_hooks'
 import { AnyObjectSchema, ObjectSchema } from 'yup'
+import { z, ZodSchema } from 'zod'
 import { ClientNode } from './client-node'
 import { HeleneAsyncLocalStorage } from './helene-async-local-storage'
 import { Server } from './server'
@@ -23,12 +24,12 @@ export type MethodFunction<T = any, R = any> = (
 /**
  * @todo Add support for timeout monitoring.
  */
-export interface MethodOptions {
+export interface MethodOptions<Schema extends z.ZodUndefined | z.ZodTypeAny> {
   cache?: boolean
   maxAge?: number
   protected?: boolean
   middleware?: AnyFunction[]
-  schema?: AnyObjectSchema
+  schema?: Schema | AnyObjectSchema
 }
 
 interface MemoizeOptions {
@@ -57,20 +58,20 @@ function customMemoize<T extends (...args: any[]) => any>(
   } as T
 }
 
-export class Method {
+export class Method<Schema extends z.ZodUndefined | z.ZodTypeAny, Result> {
   uuid: string
   fn: MethodFunction
   isProtected: boolean
   middleware: AnyFunction[]
-  schema: AnyObjectSchema = null
+  schema: AnyObjectSchema | z.ZodSchema | null = null
   name: string
   server: Server
 
   constructor(
     server: Server,
     name: string,
-    fn: MethodFunction,
-    opts: MethodOptions,
+    fn: MethodFunction<z.input<Schema>, Result>,
+    opts: MethodOptions<Schema>,
   ) {
     const { cache, maxAge = 60000, schema } = opts ?? {}
 
@@ -109,6 +110,12 @@ export class Method {
           await this.schema.validate(params)
 
           cleanParams = this.schema.cast(params, { stripUnknown: true })
+        }
+
+        if (this.schema instanceof ZodSchema) {
+          await this.schema.parseAsync(params)
+
+          cleanParams = this.schema.parse(params)
         }
       } catch (error) {
         console.error(error)

@@ -14,6 +14,7 @@ import isObject from 'lodash/isObject'
 import isString from 'lodash/isString'
 import { RedisClientOptions } from 'redis'
 import WebSocket from 'ws'
+import { z } from 'zod'
 import { ClientNode } from './client-node'
 import { createMethodProxy } from './create-method-proxy'
 import { DefaultMethods } from './default-methods'
@@ -60,6 +61,21 @@ export type ProxyMethodCreation = {
   [key: string]: ProxyMethodCreation
 } & any
 
+export type ServerMethodDefinition<
+  Schema extends z.ZodTypeAny | z.ZodUndefined = z.ZodUndefined,
+  Result = any,
+> = {
+  schema?: Schema
+  fn: MethodFunction<
+    Schema extends z.ZodUndefined ? void : z.input<Schema>,
+    Result
+  >
+}
+
+export type ServerMethods = {
+  [key: string]: ServerMethodDefinition
+}
+
 export class Server extends ServerChannel {
   uuid: string
   httpTransport: HttpTransport
@@ -74,7 +90,7 @@ export class Server extends ServerChannel {
   debug = false
   rateLimit: RateLimit
 
-  methods: Map<string, Method> = new Map()
+  methods: Map<string, Method<any, any>> = new Map()
   allClients: Map<string, ClientNode> = new Map()
   channels: Map<string, ServerChannel> = new Map()
   events: Map<string, Event> = new Map()
@@ -88,6 +104,8 @@ export class Server extends ServerChannel {
   shouldAllowChannelSubscribe: ChannelChecker = async () => true
 
   static ERROR_EVENT = 'error'
+
+  public methodDefinitions: ServerMethods = {}
 
   constructor({
     host = 'localhost',
@@ -242,12 +260,17 @@ export class Server extends ServerChannel {
     })
   }
 
-  addMethod<T = any, R = any>(
+  addMethod<Schema extends z.ZodUndefined | z.ZodTypeAny, Result>(
     method: string,
-    fn: MethodFunction<T, R>,
-    opts?: MethodOptions,
+    fn: MethodFunction<z.input<Schema>, Result>,
+    opts?: MethodOptions<Schema>,
   ) {
-    this.methods.set(method, new Method(this, method, fn, opts))
+    this.methodDefinitions[method] = {
+      fn,
+      schema: opts?.schema,
+    } as ServerMethodDefinition<Schema, Result>
+
+    this.methods.set(method, new Method<Schema, Result>(this, method, fn, opts))
   }
 
   channel(name: string | object = NO_CHANNEL) {
@@ -269,6 +292,19 @@ export class Server extends ServerChannel {
     return channel
   }
 }
+
+export type InferServerMethods<T extends Server> = T extends Server
+  ? {
+      [K in keyof T['methodDefinitions']]: T['methodDefinitions'][K] extends ServerMethodDefinition<
+        infer Schema,
+        infer Result
+      >
+        ? Schema extends z.ZodUndefined
+          ? MethodFunction<void, Result>
+          : MethodFunction<z.input<Schema>, Result>
+        : never
+    }
+  : never
 
 export function createServer(options?: ServerOptions) {
   return new Server(options)

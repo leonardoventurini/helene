@@ -26,13 +26,14 @@
     "redis": "^4.6.7",
     "socket.io": "^4.8.1",
     "ws": "^8.13.0",
-    "yup": "^1.4.0"
+    "yup": "^1.4.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/express": "^4.17.13",
     "@types/ws": "^8.5.5",
     "rimraf": "^5.0.5",
-    "typescript": "^5.5.4"
+    "typescript": "^5.7.2"
   },
   "author": "Leonardo Venturini",
   "license": "MIT",

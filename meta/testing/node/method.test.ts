@@ -1,8 +1,10 @@
 import { expect } from 'chai'
 
-import * as yup from 'yup'
-import range from 'lodash/range'
-import sinon from 'sinon'
+import { Client, TransportMode } from '@helenejs/client'
+import {
+  ClientNode,
+  HeleneAsyncLocalStorage
+} from '@helenejs/server'
 import {
   Errors,
   getPromise,
@@ -11,9 +13,11 @@ import {
   ServerEvents,
   sleep,
 } from '@helenejs/utils'
-import { ClientNode, HeleneAsyncLocalStorage } from '@helenejs/server'
+import range from 'lodash/range'
+import sinon from 'sinon'
+import * as yup from 'yup'
+import { z } from 'zod'
 import { TestUtility } from '../test-utility'
-import { Client, TransportMode } from '@helenejs/client'
 
 describe('Methods', function () {
   const test = new TestUtility()
@@ -159,6 +163,32 @@ describe('Methods', function () {
     )
 
     const result = await test.client.call('validated:method', {
+      knownProperty: true,
+    })
+
+    expect(result).to.be.true
+  })
+
+  it.only('should register and call a method with zod schema validation', async () => {
+    test.server.addMethod(
+      'validated:zod:method',
+      ({ knownProperty }) => Boolean(knownProperty),
+      {
+        schema: z.object({
+          knownProperty: z.boolean(),
+        }),
+      },
+    )
+
+    expect(test.server.methodDefinitions).to.have.property(
+      'validated:zod:method',
+    )
+
+    await expect(test.client.call('validated:zod:method')).to.be.rejectedWith(
+      Errors.INVALID_PARAMS,
+    )
+
+    const result = await test.client.call('validated:zod:method', {
       knownProperty: true,
     })
 
