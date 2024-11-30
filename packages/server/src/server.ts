@@ -264,23 +264,31 @@ export class Server<
   addMethod<
     K extends string,
     Schema extends z.ZodTypeAny | z.ZodUndefined = z.ZodUndefined,
+    Params extends any[] = any[],
     Result = any,
   >(
     method: K,
-    fn: MethodFunction<
-      Schema extends z.ZodUndefined ? void : z.input<Schema>,
-      Result
-    >,
+    fn: Schema extends z.ZodUndefined
+      ? (...args: Params) => Promise<Result> | Result
+      : (schema: z.input<Schema>) => Promise<Result> | Result,
     opts?: MethodOptions<Schema>,
   ): Server<M & Record<K, ServerMethodDefinition<Schema, Result>>> {
     ;(this.handlers as any)[method] = {
-      fn: fn as (
-        schema: Schema extends z.ZodUndefined ? void : z.input<Schema>,
-      ) => Promise<Result>,
+      fn: fn as Schema extends z.ZodUndefined
+        ? (...args: Params) => Promise<Result>
+        : (schema: z.input<Schema>) => Promise<Result>,
       schema: opts?.schema,
     }
 
-    this.methods.set(method, new Method<Schema, Result>(this, method, fn, opts))
+    this.methods.set(
+      method,
+      new Method<Schema, Result>(
+        this,
+        method,
+        fn as MethodFunction<any, Result>,
+        opts,
+      ),
+    )
 
     return this as any
   }
