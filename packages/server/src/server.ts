@@ -1,5 +1,6 @@
 import {
   HeleneEvents,
+  MethodParams,
   Methods,
   NO_CHANNEL,
   Presentation,
@@ -21,7 +22,7 @@ import { ClientNode } from './client-node'
 import { createMethodProxy } from './create-method-proxy'
 import { DefaultMethods } from './default-methods'
 import { Event } from './event'
-import { Method, MethodFunction, MethodOptions, MethodParams } from './method'
+import { Method, MethodFunction, MethodOptions } from './method'
 import { ServerChannel } from './server-channel'
 import { HttpTransport, RedisTransport, WebSocketTransport } from './transports'
 
@@ -261,12 +262,9 @@ export class Server<
       : (schema: z.input<Schema>) => Promise<Result> | Result,
     opts?: MethodOptions<Schema>,
   ): Server<Methods & Record<K, ServerMethodDefinition<Schema, Result>>> {
-    ;(this.handlers as any)[method] = {
-      fn: fn as Schema extends z.ZodUndefined
-        ? (...args: Params) => Promise<Result>
-        : (schema: z.input<Schema>) => Promise<Result>,
-      schema: opts?.schema,
-    }
+    ;(this.handlers as any)[method] = fn as Schema extends z.ZodUndefined
+      ? (...args: Params) => Promise<Result>
+      : (schema: z.input<Schema>) => Promise<Result>
 
     this.methods.set(
       method,

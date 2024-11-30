@@ -129,14 +129,14 @@ export class Client<
 
   idleTimeout: IdleTimeout = null
 
-  m: ProxyMethodCall
+  m: MethodsType
 
   static ENABLE_HEARTBEAT = true
 
   constructor(options: ClientOptions = {}) {
     super(NO_CHANNEL)
 
-    this.m = callMethodProxy(this)
+    this.m = callMethodProxy(this) as unknown as MethodsType
 
     this.uuid = Presentation.uuid()
 
@@ -436,12 +436,10 @@ export class Client<
     })
   }
 
-  handlers: MethodsType
-
   async tcall<
     M extends keyof MethodsType,
-    P extends Parameters<MethodsType[M]['fn']>[0],
-    R extends ReturnType<MethodsType[M]['fn']>,
+    P extends Parameters<MethodsType[M]>[0],
+    R extends ReturnType<MethodsType[M]>,
   >(method: M, params?: P, options?: CallOptions): Promise<R> {
     return this.call(method as string, params, options)
   }

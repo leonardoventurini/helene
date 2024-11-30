@@ -1,11 +1,7 @@
 import { expect } from 'chai'
 
 import { Client, TransportMode } from '@helenejs/client'
-import {
-  ClientNode,
-  createServer,
-  HeleneAsyncLocalStorage,
-} from '@helenejs/server'
+import { ClientNode, HeleneAsyncLocalStorage } from '@helenejs/server'
 import {
   Errors,
   getPromise,
@@ -170,7 +166,7 @@ describe('Methods', function () {
     expect(result).to.be.true
   })
 
-  it.only('should register and call a method with zod schema validation', async () => {
+  it('should register and call a method with zod schema validation', async () => {
     test.server.addMethod(
       'validated:zod:method',
       ({ knownProperty }) => Boolean(knownProperty),
@@ -181,15 +177,44 @@ describe('Methods', function () {
       },
     )
 
-    const srv = createServer().addMethod(
-      'validated:zod:method',
-      ({ knownProperty }) => Boolean(knownProperty),
-      {
-        schema: z.object({
-          knownProperty: z.boolean(),
-        }),
-      },
-    )
+    const srv = test.server
+      .addMethod(
+        'validated:zod:method2',
+        ({ knownProperty }) => knownProperty,
+        {
+          schema: z.object({
+            knownProperty: z.boolean(),
+          }),
+        },
+      )
+      .addMethod('hello', () => 'world')
+
+    const client = test.client.typed(srv.handlers)
+
+    /**
+     * Should have type inference
+     */
+    const res1 = await client.m['validated:zod:method2']({
+      knownProperty: true,
+    })
+
+    expect(res1).to.be.true
+
+    /**
+     * Should have type inference
+     */
+    const res2 = await client.m.hello()
+
+    expect(res2).to.equal('world')
+
+    /**
+     * Should have type inference
+     */
+    const res3 = await client.tcall('validated:zod:method2', {
+      knownProperty: true,
+    })
+
+    expect(res3).to.be.true
 
     expect(test.server.handlers).to.have.property('validated:zod:method')
 
