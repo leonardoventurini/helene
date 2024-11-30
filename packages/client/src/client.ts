@@ -1,4 +1,4 @@
-import type { MethodParams, ServerMethods } from '@helenejs/utils'
+import type { CallOptions, MethodParams, ServerMethods } from '@helenejs/utils'
 import {
   ClientEvents,
   Environment,
@@ -75,15 +75,6 @@ export type ClientOptions = {
   allowedContextKeys?: string[]
   meta?: Record<string, any>
   idlenessTimeout?: number
-}
-
-export type CallOptions = {
-  http?: boolean
-  timeout?: number
-  httpFallback?: boolean
-  ignoreInit?: boolean
-  maxRetries?: number
-  delayBetweenRetriesMs?: number
 }
 
 export type ProxyMethodCall = { [key: string]: ProxyMethodCall } & (<

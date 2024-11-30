@@ -7,6 +7,7 @@ export type ServerMethodDefinition<
   Result = any,
 > = (
   schema: Schema extends z.ZodUndefined ? void : z.input<Schema>,
+  options?: CallOptions,
 ) => Promise<Result>
 
 export type ServerMethods = {
@@ -14,3 +15,12 @@ export type ServerMethods = {
 }
 
 export type MethodParams<T = any> = T
+
+export type CallOptions = {
+  http?: boolean
+  timeout?: number
+  httpFallback?: boolean
+  ignoreInit?: boolean
+  maxRetries?: number
+  delayBetweenRetriesMs?: number
+}
