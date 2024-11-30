@@ -82,6 +82,8 @@ export type CallOptions = {
   timeout?: number
   httpFallback?: boolean
   ignoreInit?: boolean
+  maxRetries?: number
+  delayBetweenRetriesMs?: number
 }
 
 export type ProxyMethodCall = { [key: string]: ProxyMethodCall } & (<
@@ -454,6 +456,8 @@ export class Client<
       http,
       httpFallback = true,
       ignoreInit = false,
+      maxRetries = 0,
+      delayBetweenRetriesMs = 3000,
     } = options ?? {}
 
     // It should wait for the client to initialize before calling any method.
@@ -466,40 +470,56 @@ export class Client<
       }
     }
 
-    return new Promise((resolve, reject) => {
-      const uuid = Presentation.uuid()
+    let lastError: any
 
-      const payload = { uuid, type: PayloadType.METHOD, method, params }
+    for (let attempt = 0; attempt < 1 + maxRetries; attempt++) {
+      try {
+        return await new Promise((resolve, reject) => {
+          const uuid = Presentation.uuid()
+          const payload = { uuid, type: PayloadType.METHOD, method, params }
+          this.emit(ClientEvents.OUTBOUND_MESSAGE, payload)
 
-      this.emit(ClientEvents.OUTBOUND_MESSAGE, payload)
+          if (http || (!this.clientSocket.ready && httpFallback)) {
+            return this.clientHttp.request(payload, resolve, reject)
+          }
 
-      // It should call the method via HTTP if the socket is not ready or the initialization did not occur yet.
-      if (http || (!this.clientSocket.ready && httpFallback)) {
-        return this.clientHttp.request(payload, resolve, reject)
+          this.clientSocket.send(Presentation.encode(payload))
+
+          const timeoutId = setTimeout(() => {
+            const promise = this.queue.dequeue(uuid)
+            promise.reject(new Error('Result Timeout'))
+          }, timeout)
+
+          this.timeouts.add(timeoutId)
+
+          this.queue.enqueue(uuid, {
+            method: method as string,
+            resolve,
+            reject: this.errorHandler
+              ? error => {
+                  this.errorHandler(error)
+                  reject(error)
+                }
+              : reject,
+            timeoutId,
+          })
+        })
+      } catch (error) {
+        lastError = error
+
+        if (attempt > 0) {
+          console.log(
+            `Attempt ${attempt + 1} failed with error: ${error.message}`,
+          )
+        }
+
+        if (attempt + 1 >= maxRetries) {
+          throw lastError
+        }
+
+        await new Promise(resolve => setTimeout(resolve, delayBetweenRetriesMs))
       }
-
-      this.clientSocket.send(Presentation.encode(payload))
-
-      const timeoutId = setTimeout(() => {
-        const promise = this.queue.dequeue(uuid)
-
-        promise.reject(new Error('Result Timeout'))
-      }, timeout)
-
-      this.timeouts.add(timeoutId)
-
-      this.queue.enqueue(uuid, {
-        method: method as string,
-        resolve,
-        reject: this.errorHandler
-          ? error => {
-              this.errorHandler(error)
-              reject(error)
-            }
-          : reject,
-        timeoutId,
-      })
-    })
+    }
   }
 
   typed<T extends ServerMethods>(types: T) {

@@ -359,4 +359,39 @@ describe('Methods', function () {
       stub.restore()
     }
   })
+
+  it('should retry failed method calls according to retry options', async () => {
+    const calls = []
+    let shouldFail = true
+
+    test.server.addMethod('test:method', async param => {
+      calls.push(param)
+      if (shouldFail) {
+        shouldFail = false
+        throw new Error('Temporary failure')
+      }
+      return 42
+    })
+
+    const result = await test.client.call('test:method', 1, {
+      maxRetries: 2,
+      delayBetweenRetriesMs: 100,
+    })
+
+    expect(calls).to.deep.equal([1, 1])
+    expect(result).to.equal(42)
+  })
+
+  it('should throw after exhausting all retry attempts', async () => {
+    test.server.addMethod('test:method', async () => {
+      throw new Error('Persistent failure')
+    })
+
+    await expect(
+      test.client.call('test:method', 1, {
+        maxRetries: 3,
+        delayBetweenRetriesMs: 100,
+      }),
+    ).to.be.rejectedWith(Errors.INTERNAL_ERROR)
+  })
 })
