@@ -517,6 +517,10 @@ export class Client<
     return this as any as Client<T>
   }
 
+  combine<T extends ServerMethods>(methods: T) {
+    return this as any as Client<T & MethodsType>
+  }
+
   handleError(payload: Presentation.Payload) {
     if (payload.uuid) {
       const promise = this.queue.dequeue(payload.uuid)
