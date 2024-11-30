@@ -2,6 +2,7 @@ import {
   AnyFunction,
   Errors,
   intercept,
+  MethodParams,
   Presentation,
   SchemaValidationError,
   ServerEvents,
@@ -15,7 +16,6 @@ import { ClientNode } from './client-node'
 import { HeleneAsyncLocalStorage } from './helene-async-local-storage'
 import { Server } from './server'
 
-export type MethodParams<T = any> = T
 export type MethodFunction<T = any, R = any> = (
   this: ClientNode,
   params?: MethodParams<T>,

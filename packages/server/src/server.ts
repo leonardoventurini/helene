@@ -4,6 +4,8 @@ import {
   NO_CHANNEL,
   Presentation,
   ServerEvents,
+  ServerMethodDefinition,
+  ServerMethods,
   waitForAll,
 } from '@helenejs/utils'
 import * as assert from 'assert'
@@ -61,22 +63,8 @@ export type ProxyMethodCreation = {
   [key: string]: ProxyMethodCreation
 } & any
 
-export type ServerMethodDefinition<
-  Schema extends z.ZodTypeAny | z.ZodUndefined = z.ZodUndefined,
-  Result = any,
-> = {
-  schema?: Schema
-  fn: (
-    schema: Schema extends z.ZodUndefined ? void : z.input<Schema>,
-  ) => Promise<Result>
-}
-
-export type ServerMethods = {
-  [key: string]: ServerMethodDefinition
-}
-
 export class Server<
-  M extends ServerMethods = ServerMethods,
+  Methods extends ServerMethods = ServerMethods,
 > extends ServerChannel {
   uuid: string
   httpTransport: HttpTransport
@@ -106,7 +94,7 @@ export class Server<
 
   static ERROR_EVENT = 'error'
 
-  public handlers: M = {} as M
+  public handlers: Methods = {} as Methods
 
   constructor({
     host = 'localhost',
@@ -272,7 +260,7 @@ export class Server<
       ? (...args: Params) => Promise<Result> | Result
       : (schema: z.input<Schema>) => Promise<Result> | Result,
     opts?: MethodOptions<Schema>,
-  ): Server<M & Record<K, ServerMethodDefinition<Schema, Result>>> {
+  ): Server<Methods & Record<K, ServerMethodDefinition<Schema, Result>>> {
     ;(this.handlers as any)[method] = {
       fn: fn as Schema extends z.ZodUndefined
         ? (...args: Params) => Promise<Result>

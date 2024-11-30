@@ -1,4 +1,4 @@
-import { MethodParams } from '@helenejs/server'
+import type { MethodParams, ServerMethods } from '@helenejs/utils'
 import {
   ClientEvents,
   Environment,
@@ -96,7 +96,9 @@ export type ProxyMethodCall = { [key: string]: ProxyMethodCall } & (<
  * When working with Next.js, it is probably a good idea to not run this in the
  * server side by using it inside a `useEffect` hook.
  */
-export class Client extends ClientChannel {
+export class Client<
+  MethodsType extends ServerMethods = ServerMethods,
+> extends ClientChannel {
   uuid: string
 
   queue: PromiseQueue
@@ -434,19 +436,28 @@ export class Client extends ClientChannel {
     })
   }
 
-  /**
-   * Calls a method and wait asynchronously for a value.
-   */
-  async call<T = any, R = any>(
+  handlers: MethodsType
+
+  async tcall<
+    M extends keyof MethodsType,
+    P extends Parameters<MethodsType[M]['fn']>[0],
+    R extends ReturnType<MethodsType[M]['fn']>,
+  >(method: M, params?: P, options?: CallOptions): Promise<R> {
+    return this.call(method as string, params, options)
+  }
+
+  async call<P = Record<string, any>, R = any>(
     method: string,
-    params?: MethodParams<T>,
-    {
+    params?: P,
+    options?: CallOptions,
+  ): Promise<R> {
+    const {
       timeout = 20000,
       http,
       httpFallback = true,
       ignoreInit = false,
-    }: CallOptions = {},
-  ): Promise<R> {
+    } = options ?? {}
+
     // It should wait for the client to initialize before calling any method.
     if (!ignoreInit && !this.initialized && method !== Methods.RPC_INIT) {
       try {
@@ -480,7 +491,7 @@ export class Client extends ClientChannel {
       this.timeouts.add(timeoutId)
 
       this.queue.enqueue(uuid, {
-        method,
+        method: method as string,
         resolve,
         reject: this.errorHandler
           ? error => {
@@ -491,6 +502,10 @@ export class Client extends ClientChannel {
         timeoutId,
       })
     })
+  }
+
+  typed<T extends ServerMethods>(types: T) {
+    return this as any as Client<T>
   }
 
   handleError(payload: Presentation.Payload) {
