@@ -3,7 +3,8 @@ import { expect } from 'chai'
 import { Client, TransportMode } from '@helenejs/client'
 import {
   ClientNode,
-  HeleneAsyncLocalStorage
+  createServer,
+  HeleneAsyncLocalStorage,
 } from '@helenejs/server'
 import {
   Errors,
@@ -180,9 +181,17 @@ describe('Methods', function () {
       },
     )
 
-    expect(test.server.methodDefinitions).to.have.property(
+    const srv = createServer().addMethod(
       'validated:zod:method',
+      ({ knownProperty }) => Boolean(knownProperty),
+      {
+        schema: z.object({
+          knownProperty: z.boolean(),
+        }),
+      },
     )
+
+    expect(test.server.handlers).to.have.property('validated:zod:method')
 
     await expect(test.client.call('validated:zod:method')).to.be.rejectedWith(
       Errors.INVALID_PARAMS,

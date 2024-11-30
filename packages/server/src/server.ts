@@ -66,17 +66,18 @@ export type ServerMethodDefinition<
   Result = any,
 > = {
   schema?: Schema
-  fn: MethodFunction<
-    Schema extends z.ZodUndefined ? void : z.input<Schema>,
-    Result
-  >
+  fn: (
+    schema: Schema extends z.ZodUndefined ? void : z.input<Schema>,
+  ) => Promise<Result>
 }
 
 export type ServerMethods = {
   [key: string]: ServerMethodDefinition
 }
 
-export class Server extends ServerChannel {
+export class Server<
+  M extends ServerMethods = ServerMethods,
+> extends ServerChannel {
   uuid: string
   httpTransport: HttpTransport
   webSocketTransport: WebSocketTransport
@@ -105,7 +106,7 @@ export class Server extends ServerChannel {
 
   static ERROR_EVENT = 'error'
 
-  public methodDefinitions: ServerMethods = {}
+  public handlers: M = {} as M
 
   constructor({
     host = 'localhost',
@@ -260,17 +261,28 @@ export class Server extends ServerChannel {
     })
   }
 
-  addMethod<Schema extends z.ZodUndefined | z.ZodTypeAny, Result>(
-    method: string,
-    fn: MethodFunction<z.input<Schema>, Result>,
+  addMethod<
+    K extends string,
+    Schema extends z.ZodTypeAny | z.ZodUndefined = z.ZodUndefined,
+    Result = any,
+  >(
+    method: K,
+    fn: MethodFunction<
+      Schema extends z.ZodUndefined ? void : z.input<Schema>,
+      Result
+    >,
     opts?: MethodOptions<Schema>,
-  ) {
-    this.methodDefinitions[method] = {
-      fn,
+  ): Server<M & Record<K, ServerMethodDefinition<Schema, Result>>> {
+    ;(this.handlers as any)[method] = {
+      fn: fn as (
+        schema: Schema extends z.ZodUndefined ? void : z.input<Schema>,
+      ) => Promise<Result>,
       schema: opts?.schema,
-    } as ServerMethodDefinition<Schema, Result>
+    }
 
     this.methods.set(method, new Method<Schema, Result>(this, method, fn, opts))
+
+    return this as any
   }
 
   channel(name: string | object = NO_CHANNEL) {
@@ -293,18 +305,7 @@ export class Server extends ServerChannel {
   }
 }
 
-export type InferServerMethods<T extends Server> = T extends Server
-  ? {
-      [K in keyof T['methodDefinitions']]: T['methodDefinitions'][K] extends ServerMethodDefinition<
-        infer Schema,
-        infer Result
-      >
-        ? Schema extends z.ZodUndefined
-          ? MethodFunction<void, Result>
-          : MethodFunction<z.input<Schema>, Result>
-        : never
-    }
-  : never
+export type InferServerMethods<T extends Server<any>> = T['handlers']
 
 export function createServer(options?: ServerOptions) {
   return new Server(options)
