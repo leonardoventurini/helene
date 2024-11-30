@@ -297,6 +297,10 @@ export class Server<
     this.channels.set(name, channel)
     return channel
   }
+
+  combine<T extends Server<any>>(methods: T) {
+    return this as any as Server<InferServerMethods<T> & Methods>
+  }
 }
 
 export type InferServerMethods<T extends Server<any>> = T['handlers']

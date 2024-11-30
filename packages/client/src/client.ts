@@ -517,8 +517,8 @@ export class Client<
     return this as any as Client<T>
   }
 
-  combine<T extends ServerMethods>(methods: T) {
-    return this as any as Client<T & MethodsType>
+  combine<T extends Client>(methods: T) {
+    return this as any as Client<InferClientMethods<T> & MethodsType>
   }
 
   handleError(payload: Presentation.Payload) {
@@ -658,3 +658,5 @@ export class Client<
     )
   }
 }
+
+export type InferClientMethods<T extends Client> = T['m']
