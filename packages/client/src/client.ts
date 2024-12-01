@@ -431,10 +431,11 @@ export class Client<
 
   async tcall<
     M extends keyof MethodsType,
-    P extends Parameters<MethodsType[M]>[0],
-    R extends ReturnType<MethodsType[M]>,
-  >(method: M, params?: P, options?: CallOptions): Promise<R> {
-    return this.call(method as string, params, options)
+    Method extends MethodsType[M],
+    Params extends Parameters<Method>[0] = Parameters<Method>[0],
+    Result extends Awaited<ReturnType<Method>> = Awaited<ReturnType<Method>>,
+  >(method: M, params?: Params, options?: CallOptions): Promise<Result> {
+    return this.call(method as string, params, options) as Promise<Result>
   }
 
   async call<P = Record<string, any>, R = any>(

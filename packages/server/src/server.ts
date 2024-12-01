@@ -261,7 +261,11 @@ export class Server<
       ? (...args: Params) => Promise<Result> | Result
       : (schema: z.input<Schema>) => Promise<Result> | Result,
     opts?: MethodOptions<Schema>,
-  ): Server<Methods & Record<K, ServerMethodDefinition<Schema, Result>>> {
+  ): Server<
+    Methods & {
+      [key in K]: ServerMethodDefinition<Schema, Result>
+    }
+  > {
     ;(this.handlers as any)[method] = fn as Schema extends z.ZodUndefined
       ? (...args: Params) => Promise<Result>
       : (schema: z.input<Schema>) => Promise<Result>
