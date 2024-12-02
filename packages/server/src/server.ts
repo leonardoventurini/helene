@@ -1,9 +1,12 @@
 import {
   HeleneEvents,
+  MethodParams,
   Methods,
   NO_CHANNEL,
   Presentation,
   ServerEvents,
+  ServerMethodDefinition,
+  ServerMethods,
   waitForAll,
 } from '@helenejs/utils'
 import * as assert from 'assert'
@@ -14,11 +17,12 @@ import isObject from 'lodash/isObject'
 import isString from 'lodash/isString'
 import { RedisClientOptions } from 'redis'
 import WebSocket from 'ws'
+import { z } from 'zod'
 import { ClientNode } from './client-node'
 import { createMethodProxy } from './create-method-proxy'
 import { DefaultMethods } from './default-methods'
 import { Event } from './event'
-import { Method, MethodFunction, MethodOptions, MethodParams } from './method'
+import { Method, MethodFunction, MethodOptions } from './method'
 import { ServerChannel } from './server-channel'
 import { HttpTransport, RedisTransport, WebSocketTransport } from './transports'
 
@@ -60,7 +64,9 @@ export type ProxyMethodCreation = {
   [key: string]: ProxyMethodCreation
 } & any
 
-export class Server extends ServerChannel {
+export class Server<
+  Methods extends ServerMethods = ServerMethods,
+> extends ServerChannel {
   uuid: string
   httpTransport: HttpTransport
   webSocketTransport: WebSocketTransport
@@ -74,7 +80,7 @@ export class Server extends ServerChannel {
   debug = false
   rateLimit: RateLimit
 
-  methods: Map<string, Method> = new Map()
+  methods: Map<string, Method<any, any>> = new Map()
   allClients: Map<string, ClientNode> = new Map()
   channels: Map<string, ServerChannel> = new Map()
   events: Map<string, Event> = new Map()
@@ -88,6 +94,8 @@ export class Server extends ServerChannel {
   shouldAllowChannelSubscribe: ChannelChecker = async () => true
 
   static ERROR_EVENT = 'error'
+
+  public handlers: Methods = {} as Methods
 
   constructor({
     host = 'localhost',
@@ -242,12 +250,37 @@ export class Server extends ServerChannel {
     })
   }
 
-  addMethod<T = any, R = any>(
-    method: string,
-    fn: MethodFunction<T, R>,
-    opts?: MethodOptions,
-  ) {
-    this.methods.set(method, new Method(this, method, fn, opts))
+  addMethod<
+    K extends string,
+    Schema extends z.ZodTypeAny | z.ZodUndefined = z.ZodUndefined,
+    Params extends any[] = any[],
+    Result = any,
+  >(
+    method: K,
+    fn: Schema extends z.ZodUndefined
+      ? (...args: Params) => Promise<Result> | Result
+      : (schema: z.input<Schema>) => Promise<Result> | Result,
+    opts?: MethodOptions<Schema>,
+  ): Server<
+    Methods & {
+      [key in K]: ServerMethodDefinition<Schema, Result>
+    }
+  > {
+    ;(this.handlers as any)[method] = fn as Schema extends z.ZodUndefined
+      ? (...args: Params) => Promise<Result>
+      : (schema: z.input<Schema>) => Promise<Result>
+
+    this.methods.set(
+      method,
+      new Method<Schema, Result>(
+        this,
+        method,
+        fn as MethodFunction<any, Result>,
+        opts,
+      ),
+    )
+
+    return this as any
   }
 
   channel(name: string | object = NO_CHANNEL) {
@@ -268,7 +301,13 @@ export class Server extends ServerChannel {
     this.channels.set(name, channel)
     return channel
   }
+
+  combine<T extends Server<any>>(methods: T) {
+    return this as any as Server<InferServerMethods<T> & Methods>
+  }
 }
+
+export type InferServerMethods<T extends Server<any>> = T['handlers']
 
 export function createServer(options?: ServerOptions) {
   return new Server(options)

@@ -19,7 +19,7 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "lerna": "^8.1.9",
     "prettier": "^3.0.3",
-    "typescript": "^5.5.4"
+    "typescript": "^5.7.2"
   },
   "author": "Leonardo Venturini",
   "license": "MIT",

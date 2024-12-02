@@ -1,4 +1,4 @@
-import { MethodParams } from '@helenejs/server'
+import type { CallOptions, MethodParams, ServerMethods } from '@helenejs/utils'
 import {
   ClientEvents,
   Environment,
@@ -77,13 +77,6 @@ export type ClientOptions = {
   idlenessTimeout?: number
 }
 
-export type CallOptions = {
-  http?: boolean
-  timeout?: number
-  httpFallback?: boolean
-  ignoreInit?: boolean
-}
-
 export type ProxyMethodCall = { [key: string]: ProxyMethodCall } & (<
   T = any,
   R = any,
@@ -96,7 +89,9 @@ export type ProxyMethodCall = { [key: string]: ProxyMethodCall } & (<
  * When working with Next.js, it is probably a good idea to not run this in the
  * server side by using it inside a `useEffect` hook.
  */
-export class Client extends ClientChannel {
+export class Client<
+  MethodsType extends ServerMethods = ServerMethods,
+> extends ClientChannel {
   uuid: string
 
   queue: PromiseQueue
@@ -127,14 +122,14 @@ export class Client extends ClientChannel {
 
   idleTimeout: IdleTimeout = null
 
-  m: ProxyMethodCall
+  m: MethodsType
 
   static ENABLE_HEARTBEAT = true
 
   constructor(options: ClientOptions = {}) {
     super(NO_CHANNEL)
 
-    this.m = callMethodProxy(this)
+    this.m = callMethodProxy(this) as unknown as MethodsType
 
     this.uuid = Presentation.uuid()
 
@@ -434,19 +429,29 @@ export class Client extends ClientChannel {
     })
   }
 
-  /**
-   * Calls a method and wait asynchronously for a value.
-   */
-  async call<T = any, R = any>(
+  async tcall<
+    M extends keyof MethodsType,
+    Method extends MethodsType[M],
+    Params extends Parameters<Method>[0] = Parameters<Method>[0],
+    Result extends Awaited<ReturnType<Method>> = Awaited<ReturnType<Method>>,
+  >(method: M, params?: Params, options?: CallOptions): Promise<Result> {
+    return this.call(method as string, params, options) as Promise<Result>
+  }
+
+  async call<P = Record<string, any>, R = any>(
     method: string,
-    params?: MethodParams<T>,
-    {
+    params?: P,
+    options?: CallOptions,
+  ): Promise<R> {
+    const {
       timeout = 20000,
       http,
       httpFallback = true,
       ignoreInit = false,
-    }: CallOptions = {},
-  ): Promise<R> {
+      maxRetries = 0,
+      delayBetweenRetriesMs = 3000,
+    } = options ?? {}
+
     // It should wait for the client to initialize before calling any method.
     if (!ignoreInit && !this.initialized && method !== Methods.RPC_INIT) {
       try {
@@ -457,40 +462,64 @@ export class Client extends ClientChannel {
       }
     }
 
-    return new Promise((resolve, reject) => {
-      const uuid = Presentation.uuid()
+    let lastError: any
 
-      const payload = { uuid, type: PayloadType.METHOD, method, params }
+    for (let attempt = 0; attempt < 1 + maxRetries; attempt++) {
+      try {
+        return await new Promise((resolve, reject) => {
+          const uuid = Presentation.uuid()
+          const payload = { uuid, type: PayloadType.METHOD, method, params }
+          this.emit(ClientEvents.OUTBOUND_MESSAGE, payload)
 
-      this.emit(ClientEvents.OUTBOUND_MESSAGE, payload)
+          if (http || (!this.clientSocket.ready && httpFallback)) {
+            return this.clientHttp.request(payload, resolve, reject)
+          }
 
-      // It should call the method via HTTP if the socket is not ready or the initialization did not occur yet.
-      if (http || (!this.clientSocket.ready && httpFallback)) {
-        return this.clientHttp.request(payload, resolve, reject)
+          this.clientSocket.send(Presentation.encode(payload))
+
+          const timeoutId = setTimeout(() => {
+            const promise = this.queue.dequeue(uuid)
+            promise.reject(new Error('Result Timeout'))
+          }, timeout)
+
+          this.timeouts.add(timeoutId)
+
+          this.queue.enqueue(uuid, {
+            method: method as string,
+            resolve,
+            reject: this.errorHandler
+              ? error => {
+                  this.errorHandler(error)
+                  reject(error)
+                }
+              : reject,
+            timeoutId,
+          })
+        })
+      } catch (error) {
+        lastError = error
+
+        if (attempt > 0) {
+          console.log(
+            `Attempt ${attempt + 1} failed with error: ${error.message}`,
+          )
+        }
+
+        if (attempt + 1 >= maxRetries) {
+          throw lastError
+        }
+
+        await new Promise(resolve => setTimeout(resolve, delayBetweenRetriesMs))
       }
+    }
+  }
 
-      this.clientSocket.send(Presentation.encode(payload))
+  typed<T extends ServerMethods>(types: T) {
+    return this as any as Client<T>
+  }
 
-      const timeoutId = setTimeout(() => {
-        const promise = this.queue.dequeue(uuid)
-
-        promise.reject(new Error('Result Timeout'))
-      }, timeout)
-
-      this.timeouts.add(timeoutId)
-
-      this.queue.enqueue(uuid, {
-        method,
-        resolve,
-        reject: this.errorHandler
-          ? error => {
-              this.errorHandler(error)
-              reject(error)
-            }
-          : reject,
-        timeoutId,
-      })
-    })
+  combine<T extends Client>(methods: T) {
+    return this as any as Client<InferClientMethods<T> & MethodsType>
   }
 
   handleError(payload: Presentation.Payload) {
@@ -630,3 +659,5 @@ export class Client extends ClientChannel {
     )
   }
 }
+
+export type InferClientMethods<T extends Client> = T['m']

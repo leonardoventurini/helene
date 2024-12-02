@@ -1,9 +1,9 @@
+import { ClientEvents } from '@helenejs/utils'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useClient } from './use-client'
 import { useThrottledEvents } from './use-throttled-events'
-import { ClientEvents } from '@helenejs/utils'
 
-export const useConnectionState = () => {
+export function useConnectionState() {
   const client = useClient()
 
   const intervalRef = useRef(null)

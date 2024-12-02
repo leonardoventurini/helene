@@ -1,14 +1,18 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useClient } from './use-client'
+import {
+  CallOptions,
+  ClientEvents,
+  HeleneEvents,
+  NO_CHANNEL,
+} from '@helenejs/utils'
 import isFunction from 'lodash/isFunction'
 import noop from 'lodash/noop'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useDebouncedCallback } from 'use-debounce'
-import { useLocalEvent, useRemoteEvent } from './use-event'
-import { useCircuitBreaker } from './use-circuit-breaker'
-import { useMethodRefresh } from './use-method-refresh'
 import { useCaller } from './use-caller'
-import { ClientEvents, HeleneEvents, NO_CHANNEL } from '@helenejs/utils'
-import { CallOptions } from '@helenejs/client'
+import { useCircuitBreaker } from './use-circuit-breaker'
+import { useClient } from './use-client'
+import { useLocalEvent, useRemoteEvent } from './use-event'
+import { useMethodRefresh } from './use-method-refresh'
 
 export type UseMethodParams = {
   method?: string

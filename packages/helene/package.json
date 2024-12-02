@@ -1,7 +1,7 @@
 {
   "name": "helene",
   "description": "Real-time Web Apps for Node.js",
-  "version": "1.4.10-alpha.9",
+  "version": "1.4.10-alpha.15",
   "browser": "index.browser.js",
   "main": "index.js",
   "type": "commonjs",
@@ -13,15 +13,15 @@
     "prepublishOnly": "yarn run rebuild"
   },
   "dependencies": {
-    "@helenejs/client": "^1.4.10-alpha.7",
-    "@helenejs/data": "^1.4.10-alpha.9",
-    "@helenejs/react": "^1.4.10-alpha.9",
-    "@helenejs/server": "^1.4.10-alpha.8",
-    "@helenejs/utils": "^1.4.10-alpha.7"
+    "@helenejs/client": "^1.4.10-alpha.15",
+    "@helenejs/data": "^1.4.10-alpha.10",
+    "@helenejs/react": "^1.4.10-alpha.15",
+    "@helenejs/server": "^1.4.10-alpha.15",
+    "@helenejs/utils": "^1.4.10-alpha.12"
   },
   "devDependencies": {
     "rimraf": "^5.0.5",
-    "typescript": "^5.5.4"
+    "typescript": "^5.7.2"
   },
   "author": "Leonardo Venturini",
   "license": "MIT",

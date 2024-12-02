@@ -1,6 +1,6 @@
 {
   "name": "@helenejs/testing",
-  "version": "1.4.10-alpha.7",
+  "version": "1.4.10-alpha.11",
   "main": "index.ts",
   "scripts": {
     "browser:test": "karma start karma.config.js",

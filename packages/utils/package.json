@@ -1,7 +1,7 @@
 {
   "name": "@helenejs/utils",
   "description": "Real-time Web Apps for Node.js",
-  "version": "1.4.10-alpha.7",
+  "version": "1.4.10-alpha.12",
   "main": "lib/index.js",
   "type": "commonjs",
   "scripts": {
@@ -15,11 +15,12 @@
     "@lukeed/uuid": "^2.0.1",
     "ejson2": "^1.1.0",
     "eventemitter2": "^6.4.7",
-    "lodash": "^4.17.21"
+    "lodash": "^4.17.21",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "rimraf": "^5.0.5",
-    "typescript": "^5.5.4"
+    "typescript": "^5.7.2"
   },
   "author": "Leonardo Venturini",
   "license": "MIT",

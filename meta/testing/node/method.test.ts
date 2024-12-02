@@ -1,8 +1,7 @@
 import { expect } from 'chai'
 
-import * as yup from 'yup'
-import range from 'lodash/range'
-import sinon from 'sinon'
+import { Client, TransportMode } from '@helenejs/client'
+import { ClientNode, HeleneAsyncLocalStorage } from '@helenejs/server'
 import {
   Errors,
   getPromise,
@@ -11,9 +10,11 @@ import {
   ServerEvents,
   sleep,
 } from '@helenejs/utils'
-import { ClientNode, HeleneAsyncLocalStorage } from '@helenejs/server'
+import range from 'lodash/range'
+import sinon from 'sinon'
+import * as yup from 'yup'
+import { z } from 'zod'
 import { TestUtility } from '../test-utility'
-import { Client, TransportMode } from '@helenejs/client'
 
 describe('Methods', function () {
   const test = new TestUtility()
@@ -165,6 +166,69 @@ describe('Methods', function () {
     expect(result).to.be.true
   })
 
+  it('should register and call a method with zod schema validation', async () => {
+    test.server.addMethod(
+      'validated:zod:method',
+      ({ knownProperty }) => Boolean(knownProperty),
+      {
+        schema: z.object({
+          knownProperty: z.boolean(),
+        }),
+      },
+    )
+
+    const srv = test.server
+      .addMethod(
+        'validated:zod:method2',
+        ({ knownProperty }) => knownProperty,
+        {
+          schema: z.object({
+            knownProperty: z.boolean(),
+          }),
+        },
+      )
+      .addMethod('hello', () => 'world')
+
+    const client = test.client.typed(srv.handlers)
+
+    /**
+     * Should have type inference
+     */
+    const res1 = await client.m['validated:zod:method2']({
+      knownProperty: true,
+    })
+
+    expect(res1).to.be.true
+
+    /**
+     * Should have type inference
+     */
+    const res2 = await client.m.hello()
+
+    expect(res2).to.equal('world')
+
+    /**
+     * Should have type inference
+     */
+    const res3 = await client.tcall('validated:zod:method2', {
+      knownProperty: true,
+    })
+
+    expect(res3).to.be.true
+
+    expect(test.server.handlers).to.have.property('validated:zod:method')
+
+    await expect(test.client.call('validated:zod:method')).to.be.rejectedWith(
+      Errors.INVALID_PARAMS,
+    )
+
+    const result = await test.client.call('validated:zod:method', {
+      knownProperty: true,
+    })
+
+    expect(result).to.be.true
+  })
+
   it('should have async local storage', async () => {
     test.server.addMethod('get:async:ls', function () {
       return HeleneAsyncLocalStorage.getStore()
@@ -294,5 +358,40 @@ describe('Methods', function () {
     } finally {
       stub.restore()
     }
+  })
+
+  it('should retry failed method calls according to retry options', async () => {
+    const calls = []
+    let shouldFail = true
+
+    test.server.addMethod('test:method', async param => {
+      calls.push(param)
+      if (shouldFail) {
+        shouldFail = false
+        throw new Error('Temporary failure')
+      }
+      return 42
+    })
+
+    const result = await test.client.call('test:method', 1, {
+      maxRetries: 2,
+      delayBetweenRetriesMs: 100,
+    })
+
+    expect(calls).to.deep.equal([1, 1])
+    expect(result).to.equal(42)
+  })
+
+  it('should throw after exhausting all retry attempts', async () => {
+    test.server.addMethod('test:method', async () => {
+      throw new Error('Persistent failure')
+    })
+
+    await expect(
+      test.client.call('test:method', 1, {
+        maxRetries: 3,
+        delayBetweenRetriesMs: 100,
+      }),
+    ).to.be.rejectedWith(Errors.INTERNAL_ERROR)
   })
 })

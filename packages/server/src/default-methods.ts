@@ -1,9 +1,13 @@
-import { Method } from './method'
-import { Server } from './server'
-import { listMethods, rpcInit, rpcLogout, rpcOff, rpcOn } from './methods'
 import { Methods } from '@helenejs/utils'
+import { z } from 'zod'
+import { Method } from './method'
+import { listMethods, rpcInit, rpcLogout, rpcOff, rpcOn } from './methods'
+import { Server } from './server'
 
-type MethodBuilder = (server: Server, name: string) => Method
+type MethodBuilder<
+  Schema extends z.ZodTypeAny | z.ZodUndefined = z.ZodUndefined,
+  Result = any,
+> = (server: Server, name: string) => Method<Schema, Result>
 
 export const DefaultMethods: {
   [key: string]: MethodBuilder

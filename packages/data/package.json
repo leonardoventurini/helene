@@ -1,6 +1,6 @@
 {
   "name": "@helenejs/data",
-  "version": "1.4.10-alpha.9",
+  "version": "1.4.10-alpha.10",
   "description": "Real-time Web Apps for Node.js",
   "main": "lib/index.js",
   "type": "commonjs",
@@ -23,7 +23,7 @@
     "mkdirp": "^2.1.6"
   },
   "devDependencies": {
-    "typescript": "^5.5.4"
+    "typescript": "^5.7.2"
   },
   "author": "Leonardo Venturini",
   "license": "MIT",
