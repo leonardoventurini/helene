@@ -1,7 +1,7 @@
 {
   "name": "@helenejs/utils",
   "description": "Real-time Web Apps for Node.js",
-  "version": "1.4.10-alpha.12",
+  "version": "1.5.0-alpha.0",
   "main": "lib/index.js",
   "type": "commonjs",
   "scripts": {

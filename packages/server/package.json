@@ -1,6 +1,6 @@
 {
   "name": "@helenejs/server",
-  "version": "1.4.10-alpha.15",
+  "version": "1.5.0-alpha.0",
   "description": "Real-time Web Apps for Node.js",
   "main": "lib/index.js",
   "type": "commonjs",
@@ -12,7 +12,7 @@
     "prepublishOnly": "yarn run rebuild"
   },
   "dependencies": {
-    "@helenejs/utils": "^1.4.10-alpha.12",
+    "@helenejs/utils": "^1.5.0-alpha.0",
     "@lukeed/uuid": "^2.0.1",
     "ahooks": "^3.7.7",
     "cors": "^2.8.5",
