@@ -180,11 +180,14 @@ describe('Methods', function () {
       },
     )
 
-    const submodule3 = ns().add('foo3', () => true)
+    const submodule3 = ns()
+      .add('foo3', () => true)
+      .build()
 
     const submodule1 = ns()
       .add('foo1', () => true)
       .add('submodule3', submodule3)
+      .build()
 
     const submodule2 = ns()
       .add('validated:zod:method2', ({ knownProperty }) => knownProperty, {
@@ -194,7 +197,7 @@ describe('Methods', function () {
       })
       .add('hello', () => 'world')
       .add('submodule1', submodule1)
-      .build()
+      .register()
 
     const c = client.typed(submodule2)
 

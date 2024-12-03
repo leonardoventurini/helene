@@ -17,33 +17,30 @@ export function ns<
   ): ReturnType<
     typeof ns<
       Namespace,
-      Methods & Record<Name, ServerMethodDefinition<Schema, ResultType>>
+      Methods & {
+        [K in Name]: ServerMethodDefinition<Schema, ResultType>
+      }
     >
   >
 
-  function add<Name extends string, T extends { submodules: ServerMethods }>(
+  function add<Name extends string, NestedNamespace extends ServerMethods>(
     name: Name,
-    submodule: T,
+    nested: NestedNamespace,
   ): ReturnType<
-    typeof ns<Namespace, Methods & { [K in Name]: T['submodules'] }>
+    typeof ns<Namespace, Methods & { [K in Name]: NestedNamespace }>
   >
 
   function add<
     Name extends string,
     Schema extends z.ZodUndefined | z.ZodTypeAny,
     ResultType,
-    ChildMethods extends ServerMethods,
   >(
     methodName: Name,
-    fnOrSubmodule:
-      | MethodFunction<z.input<Schema>, ResultType>
-      | ReturnType<typeof ns>,
+    fnOrSubmodule: MethodFunction<z.input<Schema>, ResultType> | ServerMethods,
     options?: MethodOptions<Schema>,
   ) {
     const isMethodFunction = (
-      value:
-        | MethodFunction<z.input<Schema>, ResultType>
-        | ReturnType<typeof ns>,
+      value: MethodFunction<z.input<Schema>, ResultType> | ServerMethods,
     ): value is MethodFunction<z.input<Schema>, ResultType> => {
       return typeof value === 'function'
     }
@@ -66,17 +63,20 @@ export function ns<
       namespace,
       {
         ...submodules,
-        [methodName]: fnOrSubmodule.submodules,
+        [methodName]: {
+          ...(submodules[methodName] ?? {}),
+          ...fnOrSubmodule,
+        },
       } as Methods & {
-        [K in typeof methodName]: typeof fnOrSubmodule.submodules
+        [K in typeof methodName]: typeof fnOrSubmodule
       },
     )
   }
 
+  type MethodBlocks = [MethodFunction<any, any>, MethodOptions<any>]
+
   interface MethodDefinition {
-    [key: string]:
-      | [MethodFunction<any, any>, MethodOptions<any>]
-      | MethodDefinition
+    [key: string]: MethodBlocks | Record<string, MethodBlocks>
   }
 
   const registerMethods = (methods: MethodDefinition, prefix: string = '') => {
@@ -91,8 +91,11 @@ export function ns<
   }
 
   const build = () => {
-    registerMethods(submodules as unknown as MethodDefinition)
+    return submodules as Methods
+  }
 
+  const register = () => {
+    registerMethods(submodules as unknown as MethodDefinition)
     return submodules as Methods
   }
 
@@ -100,5 +103,6 @@ export function ns<
     add,
     build,
     submodules,
+    register,
   }
 }
