@@ -6,8 +6,8 @@ export type ServerMethodDefinition<
   Schema extends z.ZodTypeAny | z.ZodUndefined = z.ZodUndefined,
   Result = any,
 > = (
-  schema: Schema extends z.ZodUndefined ? void : z.input<Schema>,
-  options?: CallOptions,
+  params: Schema extends z.ZodUndefined ? CallOptions | void : z.input<Schema>,
+  options: Schema extends z.ZodUndefined ? void : CallOptions | void,
 ) => Promise<Result>
 
 export type ServerMethods = {

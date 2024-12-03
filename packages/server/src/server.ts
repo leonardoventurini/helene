@@ -5,7 +5,6 @@ import {
   NO_CHANNEL,
   Presentation,
   ServerEvents,
-  ServerMethodDefinition,
   ServerMethods,
   waitForAll,
 } from '@helenejs/utils'
@@ -251,36 +250,15 @@ export class Server<
   }
 
   addMethod<
-    K extends string,
+    T = any,
+    R = any,
     Schema extends z.ZodTypeAny | z.ZodUndefined = z.ZodUndefined,
-    Params extends any[] = any[],
-    Result = any,
   >(
-    method: K,
-    fn: Schema extends z.ZodUndefined
-      ? (...args: Params) => Promise<Result> | Result
-      : (schema: z.input<Schema>) => Promise<Result> | Result,
+    method: string,
+    fn: MethodFunction<Schema extends z.ZodUndefined ? T : z.input<Schema>, R>,
     opts?: MethodOptions<Schema>,
-  ): Server<
-    Methods & {
-      [key in K]: ServerMethodDefinition<Schema, Result>
-    }
-  > {
-    ;(this.handlers as any)[method] = fn as Schema extends z.ZodUndefined
-      ? (...args: Params) => Promise<Result>
-      : (schema: z.input<Schema>) => Promise<Result>
-
-    this.methods.set(
-      method,
-      new Method<Schema, Result>(
-        this,
-        method,
-        fn as MethodFunction<any, Result>,
-        opts,
-      ),
-    )
-
-    return this as any
+  ) {
+    this.methods.set(method, new Method(this, method, fn, opts))
   }
 
   channel(name: string | object = NO_CHANNEL) {
@@ -300,10 +278,6 @@ export class Server<
     channel.setServer(this.server)
     this.channels.set(name, channel)
     return channel
-  }
-
-  combine<T extends Server<any>>(methods: T) {
-    return this as any as Server<InferServerMethods<T> & Methods>
   }
 }
 
