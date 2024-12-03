@@ -64,7 +64,7 @@ export function ns<
       {
         ...submodules,
         [methodName]: {
-          ...(submodules[methodName] ?? {}),
+          ...(submodules?.[methodName] ?? {}),
           ...fnOrSubmodule,
         },
       } as Methods & {
