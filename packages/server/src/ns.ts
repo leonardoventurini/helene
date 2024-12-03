@@ -82,7 +82,6 @@ export function ns<
   const registerMethods = (methods: MethodDefinition, prefix: string = '') => {
     Object.entries(methods).forEach(([key, value]) => {
       if (Array.isArray(value)) {
-        console.log('registering method', prefix ? `${prefix}.${key}` : key)
         Helene.addMethod(prefix ? `${prefix}.${key}` : key, value[0], value[1])
         return
       }
