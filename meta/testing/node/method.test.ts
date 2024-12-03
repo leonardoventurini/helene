@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 
 import { Client, TransportMode } from '@helenejs/client'
-import { ClientNode, HeleneAsyncLocalStorage } from '@helenejs/server'
+import { ClientNode, HeleneAsyncLocalStorage, ns } from '@helenejs/server'
 import {
   Errors,
   getPromise,
@@ -167,7 +167,10 @@ describe('Methods', function () {
   })
 
   it('should register and call a method with zod schema validation', async () => {
-    test.server.addMethod(
+    const { server } = await test.createRandomSrv({ globalInstance: true })
+    const { client } = await test.createClient({ port: server.port })
+
+    server.addMethod(
       'validated:zod:method',
       ({ knownProperty }) => Boolean(knownProperty),
       {
@@ -177,56 +180,56 @@ describe('Methods', function () {
       },
     )
 
-    const srv = test.server
-      .addMethod(
-        'validated:zod:method2',
-        ({ knownProperty }) => knownProperty,
-        {
-          schema: z.object({
-            knownProperty: z.boolean(),
-          }),
-        },
-      )
-      .addMethod('hello', () => 'world')
+    const submodule3 = ns().add('foo3', () => true)
 
-    const client = test.client.typed(srv.handlers)
+    const submodule1 = ns()
+      .add('foo1', () => true)
+      .add('submodule3', submodule3)
 
-    /**
-     * Should have type inference
-     */
-    const res1 = await client.m['validated:zod:method2']({
-      knownProperty: true,
-    })
+    const submodule2 = ns()
+      .add('validated:zod:method2', ({ knownProperty }) => knownProperty, {
+        schema: z.object({
+          knownProperty: z.boolean(),
+        }),
+      })
+      .add('hello', () => 'world')
+      .add('submodule1', submodule1)
+      .build()
+
+    const c = client.typed(submodule2)
+
+    c.m['validated:zod:method2']({ knownProperty: true })
+
+    const res1 = await c.m.submodule1.foo1()
 
     expect(res1).to.be.true
 
-    /**
-     * Should have type inference
-     */
-    const res2 = await client.m.hello()
+    const res2 = await c.m.hello()
 
     expect(res2).to.equal('world')
 
-    /**
-     * Should have type inference
-     */
-    const res3 = await client.tcall('validated:zod:method2', {
+    const res3 = await c.call('validated:zod:method2', {
       knownProperty: true,
     })
 
     expect(res3).to.be.true
 
-    expect(test.server.handlers).to.have.property('validated:zod:method')
+    const res4 = await c.m.submodule1.submodule3.foo3()
 
-    await expect(test.client.call('validated:zod:method')).to.be.rejectedWith(
+    expect(res4).to.be.true
+
+    await expect(client.call('validated:zod:method')).to.be.rejectedWith(
       Errors.INVALID_PARAMS,
     )
 
-    const result = await test.client.call('validated:zod:method', {
+    const result = await client.call('validated:zod:method', {
       knownProperty: true,
     })
 
     expect(result).to.be.true
+
+    await client.close()
+    await server.close()
   })
 
   it('should have async local storage', async () => {
