@@ -1,7 +1,7 @@
 {
   "name": "helene",
   "description": "Real-time Web Apps for Node.js",
-  "version": "1.5.0-alpha.0",
+  "version": "1.5.0-alpha.1",
   "browser": "index.browser.js",
   "main": "index.js",
   "type": "commonjs",
@@ -15,8 +15,8 @@
   "dependencies": {
     "@helenejs/client": "^1.5.0-alpha.0",
     "@helenejs/data": "^1.5.0-alpha.0",
-    "@helenejs/react": "^1.5.0-alpha.0",
-    "@helenejs/server": "^1.5.0-alpha.0",
+    "@helenejs/react": "^1.5.0-alpha.1",
+    "@helenejs/server": "^1.5.0-alpha.1",
     "@helenejs/utils": "^1.5.0-alpha.0"
   },
   "devDependencies": {
