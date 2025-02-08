@@ -11,7 +11,7 @@ import { EJSON } from 'ejson2'
 import isEmpty from 'lodash/isEmpty'
 import perf_hooks from 'perf_hooks'
 import { AnyObjectSchema, ObjectSchema } from 'yup'
-import { z, ZodSchema } from 'zod'
+import { z } from 'zod'
 import { ClientNode } from './client-node'
 import { HeleneAsyncLocalStorage } from './helene-async-local-storage'
 import { Server } from './server'
@@ -112,7 +112,7 @@ export class Method<Schema extends z.ZodUndefined | z.ZodTypeAny, Result> {
           cleanParams = this.schema.cast(params, { stripUnknown: true })
         }
 
-        if (this.schema instanceof ZodSchema) {
+        if (isZodSchema(this.schema)) {
           await this.schema.parseAsync(params)
 
           cleanParams = this.schema.parse(params)
@@ -143,4 +143,18 @@ export class Method<Schema extends z.ZodUndefined | z.ZodTypeAny, Result> {
 
     return result
   }
+}
+
+function isZodSchema(schema: unknown): schema is z.ZodType {
+  if (!schema || typeof schema !== 'object') {
+    return false
+  }
+
+  return (
+    '_def' in schema &&
+    'parse' in schema &&
+    typeof (schema as z.ZodType).parse === 'function' &&
+    'safeParse' in schema &&
+    typeof (schema as z.ZodType).safeParse === 'function'
+  )
 }
