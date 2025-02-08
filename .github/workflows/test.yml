@@ -9,7 +9,7 @@ on:
 jobs:
   test_bun:
     name: Bun
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: supercharge/redis-github-action@1.4.0
       - uses: actions/checkout@v2
@@ -33,7 +33,7 @@ jobs:
         image: redis:7.2-alpine
         ports:
           - 6379:6379
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
       - uses: oven-sh/setup-bun@v1
@@ -50,7 +50,7 @@ jobs:
           CI: true
   test_browser:
     name: Browser Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v3
