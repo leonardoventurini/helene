@@ -23,7 +23,7 @@ jobs:
       - run: bun upgrade
       - run: yarn install --frozen-lockfile
       - run: lerna run build
-      - run: lerna run bun:test:mocha
+      - run: lerna run bun:test:mocha --stream
         env:
           CI: true
   test_node:
