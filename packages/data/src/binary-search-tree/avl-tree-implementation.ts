@@ -245,10 +245,14 @@ export class AVLTreeImplementation extends BinarySearchTree {
       if (currentNode.compareKeys(currentNode.key, key) === 0) {
         if (currentNode.unique) {
           const err = new Error(
-            "Can't insert key " + key + ', it violates the unique constraint',
+            `Unique constraint violation: Cannot insert duplicate key "${key}" with value ${JSON.stringify(
+              value,
+            )}. A document with this key already exists.`,
           ) as any
           err.key = key
+          err.value = value
           err.errorType = 'uniqueViolated'
+          err.existingData = currentNode.data
           throw err
         } else {
           currentNode.data.push(value)

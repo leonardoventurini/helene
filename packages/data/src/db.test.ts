@@ -1801,7 +1801,10 @@ describe('Database', function () {
         collection.indexes.z.tree.getNumberOfKeys().should.equal(0)
 
         await fs.promises.writeFile(testDb, rawData, 'utf8')
-        await assert.isRejected(collection.loadDatabase(), /unique constraint/)
+        await assert.isRejected(
+          collection.loadDatabase(),
+          /Unique constraint violation/,
+        )
         collection.getAllData().length.should.equal(0)
         collection.indexes.z.tree.getNumberOfKeys().should.equal(0)
       })
@@ -1815,7 +1818,7 @@ describe('Database', function () {
 
         await assert.isRejected(
           collection.ensureIndex({ fieldName: 'a', unique: true }),
-          /unique constraint/,
+          /Unique constraint violation/,
         )
 
         assert.deepEqual(Object.keys(collection.indexes), ['_id', 'b'])
