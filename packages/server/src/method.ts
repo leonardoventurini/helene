@@ -118,7 +118,7 @@ export class Method<Schema extends z.ZodUndefined | z.ZodTypeAny, Result> {
           cleanParams = this.schema.parse(params)
         }
       } catch (error) {
-        console.error(error)
+        console.error(JSON.stringify(error, null, 2))
         throw new SchemaValidationError(Errors.INVALID_PARAMS)
       }
     }
