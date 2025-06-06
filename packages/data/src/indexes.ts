@@ -1,5 +1,5 @@
-import { AVLTreeInterface } from './binary-search-tree/avl-tree-interface'
 import { compareThings, getDotValue } from './model'
+import { AVLTreeWrapper } from './avl-tree-wrapper'
 import isArray from 'lodash/isArray'
 import isDate from 'lodash/isDate'
 import uniq from 'lodash/uniq'
@@ -50,7 +50,7 @@ export class Index {
     checkValueEquality: typeof checkValueEquality
   }
 
-  tree: AVLTreeInterface
+  tree: AVLTreeWrapper
 
   /**
    * Create a new index
@@ -80,7 +80,7 @@ export class Index {
    *                                                 If an error is thrown during insertion, the index is not modified
    */
   reset(newData?) {
-    this.tree = new AVLTreeInterface(this.treeOptions)
+    this.tree = new AVLTreeWrapper(this.treeOptions)
 
     if (newData) {
       this.insert(newData)
