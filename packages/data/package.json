@@ -1,6 +1,6 @@
 {
   "name": "@helenejs/data",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "Real-time Web Apps for Node.js",
   "main": "lib/index.js",
   "type": "commonjs",
@@ -16,6 +16,7 @@
     "prepublishOnly": "yarn run rebuild"
   },
   "dependencies": {
+    "avl": "^1.6.0",
     "eventemitter2": "^6.4.7",
     "idb": "^8.0.0",
     "immutable": "^4.3.5",

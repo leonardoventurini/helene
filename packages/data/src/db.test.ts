@@ -413,7 +413,7 @@ describe('Database', function () {
       let doc = await collection.findOne({})
       doc.hello.should.equal('world')
 
-      await new Promise(resolve => setTimeout(resolve, 101))
+      await new Promise(resolve => setTimeout(resolve, 110))
 
       doc = await collection.findOne({})
       assert.isNull(doc)
@@ -451,13 +451,13 @@ describe('Database', function () {
       let docs = await collection.find({})
       docs.length.should.equal(3)
 
-      await new Promise(resolve => setTimeout(resolve, 101))
+      await new Promise(resolve => setTimeout(resolve, 110))
 
       docs = await collection.find({})
       docs.length.should.equal(1)
       docs[0].hello.should.equal('world3')
 
-      await new Promise(resolve => setTimeout(resolve, 101))
+      await new Promise(resolve => setTimeout(resolve, 110))
 
       docs = await collection.find({})
       docs.length.should.equal(0)
@@ -480,7 +480,7 @@ describe('Database', function () {
       let docs = await collection.find()
       docs.length.should.equal(3)
 
-      await new Promise(resolve => setTimeout(resolve, 101))
+      await new Promise(resolve => setTimeout(resolve, 110))
 
       docs = await collection.find()
       docs.length.should.equal(2)

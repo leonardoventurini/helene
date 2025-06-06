@@ -6,7 +6,9 @@
   "scripts": {
     "lint": "eslint --ext .js,.jsx,.ts,.tsx 'packages/**/src/**/*' 'meta/**/*.ts'"
   },
-  "dependencies": {},
+  "dependencies": {
+    "avl": "^1.6.0"
+  },
   "devDependencies": {
     "@types/express": "^5.0.0",
     "@typescript-eslint/eslint-plugin": "^6.7.4",
