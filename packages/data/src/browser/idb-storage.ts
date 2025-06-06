@@ -31,10 +31,10 @@
  * - Manual flush capability for critical operations
  *
  * ### 5. Optimized Append Operations
- * - O(1) append operations that avoid reading entire documents
- * - Smart chunk space utilization - fills partial chunks before creating new ones
- * - Direct chunk manipulation for maximum efficiency
- * - Handles chunk overflow scenarios gracefully
+ * - Efficient append operations that leverage batched writes
+ * - Cache-first approach for maximum performance when data is already loaded
+ * - Minimal disk reads - only when data isn't cached
+ * - Consistent behavior with write operations through unified batching system
  *
  * ### 6. Robust Error Handling
  * - Graceful degradation when compression fails
@@ -44,7 +44,7 @@
  *
  * ## Performance Benefits
  *
- * - **Append Operations**: O(1) instead of O(n) - no full document reads required
+ * - **Append Operations**: Cache-hit appends are O(1), cache-miss appends require one read + batched write
  * - **Read Performance**: Cache hits are near-instantaneous
  * - **Write Performance**: Batched + async writes reduce UI blocking
  * - **Storage Efficiency**: Compression reduces disk/IndexedDB usage by 30-70% for text
@@ -331,11 +331,15 @@ export class IDBStorage implements IStorage {
       return
     }
 
-    await this.appendToDisk(name, data)
+    // For cache miss, we need the current content to calculate the new total
+    const currentData = await this.readFromDisk(name)
+    const newData = currentData + data
 
-    // Refresh cache
-    const updatedData = await this.readFromDisk(name)
-    this.cache.set(name, updatedData)
+    // Update cache with the new content
+    this.cache.set(name, newData)
+
+    // Schedule the write operation
+    this.batchWriter.schedule(name, newData)
   }
 
   async flush(): Promise<void> {
@@ -372,7 +376,6 @@ export class IDBStorage implements IStorage {
           }
         } catch (error) {
           console.warn(`Failed to decompress chunk ${chunk.id}:`, error)
-          // Try to use raw content if decompression fails
           result += chunk.content || ''
         }
       }
@@ -400,36 +403,6 @@ export class IDBStorage implements IStorage {
     } catch (error) {
       console.error('Error writing to IndexedDB:', error)
       throw new Error('Failed to write data to storage')
-    }
-  }
-
-  private async appendToDisk(name: string, data: string): Promise<void> {
-    try {
-      const docId = `${this.prefix}${name}`
-      const db = await this.getDB()
-      const chunks = await db.getAllFromIndex(STORE_NAME, 'docId', docId)
-
-      chunks.sort((a, b) => a.chunkIndex - b.chunkIndex)
-
-      const tx = db.transaction(STORE_NAME, 'readwrite')
-      const store = tx.objectStore(STORE_NAME)
-
-      const { remainingData, nextIndex } = await this.appendToLastChunk(
-        store,
-        chunks,
-        data,
-        docId,
-      )
-
-      if (remainingData) {
-        const newChunks = this.createChunks(remainingData)
-        await this.writeChunks(store, docId, newChunks, nextIndex)
-      }
-
-      await tx.done
-    } catch (error) {
-      console.error('Error appending data:', error)
-      throw new Error('Failed to append data')
     }
   }
 
@@ -465,62 +438,17 @@ export class IDBStorage implements IStorage {
     store: any,
     docId: string,
     chunks: Array<{ content: string; compressed: boolean }>,
-    startIndex: number = 0,
   ): Promise<void> {
     const writePromises = chunks.map((chunk, i) =>
       store.put({
-        id: `${docId}-${startIndex + i}`,
+        id: `${docId}-${i}`,
         docId,
-        chunkIndex: startIndex + i,
+        chunkIndex: i,
         content: chunk.content,
         compressed: chunk.compressed,
       } as ChunkData),
     )
 
     await Promise.all(writePromises)
-  }
-
-  private async appendToLastChunk(
-    store: any,
-    chunks: ChunkData[],
-    data: string,
-    docId: string,
-  ): Promise<{ remainingData: string; nextIndex: number }> {
-    if (chunks.length === 0) {
-      return { remainingData: data, nextIndex: 0 }
-    }
-
-    const lastChunk = chunks[chunks.length - 1]
-    let lastContent: string
-
-    try {
-      lastContent = lastChunk.compressed
-        ? TextCompressor.decompress(lastChunk.content)
-        : lastChunk.content || ''
-    } catch (error) {
-      console.warn(`Failed to decompress last chunk, using raw content:`, error)
-      lastContent = lastChunk.content || ''
-    }
-
-    const remainingSpace = CHUNK_SIZE - lastContent.length
-
-    if (remainingSpace <= 0) {
-      return { remainingData: data, nextIndex: chunks.length }
-    }
-
-    const dataToAppend = data.slice(0, remainingSpace)
-    const updatedContent = lastContent + dataToAppend
-    const processedChunk = TextCompressor.processChunk(updatedContent)
-
-    await store.put({
-      ...lastChunk,
-      content: processedChunk.content,
-      compressed: processedChunk.compressed,
-    })
-
-    return {
-      remainingData: data.slice(remainingSpace),
-      nextIndex: chunks.length,
-    }
   }
 }

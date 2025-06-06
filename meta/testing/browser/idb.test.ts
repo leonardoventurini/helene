@@ -174,6 +174,9 @@ describe('Helene Data IDB Storage', function () {
 
       const largeName = 'x'.repeat(CHUNK_SIZE * 2)
       await collection.insert({ _id: 1, name: largeName })
+
+      // Force collection to persist data to storage
+      await (collection as any).persistence.compactDatafile()
       await storage.flush()
 
       const chunkCount = await getChunkCount(collectionName)
