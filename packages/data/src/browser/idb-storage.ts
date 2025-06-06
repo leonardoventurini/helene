@@ -21,7 +21,7 @@
  * ### 3. Intelligent Compression
  * - Automatic compression for text data larger than 1KB
  * - Adaptive compression only when it provides >10% space savings
- * - LZ-string-like algorithm optimized for repetitive text data
+ * - Battle-tested lz-string library for reliable text compression
  * - Seamless compression/decompression with graceful fallback handling
  *
  * ### 4. Batch Write Operations
@@ -102,6 +102,7 @@
 
 import { IStorage } from '../types'
 import { IDBPDatabase, openDB } from 'idb'
+import * as LZString from 'lz-string'
 
 export const CHUNK_SIZE = 256 * 1024 // Reduced to 256KB for better granularity
 export const STORE_NAME = 'chunks'
@@ -123,32 +124,14 @@ class TextCompressor {
 
   static compress(str: string): string {
     if (!str || str.length === 0) {
-      return JSON.stringify([])
+      return ''
     }
 
-    const dict: Record<string, number> = {}
-    const data = str.split('')
-    const result: (string | number)[] = []
-    let dictSize = 256
-    let w = ''
-
-    for (let i = 0; i < data.length; i++) {
-      const c = data[i]
-      const wc = w + c
-      if (dict[wc]) {
-        w = wc
-      } else {
-        result.push(w.length > 1 ? dict[w] : w.charCodeAt(0))
-        dict[wc] = dictSize++
-        w = c
-      }
+    try {
+      return LZString.compress(str) || str
+    } catch (error) {
+      throw new Error(`Compression failed: ${error.message}`)
     }
-
-    if (w) {
-      result.push(w.length > 1 ? dict[w] : w.charCodeAt(0))
-    }
-
-    return JSON.stringify(result)
   }
 
   static decompress(str: string): string {
@@ -156,54 +139,15 @@ class TextCompressor {
       return ''
     }
 
-    let data: (string | number)[]
     try {
-      data = JSON.parse(str) as (string | number)[]
-    } catch (e) {
-      throw new Error('Invalid compressed data format')
-    }
-
-    if (!data || data.length === 0) {
-      return ''
-    }
-
-    const dict: Record<number, string> = {}
-    let dictSize = 256
-
-    const firstItem = data[0]
-    if (firstItem === null || firstItem === undefined) {
-      return ''
-    }
-
-    let w = String.fromCharCode(
-      typeof firstItem === 'number' ? firstItem : firstItem.charCodeAt(0),
-    )
-    let result = w
-
-    for (let i = 1; i < data.length; i++) {
-      let entry: string
-      const k = data[i]
-
-      if (k === null || k === undefined) {
-        continue
+      const decompressed = LZString.decompress(str)
+      if (decompressed === null) {
+        throw new Error('Decompression returned null - invalid compressed data')
       }
-
-      if (typeof k === 'string') {
-        entry = k
-      } else if (dict[k]) {
-        entry = dict[k]
-      } else if (k === dictSize) {
-        entry = w + w.charAt(0)
-      } else {
-        throw new Error('Invalid compressed data')
-      }
-
-      result += entry
-      dict[dictSize++] = w + entry.charAt(0)
-      w = entry
+      return decompressed || str
+    } catch (error) {
+      throw new Error(`Decompression failed: ${error.message}`)
     }
-
-    return result
   }
 
   static processChunk(chunk: string): { content: string; compressed: boolean } {
@@ -215,11 +159,17 @@ class TextCompressor {
       const compressed = this.compress(chunk)
       const isEfficient = compressed.length < chunk.length * 0.9
 
-      return isEfficient
-        ? { content: compressed, compressed: true }
-        : { content: chunk, compressed: false }
+      if (isEfficient) {
+        const decompressed = this.decompress(compressed)
+        if (decompressed !== chunk) {
+          throw new Error('Round-trip compression validation failed')
+        }
+        return { content: compressed, compressed: true }
+      } else {
+        return { content: chunk, compressed: false }
+      }
     } catch (error) {
-      // Fallback to uncompressed if compression fails
+      console.warn('Compression failed, using uncompressed:', error.message)
       return { content: chunk, compressed: false }
     }
   }
@@ -266,6 +216,7 @@ class DocumentCache {
 
 class BatchWriter {
   private pendingWrites = new Map<string, NodeJS.Timeout>()
+  private pendingData = new Map<string, string>()
   private readonly batchDelay: number
   private readonly flushCallback: (name: string, data: string) => Promise<void>
 
@@ -279,13 +230,19 @@ class BatchWriter {
 
   schedule(name: string, data: string): void {
     this.clearPending(name)
+    this.pendingData.set(name, data)
 
     const timeout = setTimeout(async () => {
       this.pendingWrites.delete(name)
-      try {
-        await this.flushCallback(name, data)
-      } catch (error) {
-        console.error(`Failed to flush ${name}:`, error)
+      const latestData = this.pendingData.get(name)
+      this.pendingData.delete(name)
+
+      if (latestData !== undefined) {
+        try {
+          await this.flushCallback(name, latestData)
+        } catch (error) {
+          console.error(`Failed to flush ${name}:`, error)
+        }
       }
     }, this.batchDelay)
 
@@ -298,7 +255,10 @@ class BatchWriter {
         clearTimeout(timeout)
         this.pendingWrites.delete(name)
 
-        const data = cache.get(name)
+        const pendingData = this.pendingData.get(name)
+        this.pendingData.delete(name)
+
+        const data = pendingData ?? cache.get(name)
         return data ? this.flushCallback(name, data) : Promise.resolve()
       },
     )
@@ -311,6 +271,7 @@ class BatchWriter {
       clearTimeout(timeout)
     }
     this.pendingWrites.clear()
+    this.pendingData.clear()
   }
 
   private clearPending(name: string): void {
@@ -319,6 +280,7 @@ class BatchWriter {
       clearTimeout(existing)
       this.pendingWrites.delete(name)
     }
+    this.pendingData.delete(name)
   }
 }
 

@@ -486,4 +486,301 @@ describe('Helene Data IDB Storage', function () {
       expect(readTime).to.be.lessThan(1000)
     })
   })
+
+  describe('Data Integrity Over Multiple Cycles', () => {
+    it('should maintain data integrity over repeated write/read cycles', async () => {
+      const docName = getUniqueCollectionName('integrity_cycles')
+      const originalData = 'hello world '.repeat(500) // Compressible data
+
+      await storage.write(docName, originalData)
+      await storage.flush()
+
+      for (let cycle = 0; cycle < 10; cycle++) {
+        const readData = await storage.read(docName)
+        expect(readData).to.equal(
+          originalData,
+          `Data corrupted on cycle ${cycle}`,
+        )
+
+        await storage.write(docName, readData)
+        await storage.flush()
+
+        const verifyData = await storage.read(docName)
+        expect(verifyData).to.equal(
+          originalData,
+          `Data corrupted after rewrite on cycle ${cycle}`,
+        )
+      }
+    })
+
+    it('should maintain integrity with mixed compressed and uncompressed data', async () => {
+      const testCases = [
+        { name: 'small', data: 'small data' }, // Won't compress
+        { name: 'large', data: 'repeated text '.repeat(200) }, // Will compress
+        { name: 'json', data: JSON.stringify({ key: 'value'.repeat(100) }) }, // JSON data
+        { name: 'special', data: '!@#$%^&*()_+{}[]"\'\\'.repeat(50) }, // Special chars
+      ]
+
+      for (const testCase of testCases) {
+        const docName = getUniqueCollectionName(`integrity_${testCase.name}`)
+
+        for (let cycle = 0; cycle < 5; cycle++) {
+          await storage.write(docName, testCase.data)
+          await storage.flush()
+
+          const readData = await storage.read(docName)
+          expect(readData).to.equal(
+            testCase.data,
+            `${testCase.name} data corrupted on cycle ${cycle}`,
+          )
+        }
+      }
+    })
+
+    it('should maintain integrity across storage instance recreations', async () => {
+      const docName = getUniqueCollectionName('integrity_instances')
+      const testData = 'persistent data '.repeat(300)
+
+      for (let cycle = 0; cycle < 5; cycle++) {
+        const tempStorage = new IDBStorage()
+
+        if (cycle === 0) {
+          await tempStorage.write(docName, testData)
+        }
+
+        await tempStorage.flush()
+        const readData = await tempStorage.read(docName)
+
+        expect(readData).to.equal(
+          testData,
+          `Data corrupted on storage recreation cycle ${cycle}`,
+        )
+
+        await tempStorage.write(docName, testData)
+        await tempStorage.flush()
+
+        // Don't clear the temp storage to test persistence
+      }
+    })
+
+    it('should handle rapid successive operations without corruption', async () => {
+      const docName = getUniqueCollectionName('integrity_rapid')
+      const baseData = 'rapid test data '
+
+      for (let batch = 0; batch < 5; batch++) {
+        const operations = []
+
+        for (let i = 0; i < 20; i++) {
+          const data = baseData.repeat(i + 1)
+          operations.push(storage.write(docName, data))
+        }
+
+        await Promise.all(operations)
+        await storage.flush()
+
+        const finalData = await storage.read(docName)
+        expect(finalData).to.include(
+          baseData,
+          `Data corrupted in rapid operations batch ${batch}`,
+        )
+      }
+    })
+
+    it('should maintain integrity during append operations over multiple cycles', async () => {
+      const docName = getUniqueCollectionName('integrity_append')
+      const chunkData = 'chunk data '.repeat(100)
+      let expectedData = ''
+
+      for (let cycle = 0; cycle < 10; cycle++) {
+        await storage.append(docName, chunkData)
+        expectedData += chunkData
+
+        await storage.flush()
+
+        const readData = await storage.read(docName)
+        expect(readData).to.equal(
+          expectedData,
+          `Append data corrupted on cycle ${cycle}`,
+        )
+
+        expect(readData.length).to.equal(
+          expectedData.length,
+          `Data length mismatch on cycle ${cycle}`,
+        )
+      }
+    })
+
+    it('should detect and handle compression round-trip corruption', async () => {
+      const docName = getUniqueCollectionName('integrity_compression')
+
+      const testCases = [
+        'unicode: 你好世界 🌍 émojis 🎉',
+        'binary-like: \x00\x01\x02\x03\xFF',
+        'newlines:\nline1\nline2\r\nline3\n',
+        'tabs and spaces:\t  \t  mixed whitespace',
+        'quotes: "double" \'single\' `backtick`',
+        'json: {"nested": {"deep": {"value": "test"}}}',
+      ]
+
+      for (const testData of testCases) {
+        const largifiedData = testData.repeat(200) // Make it large enough to compress
+
+        for (let cycle = 0; cycle < 3; cycle++) {
+          await storage.write(docName, largifiedData)
+          await storage.flush()
+
+          const readData = await storage.read(docName)
+          expect(readData).to.equal(
+            largifiedData,
+            `Compression round-trip failed for: ${testData.substring(
+              0,
+              20,
+            )}... on cycle ${cycle}`,
+          )
+        }
+      }
+    })
+
+    it('should maintain integrity under concurrent read/write stress', async () => {
+      const docNames = Array.from({ length: 5 }, (_, i) =>
+        getUniqueCollectionName(`integrity_stress_${i}`),
+      )
+      const testData = 'stress test data '.repeat(100)
+
+      for (let round = 0; round < 3; round++) {
+        const writeOps = []
+        const readOps = []
+
+        // Start all writes
+        for (const docName of docNames) {
+          writeOps.push(storage.write(docName, testData + round))
+        }
+
+        // Start concurrent reads - they might read old or new data during transition
+        for (const docName of docNames) {
+          readOps.push(
+            storage.read(docName).then(data => {
+              // During concurrent operations, we might read:
+              // - Empty string (if never written)
+              // - Previous round data (if not yet updated)
+              // - Current round data (if already updated)
+              const validData = [
+                '', // Empty
+                testData + (round - 1), // Previous round
+                testData + round, // Current round
+              ]
+
+              if (round === 0) {
+                // First round can only be empty or current
+                expect(['', testData + round]).to.include(data)
+              } else {
+                // Later rounds can be any of the valid states
+                expect(validData).to.include(
+                  data,
+                  `Invalid concurrent read data: ${data?.substring(0, 50)}...`,
+                )
+              }
+            }),
+          )
+        }
+
+        await Promise.all([...writeOps, ...readOps])
+        await storage.flush()
+
+        // After flush, all data should be consistent
+        for (const docName of docNames) {
+          const finalData = await storage.read(docName)
+          expect(finalData).to.equal(
+            testData + round,
+            `Stress test corrupted data for ${docName} in round ${round}`,
+          )
+        }
+      }
+    })
+
+    it('should verify chunk boundary integrity over multiple operations', async () => {
+      const docName = getUniqueCollectionName('integrity_chunks')
+
+      const chunk1 = 'A'.repeat(CHUNK_SIZE - 100)
+      const chunk2 = 'B'.repeat(200) // This will overflow to new chunk
+      const chunk3 = 'C'.repeat(CHUNK_SIZE)
+
+      await storage.write(docName, chunk1)
+      await storage.flush()
+
+      for (let cycle = 0; cycle < 5; cycle++) {
+        await storage.append(docName, chunk2)
+        await storage.flush()
+
+        const readData = await storage.read(docName)
+        const expectedLength = chunk1.length + chunk2.length * (cycle + 1)
+        expect(readData.length).to.equal(
+          expectedLength,
+          `Chunk boundary corruption on cycle ${cycle}`,
+        )
+
+        expect(readData.startsWith(chunk1)).to.be.true
+        expect(readData.includes(chunk2)).to.be.true
+      }
+
+      await storage.append(docName, chunk3)
+      await storage.flush()
+
+      const finalData = await storage.read(docName)
+      expect(finalData.endsWith(chunk3)).to.be.true
+      expect(finalData.startsWith(chunk1)).to.be.true
+    })
+
+    it('should maintain data consistency during cache eviction cycles', async () => {
+      const docNames = Array.from({ length: 60 }, (_, i) =>
+        getUniqueCollectionName(`integrity_cache_${i}`),
+      ) // More than cache size to force eviction
+
+      const testData = 'cache eviction test '.repeat(50)
+
+      for (let cycle = 0; cycle < 3; cycle++) {
+        for (const docName of docNames) {
+          await storage.write(docName, testData + cycle)
+        }
+        await storage.flush()
+
+        for (const docName of docNames) {
+          const readData = await storage.read(docName)
+          expect(readData).to.equal(
+            testData + cycle,
+            `Cache eviction corrupted data for ${docName} in cycle ${cycle}`,
+          )
+        }
+      }
+    })
+
+    it('should verify data integrity after simulated power loss scenarios', async () => {
+      const docName = getUniqueCollectionName('integrity_power_loss')
+      const testData = 'power loss test '.repeat(200)
+
+      for (let cycle = 0; cycle < 5; cycle++) {
+        await storage.write(docName, testData + cycle)
+
+        if (cycle % 2 === 0) {
+          await storage.flush()
+        }
+
+        const readData = await storage.read(docName)
+        expect(readData).to.equal(
+          testData + cycle,
+          `Power loss simulation corrupted data on cycle ${cycle}`,
+        )
+
+        const tempStorage = new IDBStorage()
+        const persistedData = await tempStorage.read(docName)
+
+        if (cycle % 2 === 0) {
+          expect(persistedData).to.equal(
+            testData + cycle,
+            `Persisted data corrupted on flushed cycle ${cycle}`,
+          )
+        }
+      }
+    })
+  })
 })
