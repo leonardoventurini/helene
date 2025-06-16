@@ -18,26 +18,19 @@
  * - LRU eviction prevents memory bloat in long-running applications
  * - Cache-first reads eliminate IndexedDB hits for hot data
  *
- * ### 3. Intelligent Compression
- * - Automatic compression for text data larger than 1KB
- * - Adaptive compression only when it provides >10% space savings
- * - Battle-tested lz-string library for reliable text compression
- * - Seamless compression/decompression with graceful fallback handling
- *
- * ### 4. Batch Write Operations
+ * ### 3. Batch Write Operations
  * - Write operations are batched with configurable delay (default: 100ms)
  * - Reduces IndexedDB transaction overhead significantly
  * - Async writes with immediate cache updates for perceived performance
  * - Manual flush capability for critical operations
  *
- * ### 5. Optimized Append Operations
+ * ### 4. Optimized Append Operations
  * - Efficient append operations that leverage batched writes
  * - Cache-first approach for maximum performance when data is already loaded
  * - Minimal disk reads - only when data isn't cached
  * - Consistent behavior with write operations through unified batching system
  *
- * ### 6. Robust Error Handling
- * - Graceful degradation when compression fails
+ * ### 5. Robust Error Handling
  * - Per-chunk error recovery for corrupted data
  * - Fallback mechanisms for data integrity
  * - Comprehensive logging for debugging
@@ -47,7 +40,6 @@
  * - **Append Operations**: Cache-hit appends are O(1), cache-miss appends require one read + batched write
  * - **Read Performance**: Cache hits are near-instantaneous
  * - **Write Performance**: Batched + async writes reduce UI blocking
- * - **Storage Efficiency**: Compression reduces disk/IndexedDB usage by 30-70% for text
  * - **Memory Usage**: Bounded cache with LRU eviction prevents memory leaks
  * - **Chunking Benefits**: Better handling of large documents and partial updates
  *
@@ -74,7 +66,6 @@
  *
  * The implementation is split into focused, testable components:
  *
- * - **TextCompressor**: Handles all compression logic with smart efficiency detection
  * - **DocumentCache**: Manages LRU caching with configurable size limits
  * - **BatchWriter**: Handles write batching and scheduling with error recovery
  * - **IDBStorage**: Main class coordinating all components with clean separation of concerns
@@ -89,8 +80,7 @@
  * - `id`: Unique chunk identifier (`${docId}-${chunkIndex}`)
  * - `docId`: Document identifier with namespace prefix
  * - `chunkIndex`: Ordering index for chunk reassembly
- * - `content`: Actual data (compressed or raw)
- * - `compressed`: Boolean flag indicating compression status
+ * - `content`: Actual data
  *
  * ## Browser Compatibility
  *
@@ -102,7 +92,6 @@
 
 import { IStorage } from '../types'
 import { IDBPDatabase, openDB } from 'idb'
-import * as LZString from 'lz-string'
 
 export const CHUNK_SIZE = 256 * 1024 // Reduced to 256KB for better granularity
 export const STORE_NAME = 'chunks'
@@ -114,65 +103,6 @@ interface ChunkData {
   docId: string
   chunkIndex: number
   content: string
-  compressed?: boolean
-}
-
-class TextCompressor {
-  static shouldCompress(text: string): boolean {
-    return text && text.length > 1024
-  }
-
-  static compress(str: string): string {
-    if (!str || str.length === 0) {
-      return ''
-    }
-
-    try {
-      return LZString.compress(str) || str
-    } catch (error) {
-      throw new Error(`Compression failed: ${error.message}`)
-    }
-  }
-
-  static decompress(str: string): string {
-    if (!str || str.trim().length === 0) {
-      return ''
-    }
-
-    try {
-      const decompressed = LZString.decompress(str)
-      if (decompressed === null) {
-        throw new Error('Decompression returned null - invalid compressed data')
-      }
-      return decompressed || str
-    } catch (error) {
-      throw new Error(`Decompression failed: ${error.message}`)
-    }
-  }
-
-  static processChunk(chunk: string): { content: string; compressed: boolean } {
-    if (!chunk || !this.shouldCompress(chunk)) {
-      return { content: chunk || '', compressed: false }
-    }
-
-    try {
-      const compressed = this.compress(chunk)
-      const isEfficient = compressed.length < chunk.length * 0.9
-
-      if (isEfficient) {
-        const decompressed = this.decompress(compressed)
-        if (decompressed !== chunk) {
-          throw new Error('Round-trip compression validation failed')
-        }
-        return { content: compressed, compressed: true }
-      } else {
-        return { content: chunk, compressed: false }
-      }
-    } catch (error) {
-      console.warn('Compression failed, using uncompressed:', error.message)
-      return { content: chunk, compressed: false }
-    }
-  }
 }
 
 class DocumentCache {
@@ -368,16 +298,7 @@ export class IDBStorage implements IStorage {
 
       let result = ''
       for (const chunk of chunks) {
-        try {
-          if (chunk.compressed) {
-            result += TextCompressor.decompress(chunk.content)
-          } else {
-            result += chunk.content || ''
-          }
-        } catch (error) {
-          console.warn(`Failed to decompress chunk ${chunk.id}:`, error)
-          result += chunk.content || ''
-        }
+        result += chunk.content || ''
       }
 
       return result
@@ -406,14 +327,11 @@ export class IDBStorage implements IStorage {
     }
   }
 
-  private createChunks(
-    data: string,
-  ): Array<{ content: string; compressed: boolean }> {
-    const chunks: Array<{ content: string; compressed: boolean }> = []
+  private createChunks(data: string): Array<string> {
+    const chunks: Array<string> = []
 
     for (let i = 0; i < data.length; i += CHUNK_SIZE) {
-      const chunk = data.slice(i, i + CHUNK_SIZE)
-      chunks.push(TextCompressor.processChunk(chunk))
+      chunks.push(data.slice(i, i + CHUNK_SIZE))
     }
 
     return chunks
@@ -437,15 +355,14 @@ export class IDBStorage implements IStorage {
   private async writeChunks(
     store: any,
     docId: string,
-    chunks: Array<{ content: string; compressed: boolean }>,
+    chunks: Array<string>,
   ): Promise<void> {
     const writePromises = chunks.map((chunk, i) =>
       store.put({
         id: `${docId}-${i}`,
         docId,
         chunkIndex: i,
-        content: chunk.content,
-        compressed: chunk.compressed,
+        content: chunk,
       } as ChunkData),
     )
 

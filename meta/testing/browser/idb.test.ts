@@ -183,32 +183,6 @@ describe('Helene Data IDB Storage', function () {
       expect(chunkCount).to.be.at.least(2)
     })
 
-    it('should compress large text data', async () => {
-      const docName = getUniqueCollectionName('compression')
-      const repetitiveText = 'hello world '.repeat(1000) // Should compress well
-      await storage.write(docName, repetitiveText)
-      await storage.flush()
-
-      const chunks = await readRawDataFromIDB(docName)
-      expect(chunks.some(chunk => chunk.compressed)).to.be.true
-
-      const result = await storage.read(docName)
-      expect(result).to.equal(repetitiveText)
-    })
-
-    it('should not compress small data', async () => {
-      const docName = getUniqueCollectionName('nocompression')
-      const smallText = 'small data'
-      await storage.write(docName, smallText)
-      await storage.flush()
-
-      const chunks = await readRawDataFromIDB(docName)
-      expect(chunks.every(chunk => !chunk.compressed)).to.be.true
-
-      const result = await storage.read(docName)
-      expect(result).to.equal(smallText)
-    })
-
     it('should handle mixed compressed and uncompressed chunks', async () => {
       const docName = getUniqueCollectionName('mixed')
       const mixedData = 'small' + 'x'.repeat(2000) + 'y'.repeat(2000)
