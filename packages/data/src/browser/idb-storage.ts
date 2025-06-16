@@ -93,7 +93,7 @@
 import { IStorage } from '../types'
 import { IDBPDatabase, openDB } from 'idb'
 
-export const CHUNK_SIZE = 256 * 1024 // Reduced to 256KB for better granularity
+export const CHUNK_SIZE = 512 * 1024 // Increased to 512KB for better performance with larger documents
 export const STORE_NAME = 'chunks'
 export const DB_NAME = 'helene_data'
 export const DB_VERSION = 1
@@ -109,7 +109,8 @@ class DocumentCache {
   private cache = new Map<string, string>()
   private readonly maxSize: number
 
-  constructor(maxSize: number = 50) {
+  constructor(maxSize: number = 100) {
+    // Increased default cache size
     this.maxSize = maxSize
   }
 
@@ -152,7 +153,7 @@ class BatchWriter {
 
   constructor(
     flushCallback: (name: string, data: string) => Promise<void>,
-    batchDelay: number = 100,
+    batchDelay: number = 50, // Reduced default batch delay for better responsiveness
   ) {
     this.flushCallback = flushCallback
     this.batchDelay = batchDelay
@@ -224,10 +225,22 @@ const dbPromise = openDB(DB_NAME, DB_VERSION, {
 export class IDBStorage implements IStorage {
   private readonly prefix = 'helene:data:'
   private db: IDBPDatabase | null = null
-  private cache = new DocumentCache()
-  private batchWriter = new BatchWriter((name, data) =>
-    this.writeToDisk(name, data),
-  )
+  private cache: DocumentCache
+  private batchWriter: BatchWriter
+  private readonly chunkSize: number
+
+  constructor(options?: {
+    cacheSize?: number
+    batchDelay?: number
+    chunkSize?: number
+  }) {
+    this.cache = new DocumentCache(options?.cacheSize ?? 100)
+    this.batchWriter = new BatchWriter(
+      (name, data) => this.writeToDisk(name, data),
+      options?.batchDelay ?? 50,
+    )
+    this.chunkSize = options?.chunkSize ?? CHUNK_SIZE
+  }
 
   private async getDB(): Promise<IDBPDatabase> {
     if (!this.db) {
@@ -290,18 +303,45 @@ export class IDBStorage implements IStorage {
     try {
       const docId = `${this.prefix}${name}`
       const db = await this.getDB()
-      const chunks = await db.getAllFromIndex(STORE_NAME, 'docId', docId)
 
-      if (!chunks.length) return ''
+      // For small documents, use getAllFromIndex
+      const tx = db.transaction(STORE_NAME, 'readonly')
+      const index = tx.objectStore(STORE_NAME).index('docId')
 
-      chunks.sort((a, b) => a.chunkIndex - b.chunkIndex)
+      // First, get the count to decide strategy
+      const count = await index.count(docId)
 
-      let result = ''
-      for (const chunk of chunks) {
-        result += chunk.content || ''
+      if (count === 0) return ''
+
+      // Use array for efficient string building
+      const chunks: string[] = []
+
+      if (count <= 10) {
+        // For small documents, load all chunks at once
+        const allChunks = await index.getAll(docId)
+        allChunks.sort((a, b) => a.chunkIndex - b.chunkIndex)
+        for (const chunk of allChunks) {
+          chunks.push(chunk.content || '')
+        }
+      } else {
+        // For large documents, use cursor-based streaming
+        let cursor = await index.openCursor(docId)
+        const chunkMap = new Map<number, string>()
+
+        while (cursor) {
+          chunkMap.set(cursor.value.chunkIndex, cursor.value.content || '')
+          cursor = await cursor.continue()
+        }
+
+        // Sort by chunk index and build result
+        const sortedIndices = Array.from(chunkMap.keys()).sort((a, b) => a - b)
+        for (const idx of sortedIndices) {
+          chunks.push(chunkMap.get(idx)!)
+        }
       }
 
-      return result
+      await tx.done
+      return chunks.join('')
     } catch (error) {
       console.error('Error reading from IndexedDB:', error)
       throw new Error('Failed to read data from storage')
@@ -314,11 +354,12 @@ export class IDBStorage implements IStorage {
       const db = await this.getDB()
       const chunks = this.createChunks(data)
 
+      // Use a single transaction for both delete and write operations
       const tx = db.transaction(STORE_NAME, 'readwrite')
       const store = tx.objectStore(STORE_NAME)
 
-      await this.deleteExistingChunks(store, docId)
-      await this.writeChunks(store, docId, chunks)
+      // Delete existing chunks and write new ones in the same transaction
+      await this.deleteAndWriteChunks(store, docId, chunks)
 
       await tx.done
     } catch (error) {
@@ -330,33 +371,30 @@ export class IDBStorage implements IStorage {
   private createChunks(data: string): Array<string> {
     const chunks: Array<string> = []
 
-    for (let i = 0; i < data.length; i += CHUNK_SIZE) {
-      chunks.push(data.slice(i, i + CHUNK_SIZE))
+    for (let i = 0; i < data.length; i += this.chunkSize) {
+      chunks.push(data.slice(i, i + this.chunkSize))
     }
 
     return chunks
   }
 
-  private async deleteExistingChunks(store: any, docId: string): Promise<void> {
-    const index = store.index('docId')
-    const range = IDBKeyRange.only(docId)
-
-    let cursor = await index.openCursor(range)
-    const deletePromises: Promise<void>[] = []
-
-    while (cursor) {
-      deletePromises.push(store.delete(cursor.primaryKey))
-      cursor = await cursor.continue()
-    }
-
-    await Promise.all(deletePromises)
-  }
-
-  private async writeChunks(
+  private async deleteAndWriteChunks(
     store: any,
     docId: string,
     chunks: Array<string>,
   ): Promise<void> {
+    // First delete existing chunks
+    const index = store.index('docId')
+    const range = IDBKeyRange.only(docId)
+
+    // Use cursor to delete while we iterate (more memory efficient)
+    let cursor = await index.openCursor(range)
+    while (cursor) {
+      await store.delete(cursor.primaryKey)
+      cursor = await cursor.continue()
+    }
+
+    // Then write new chunks in parallel
     const writePromises = chunks.map((chunk, i) =>
       store.put({
         id: `${docId}-${i}`,
