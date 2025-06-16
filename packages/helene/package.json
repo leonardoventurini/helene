@@ -1,7 +1,7 @@
 {
   "name": "helene",
   "description": "Real-time Web Apps for Node.js",
-  "version": "1.6.3",
+  "version": "1.6.4",
   "browser": "index.browser.js",
   "main": "index.js",
   "type": "commonjs",
@@ -13,11 +13,11 @@
     "prepublishOnly": "yarn run rebuild"
   },
   "dependencies": {
-    "@helenejs/client": "^1.6.3",
-    "@helenejs/data": "^1.6.3",
-    "@helenejs/react": "^1.6.3",
-    "@helenejs/server": "^1.6.3",
-    "@helenejs/utils": "^1.5.0-alpha.0"
+    "@helenejs/client": "^1.6.4",
+    "@helenejs/data": "^1.6.4",
+    "@helenejs/react": "^1.6.4",
+    "@helenejs/server": "^1.6.4",
+    "@helenejs/utils": "^1.6.4"
   },
   "devDependencies": {
     "rimraf": "^5.0.5",
