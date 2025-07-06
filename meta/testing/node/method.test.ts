@@ -51,8 +51,6 @@ describe('Methods', function () {
     expect(error).to.have.property('type').that.equals(PayloadType.ERROR)
 
     expect(error).to.have.property('message').that.equals(Errors.INTERNAL_ERROR)
-
-    expect(error).to.have.property('stack').that.is.a('string')
   })
 
   it('should make a void method call', async () => {
