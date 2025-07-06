@@ -1,7 +1,7 @@
 import { Methods } from '@helenejs/utils'
 import { z } from 'zod'
 import { Method } from './method'
-import { listMethods, rpcInit, rpcLogout, rpcOff, rpcOn } from './methods'
+import { rpcInit, rpcLogout, rpcOff, rpcOn } from './methods'
 import { Server } from './server'
 
 type MethodBuilder<
@@ -12,7 +12,6 @@ type MethodBuilder<
 export const DefaultMethods: {
   [key: string]: MethodBuilder
 } = {
-  [Methods.LIST_METHODS]: listMethods,
   [Methods.RPC_ON]: rpcOn,
   [Methods.RPC_OFF]: rpcOff,
   [Methods.RPC_INIT]: rpcInit,

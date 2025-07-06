@@ -242,7 +242,6 @@ export class HttpTransport {
           Presentation.encode({
             type: PayloadType.ERROR,
             message: error.message,
-            stack: error.stack,
             ...uuid,
           }),
         )
@@ -263,7 +262,6 @@ export class HttpTransport {
         Presentation.encode({
           type: PayloadType.ERROR,
           message: Errors.INTERNAL_ERROR,
-          stack: error.stack,
           ...uuid,
         }),
       )

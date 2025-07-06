@@ -113,7 +113,6 @@ export class WebSocketTransport {
     } catch (error) {
       return node.error({
         message: Errors.PARSE_ERROR,
-        stack: error.stack,
       })
     }
   }
@@ -165,7 +164,6 @@ export class WebSocketTransport {
       if (error instanceof PublicError) {
         return node.error({
           message: error.message,
-          stack: error.stack,
           ...uuid,
         })
       }
@@ -180,7 +178,6 @@ export class WebSocketTransport {
 
       return node.error({
         message: Errors.INTERNAL_ERROR,
-        stack: error.stack,
         ...uuid,
       })
     }
