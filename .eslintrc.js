@@ -1,6 +1,8 @@
 module.exports = {
   parser: '@typescript-eslint/parser',
 
+  ignorePatterns: ['**/*.html'],
+
   plugins: ['react-hooks', 'prettier', 'react'],
 
   globals: {
