@@ -1,9 +1,4 @@
-import {
-  AnyFunction,
-  createIterator,
-  HeleneEvents,
-  Methods,
-} from '@helenejs/utils'
+import { AnyFunction, createIterator, HeleneEvents, Methods } from '../utils'
 import { EventEmitter2 } from 'eventemitter2'
 import castArray from 'lodash/castArray'
 import isEmpty from 'lodash/isEmpty'

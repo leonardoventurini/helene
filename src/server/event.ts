@@ -1,5 +1,5 @@
 import { Server } from './server'
-import { PayloadType, Presentation } from '@helenejs/utils'
+import { PayloadType, Presentation } from '../utils'
 import { ClientNode } from './client-node'
 import { ServerChannel } from './server-channel'
 

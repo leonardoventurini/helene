@@ -1,4 +1,4 @@
-import { ClientEvents, Environment, WebSocketState } from '@helenejs/utils'
+import { ClientEvents, Environment, WebSocketState } from '../utils'
 import defer from 'lodash/defer'
 import isNumber from 'lodash/isNumber'
 import throttle from 'lodash/throttle'

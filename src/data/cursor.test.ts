@@ -7,7 +7,7 @@ import { Collection } from './collection'
 import { NodeStorage } from './node'
 import { Cursor } from './cursor'
 import { pluck } from './utils'
-import { sleep } from '@helenejs/utils'
+import { sleep } from '../utils'
 
 const testDb = 'workspace/test.db'
 

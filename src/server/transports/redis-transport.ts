@@ -4,7 +4,7 @@ import {
   Presentation,
   RedisListeners,
   ServerEvents,
-} from '@helenejs/utils'
+} from '../../utils'
 import { Server } from '../server'
 
 export type RedisMessage = {

@@ -1,9 +1,4 @@
-import {
-  HeleneEvents,
-  PayloadType,
-  Presentation,
-  ServerEvents,
-} from '@helenejs/utils'
+import { HeleneEvents, PayloadType, Presentation, ServerEvents } from '../utils'
 import { EventEmitter2 } from 'eventemitter2'
 import { Request, Response } from 'express'
 import http from 'http'

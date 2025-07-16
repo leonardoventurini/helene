@@ -8,7 +8,7 @@ import {
   SchemaValidationError,
   ServerEvents,
   TOKEN_HEADER_KEY,
-} from '@helenejs/utils'
+} from '../../utils'
 import cors from 'cors'
 import express from 'express'
 import http from 'http'

@@ -1,5 +1,5 @@
 import { TestUtility } from '../test-utility'
-import { Errors } from '@helenejs/utils'
+import { Errors } from '../../utils'
 import { expect } from 'chai'
 
 describe('Auth', async () => {

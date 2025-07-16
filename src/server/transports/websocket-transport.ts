@@ -7,7 +7,7 @@ import {
   SchemaValidationError,
   ServerEvents,
   WebSocketEvents,
-} from '@helenejs/utils'
+} from '../../utils'
 import io from 'socket.io'
 import { ClientNode } from '../client-node'
 import { Server } from '../server'

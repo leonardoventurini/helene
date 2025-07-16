@@ -7,7 +7,7 @@ import {
   ServerEvents,
   ServerMethods,
   waitForAll,
-} from '@helenejs/utils'
+} from '../utils'
 import * as assert from 'assert'
 import { RequestListener } from 'http'
 import defer from 'lodash/defer'

@@ -1,5 +1,5 @@
-import { HttpTransport, Server, WebSocketTransport } from '@helenejs/server'
-import { ServerEvents } from '@helenejs/utils'
+import { HttpTransport, Server, WebSocketTransport } from '../../server'
+import { ServerEvents } from '../../utils'
 import { expect } from 'chai'
 import { EJSON } from 'ejson2'
 import { TestUtility } from '../test-utility'

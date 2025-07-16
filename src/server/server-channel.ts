@@ -1,4 +1,4 @@
-import { HeleneEvents, ServerEvents } from '@helenejs/utils'
+import { HeleneEvents, ServerEvents } from '../utils'
 import { EventEmitter2 } from 'eventemitter2'
 import { ClientNode } from './client-node'
 import { Event, EventOptions } from './event'

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Collection, CollectionEvent } from '@helenejs/data'
+import { Collection, CollectionEvent } from '../../data'
 import isEmpty from 'lodash/isEmpty'
 import { throttle } from 'lodash'
 

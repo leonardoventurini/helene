@@ -4,7 +4,7 @@ import {
   HeleneEvents,
   PayloadType,
   Presentation,
-} from '@helenejs/utils'
+} from '../utils'
 import { EventEmitter2 } from 'eventemitter2'
 import defer from 'lodash/defer'
 import { io, Socket } from 'socket.io-client'

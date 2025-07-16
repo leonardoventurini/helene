@@ -1,11 +1,11 @@
 import { expect } from 'chai'
 import { useTracker } from './use-tracker'
-import { TestUtility } from '@helenejs/testing/test-utility'
+import { TestUtility } from '../../test/test-utility'
 import { renderHook } from '@testing-library/react'
 import { ClientProvider } from '../components'
 import React from 'react'
-import { sleep } from '@helenejs/utils'
-import { createCollection } from '@helenejs/data'
+import { sleep } from '../../utils'
+import { createCollection } from '../../data'
 
 describe('useTracker', () => {
   const test = new TestUtility()

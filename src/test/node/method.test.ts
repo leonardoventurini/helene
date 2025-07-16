@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 
-import { Client, TransportMode } from '@helenejs/client'
-import { ClientNode, HeleneAsyncLocalStorage, ns } from '@helenejs/server'
+import { Client, TransportMode } from '../../client'
+import { ClientNode, HeleneAsyncLocalStorage, ns } from '../../server'
 import {
   Errors,
   getPromise,
@@ -9,7 +9,7 @@ import {
   PublicError,
   ServerEvents,
   sleep,
-} from '@helenejs/utils'
+} from '../../utils'
 import range from 'lodash/range'
 import sinon from 'sinon'
 import * as yup from 'yup'

@@ -1,5 +1,5 @@
-import { TestUtility } from '@helenejs/testing/test-utility'
-import { sleep } from '@helenejs/utils'
+import { TestUtility } from '../test/test-utility'
+import { sleep } from '../utils'
 import { render, renderHook, screen, waitFor } from '@testing-library/react'
 import { expect } from 'chai'
 import { EventEmitter2 } from 'eventemitter2'

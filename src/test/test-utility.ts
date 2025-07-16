@@ -1,6 +1,6 @@
-import { Client, ClientOptions, TransportMode } from '@helenejs/client'
-import { EventOptions, Server, ServerOptions } from '@helenejs/server'
-import { ClientEvents, NO_CHANNEL, ServerEvents, sleep } from '@helenejs/utils'
+import { Client, ClientOptions, TransportMode } from '../client'
+import { EventOptions, Server, ServerOptions } from '../server'
+import { ClientEvents, NO_CHANNEL, ServerEvents, sleep } from '../utils'
 
 const PORTS = new Set()
 

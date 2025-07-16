@@ -1,5 +1,5 @@
-import { Collection, createCollection } from '@helenejs/data'
-import { BrowserStorage } from '@helenejs/data/lib/browser/browser-storage'
+import { Collection, createCollection } from '../../data'
+import { BrowserStorage } from '../../data/browser/browser-storage'
 import { expect } from 'chai'
 
 type Test = { _id: number; name: string }

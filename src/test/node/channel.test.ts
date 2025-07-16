@@ -1,4 +1,4 @@
-import { Presentation } from '@helenejs/utils'
+import { Presentation } from '../../utils'
 import { expect } from 'chai'
 import defer from 'lodash/defer'
 import { TestUtility } from '../test-utility'

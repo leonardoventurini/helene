@@ -6,7 +6,7 @@ import {
   Reject,
   Resolve,
   TOKEN_HEADER_KEY,
-} from '@helenejs/utils'
+} from '../utils'
 import EventSource from '@sanity/eventsource'
 import { EJSON } from 'ejson2'
 import defer from 'lodash/defer'

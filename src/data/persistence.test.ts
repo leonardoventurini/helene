@@ -11,7 +11,7 @@ import { ensureDatafileIntegrity, ensureFileDoesntExist } from './node/utils'
 import { NodeStorage } from './node'
 import find from 'lodash/find'
 import isEqual from 'lodash/isEqual'
-import { sleep } from '@helenejs/utils'
+import { sleep } from '../utils'
 
 const testDb = 'workspace/test.db'
 

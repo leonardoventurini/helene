@@ -3,7 +3,7 @@ import {
   ClientEvents,
   HeleneEvents,
   NO_CHANNEL,
-} from '@helenejs/utils'
+} from '../../utils'
 import isFunction from 'lodash/isFunction'
 import noop from 'lodash/noop'
 import { useCallback, useEffect, useMemo, useState } from 'react'

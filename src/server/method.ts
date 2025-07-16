@@ -6,7 +6,7 @@ import {
   Presentation,
   SchemaValidationError,
   ServerEvents,
-} from '@helenejs/utils'
+} from '../utils'
 import { EJSON } from 'ejson2'
 import isEmpty from 'lodash/isEmpty'
 import perf_hooks from 'perf_hooks'

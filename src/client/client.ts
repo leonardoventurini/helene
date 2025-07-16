@@ -1,4 +1,4 @@
-import type { CallOptions, MethodParams, ServerMethods } from '@helenejs/utils'
+import type { CallOptions, MethodParams, ServerMethods } from '../utils'
 import {
   ClientEvents,
   Environment,
@@ -10,7 +10,7 @@ import {
   Presentation,
   PromiseQueue,
   TOKEN_HEADER_KEY,
-} from '@helenejs/utils'
+} from '../utils'
 import { EJSON } from 'ejson2'
 import isEmpty from 'lodash/isEmpty'
 import isFunction from 'lodash/isFunction'

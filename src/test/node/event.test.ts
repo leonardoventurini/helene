@@ -1,5 +1,5 @@
 import { expect } from 'chai'
-import { NO_CHANNEL } from '@helenejs/utils'
+import { NO_CHANNEL } from '../../utils'
 import { TestUtility } from '../test-utility'
 
 describe('Events', function () {

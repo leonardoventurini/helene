@@ -1,4 +1,4 @@
-import { ClientEvents } from '@helenejs/utils'
+import { ClientEvents } from '../../utils'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useClient } from './use-client'
 import { useThrottledEvents } from './use-throttled-events'

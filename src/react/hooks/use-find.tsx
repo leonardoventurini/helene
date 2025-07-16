@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useObject } from './use-object'
-import { Collection, CollectionEvent } from '@helenejs/data'
+import { Collection, CollectionEvent } from '../../data'
 
 export function useFind(
   collection: Collection,

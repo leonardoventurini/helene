@@ -1,4 +1,4 @@
-import { ServerMethodDefinition, ServerMethods } from '@helenejs/utils'
+import { ServerMethodDefinition, ServerMethods } from '../utils'
 import { z } from 'zod'
 import { MethodFunction, MethodOptions } from './method'
 

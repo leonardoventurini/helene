@@ -1,4 +1,4 @@
-import { Methods } from '@helenejs/utils'
+import { Methods } from '../utils'
 import { z } from 'zod'
 import { Method } from './method'
 import { rpcInit, rpcLogout, rpcOff, rpcOn } from './methods'

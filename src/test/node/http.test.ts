@@ -5,9 +5,9 @@ import request from 'supertest'
 import defer from 'lodash/defer'
 import range from 'lodash/range'
 import sinon from 'sinon'
-import { ClientEvents, Errors, ServerEvents } from '@helenejs/utils'
-import { Client, ClientHttp } from '@helenejs/client'
-import { ClientNode } from '@helenejs/server'
+import { ClientEvents, Errors, ServerEvents } from '../../utils'
+import { Client, ClientHttp } from '../../client'
+import { ClientNode } from '../../server'
 
 describe('HTTP', async () => {
   const test = new TestUtility()

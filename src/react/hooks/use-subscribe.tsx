@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useClient } from './use-client'
 import isString from 'lodash/isString'
 import useCreation from 'ahooks/lib/useCreation'
-import { AnyFunction, NO_CHANNEL } from '@helenejs/utils'
+import { AnyFunction, NO_CHANNEL } from '../../utils'
 
 type UseSubscribeParams = {
   event: string

@@ -1,4 +1,4 @@
-import { ClientEvents, sleep } from '@helenejs/utils'
+import { ClientEvents, sleep } from '../../utils'
 import { expect } from 'chai'
 import EventSource from 'eventsource'
 import defer from 'lodash/defer'

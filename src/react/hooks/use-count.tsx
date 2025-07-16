@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useObject } from './use-object'
-import { Collection, CollectionEvent } from '@helenejs/data'
+import { Collection, CollectionEvent } from '../../data'
 
 export function useCount(collection: Collection, filter: Record<string, any>) {
   const [data, setData] = useState(null)

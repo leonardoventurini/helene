@@ -1,5 +1,5 @@
-import { Client } from '@helenejs/client'
-import { Environment, ServerMethods } from '@helenejs/utils'
+import { Client } from '../../client'
+import { Environment, ServerMethods } from '../../utils'
 import { useContext } from 'react'
 import { ClientContext } from '../components'
 
