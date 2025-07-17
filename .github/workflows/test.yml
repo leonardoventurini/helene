@@ -7,25 +7,6 @@ on:
     branches:
       - main
 jobs:
-  test_bun:
-    name: Bun
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: supercharge/redis-github-action@1.4.0
-      - uses: actions/checkout@v2
-      - uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: latest
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 20
-          cache: yarn
-      - run: bun upgrade
-      - run: yarn install --frozen-lockfile
-      - run: lerna run build
-      - run: lerna run bun:test:mocha --stream
-        env:
-          CI: true
   test_node:
     name: Node.js Tests
     services:
@@ -36,16 +17,12 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
-      - uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: latest
       - uses: actions/setup-node@v3
         with:
-          node-version: 20
+          node-version: 24
           cache: yarn
       - run: yarn install --frozen-lockfile
-      - run: lerna run build
-      - run: lerna run node:test:mocha
+      - run: yarn run test:mocha
         env:
           CI: true
   test_browser:
