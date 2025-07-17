@@ -1,8 +1,5 @@
-import { Collection, createCollection } from '../../../packages/data/src'
-import {
-  CHUNK_SIZE,
-  IDBStorage,
-} from '../../../packages/data/src/browser/idb-storage'
+import { Collection, createCollection } from '../../data'
+import { CHUNK_SIZE, IDBStorage } from '../../data/browser/idb-storage'
 import { expect } from 'chai'
 import { openDB } from 'idb'
 
