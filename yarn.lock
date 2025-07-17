@@ -959,6 +959,11 @@ available-typed-arrays@^1.0.5:
   resolved "https://registry.yarnpkg.com/available-typed-arrays/-/available-typed-arrays-1.0.5.tgz#92f95616501069d07d10edb2fc37d3e1c65123b7"
   integrity sha512-DMD0KiN46eipeziST1LPP/STfDU0sufISXmjSgvVsoU2tqxctQeASejWcfNtxYKqETM1UxQ8sp2OrSBWpHY6sw==
 
+avl@^1.6.0:
+  version "1.6.0"
+  resolved "https://registry.yarnpkg.com/avl/-/avl-1.6.0.tgz#c0c3b89df869dd717ebd0e05866eae8aabc3f5b8"
+  integrity sha512-sXZcG/wbnIWbJJnH0wQrZl0iyzorHUQaL1BX9+8byrhIp2iPaXnloQ3bFkXTBEHKrshK6wcWe6iGblgMNXarUA==
+
 b4a@^1.6.4:
   version "1.6.7"
   resolved "https://registry.yarnpkg.com/b4a/-/b4a-1.6.7.tgz#a99587d4ebbfbd5a6e3b21bdb5d5fa385767abe4"
