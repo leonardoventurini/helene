@@ -4,8 +4,8 @@
   "description": "Real-time Web Apps for Node.js",
   "scripts": {
     "lint": "eslint --ext .js,.jsx,.ts,.tsx 'src/**/*'",
-    "browser:test": "karma start",
-    "browser:test:watch": "karma start --auto-watch --no-single-run",
+    "browser:test": "vitest --config vitest.config.ts",
+    "browser:test:watch": "vitest --config vitest.config.ts --watch",
     "test": "nodemon --watch 'node_modules/**/*' -e ts,tsx --exec 'yarn run test:mocha'",
     "test:mocha": "NODE_ENV=test mocha -r @swc-node/register --file src/test/index.ts --extension js,jsx,ts,tsx --timeout 10000 --exit --exclude='browser/*' 'src/test/node/**/*.test.ts' 'src/react/**/*.test.tsx'"
   },
@@ -42,6 +42,7 @@
     "@types/mocha": "^10.0.10",
     "@typescript-eslint/eslint-plugin": "^6.7.4",
     "@typescript-eslint/parser": "^6.7.4",
+    "@vitest/browser": "^3.2.4",
     "chai": "^4.3.10",
     "chai-as-promised": "^7.1.1",
     "chai-subset": "^1.6.0",
@@ -53,13 +54,10 @@
     "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.0",
     "jsdom": "^26.1.0",
-    "karma": "6.4.4",
-    "karma-chrome-launcher": "^3.2.0",
-    "karma-esbuild": "^2.3.0",
-    "karma-mocha": "2.0.1",
     "lodash": "^4.17.21",
     "mocha": "11.7.1",
     "nodemon": "^3.0.1",
+    "playwright": "^1.54.1",
     "prettier": "^3.0.3",
     "puppeteer": "22.6.1",
     "react": "^19.1.0",
@@ -67,7 +65,8 @@
     "sinon": "^21.0.0",
     "sinon-chai": "^4.0.0",
     "supertest": "^6.3.3",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
   },
   "author": "Leonardo Venturini",
   "license": "MIT",

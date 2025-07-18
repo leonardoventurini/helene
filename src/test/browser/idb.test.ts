@@ -1,6 +1,6 @@
 import { Collection, createCollection } from '../../data'
 import { CHUNK_SIZE, IDBStorage } from '../../data/browser/idb-storage'
-import { expect } from 'chai'
+import { expect, describe, it, beforeEach, afterEach, afterAll } from 'vitest'
 import { openDB } from 'idb'
 
 type Test = { _id: number; name: string }
@@ -8,8 +8,7 @@ type Test = { _id: number; name: string }
 // Simple delay utility for tests
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
-describe('Helene Data IDB Storage', function () {
-  this.timeout(10000)
+describe('Helene Data IDB Storage', () => {
 
   let collection: Collection<Test>
   let storage: IDBStorage
@@ -64,7 +63,7 @@ describe('Helene Data IDB Storage', function () {
     }
   })
 
-  after(async () => {
+  afterAll(async () => {
     // Final cleanup - clear entire database
     try {
       const db = await openDB(DB_NAME, 1)
@@ -409,7 +408,7 @@ describe('Helene Data IDB Storage', function () {
   })
 
   describe('Performance', () => {
-    it('should handle moderate number of documents efficiently', async function () {
+    it('should handle moderate number of documents efficiently', async () => {
       const collectionName = getUniqueCollectionName('perf')
       collection = await createCollection<Test>({
         name: collectionName,

@@ -1,6 +1,6 @@
 import { Collection, createCollection } from '../../data'
 import { BrowserStorage } from '../../data/browser/browser-storage'
-import { expect } from 'chai'
+import { expect, describe, it, beforeAll } from 'vitest'
 
 type Test = { _id: number; name: string }
 
@@ -8,7 +8,7 @@ describe('Helene Data', function () {
   describe('Local Storage', () => {
     let collection: Collection<Test>
 
-    before(async () => {
+    beforeAll(async () => {
       Error.stackTraceLimit = Infinity
 
       collection = await createCollection<Test>({
