@@ -5,7 +5,7 @@ import http from 'http'
 import { RateLimiter } from 'limiter'
 import defer from 'lodash/defer'
 import isString from 'lodash/isString'
-import io from 'socket.io'
+import { Socket } from 'socket.io'
 import { Heartbeat } from './heartbeat'
 import { RateLimit, Server } from './server'
 
@@ -18,7 +18,7 @@ export class ClientNode extends EventEmitter2 {
   context: ClientNodeContext = {}
   userId: any = null
   user: Record<string, any> = null
-  socket?: io.Socket
+  socket?: Socket
   isEventSource = false
   req?: Request = {} as Request
   res?: Response = {} as Response
@@ -33,7 +33,7 @@ export class ClientNode extends EventEmitter2 {
 
   constructor(
     server: Server,
-    socket?: io.Socket,
+    socket?: Socket,
     req?: Request,
     res?: Response,
     limit?: RateLimit,
@@ -96,7 +96,7 @@ export class ClientNode extends EventEmitter2 {
     this.setUserId()
   }
 
-  setTrackingProperties(socket: io.Socket | http.IncomingMessage) {
+  setTrackingProperties(socket: Socket | http.IncomingMessage) {
     if (socket instanceof http.IncomingMessage) {
       this.headers = socket.headers as any
       this.userAgent = socket.headers['user-agent']

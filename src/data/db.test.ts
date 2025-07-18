@@ -1,19 +1,19 @@
-import { assert, expect } from 'chai'
+import { expect, describe, it, beforeEach, assert } from 'vitest'
 import fs from 'fs'
 import each from 'lodash/each'
 import find from 'lodash/find'
 import isEqual from 'lodash/isEqual'
-import mkdirp from 'mkdirp'
+import { mkdirp } from 'mkdirp'
 import path from 'path'
 import { Collection, CollectionEvent, createCollection } from './collection'
 import { NodeStorage } from './node'
 import { serialize } from './serialization'
 import { pluck } from './utils'
 
-const testDb = 'workspace/test.db',
+const testDb = path.join(process.cwd(), 'test-workspace', 'test.db'),
   reloadTimeUpperBound = 60 // In ms, an upper bound for the reload time used to check createdAt and updatedAt
 
-describe('Database', function () {
+describe('Database', () => {
   let collection: Collection
 
   beforeEach(async () => {
@@ -21,16 +21,22 @@ describe('Database', function () {
       name: testDb,
       storage: new NodeStorage(),
     })
-    collection.name.should.equal(testDb)
-    collection.inMemoryOnly.should.equal(false)
+    expect(collection.name).toEqual(testDb)
+    expect(collection.inMemoryOnly).toEqual(false)
 
     await mkdirp(path.dirname(testDb))
 
-    fs.existsSync(testDb) && fs.unlinkSync(testDb)
+    try {
+      if (fs.existsSync(testDb)) {
+        fs.unlinkSync(testDb)
+      }
+    } catch (error) {
+      // Ignore file not found errors
+    }
 
     await collection.loadDatabase()
 
-    collection.getAllData().length.should.equal(0)
+    expect(collection.getAllData()).toHaveLength(0)
   })
 
   describe('Autoloading', function () {
@@ -51,7 +57,7 @@ describe('Database', function () {
 
       const docs = await db.find({})
 
-      docs.length.should.equal(2)
+      expect(docs).toHaveLength(2)
     })
 
     it('Throws if autoload fails', async () => {
@@ -67,7 +73,7 @@ describe('Database', function () {
 
       // Check the loadDatabase generated an error
       function onload(err) {
-        err?.errorType.should.equal('uniqueViolated')
+        expect(err?.errorType).toEqual('uniqueViolated')
       }
 
       const db = new Collection({
@@ -83,39 +89,39 @@ describe('Database', function () {
   describe('Insert', function () {
     it('Able to insert a document in the database, setting an _id if none provided, and retrieve it even after a reload', async () => {
       let docs = await collection.find({})
-      docs.length.should.equal(0)
+      expect(docs).toHaveLength(0)
 
       await collection.insert({ somedata: 'ok' })
 
       // The data was correctly updated
       docs = await collection.find({})
-      docs.length.should.equal(1)
-      Object.keys(docs[0]).length.should.equal(2)
-      docs[0].somedata.should.equal('ok')
+      expect(docs).toHaveLength(1)
+      expect(Object.keys(docs[0])).toHaveLength(2)
+      expect(docs[0].somedata).toEqual('ok')
       assert.isDefined(docs[0]._id)
 
       // After a reload, the data has been correctly persisted
       await collection.loadDatabase()
       docs = await collection.find({})
-      docs.length.should.equal(1)
-      Object.keys(docs[0]).length.should.equal(2)
-      docs[0].somedata.should.equal('ok')
+      expect(docs).toHaveLength(1)
+      expect(Object.keys(docs[0])).toHaveLength(2)
+      expect(docs[0].somedata).toEqual('ok')
       assert.isDefined(docs[0]._id)
     })
 
     it('Can insert multiple documents in the database', async function () {
       const docs = await collection.find({})
-      docs.length.should.equal(0)
+      expect(docs).toHaveLength(0)
 
       await collection.insert({ somedata: 'ok' })
       await collection.insert({ somedata: 'another' })
       await collection.insert({ somedata: 'again' })
 
       const newDocs = await collection.find({})
-      newDocs.length.should.equal(3)
-      pluck(newDocs, 'somedata').should.contain('ok')
-      pluck(newDocs, 'somedata').should.contain('another')
-      pluck(newDocs, 'somedata').should.contain('again')
+      expect(newDocs).toHaveLength(3)
+      expect(pluck(newDocs, 'somedata')).toContain('ok')
+      expect(pluck(newDocs, 'somedata')).toContain('another')
+      expect(pluck(newDocs, 'somedata')).toContain('again')
     })
 
     it('Can insert and get back from DB complex objects with all primitive and secondary types', async function () {
@@ -124,46 +130,46 @@ describe('Database', function () {
       await collection.insert(obj)
       const res = await collection.findOne({})
 
-      res.a.length.should.equal(3)
-      res.a[0].should.equal('ee')
-      res.a[1].should.equal('ff')
-      res.a[2].should.equal(42)
-      res.date.getTime().should.equal(da.getTime())
-      res.subobj.a.should.equal('b')
-      res.subobj.b.should.equal('c')
+      expect(res.a).toHaveLength(3)
+      expect(res.a[0]).toEqual('ee')
+      expect(res.a[1]).toEqual('ff')
+      expect(res.a[2]).toEqual(42)
+      expect(res.date.getTime()).toEqual(da.getTime())
+      expect(res.subobj.a).toEqual('b')
+      expect(res.subobj.b).toEqual('c')
     })
 
     it('If an object returned from the DB is modified and refetched, the original value should be found', async function () {
       await collection.insert({ a: 'something' })
       let doc = await collection.findOne({})
-      doc.a.should.equal('something')
+      expect(doc.a).toEqual('something')
       doc.a = 'another thing'
-      doc.a.should.equal('another thing')
+      expect(doc.a).toEqual('another thing')
 
       // Re-fetching with findOne should yield the persisted value
       doc = await collection.findOne({})
-      doc.a.should.equal('something')
+      expect(doc.a).toEqual('something')
       doc.a = 'another thing'
-      doc.a.should.equal('another thing')
+      expect(doc.a).toEqual('another thing')
 
       // Re-fetching with find should yield the persisted value
       const docs = await collection.find({})
-      docs[0].a.should.equal('something')
+      expect(docs[0].a).toEqual('something')
     })
 
     it('Cannot insert a doc that has a field beginning with a $ sign', async function () {
-      await assert.isRejected(collection.insert({ $something: 'atest' }))
+      await expect(collection.insert({ $something: 'atest' })).rejects.toThrow()
     })
 
     it('If an _id is already given when we insert a document, use that instead of generating a random one', async function () {
       const newDoc = await collection.insert({ _id: 'test', stuff: true })
-      newDoc.stuff.should.equal(true)
-      newDoc._id.should.equal('test')
+      expect(newDoc.stuff).toEqual(true)
+      expect(newDoc._id).toEqual('test')
 
       try {
         await collection.insert({ _id: 'test', otherstuff: 42 })
       } catch (err) {
-        err.errorType.should.equal('uniqueViolated')
+        expect(err.errorType).toEqual('uniqueViolated')
       }
     })
 
@@ -171,7 +177,7 @@ describe('Database', function () {
       const newDoc = await collection.insert({ a: 2, hello: 'world' })
       newDoc.hello = 'changed'
       const doc = await collection.findOne({ a: 2 })
-      doc.hello.should.equal('world')
+      expect(doc.hello).toEqual('world')
     })
 
     it('If timestampData option is set, a createdAt field is added and persisted', async function () {
@@ -186,26 +192,26 @@ describe('Database', function () {
       })
 
       let docs = await collection.find({})
-      docs.length.should.equal(0)
+      expect(docs).toHaveLength(0)
 
       const insertedDoc = await collection.insert(newDoc)
       assert.deepEqual(newDoc, { hello: 'world' })
-      insertedDoc.hello.should.equal('world')
+      expect(insertedDoc.hello).toEqual('world')
       assert.isDefined(insertedDoc.createdAt)
       assert.isDefined(insertedDoc.updatedAt)
-      insertedDoc.createdAt.should.equal(insertedDoc.updatedAt)
+      expect(insertedDoc.createdAt).toEqual(insertedDoc.updatedAt)
       assert.isDefined(insertedDoc._id)
-      Object.keys(insertedDoc).length.should.equal(4)
+      expect(Object.keys(insertedDoc)).toHaveLength(4)
       assert.isBelow(
         Math.abs(insertedDoc.createdAt.getTime() - beginning),
         reloadTimeUpperBound,
       )
 
       insertedDoc.bloup = 'another'
-      Object.keys(insertedDoc).length.should.equal(5)
+      expect(Object.keys(insertedDoc)).toHaveLength(5)
 
       docs = await collection.find({})
-      docs.length.should.equal(1)
+      expect(docs).toHaveLength(1)
       assert.deepEqual(newDoc, { hello: 'world' })
       assert.deepEqual(
         {
@@ -220,7 +226,7 @@ describe('Database', function () {
       await collection.loadDatabase()
 
       docs = await collection.find({})
-      docs.length.should.equal(1)
+      expect(docs).toHaveLength(1)
       assert.deepEqual(newDoc, { hello: 'world' })
       assert.deepEqual(
         {
@@ -235,12 +241,12 @@ describe('Database', function () {
 
     it("If timestampData option not set, don't create a createdAt and a updatedAt field", async function () {
       const insertedDoc = await collection.insert({ hello: 'world' })
-      Object.keys(insertedDoc).length.should.equal(2)
+      expect(Object.keys(insertedDoc)).toHaveLength(2)
       assert.isUndefined(insertedDoc.createdAt)
       assert.isUndefined(insertedDoc.updatedAt)
 
       const docs = await collection.find({})
-      docs.length.should.equal(1)
+      expect(docs).toHaveLength(1)
       assert.deepEqual(docs[0], insertedDoc)
     })
 
@@ -257,9 +263,9 @@ describe('Database', function () {
 
       const insertedDoc = await collection.insert(newDoc)
 
-      Object.keys(insertedDoc).length.should.equal(4)
+      expect(Object.keys(insertedDoc)).toHaveLength(4)
 
-      insertedDoc.createdAt.getTime().should.equal(234) // Not modified
+      expect(insertedDoc.createdAt.getTime()).toEqual(234) // Not modified
 
       assert.isBelow(
         insertedDoc.updatedAt.getTime() - beginning,
@@ -288,8 +294,8 @@ describe('Database', function () {
 
       const insertedDoc = await collection.insert(newDoc)
 
-      Object.keys(insertedDoc).length.should.equal(4)
-      insertedDoc.updatedAt.getTime().should.equal(234) // Not modified
+      expect(Object.keys(insertedDoc)).toHaveLength(4)
+      expect(insertedDoc.updatedAt.getTime()).toEqual(234) // Not modified
       assert.isBelow(
         insertedDoc.createdAt.getTime() - beginning,
         reloadTimeUpperBound,
@@ -306,8 +312,8 @@ describe('Database', function () {
 
     it('Can insert a doc with id 0', async function () {
       const doc = await collection.insert({ _id: 0, hello: 'world' })
-      doc._id.should.equal(0)
-      doc.hello.should.equal('world')
+      expect(doc._id).toEqual(0)
+      expect(doc.hello).toEqual('world')
     })
   })
 
@@ -344,7 +350,7 @@ describe('Database', function () {
       const foundDoc1 = data.find(d => d._id === doc1._id)
       const foundDoc2 = data.find(d => d._id === doc2._id)
 
-      data.length.should.equal(2)
+      expect(data).toHaveLength(2)
       assert.deepEqual(foundDoc1, { _id: foundDoc1._id, tf: 6 })
       assert.deepEqual(foundDoc2, { _id: foundDoc2._id, tf: 9 })
     })
@@ -373,7 +379,7 @@ describe('Database', function () {
         return d._id === _doc4._id
       })
 
-      data.length.should.equal(4)
+      expect(data).toHaveLength(4)
       assert.deepEqual(doc1, { _id: doc1._id, tf: 4 })
       assert.deepEqual(doc2, { _id: doc2._id, tf: 6 })
       assert.deepEqual(doc3, { _id: doc3._id, tf: 4, an: 'other' })
@@ -396,7 +402,7 @@ describe('Database', function () {
       const foundDoc4 = find(data, function (d) {
         return d._id === doc4._id
       })
-      data.length.should.equal(2)
+      expect(data).toHaveLength(2)
       assert.deepEqual(foundDoc2, { _id: doc2._id, tf: 6 })
       assert.deepEqual(foundDoc4, { _id: doc4._id, tf: 9 })
     })
@@ -411,7 +417,7 @@ describe('Database', function () {
       await new Promise(resolve => setTimeout(resolve, 100))
 
       let doc = await collection.findOne({})
-      doc.hello.should.equal('world')
+      expect(doc.hello).toEqual('world')
 
       await new Promise(resolve => setTimeout(resolve, 110))
 
@@ -423,7 +429,7 @@ describe('Database', function () {
       // After compaction, no more mention of the document, correctly removed
       const datafileContents = fs.readFileSync(testDb, 'utf8')
 
-      datafileContents.split('\n').length.should.equal(2)
+      expect(datafileContents.split('\n')).toHaveLength(2)
       assert.isNull(datafileContents.match(/world/))
 
       // New datastore on same datafile is empty
@@ -449,18 +455,18 @@ describe('Database', function () {
       await new Promise(resolve => setTimeout(resolve, 100))
 
       let docs = await collection.find({})
-      docs.length.should.equal(3)
+      expect(docs).toHaveLength(3)
 
       await new Promise(resolve => setTimeout(resolve, 110))
 
       docs = await collection.find({})
-      docs.length.should.equal(1)
-      docs[0].hello.should.equal('world3')
+      expect(docs).toHaveLength(1)
+      expect(docs[0].hello).toEqual('world3')
 
       await new Promise(resolve => setTimeout(resolve, 110))
 
       docs = await collection.find({})
-      docs.length.should.equal(0)
+      expect(docs).toHaveLength(0)
     })
 
     it('Document where indexed field is absent or not a date are ignored', async function () {
@@ -478,14 +484,14 @@ describe('Database', function () {
       await new Promise(resolve => setTimeout(resolve, 100))
 
       let docs = await collection.find()
-      docs.length.should.equal(3)
+      expect(docs).toHaveLength(3)
 
       await new Promise(resolve => setTimeout(resolve, 110))
 
       docs = await collection.find()
-      docs.length.should.equal(2)
-      docs[0].hello.should.not.equal('world1')
-      docs[1].hello.should.not.equal('world1')
+      expect(docs).toHaveLength(2)
+      expect(docs[0].hello).not.toEqual('world1')
+      expect(docs[1].hello).not.toEqual('world1')
     })
   })
 
@@ -496,13 +502,15 @@ describe('Database', function () {
       await collection.insert({ somedata: 'again' })
 
       const docs = await collection.find({})
-      docs.length.should.equal(3)
-      pluck(docs, 'somedata').should.contain('ok')
-      pluck(docs, 'somedata').should.contain('another')
-      find(docs, function (d) {
-        return d.somedata === 'another'
-      }).plus.should.equal('additional data')
-      pluck(docs, 'somedata').should.contain('again')
+      expect(docs).toHaveLength(3)
+      expect(pluck(docs, 'somedata')).toContain('ok')
+      expect(pluck(docs, 'somedata')).toContain('another')
+      expect(
+        find(docs, function (d) {
+          return d.somedata === 'another'
+        }).plus,
+      ).toEqual('additional data')
+      expect(pluck(docs, 'somedata')).toContain('again')
     })
 
     it('Can find all documents matching a basic query', async function () {
@@ -512,12 +520,12 @@ describe('Database', function () {
 
       // Test with query that will return docs
       let docs = await collection.find({ somedata: 'again' })
-      docs.length.should.equal(2)
-      pluck(docs, 'somedata').should.not.contain('ok')
+      expect(docs).toHaveLength(2)
+      expect(pluck(docs, 'somedata')).not.toContain('ok')
 
       // Test with query that doesn't match anything
       docs = await collection.find({ somedata: 'nope' })
-      docs.length.should.equal(0)
+      expect(docs).toHaveLength(0)
     })
 
     it('Can find one document matching a basic query and return null if none is found', async function () {
@@ -527,8 +535,8 @@ describe('Database', function () {
 
       // Test with query that will return docs
       let doc = await collection.findOne({ somedata: 'ok' })
-      Object.keys(doc).length.should.equal(2)
-      doc.somedata.should.equal('ok')
+      expect(Object.keys(doc)).toHaveLength(2)
+      expect(doc.somedata).toEqual('ok')
       assert.isDefined(doc._id)
 
       // Test with query that doesn't match anything
@@ -545,13 +553,13 @@ describe('Database', function () {
       await collection.insert({ now: date1, sth: { name: 'nedb' } })
 
       let doc = await collection.findOne({ now: date1 })
-      doc.sth.name.should.equal('nedb')
+      expect(doc.sth.name).toEqual('nedb')
 
       doc = await collection.findOne({ now: date2 })
       assert.isNull(doc)
 
       doc = await collection.findOne({ sth: { name: 'nedb' } })
-      doc.sth.name.should.equal('nedb')
+      expect(doc.sth.name).toEqual('nedb')
 
       doc = await collection.findOne({ sth: { name: 'other' } })
       assert.isNull(doc)
@@ -561,7 +569,7 @@ describe('Database', function () {
       await collection.insert({ greeting: { english: 'hello' } })
 
       let doc = await collection.findOne({ 'greeting.english': 'hello' })
-      doc.greeting.english.should.equal('hello')
+      expect(doc.greeting.english).toEqual('hello')
 
       doc = await collection.findOne({ 'greeting.english': 'hellooo' })
       assert.isNull(doc)
@@ -580,17 +588,17 @@ describe('Database', function () {
       const doc3 = await collection.insert({ fruits: ['banana'] })
 
       let docs = await collection.find({ fruits: 'pear' })
-      docs.length.should.equal(2)
-      pluck(docs, '_id').should.contain(doc1._id)
-      pluck(docs, '_id').should.contain(doc2._id)
+      expect(docs).toHaveLength(2)
+      expect(pluck(docs, '_id')).toContain(doc1._id)
+      expect(pluck(docs, '_id')).toContain(doc2._id)
 
       docs = await collection.find({ fruits: 'banana' })
-      docs.length.should.equal(2)
-      pluck(docs, '_id').should.contain(doc1._id)
-      pluck(docs, '_id').should.contain(doc3._id)
+      expect(docs).toHaveLength(2)
+      expect(pluck(docs, '_id')).toContain(doc1._id)
+      expect(pluck(docs, '_id')).toContain(doc3._id)
 
       docs = await collection.find({ fruits: 'doesntexist' })
-      docs.length.should.equal(0)
+      expect(docs).toHaveLength(0)
     })
 
     it('Returns an error if the query is not well formed', async function () {
@@ -620,11 +628,11 @@ describe('Database', function () {
       let doc = await collection.findOne({ a: 2 })
       doc.hello = 'changed'
       doc = await collection.findOne({ a: 2 })
-      doc.hello.should.equal('world')
+      expect(doc.hello).toEqual('world')
       const docs = await collection.find({ a: 2 })
       docs[0].hello = 'changed'
       doc = await collection.findOne({ a: 2 })
-      doc.hello.should.equal('world')
+      expect(doc.hello).toEqual('world')
     })
 
     it('Can use projections in find, normal or cursor way', async function () {
@@ -632,11 +640,11 @@ describe('Database', function () {
       await collection.insert({ a: 24, hello: 'earth' })
 
       let docs = await collection.find({ a: 2 }, { a: 0, _id: 0 })
-      docs.length.should.equal(1)
+      expect(docs).toHaveLength(1)
       assert.deepEqual(docs[0], { hello: 'world' })
 
       docs = await collection.find({ a: 2 }, { a: 0, _id: 0 })
-      docs.length.should.equal(1)
+      expect(docs).toHaveLength(1)
       assert.deepEqual(docs[0], { hello: 'world' })
 
       // Can't use both modes at once if not _id
@@ -668,9 +676,13 @@ describe('Database', function () {
       assert.deepEqual(doc2, { hello: 'world' })
 
       // Can't use both modes at once if not _id
-      await assert.isRejected(collection.findOne({ a: 2 }, { a: 0, hello: 1 }))
+      await expect(
+        collection.findOne({ a: 2 }, { a: 0, hello: 1 }),
+      ).rejects.toThrow()
 
-      await assert.isRejected(collection.findOne({ a: 2 }, { a: 0, hello: 1 }))
+      await expect(
+        collection.findOne({ a: 2 }, { a: 0, hello: 1 }),
+      ).rejects.toThrow()
     })
   })
 
@@ -693,11 +705,11 @@ describe('Database', function () {
       // Test with query that will return docs
       const docs = await collection.find({ somedata: 'again' })
       let count = await collection.count({ somedata: 'again' })
-      count.should.equal(docs.length)
+      expect(count).toEqual(docs.length)
 
       // Test with query that doesn't match anything
       count = await collection.count({ somedata: 'nope' })
-      count.should.equal(0)
+      expect(count).toEqual(0)
     })
 
     it('Array fields match if any element matches', async function () {
@@ -718,7 +730,9 @@ describe('Database', function () {
     it('Returns an error if the query is not well formed', async function () {
       await collection.insert({ hello: 'world' })
 
-      await assert.isRejected(collection.count({ $or: { hello: 'world' } }))
+      await expect(
+        collection.count({ $or: { hello: 'world' } }),
+      ).rejects.toThrow()
     })
   })
 
@@ -735,7 +749,7 @@ describe('Database', function () {
         { multi: true },
       )
 
-      n.modifiedCount.should.equal(0)
+      expect(n.modifiedCount).toEqual(0)
 
       const docs = await collection.find({})
 
@@ -749,7 +763,7 @@ describe('Database', function () {
         return d.somedata === 'another'
       })
 
-      docs.length.should.equal(3)
+      expect(docs).toHaveLength(3)
       assert.isUndefined(
         find(docs, function (d) {
           return d.newDoc === 'yes'
@@ -786,7 +800,7 @@ describe('Database', function () {
         reloadTimeUpperBound,
       )
 
-      Object.keys(insertedDoc).length.should.equal(4)
+      expect(Object.keys(insertedDoc)).toHaveLength(4)
 
       // Wait 100ms before performing the update
       await new Promise(resolve => setTimeout(resolve, 100))
@@ -801,11 +815,11 @@ describe('Database', function () {
 
       const docs = await collection.find({ _id: insertedDoc._id })
 
-      docs.length.should.equal(1)
-      Object.keys(docs[0]).length.should.equal(4)
-      docs[0]._id.should.equal(insertedDoc._id)
-      docs[0].createdAt.should.deep.equal(insertedDoc.createdAt)
-      docs[0].hello.should.equal('mars')
+      expect(docs).toHaveLength(1)
+      expect(Object.keys(docs[0])).toHaveLength(4)
+      expect(docs[0]._id).toEqual(insertedDoc._id)
+      expect(docs[0].createdAt).toEqual(insertedDoc.createdAt)
+      expect(docs[0].hello).toEqual('mars')
       assert.isAbove(docs[0].updatedAt.getTime() - beginning, 99) // updatedAt modified
       assert.isBelow(docs[0].updatedAt.getTime() - step1, reloadTimeUpperBound) // updatedAt modified
     })
@@ -827,19 +841,19 @@ describe('Database', function () {
             return d._id === id3
           })
 
-        docs.length.should.equal(3)
+        expect(docs).toHaveLength(3)
 
-        Object.keys(doc1).length.should.equal(2)
-        doc1.somedata.should.equal('ok')
-        doc1._id.should.equal(id1)
+        expect(Object.keys(doc1)).toHaveLength(2)
+        expect(doc1.somedata).toEqual('ok')
+        expect(doc1._id).toEqual(id1)
 
-        Object.keys(doc2).length.should.equal(2)
-        doc2.newDoc.should.equal('yes')
-        doc2._id.should.equal(id2)
+        expect(Object.keys(doc2)).toHaveLength(2)
+        expect(doc2.newDoc).toEqual('yes')
+        expect(doc2._id).toEqual(id2)
 
-        Object.keys(doc3).length.should.equal(2)
-        doc3.newDoc.should.equal('yes')
-        doc3._id.should.equal(id3)
+        expect(Object.keys(doc3)).toHaveLength(2)
+        expect(doc3.newDoc).toEqual('yes')
+        expect(doc3._id).toEqual(id3)
       }
 
       const doc1 = await collection.insert({ somedata: 'ok' })
@@ -863,7 +877,7 @@ describe('Database', function () {
         { multi: true },
       )
 
-      n.modifiedCount.should.equal(2)
+      expect(n.modifiedCount).toEqual(2)
 
       await testPostUpdateState()
 
@@ -884,7 +898,7 @@ describe('Database', function () {
           doc2 = find(docs, d => d._id === id2),
           doc3 = find(docs, d => d._id === id3)
 
-        docs.length.should.equal(3)
+        expect(docs).toHaveLength(3)
 
         assert.deepEqual(doc1, { somedata: 'ok', _id: doc1._id })
         assert.deepEqual(doc2, {
@@ -912,7 +926,7 @@ describe('Database', function () {
         { multi: false },
       )
 
-      n.modifiedCount.should.equal(0)
+      expect(n.modifiedCount).toEqual(0)
 
       await testPostUpdateState()
 
@@ -930,9 +944,9 @@ describe('Database', function () {
           {},
         )
 
-        nr.modifiedCount.should.equal(0)
+        expect(nr.modifiedCount).toEqual(0)
         const docs = await collection.find({})
-        docs.length.should.equal(0)
+        expect(docs).toHaveLength(0)
 
         // test that upsert inserts
         const upsert = await collection.update(
@@ -941,16 +955,16 @@ describe('Database', function () {
           { upsert: true },
         )
 
-        upsert.acknowledged.should.equal(true)
+        expect(upsert.acknowledged).toEqual(true)
 
         const newDoc = await collection.findOne({ something: 'created ok' })
 
-        newDoc.something.should.equal('created ok')
+        expect(newDoc.something).toEqual('created ok')
 
         assert.isDefined(newDoc._id)
         const docs2 = await collection.find({})
-        docs2.length.should.equal(1)
-        docs2[0].something.should.equal('created ok')
+        expect(docs2).toHaveLength(1)
+        expect(docs2[0].something).toEqual('created ok')
 
         // Modifying the returned upserted document doesn't modify the database
         newDoc.newField = true
@@ -966,11 +980,11 @@ describe('Database', function () {
           { upsert: true },
         )
         const docs = await collection.find({})
-        docs.length.should.equal(1)
+        expect(docs).toHaveLength(1)
         const doc = docs[0]
-        Object.keys(doc).length.should.equal(3)
-        doc.hello.should.equal('world')
-        doc.bloup.should.equal('blap')
+        expect(Object.keys(doc)).toHaveLength(3)
+        expect(doc.hello).toEqual('world')
+        expect(doc.bloup).toEqual('blap')
       })
 
       it('If the update query contains modifiers, it is applied to the object resulting from removing all operators from the find query 1', async function () {
@@ -981,11 +995,11 @@ describe('Database', function () {
         )
 
         const docs = await collection.find({ hello: 'world' })
-        docs.length.should.equal(1)
+        expect(docs).toHaveLength(1)
         const doc = docs[0]
-        Object.keys(doc).length.should.equal(3)
-        doc.hello.should.equal('world')
-        doc.bloup.should.equal(3)
+        expect(Object.keys(doc)).toHaveLength(3)
+        expect(doc.hello).toEqual('world')
+        expect(doc.bloup).toEqual(3)
       })
 
       it('If the update query contains modifiers, it is applied to the object resulting from removing all operators from the find query 2', async function () {
@@ -996,13 +1010,13 @@ describe('Database', function () {
         )
 
         const docs = await collection.find({ hello: 'world' })
-        docs.length.should.equal(1)
+        expect(docs).toHaveLength(1)
 
         const doc = docs[0]
-        Object.keys(doc).length.should.equal(4)
-        doc.cac.should.equal('rrr')
-        doc.hello.should.equal('world')
-        doc.bloup.should.equal(3)
+        expect(Object.keys(doc)).toHaveLength(4)
+        expect(doc.cac).toEqual('rrr')
+        expect(doc.hello).toEqual('world')
+        expect(doc.bloup).toEqual(3)
       })
 
       it('Performing upsert with badly formatted fields yields a standard error not an exception', async function () {
@@ -1021,25 +1035,25 @@ describe('Database', function () {
     it('Cannot perform update if the update query is not either registered-modifiers-only or copy-only, or contain badly formatted fields', async function () {
       await collection.insert({ something: 'yup' })
 
-      await assert.isRejected(
+      await expect(
         collection.update({}, { boom: { $badfield: 5 } }, { multi: false }),
-      )
+      ).rejects.toThrow()
 
-      await assert.isRejected(
+      await expect(
         collection.update({}, { boom: { 'bad.field': 5 } }, { multi: false }),
-      )
+      ).rejects.toThrow()
 
-      await assert.isRejected(
+      await expect(
         collection.update(
           {},
           { $inc: { test: 5 }, mixed: 'rrr' },
           { multi: false },
         ),
-      )
+      ).rejects.toThrow()
 
-      await assert.isRejected(
+      await expect(
         collection.update({}, { $inexistent: { test: 5 } }, { multi: false }),
-      )
+      ).rejects.toThrow()
     })
 
     it('Can update documents using multiple modifiers', async function () {
@@ -1068,23 +1082,23 @@ describe('Database', function () {
         { upsert: true },
       )
 
-      update.acknowledged.should.equal(true)
-      update.insertedIds.should.be.an('array')
+      expect(update.acknowledged).toEqual(true)
+      expect(update.insertedIds).toEqual(expect.any(Array))
 
       const [_id] = update.insertedIds
 
       const newDoc = await collection.findOne({ _id })
 
-      newDoc.bloup.should.equal('blap')
-      newDoc.hello.should.equal('world')
+      expect(newDoc.bloup).toEqual('blap')
+      expect(newDoc.hello).toEqual('world')
       assert.isDefined(newDoc._id)
 
       const docs = await collection.find({})
 
-      docs.length.should.equal(1)
-      Object.keys(docs[0]).length.should.equal(3)
-      docs[0].hello.should.equal('world')
-      docs[0].bloup.should.equal('blap')
+      expect(docs).toHaveLength(1)
+      expect(Object.keys(docs[0])).toHaveLength(3)
+      expect(docs[0].hello).toEqual('world')
+      expect(docs[0].bloup).toEqual('blap')
       assert.isDefined(docs[0]._id)
     })
 
@@ -1094,13 +1108,13 @@ describe('Database', function () {
       // Correct method
       await collection.update({}, { $set: { 'bloup.blip': 'hello' } }, {})
       let doc = await collection.findOne({})
-      doc.bloup.blip.should.equal('hello')
-      doc.bloup.other.should.equal(true)
+      expect(doc.bloup.blip).toEqual('hello')
+      expect(doc.bloup.other).toEqual(true)
 
       // Wrong
       await collection.update({}, { $set: { bloup: { blip: 'ola' } } }, {})
       doc = await collection.findOne({})
-      doc.bloup.blip.should.equal('ola')
+      expect(doc.bloup.blip).toEqual('ola')
       assert.isUndefined(doc.bloup.other) // This information was lost
     })
 
@@ -1108,9 +1122,9 @@ describe('Database', function () {
       await collection.remove({}, { multi: true })
       await collection.insert({ hello: 'world' })
 
-      await assert.isRejected(
+      await expect(
         collection.update({ $or: { hello: 'world' } }, { a: 1 }, {}),
-      )
+      ).rejects.toThrow()
     })
 
     it('If an error is thrown by a modifier, the database state is not changed', async function () {
@@ -1118,7 +1132,9 @@ describe('Database', function () {
       let docs = await collection.find({})
       assert.deepEqual(docs, [{ _id: newDoc._id, hello: 'world' }])
 
-      await assert.isRejected(collection.update({}, { $inc: { hello: 4 } }, {}))
+      await expect(
+        collection.update({}, { $inc: { hello: 4 } }, {}),
+      ).rejects.toThrow()
 
       // Check that the database state is unchanged
       docs = await collection.find({})
@@ -1127,25 +1143,25 @@ describe('Database', function () {
 
     it('Cant change the _id of a document', async function () {
       const newDoc = await collection.insert({ a: 2 })
-      await assert.isRejected(
+      await expect(
         collection.update({ a: 2 }, { a: 2, _id: 'nope' }, {}),
-      )
+      ).rejects.toThrow()
 
       let docs = await collection.find({})
-      docs.length.should.equal(1)
-      Object.keys(docs[0]).length.should.equal(2)
-      docs[0].a.should.equal(2)
-      docs[0]._id.should.equal(newDoc._id)
+      expect(docs).toHaveLength(1)
+      expect(Object.keys(docs[0])).toHaveLength(2)
+      expect(docs[0].a).toEqual(2)
+      expect(docs[0]._id).toEqual(newDoc._id)
 
-      await assert.isRejected(
+      await expect(
         collection.update({ a: 2 }, { $set: { _id: 'nope' } }, {}),
-      )
+      ).rejects.toThrow()
 
       docs = await collection.find({})
-      docs.length.should.equal(1)
-      Object.keys(docs[0]).length.should.equal(2)
-      docs[0].a.should.equal(2)
-      docs[0]._id.should.equal(newDoc._id)
+      expect(docs).toHaveLength(1)
+      expect(Object.keys(docs[0])).toHaveLength(2)
+      expect(docs[0].a).toEqual(2)
+      expect(docs[0]._id).toEqual(newDoc._id)
     })
 
     it('Non-multi updates are persistent', async function () {
@@ -1160,17 +1176,21 @@ describe('Database', function () {
         return a.a - b.a
       })
 
-      docs.length.should.equal(2)
-      isEqual(docs[0], {
-        _id: doc1._id,
-        a: 1,
-        hello: 'world',
-      }).should.equal(true)
-      isEqual(docs[1], {
-        _id: doc2._id,
-        a: 2,
-        hello: 'changed',
-      }).should.equal(true)
+      expect(docs).toHaveLength(2)
+      expect(
+        isEqual(docs[0], {
+          _id: doc1._id,
+          a: 1,
+          hello: 'world',
+        }),
+      ).toEqual(true)
+      expect(
+        isEqual(docs[1], {
+          _id: doc2._id,
+          a: 2,
+          hello: 'changed',
+        }),
+      ).toEqual(true)
 
       await collection.loadDatabase()
 
@@ -1180,17 +1200,21 @@ describe('Database', function () {
         return a.a - b.a
       })
 
-      docs.length.should.equal(2)
-      isEqual(docs[0], {
-        _id: doc1._id,
-        a: 1,
-        hello: 'world',
-      }).should.equal(true)
-      isEqual(docs[1], {
-        _id: doc2._id,
-        a: 2,
-        hello: 'changed',
-      }).should.equal(true)
+      expect(docs).toHaveLength(2)
+      expect(
+        isEqual(docs[0], {
+          _id: doc1._id,
+          a: 1,
+          hello: 'world',
+        }),
+      ).toEqual(true)
+      expect(
+        isEqual(docs[1], {
+          _id: doc2._id,
+          a: 2,
+          hello: 'changed',
+        }),
+      ).toEqual(true)
     })
 
     it('Multi updates are persistent', async function () {
@@ -1206,44 +1230,56 @@ describe('Database', function () {
 
       const docs = await collection.find({}).sort({ a: 1 })
 
-      docs.length.should.equal(3)
-      isEqual(docs[0], {
-        _id: doc1._id,
-        a: 1,
-        hello: 'changed',
-      }).should.equal(true)
-      isEqual(docs[1], {
-        _id: doc2._id,
-        a: 2,
-        hello: 'changed',
-      }).should.equal(true)
-      isEqual(docs[2], {
-        _id: doc3._id,
-        a: 5,
-        hello: 'pluton',
-      }).should.equal(true)
+      expect(docs).toHaveLength(3)
+      expect(
+        isEqual(docs[0], {
+          _id: doc1._id,
+          a: 1,
+          hello: 'changed',
+        }),
+      ).toEqual(true)
+      expect(
+        isEqual(docs[1], {
+          _id: doc2._id,
+          a: 2,
+          hello: 'changed',
+        }),
+      ).toEqual(true)
+      expect(
+        isEqual(docs[2], {
+          _id: doc3._id,
+          a: 5,
+          hello: 'pluton',
+        }),
+      ).toEqual(true)
 
       // Even after a reload the database state hasn't changed
       await collection.loadDatabase()
 
       const reloadedDocs = await collection.find({}).sort({ a: 1 })
 
-      reloadedDocs.length.should.equal(3)
-      isEqual(reloadedDocs[0], {
-        _id: doc1._id,
-        a: 1,
-        hello: 'changed',
-      }).should.equal(true)
-      isEqual(reloadedDocs[1], {
-        _id: doc2._id,
-        a: 2,
-        hello: 'changed',
-      }).should.equal(true)
-      isEqual(reloadedDocs[2], {
-        _id: doc3._id,
-        a: 5,
-        hello: 'pluton',
-      }).should.equal(true)
+      expect(reloadedDocs).toHaveLength(3)
+      expect(
+        isEqual(reloadedDocs[0], {
+          _id: doc1._id,
+          a: 1,
+          hello: 'changed',
+        }),
+      ).toEqual(true)
+      expect(
+        isEqual(reloadedDocs[1], {
+          _id: doc2._id,
+          a: 2,
+          hello: 'changed',
+        }),
+      ).toEqual(true)
+      expect(
+        isEqual(reloadedDocs[2], {
+          _id: doc3._id,
+          a: 5,
+          hello: 'pluton',
+        }),
+      ).toEqual(true)
     })
 
     it('Can update without the options arg (will use defaults then)', async () => {
@@ -1275,13 +1311,13 @@ describe('Database', function () {
       const doc2 = await collection.insert({ a: 5 })
       const doc3 = await collection.insert({ a: 'abc' })
 
-      await assert.isRejected(
+      await expect(
         collection.update(
           { a: { $in: [4, 5, 'abc'] } },
           { $inc: { a: 10 } },
           { multi: true },
         ),
-      )
+      ).rejects.toThrow()
 
       // No index modified
       each(collection.indexes, function (index) {
@@ -1296,9 +1332,9 @@ describe('Database', function () {
             return doc._id === doc3._id
           })
         // All changes rolled back, including those that didn't trigger an error
-        d1.a.should.equal(4)
-        d2.a.should.equal(5)
-        d3.a.should.equal('abc')
+        expect(d1.a).toEqual(4)
+        expect(d2.a).toEqual(5)
+        expect(d3.a).toEqual('abc')
       })
     })
 
@@ -1308,13 +1344,13 @@ describe('Database', function () {
       const doc2 = await collection.insert({ a: 5 })
 
       // With this query, candidates are always returned in the order 4, 5, 'abc' so it's always the last one which fails
-      await assert.isRejected(
+      await expect(
         collection.update(
           { a: { $in: [4, 5, 'abc'] } },
           { $set: { a: 10 } },
           { multi: true },
         ),
-      )
+      ).rejects.toThrow()
 
       // Check that no index was modified
       each(collection.indexes, function (index) {
@@ -1325,8 +1361,8 @@ describe('Database', function () {
           d2 = find(docs, function (doc) {
             return doc._id === doc2._id
           })
-        d1.a.should.equal(4)
-        d2.a.should.equal(5)
+        expect(d1.a).toEqual(4)
+        expect(d2.a).toEqual(5)
       })
     })
 
@@ -1361,7 +1397,7 @@ describe('Database', function () {
           { $set: { b: 20 } },
           {},
         )
-        result1.modifiedCount.should.equal(1)
+        expect(result1.modifiedCount).toEqual(1)
         assert.isUndefined(result1.updatedDocs)
 
         const result2 = await collection.update(
@@ -1369,13 +1405,13 @@ describe('Database', function () {
           { $set: { b: 21 } },
           { returnUpdatedDocs: true },
         )
-        result2.modifiedCount.should.equal(1)
-        result2.updatedDocs.length.should.equal(1)
+        expect(result2.modifiedCount).toEqual(1)
+        expect(result2.updatedDocs).toHaveLength(1)
         assert.isUndefined(result2.insertedIds)
 
         const [updatedDoc] = result2.updatedDocs
 
-        updatedDoc.b.should.equal(21)
+        expect(updatedDoc.b).toEqual(21)
       })
 
       it('Regular update, multi true', async function () {
@@ -1441,13 +1477,13 @@ describe('Database', function () {
       const testPostUpdateState = async () => {
         const docs = await collection.find({})
 
-        docs.length.should.equal(1)
+        expect(docs).toHaveLength(1)
 
-        Object.keys(docs[0]).length.should.equal(2)
+        expect(Object.keys(docs[0])).toHaveLength(2)
 
-        docs[0]._id.should.equal(id1)
+        expect(docs[0]._id).toEqual(id1)
 
-        docs[0].somedata.should.equal('ok')
+        expect(docs[0].somedata).toEqual('ok')
       }
 
       await collection.insert({
@@ -1460,7 +1496,7 @@ describe('Database', function () {
       // Test with query that doesn't match anything
       const n = await collection.remove({ somedata: 'again' }, { multi: true })
 
-      n.should.equal(2)
+      expect(n).toEqual(2)
 
       await testPostUpdateState()
 
@@ -1487,9 +1523,9 @@ describe('Database', function () {
 
     it('Returns an error if the query is not well formed', async function () {
       await collection.insert({ hello: 'world' })
-      await assert.isRejected(
+      await expect(
         collection.remove({ $or: { hello: 'world' } }, {}),
-      )
+      ).rejects.toThrow()
     })
 
     it('Non-multi removes are persistent', async function () {
@@ -1497,48 +1533,48 @@ describe('Database', function () {
       await collection.insert({ a: 2, hello: 'earth' })
       const doc3 = await collection.insert({ a: 3, hello: 'moto' })
 
-      await assert.isFulfilled(collection.remove({ a: 2 }, {}))
+      await collection.remove({ a: 2 }, {})
 
       const docs = await collection.find({})
       docs.sort((a, b) => a.a - b.a)
-      docs.length.should.equal(2)
+      expect(docs).toHaveLength(2)
 
-      assert.isTrue(
+      expect(
         isEqual(docs[0], {
           _id: doc1._id,
           a: 1,
           hello: 'world',
         }),
-      )
-      assert.isTrue(
+      ).toEqual(true)
+      expect(
         isEqual(docs[1], {
           _id: doc3._id,
           a: 3,
           hello: 'moto',
         }),
-      )
+      ).toEqual(true)
 
       // Even after a reload the database state hasn't changed
-      await assert.isFulfilled(collection.loadDatabase())
+      await collection.loadDatabase()
 
       const reloadedDocs = await collection.find({})
       reloadedDocs.sort((a, b) => a.a - b.a)
-      reloadedDocs.length.should.equal(2)
+      expect(reloadedDocs).toHaveLength(2)
 
-      assert.isTrue(
+      expect(
         isEqual(reloadedDocs[0], {
           _id: doc1._id,
           a: 1,
           hello: 'world',
         }),
-      )
-      assert.isTrue(
+      ).toEqual(true)
+      expect(
         isEqual(reloadedDocs[1], {
           _id: doc3._id,
           a: 3,
           hello: 'moto',
         }),
-      )
+      ).toEqual(true)
     })
 
     it('Multi removes are persistent', async function () {
@@ -1595,12 +1631,12 @@ describe('Database', function () {
           '\n' +
           serialize({ _id: 'ccc', z: '3', nested: { today: now } })
 
-        collection.getAllData().length.should.equal(0)
+        expect(collection.getAllData()).toHaveLength(0)
 
         await fs.promises.writeFile(testDb, rawData, 'utf8')
         await collection.loadDatabase()
 
-        collection.getAllData().length.should.equal(3)
+        expect(collection.getAllData()).toHaveLength(3)
 
         assert.deepEqual(Object.keys(collection.indexes), ['_id'])
 
@@ -1658,10 +1694,10 @@ describe('Database', function () {
           '\n' +
           serialize({ _id: 'bbb', z: '2', hello: 'world' })
 
-        collection.getAllData().length.should.equal(0)
+        expect(collection.getAllData()).toHaveLength(0)
         await fs.promises.writeFile(testDb, rawData, 'utf8')
         await collection.loadDatabase()
-        collection.getAllData().length.should.equal(2)
+        expect(collection.getAllData()).toHaveLength(2)
 
         assert.deepEqual(Object.keys(collection.indexes), ['_id'])
 
@@ -1673,21 +1709,21 @@ describe('Database', function () {
         assert.deepEqual(Object.keys(collection.indexes), ['_id'])
 
         await collection.ensureIndex({ fieldName: 'z' })
-        collection.indexes.z.fieldName.should.equal('z')
-        collection.indexes.z.unique.should.equal(false)
-        collection.indexes.z.sparse.should.equal(false)
-        collection.indexes.z.tree.getNumberOfKeys().should.equal(3)
+        expect(collection.indexes.z.fieldName).toEqual('z')
+        expect(collection.indexes.z.unique).toEqual(false)
+        expect(collection.indexes.z.sparse).toEqual(false)
+        expect(collection.indexes.z.tree.getNumberOfKeys()).toEqual(3)
 
         // The pointers in the _id and z indexes are the same
-        collection.indexes.z.tree
-          .search('1')[0]
-          .should.equal(collection.indexes._id.getMatching('aaa')[0])
-        collection.indexes.z.tree
-          .search('12')[0]
-          .should.equal(collection.indexes._id.getMatching(newDoc1._id)[0])
-        collection.indexes.z.tree
-          .search('14')[0]
-          .should.equal(collection.indexes._id.getMatching(newDoc2._id)[0])
+        expect(collection.indexes.z.tree.search('1')[0]).toEqual(
+          collection.indexes._id.getMatching('aaa')[0],
+        )
+        expect(collection.indexes.z.tree.search('12')[0]).toEqual(
+          collection.indexes._id.getMatching(newDoc1._id)[0],
+        )
+        expect(collection.indexes.z.tree.search('14')[0]).toEqual(
+          collection.indexes._id.getMatching(newDoc2._id)[0],
+        )
 
         // The data in the z index is correct
         const docs = await collection.find({})
@@ -1701,7 +1737,7 @@ describe('Database', function () {
           return doc._id === newDoc2._id
         })
 
-        docs.length.should.equal(3)
+        expect(docs).toHaveLength(3)
         assert.deepEqual(doc0, {
           _id: 'aaa',
           z: '1',
@@ -1730,7 +1766,7 @@ describe('Database', function () {
             '\n' +
             serialize({ _id: 'ccc', z: '3', nested: { today: now } })
 
-        collection.getAllData().length.should.equal(0)
+        expect(collection.getAllData()).toHaveLength(0)
 
         await collection.ensureIndex({ fieldName: 'z' })
 
@@ -1795,18 +1831,17 @@ describe('Database', function () {
             serialize({ _id: 'bbb', z: '2', a: 'world' }) +
             '\n' +
             serialize({ _id: 'ccc', z: '1', a: { today: now } })
-        collection.getAllData().length.should.equal(0)
+        expect(collection.getAllData()).toHaveLength(0)
 
         await collection.ensureIndex({ fieldName: 'z', unique: true })
-        collection.indexes.z.tree.getNumberOfKeys().should.equal(0)
+        expect(collection.indexes.z.tree.getNumberOfKeys()).toEqual(0)
 
         await fs.promises.writeFile(testDb, rawData, 'utf8')
-        await assert.isRejected(
-          collection.loadDatabase(),
+        await expect(collection.loadDatabase()).rejects.toThrow(
           /Unique constraint violation/,
         )
-        collection.getAllData().length.should.equal(0)
-        collection.indexes.z.tree.getNumberOfKeys().should.equal(0)
+        expect(collection.getAllData()).toHaveLength(0)
+        expect(collection.indexes.z.tree.getNumberOfKeys()).toEqual(0)
       })
 
       it('If a unique constraint is not respected, ensureIndex will return an error and not create an index', async function () {
@@ -1816,10 +1851,9 @@ describe('Database', function () {
 
         await collection.ensureIndex({ fieldName: 'b' })
 
-        await assert.isRejected(
+        await expect(
           collection.ensureIndex({ fieldName: 'a', unique: true }),
-          /Unique constraint violation/,
-        )
+        ).rejects.toThrow(/Unique constraint violation/)
 
         assert.deepEqual(Object.keys(collection.indexes), ['_id', 'b'])
       })
@@ -1891,10 +1925,7 @@ describe('Database', function () {
         assert.strictEqual(collection.indexes.z.tree.getNumberOfKeys(), 1)
         assert.deepEqual(collection.indexes.z.getMatching('yes'), [newDoc])
 
-        await assert.isRejected(collection.insert({ a: 5, z: 'yes' }), {
-          errorType: 'uniqueViolated',
-          key: 'yes',
-        })
+        await expect(collection.insert({ a: 5, z: 'yes' })).rejects.toThrow()
 
         // Index didn't change
         assert.strictEqual(collection.indexes.z.tree.getNumberOfKeys(), 1)
@@ -1923,14 +1954,13 @@ describe('Database', function () {
         assert.strictEqual(collection.indexes.uni.tree.getNumberOfKeys(), 1)
         assert.strictEqual(collection.indexes.nonu2.tree.getNumberOfKeys(), 1)
 
-        await assert.isRejected(
+        await expect(
           collection.insert({
             nonu1: 'no',
             nonu2: 'no2',
             uni: 'willfail',
           }),
-          { errorType: 'uniqueViolated' },
-        )
+        ).rejects.toThrow()
 
         assert.strictEqual(collection.indexes.nonu1.tree.getNumberOfKeys(), 1)
         assert.strictEqual(collection.indexes.uni.tree.getNumberOfKeys(), 1)
@@ -1953,9 +1983,7 @@ describe('Database', function () {
           newDoc,
         ])
 
-        await assert.isRejected(collection.insert({ a: 5, z: 'other' }), {
-          errorType: 'uniqueViolated',
-        })
+        await expect(collection.insert({ a: 5, z: 'other' })).rejects.toThrow()
 
         await collection.ensureIndex({
           fieldName: 'yyy',
@@ -2020,19 +2048,19 @@ describe('Database', function () {
         await collection.ensureIndex({ fieldName: 'a', unique: true })
 
         const doc1 = await collection.insert({ a: 1, b: 'hello' })
-        await assert.isRejected(collection.insert({ a: 1, b: 'si' }))
+        await expect(collection.insert({ a: 1, b: 'si' })).rejects.toThrow()
 
         const docs = await collection.find({})
-        docs.length.should.equal(1)
-        collection.getAllData().length.should.equal(1)
+        expect(docs).toHaveLength(1)
+        expect(collection.getAllData()).toHaveLength(1)
 
-        collection.indexes._id.getMatching(doc1._id).length.should.equal(1)
-        collection.indexes.a.getMatching(1).length.should.equal(1)
-        collection.indexes._id
-          .getMatching(doc1._id)[0]
-          .should.equal(collection.indexes.a.getMatching(1)[0])
+        expect(collection.indexes._id.getMatching(doc1._id)).toHaveLength(1)
+        expect(collection.indexes.a.getMatching(1)).toHaveLength(1)
+        expect(collection.indexes._id.getMatching(doc1._id)[0]).toEqual(
+          collection.indexes.a.getMatching(1)[0],
+        )
 
-        collection.indexes.a.getMatching(2).length.should.equal(0)
+        expect(collection.indexes.a.getMatching(2)).toHaveLength(0)
       })
     })
 
@@ -2124,13 +2152,13 @@ describe('Database', function () {
         const _doc3 = await collection.insert({ a: 3, b: 30, c: 300 })
 
         // Will conflict with doc3
-        await assert.isRejected(
+        await expect(
           collection.update(
             { a: 2 },
             { $inc: { a: 10, c: 1000 }, $set: { b: 30 } },
             {},
           ),
-        )
+        ).rejects.toThrow()
 
         const data = collection.getAllData(),
           doc1 = find(data, doc => doc._id === _doc1._id),
@@ -2138,26 +2166,26 @@ describe('Database', function () {
           doc3 = find(data, doc => doc._id === _doc3._id)
 
         // Data left unchanged
-        data.length.should.equal(3)
+        expect(data).toHaveLength(3)
         assert.deepEqual(doc1, { a: 1, b: 10, c: 100, _id: _doc1._id })
         assert.deepEqual(doc2, { a: 2, b: 20, c: 200, _id: _doc2._id })
         assert.deepEqual(doc3, { a: 3, b: 30, c: 300, _id: _doc3._id })
 
         // All indexes left unchanged and pointing to the same docs
-        collection.indexes.a.tree.getNumberOfKeys().should.equal(3)
-        collection.indexes.a.getMatching(1)[0].should.equal(doc1)
-        collection.indexes.a.getMatching(2)[0].should.equal(doc2)
-        collection.indexes.a.getMatching(3)[0].should.equal(doc3)
+        expect(collection.indexes.a.tree.getNumberOfKeys()).toEqual(3)
+        expect(collection.indexes.a.getMatching(1)[0]).toEqual(doc1)
+        expect(collection.indexes.a.getMatching(2)[0]).toEqual(doc2)
+        expect(collection.indexes.a.getMatching(3)[0]).toEqual(doc3)
 
-        collection.indexes.b.tree.getNumberOfKeys().should.equal(3)
-        collection.indexes.b.getMatching(10)[0].should.equal(doc1)
-        collection.indexes.b.getMatching(20)[0].should.equal(doc2)
-        collection.indexes.b.getMatching(30)[0].should.equal(doc3)
+        expect(collection.indexes.b.tree.getNumberOfKeys()).toEqual(3)
+        expect(collection.indexes.b.getMatching(10)[0]).toEqual(doc1)
+        expect(collection.indexes.b.getMatching(20)[0]).toEqual(doc2)
+        expect(collection.indexes.b.getMatching(30)[0]).toEqual(doc3)
 
-        collection.indexes.c.tree.getNumberOfKeys().should.equal(3)
-        collection.indexes.c.getMatching(100)[0].should.equal(doc1)
-        collection.indexes.c.getMatching(200)[0].should.equal(doc2)
-        collection.indexes.c.getMatching(300)[0].should.equal(doc3)
+        expect(collection.indexes.c.tree.getNumberOfKeys()).toEqual(3)
+        expect(collection.indexes.c.getMatching(100)[0]).toEqual(doc1)
+        expect(collection.indexes.c.getMatching(200)[0]).toEqual(doc2)
+        expect(collection.indexes.c.getMatching(300)[0]).toEqual(doc3)
       })
 
       it('If a multi update violates a contraint, all changes are rolled back and an error is thrown', async function () {
@@ -2169,14 +2197,13 @@ describe('Database', function () {
         const _doc2 = await collection.insert({ a: 2, b: 20, c: 200 })
         const _doc3 = await collection.insert({ a: 3, b: 30, c: 300 })
 
-        await assert.isRejected(
+        await expect(
           collection.update(
             { a: { $in: [1, 2] } },
             { $inc: { a: 10, c: 1000 }, $set: { b: 30 } },
             { multi: true },
           ),
-          { errorType: 'uniqueViolated' },
-        )
+        ).rejects.toThrow()
 
         const data = collection.getAllData()
         const doc1 = data.find(doc => doc._id === _doc1._id)
@@ -2184,7 +2211,7 @@ describe('Database', function () {
         const doc3 = data.find(doc => doc._id === _doc3._id)
 
         // Data left unchanged
-        data.length.should.equal(3)
+        expect(data).toHaveLength(3)
         assert.deepEqual(doc1, {
           a: 1,
           b: 10,
@@ -2205,20 +2232,20 @@ describe('Database', function () {
         })
 
         // All indexes left unchanged and pointing to the same docs
-        collection.indexes.a.tree.getNumberOfKeys().should.equal(3)
-        collection.indexes.a.getMatching(1)[0].should.equal(doc1)
-        collection.indexes.a.getMatching(2)[0].should.equal(doc2)
-        collection.indexes.a.getMatching(3)[0].should.equal(doc3)
+        expect(collection.indexes.a.tree.getNumberOfKeys()).toEqual(3)
+        expect(collection.indexes.a.getMatching(1)[0]).toEqual(doc1)
+        expect(collection.indexes.a.getMatching(2)[0]).toEqual(doc2)
+        expect(collection.indexes.a.getMatching(3)[0]).toEqual(doc3)
 
-        collection.indexes.b.tree.getNumberOfKeys().should.equal(3)
-        collection.indexes.b.getMatching(10)[0].should.equal(doc1)
-        collection.indexes.b.getMatching(20)[0].should.equal(doc2)
-        collection.indexes.b.getMatching(30)[0].should.equal(doc3)
+        expect(collection.indexes.b.tree.getNumberOfKeys()).toEqual(3)
+        expect(collection.indexes.b.getMatching(10)[0]).toEqual(doc1)
+        expect(collection.indexes.b.getMatching(20)[0]).toEqual(doc2)
+        expect(collection.indexes.b.getMatching(30)[0]).toEqual(doc3)
 
-        collection.indexes.c.tree.getNumberOfKeys().should.equal(3)
-        collection.indexes.c.getMatching(100)[0].should.equal(doc1)
-        collection.indexes.c.getMatching(200)[0].should.equal(doc2)
-        collection.indexes.c.getMatching(300)[0].should.equal(doc3)
+        expect(collection.indexes.c.tree.getNumberOfKeys()).toEqual(3)
+        expect(collection.indexes.c.getMatching(100)[0]).toEqual(doc1)
+        expect(collection.indexes.c.getMatching(200)[0]).toEqual(doc2)
+        expect(collection.indexes.c.getMatching(300)[0]).toEqual(doc3)
       })
     })
 
@@ -2370,8 +2397,8 @@ describe('Database', function () {
           storage: new NodeStorage(),
         })
 
-        Object.keys(db.indexes).length.should.equal(1)
-        Object.keys(db.indexes)[0].should.equal('_id')
+        expect(Object.keys(db.indexes)).toHaveLength(1)
+        expect(Object.keys(db.indexes)[0]).toEqual('_id')
 
         await db.insert({ planet: 'Earth' })
         await db.insert({ planet: 'Mars' })
@@ -2382,14 +2409,14 @@ describe('Database', function () {
           sparse: false,
         })
 
-        Object.keys(db.indexes).length.should.equal(2)
-        Object.keys(db.indexes)[0].should.equal('_id')
-        Object.keys(db.indexes)[1].should.equal('planet')
+        expect(Object.keys(db.indexes)).toHaveLength(2)
+        expect(Object.keys(db.indexes)[0]).toEqual('_id')
+        expect(Object.keys(db.indexes)[1]).toEqual('planet')
 
-        db.indexes._id.getAll().length.should.equal(2)
-        db.indexes.planet.getAll().length.should.equal(2)
-        db.indexes.planet.unique.should.equal(true)
-        db.indexes.planet.sparse.should.equal(false)
+        expect(db.indexes._id.getAll()).toHaveLength(2)
+        expect(db.indexes.planet.getAll()).toHaveLength(2)
+        expect(db.indexes.planet.unique).toEqual(true)
+        expect(db.indexes.planet.sparse).toEqual(false)
 
         await db.insert({ planet: 'Jupiter' })
 
@@ -2397,13 +2424,13 @@ describe('Database', function () {
         db = new Collection({ name: persDb, storage: new NodeStorage() })
         await db.loadDatabase()
 
-        Object.keys(db.indexes).length.should.equal(2)
-        Object.keys(db.indexes)[0].should.equal('_id')
-        Object.keys(db.indexes)[1].should.equal('planet')
-        db.indexes._id.getAll().length.should.equal(3)
-        db.indexes.planet.getAll().length.should.equal(3)
-        db.indexes.planet.unique.should.equal(true)
-        db.indexes.planet.sparse.should.equal(false)
+        expect(Object.keys(db.indexes)).toHaveLength(2)
+        expect(Object.keys(db.indexes)[0]).toEqual('_id')
+        expect(Object.keys(db.indexes)[1]).toEqual('planet')
+        expect(db.indexes._id.getAll()).toHaveLength(3)
+        expect(db.indexes.planet.getAll()).toHaveLength(3)
+        expect(db.indexes.planet.unique).toEqual(true)
+        expect(db.indexes.planet.sparse).toEqual(false)
 
         await db.ensureIndex({
           fieldName: 'bloup',
@@ -2411,33 +2438,33 @@ describe('Database', function () {
           sparse: true,
         })
 
-        Object.keys(db.indexes).length.should.equal(3)
-        Object.keys(db.indexes)[0].should.equal('_id')
-        Object.keys(db.indexes)[1].should.equal('planet')
-        Object.keys(db.indexes)[2].should.equal('bloup')
-        db.indexes._id.getAll().length.should.equal(3)
-        db.indexes.planet.getAll().length.should.equal(3)
-        db.indexes.bloup.getAll().length.should.equal(0)
-        db.indexes.planet.unique.should.equal(true)
-        db.indexes.planet.sparse.should.equal(false)
-        db.indexes.bloup.unique.should.equal(false)
-        db.indexes.bloup.sparse.should.equal(true)
+        expect(Object.keys(db.indexes)).toHaveLength(3)
+        expect(Object.keys(db.indexes)[0]).toEqual('_id')
+        expect(Object.keys(db.indexes)[1]).toEqual('planet')
+        expect(Object.keys(db.indexes)[2]).toEqual('bloup')
+        expect(db.indexes._id.getAll()).toHaveLength(3)
+        expect(db.indexes.planet.getAll()).toHaveLength(3)
+        expect(db.indexes.bloup.getAll()).toHaveLength(0)
+        expect(db.indexes.planet.unique).toEqual(true)
+        expect(db.indexes.planet.sparse).toEqual(false)
+        expect(db.indexes.bloup.unique).toEqual(false)
+        expect(db.indexes.bloup.sparse).toEqual(true)
 
         // After another reload the indexes are still there (i.e. they are preserved during autocompaction)
         db = new Collection({ name: persDb, storage: new NodeStorage() })
         await db.loadDatabase()
 
-        Object.keys(db.indexes).length.should.equal(3)
-        Object.keys(db.indexes)[0].should.equal('_id')
-        Object.keys(db.indexes)[1].should.equal('planet')
-        Object.keys(db.indexes)[2].should.equal('bloup')
-        db.indexes._id.getAll().length.should.equal(3)
-        db.indexes.planet.getAll().length.should.equal(3)
-        db.indexes.bloup.getAll().length.should.equal(0)
-        db.indexes.planet.unique.should.equal(true)
-        db.indexes.planet.sparse.should.equal(false)
-        db.indexes.bloup.unique.should.equal(false)
-        db.indexes.bloup.sparse.should.equal(true)
+        expect(Object.keys(db.indexes)).toHaveLength(3)
+        expect(Object.keys(db.indexes)[0]).toEqual('_id')
+        expect(Object.keys(db.indexes)[1]).toEqual('planet')
+        expect(Object.keys(db.indexes)[2]).toEqual('bloup')
+        expect(db.indexes._id.getAll()).toHaveLength(3)
+        expect(db.indexes.planet.getAll()).toHaveLength(3)
+        expect(db.indexes.bloup.getAll()).toHaveLength(0)
+        expect(db.indexes.planet.unique).toEqual(true)
+        expect(db.indexes.planet.sparse).toEqual(false)
+        expect(db.indexes.bloup.unique).toEqual(false)
+        expect(db.indexes.bloup.sparse).toEqual(true)
       })
 
       it('Indexes can also be removed and the remove persisted', async function () {
@@ -2455,8 +2482,8 @@ describe('Database', function () {
           storage: new NodeStorage(),
         })
 
-        Object.keys(db.indexes).length.should.equal(1)
-        Object.keys(db.indexes)[0].should.equal('_id')
+        expect(Object.keys(db.indexes)).toHaveLength(1)
+        expect(Object.keys(db.indexes)[0]).toEqual('_id')
 
         await db.insert({ planet: 'Earth' })
         await db.insert({ planet: 'Mars' })
@@ -2464,53 +2491,53 @@ describe('Database', function () {
         await db.ensureIndex({ fieldName: 'planet' })
         await db.ensureIndex({ fieldName: 'another' })
 
-        Object.keys(db.indexes).length.should.equal(3)
-        Object.keys(db.indexes)[0].should.equal('_id')
-        Object.keys(db.indexes)[1].should.equal('planet')
-        Object.keys(db.indexes)[2].should.equal('another')
-        db.indexes._id.getAll().length.should.equal(2)
-        db.indexes.planet.getAll().length.should.equal(2)
-        db.indexes.planet.fieldName.should.equal('planet')
+        expect(Object.keys(db.indexes)).toHaveLength(3)
+        expect(Object.keys(db.indexes)[0]).toEqual('_id')
+        expect(Object.keys(db.indexes)[1]).toEqual('planet')
+        expect(Object.keys(db.indexes)[2]).toEqual('another')
+        expect(db.indexes._id.getAll()).toHaveLength(2)
+        expect(db.indexes.planet.getAll()).toHaveLength(2)
+        expect(db.indexes.planet.fieldName).toEqual('planet')
 
         // After a reload the indexes are recreated
         db = new Collection({ name: persDb, storage: new NodeStorage() })
 
         await db.loadDatabase()
 
-        Object.keys(db.indexes).length.should.equal(3)
-        Object.keys(db.indexes)[0].should.equal('_id')
-        Object.keys(db.indexes)[1].should.equal('planet')
-        Object.keys(db.indexes)[2].should.equal('another')
-        db.indexes._id.getAll().length.should.equal(2)
-        db.indexes.planet.getAll().length.should.equal(2)
-        db.indexes.planet.fieldName.should.equal('planet')
+        expect(Object.keys(db.indexes)).toHaveLength(3)
+        expect(Object.keys(db.indexes)[0]).toEqual('_id')
+        expect(Object.keys(db.indexes)[1]).toEqual('planet')
+        expect(Object.keys(db.indexes)[2]).toEqual('another')
+        expect(db.indexes._id.getAll()).toHaveLength(2)
+        expect(db.indexes.planet.getAll()).toHaveLength(2)
+        expect(db.indexes.planet.fieldName).toEqual('planet')
 
         // Index is removed
         db.removeIndex('planet')
 
-        Object.keys(db.indexes).length.should.equal(2)
-        Object.keys(db.indexes)[0].should.equal('_id')
-        Object.keys(db.indexes)[1].should.equal('another')
-        db.indexes._id.getAll().length.should.equal(2)
+        expect(Object.keys(db.indexes)).toHaveLength(2)
+        expect(Object.keys(db.indexes)[0]).toEqual('_id')
+        expect(Object.keys(db.indexes)[1]).toEqual('another')
+        expect(db.indexes._id.getAll()).toHaveLength(2)
 
         // After a reload indexes are preserved
         db = new Collection({ name: persDb, storage: new NodeStorage() })
 
         await db.loadDatabase()
 
-        Object.keys(db.indexes).length.should.equal(2)
-        Object.keys(db.indexes)[0].should.equal('_id')
-        Object.keys(db.indexes)[1].should.equal('another')
-        db.indexes._id.getAll().length.should.equal(2)
+        expect(Object.keys(db.indexes)).toHaveLength(2)
+        expect(Object.keys(db.indexes)[0]).toEqual('_id')
+        expect(Object.keys(db.indexes)[1]).toEqual('another')
+        expect(db.indexes._id.getAll()).toHaveLength(2)
 
         // After another reload the indexes are still there (i.e. they are preserved during autocompaction)
         db = new Collection({ name: persDb, storage: new NodeStorage() })
         await db.loadDatabase()
 
-        Object.keys(db.indexes).length.should.equal(2)
-        Object.keys(db.indexes)[0].should.equal('_id')
-        Object.keys(db.indexes)[1].should.equal('another')
-        db.indexes._id.getAll().length.should.equal(2)
+        expect(Object.keys(db.indexes)).toHaveLength(2)
+        expect(Object.keys(db.indexes)[0]).toEqual('_id')
+        expect(Object.keys(db.indexes)[1]).toEqual('another')
+        expect(db.indexes._id.getAll()).toHaveLength(2)
       })
     })
 

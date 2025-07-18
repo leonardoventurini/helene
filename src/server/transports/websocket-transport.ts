@@ -8,7 +8,7 @@ import {
   ServerEvents,
   WebSocketEvents,
 } from '../../utils'
-import io from 'socket.io'
+import { Server as SocketIOServer } from 'socket.io'
 import { ClientNode } from '../client-node'
 import { Server } from '../server'
 import Payload = Presentation.Payload
@@ -19,21 +19,17 @@ export enum WebSocketTransportEvents {
 
 export class WebSocketTransport {
   server: Server
-  wss: io.Server
-  options: Partial<io.ServerOptions> = {
+  wss: SocketIOServer
+  options: Partial<any> = {
     path: HELENE_WS_PATH,
   }
 
-  constructor(
-    server: Server,
-    origins: string[],
-    opts: Partial<io.ServerOptions>,
-  ) {
+  constructor(server: Server, origins: string[], opts: Partial<any>) {
     this.server = server
 
     Object.assign(this.options, opts ?? {})
 
-    this.wss = new io.Server(this.server.httpTransport.http, {
+    this.wss = new SocketIOServer(this.server.httpTransport.http, {
       ...this.options,
       connectionStateRecovery: {
         maxDisconnectionDuration: 2 * 60 * 1000,
@@ -62,7 +58,7 @@ export class WebSocketTransport {
     )
   }
 
-  handleConnection = (socket: io.Socket) => {
+  handleConnection = (socket: any) => {
     const node = new ClientNode(
       this.server,
       socket,

@@ -9,7 +9,6 @@ type Test = { _id: number; name: string }
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
 describe('Helene Data IDB Storage', () => {
-
   let collection: Collection<Test>
   let storage: IDBStorage
   const DB_NAME = 'helene_data'

@@ -1,4 +1,4 @@
-import { expect } from 'chai'
+import { expect, describe, it, beforeEach } from 'vitest'
 import { TestUtility } from '../test-utility'
 import path from 'path'
 import request from 'supertest'
@@ -101,7 +101,7 @@ describe('HTTP', async () => {
       }
     }
 
-    await expect(call()).to.be.rejectedWith(/429/)
+    await expect(call()).rejects.toThrow(/429/)
   })
 
   describe('client.href()', () => {
@@ -158,7 +158,7 @@ describe('HTTP', async () => {
 
       expect(payload).to.be.an('object')
       expect(payload).to.have.property('hello').that.is.equal('world')
-    }).timeout(20000)
+    }, 20000)
 
     it('should subscribe to an event', async () => {
       test.server.addEvent('test:event')
@@ -240,7 +240,7 @@ describe('HTTP', async () => {
       )
 
       expect(node2).to.be.instanceof(ClientNode)
-    }).timeout(20000)
+    }, 20000)
 
     it('should not call event source creation if auto connect is enabled (default)', async () => {
       const stub = sinon.stub(ClientHttp.prototype, 'createEventSource')

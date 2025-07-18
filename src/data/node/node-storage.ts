@@ -7,7 +7,7 @@
  * It's essentially fs, mkdirp and crash safe write and read functions
  */
 import fs from 'fs'
-import mkdirp from 'mkdirp'
+import { mkdirp } from 'mkdirp'
 import path from 'path'
 import { IStorage } from '../types'
 import { ensureDatafileIntegrity, flushToStorage } from './utils'

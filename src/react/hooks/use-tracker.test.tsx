@@ -1,4 +1,4 @@
-import { expect } from 'chai'
+import { expect, describe, it } from 'vitest'
 import { useTracker } from './use-tracker'
 import { TestUtility } from '../../test/test-utility'
 import { renderHook } from '@testing-library/react'

@@ -1,4 +1,5 @@
 import { createClient, RedisClientOptions } from 'redis'
+import { beforeAll, afterAll } from 'vitest'
 
 export class RedisTestUtil {
   pub: any
@@ -13,7 +14,7 @@ export class RedisTestUtil {
       url: 'redis://localhost:6379',
     }
 
-    before(async () => {
+    beforeAll(async () => {
       this.pub = createClient({ ...defaultOptions, ...opts })
       this.sub = createClient({ ...defaultOptions, ...opts })
 
@@ -22,7 +23,7 @@ export class RedisTestUtil {
     })
 
     // Need to quit otherwise it hangs the server.
-    after(async () => {
+    afterAll(async () => {
       await this.pub.quit()
       await this.sub.quit()
 

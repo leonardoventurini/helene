@@ -1,8 +1,8 @@
-import { expect } from 'chai'
+import { expect, describe, it } from 'vitest'
 import { NO_CHANNEL } from '../../utils'
 import { TestUtility } from '../test-utility'
 
-describe('Events', function () {
+describe('Events', () => {
   const test = new TestUtility()
 
   it('should register an event, emit and and get the payload', async () => {

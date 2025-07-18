@@ -1,4 +1,4 @@
-import { expect } from 'chai'
+import { expect, describe, it } from 'vitest'
 
 import { Client, TransportMode } from '../../client'
 import { ClientNode, HeleneAsyncLocalStorage, ns } from '../../server'
@@ -16,7 +16,7 @@ import * as yup from 'yup'
 import { z } from 'zod'
 import { TestUtility } from '../test-utility'
 
-describe('Methods', function () {
+describe('Methods', () => {
   const test = new TestUtility()
 
   it('should register a method, call it and get a response', async () => {
@@ -26,9 +26,9 @@ describe('Methods', function () {
 
     const result = await test.client.call('test:method', { a: 1, b: 2 })
 
-    expect(result).to.equal(3)
-    expect(test.client.queue.items).to.have.length(0)
-    expect(test.client.queue.isEmpty).to.be.true
+    expect(result).toEqual(3)
+    expect(test.client.queue.items).toHaveLength(0)
+    expect(test.client.queue.isEmpty).toBe(true)
   })
 
   it('should register a method as a promise and still get a response', async () => {
@@ -38,7 +38,7 @@ describe('Methods', function () {
 
     const result = await test.client.call('test:promise', [1, 2, 3])
 
-    expect(result).to.equal(6)
+    expect(result).toEqual(6)
   })
 
   it('should throw an error', async () => {
@@ -48,9 +48,11 @@ describe('Methods', function () {
 
     const error = await test.catchError(test.client.call('test:error'))
 
-    expect(error).to.have.property('type').that.equals(PayloadType.ERROR)
+    expect(error).toHaveProperty('type')
+    expect(error.type).toEqual(PayloadType.ERROR)
 
-    expect(error).to.have.property('message').that.equals(Errors.INTERNAL_ERROR)
+    expect(error).toHaveProperty('message')
+    expect(error.message).toEqual(Errors.INTERNAL_ERROR)
   })
 
   it('should make a void method call', async () => {
@@ -64,7 +66,7 @@ describe('Methods', function () {
 
     await test.sleep(500)
 
-    expect(called).to.be.true
+    expect(called).toBe(true)
   })
 
   it('should run middleware', async () => {
@@ -84,7 +86,7 @@ describe('Methods', function () {
         middleware: [
           function () {
             calledMiddleware = true
-            expect(this).to.be.instanceof(ClientNode)
+            expect(this).toBeInstanceOf(ClientNode)
 
             return { hello: true }
           },
@@ -96,7 +98,7 @@ describe('Methods', function () {
 
     await promise
 
-    expect(calledMiddleware).to.be.true
+    expect(calledMiddleware).toBe(true)
     expect(params).to.containSubset({
       hello: true,
       world: true,
@@ -124,7 +126,7 @@ describe('Methods', function () {
 
     const result = await test.client.call('test:method:middleware', 'hello')
 
-    expect(result).to.equal('world')
+    expect(result).toEqual('world')
   })
 
   it('should run middleware and throw error', async () => {
@@ -139,7 +141,7 @@ describe('Methods', function () {
 
     await expect(
       test.client.call('test:method:middleware:reject'),
-    ).to.be.rejectedWith('Authentication Failed')
+    ).rejects.toThrow('Authentication Failed')
   })
 
   it('should register and call a method with schema validation', async () => {
@@ -153,7 +155,7 @@ describe('Methods', function () {
       },
     )
 
-    await expect(test.client.call('validated:method')).to.be.rejectedWith(
+    await expect(test.client.call('validated:method')).rejects.toThrow(
       Errors.INVALID_PARAMS,
     )
 
@@ -161,7 +163,7 @@ describe('Methods', function () {
       knownProperty: true,
     })
 
-    expect(result).to.be.true
+    expect(result).toBe(true)
   })
 
   it('should register and call a method with zod schema validation', async () => {
@@ -203,23 +205,23 @@ describe('Methods', function () {
 
     const res1 = await c.m.submodule1.foo1()
 
-    expect(res1).to.be.true
+    expect(res1).toBe(true)
 
     const res2 = await c.m.hello()
 
-    expect(res2).to.equal('world')
+    expect(res2).toEqual('world')
 
     const res3 = await c.call('validated:zod:method2', {
       knownProperty: true,
     })
 
-    expect(res3).to.be.true
+    expect(res3).toBe(true)
 
     const res4 = await c.m.submodule1.submodule3.foo3()
 
-    expect(res4).to.be.true
+    expect(res4).toBe(true)
 
-    await expect(client.call('validated:zod:method')).to.be.rejectedWith(
+    await expect(client.call('validated:zod:method')).rejects.toThrow(
       Errors.INVALID_PARAMS,
     )
 
@@ -227,7 +229,7 @@ describe('Methods', function () {
       knownProperty: true,
     })
 
-    expect(result).to.be.true
+    expect(result).toBe(true)
 
     await client.close()
     await server.close()
@@ -240,8 +242,10 @@ describe('Methods', function () {
 
     const result1 = await test.client.call('get:async:ls')
 
-    expect(result1).to.have.property('executionId').that.is.a('string')
-    expect(result1).to.have.property('context').that.is.an('object')
+    expect(result1).toHaveProperty('executionId')
+    expect(result1.executionId).toBeTypeOf('string')
+    expect(result1).toHaveProperty('context')
+    expect(result1.context).toBeTypeOf('object')
   })
 
   it('should have async local storage in middleware', async () => {
@@ -261,8 +265,10 @@ describe('Methods', function () {
 
     const result1 = await test.client.call('get:async:ls')
 
-    expect(result1).to.have.property('executionId').that.is.a('string')
-    expect(result1).to.have.property('context').that.is.an('object')
+    expect(result1).toHaveProperty('executionId')
+    expect(result1.executionId).toBeTypeOf('string')
+    expect(result1).toHaveProperty('context')
+    expect(result1.context).toBeTypeOf('object')
   })
 
   it('should call a method in the server', async () => {
@@ -276,8 +282,8 @@ describe('Methods', function () {
 
     const result = await test.server.call('test:method', { a: 1, b: 2 })
 
-    expect(result).to.equal(3)
-    expect(isServer).to.be.true
+    expect(result).toEqual(3)
+    expect(isServer).toBe(true)
   })
 
   it('should throw when exceeding rate limit', async () => {
@@ -293,7 +299,7 @@ describe('Methods', function () {
       }
     }
 
-    await expect(call()).to.be.rejectedWith(Errors.RATE_LIMIT_EXCEEDED)
+    await expect(call()).rejects.toThrow(Errors.RATE_LIMIT_EXCEEDED)
   })
 
   it('in case we return undefined in a method we should ', async () => {
@@ -306,7 +312,7 @@ describe('Methods', function () {
 
     const result = await client.call('test:method')
 
-    expect(result).to.equal(undefined)
+    expect(result).toEqual(undefined)
   })
 
   it('should fire an event after a method call', async () => {
@@ -320,11 +326,12 @@ describe('Methods', function () {
 
     const [result] = await test.server.waitFor(ServerEvents.METHOD_EXECUTION)
 
-    expect(result).to.be.an('object')
-    expect(result.method).to.equal('test:method')
-    expect(result.time).to.be.within(90, 110)
-    expect(result.params).to.deep.equal({ a: 1, b: 2 })
-    expect(result.result).to.equal(42)
+    expect(result).toBeTypeOf('object')
+    expect(result.method).toEqual('test:method')
+    expect(result.time).toBeGreaterThanOrEqual(90)
+    expect(result.time).toBeLessThanOrEqual(110)
+    expect(result.params).toEqual({ a: 1, b: 2 })
+    expect(result.result).toEqual(42)
   })
 
   it('should only call a method if the client has initialized', async () => {
@@ -346,9 +353,9 @@ describe('Methods', function () {
 
       await expect(
         client.call('test:method', 1, { timeout: 1500 }),
-      ).to.rejectedWith(/Helene: Client not initialized/)
+      ).rejects.toThrow(/Helene: Client not initialized/)
 
-      expect(calls).to.deep.equal([])
+      expect(calls).toEqual([])
 
       stub.restore()
 
@@ -356,7 +363,7 @@ describe('Methods', function () {
 
       await client.call('test:method', 1)
 
-      expect(calls).to.deep.equal([1])
+      expect(calls).toEqual([1])
 
       await client.close()
     } finally {
@@ -382,8 +389,8 @@ describe('Methods', function () {
       delayBetweenRetriesMs: 100,
     })
 
-    expect(calls).to.deep.equal([1, 1])
-    expect(result).to.equal(42)
+    expect(calls).toEqual([1, 1])
+    expect(result).toEqual(42)
   })
 
   it('should throw after exhausting all retry attempts', async () => {
@@ -396,6 +403,6 @@ describe('Methods', function () {
         maxRetries: 3,
         delayBetweenRetriesMs: 100,
       }),
-    ).to.be.rejectedWith(Errors.INTERNAL_ERROR)
+    ).rejects.toThrow(Errors.INTERNAL_ERROR)
   })
 })

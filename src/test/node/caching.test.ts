@@ -1,7 +1,7 @@
-import { expect } from 'chai'
+import { expect, describe, it } from 'vitest'
 import { TestUtility } from '../test-utility'
 
-describe('Caching', function () {
+describe('Caching', () => {
   const test = new TestUtility()
 
   it('should cache result in the server', async () => {

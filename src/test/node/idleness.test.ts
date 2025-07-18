@@ -1,5 +1,5 @@
 import { ClientEvents, sleep } from '../../utils'
-import { expect } from 'chai'
+import { expect, describe, it } from 'vitest'
 import EventSource from 'eventsource'
 import defer from 'lodash/defer'
 import { TestUtility } from '../test-utility'
@@ -33,7 +33,7 @@ describe('idleness', () => {
     )
 
     await client.close()
-  }).timeout(10000)
+  }, 10000)
 
   it('should disconnect on idleness and reconnect upon interaction (websocket)', async () => {
     const client = await test.createClient({
@@ -56,7 +56,7 @@ describe('idleness', () => {
     expect(client.clientSocket.socket.connected).to.be.true
 
     await client.close()
-  }).timeout(10000)
+  }, 10000)
 
   it('should disconnect on idleness and reconnect upon interaction keeping authentication (websocket)', async () => {
     await test.client.close()
@@ -108,5 +108,5 @@ describe('idleness', () => {
     expect(await client.call('protected:method')).to.equal('42')
 
     await client.close()
-  }).timeout(10000)
+  }, 10000)
 })

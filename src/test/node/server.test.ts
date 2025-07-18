@@ -1,10 +1,10 @@
 import { HttpTransport, Server, WebSocketTransport } from '../../server'
 import { ServerEvents } from '../../utils'
-import { expect } from 'chai'
+import { expect, describe, it } from 'vitest'
 import { EJSON } from 'ejson2'
 import { TestUtility } from '../test-utility'
 
-describe('Server', function () {
+describe('Server', () => {
   const test = new TestUtility()
 
   it('should have the correct structure', async () => {
@@ -61,7 +61,7 @@ describe('Server', function () {
     await srv.close()
   })
 
-  it('should throw an error when trying to create a second instance', async function () {
+  it('should throw an error when trying to create a second instance', async () => {
     await test.server.close()
 
     const srv = new Server({
@@ -168,7 +168,7 @@ describe('Server', function () {
     expect(node.remoteAddress).to.be.a('string').and.not.be.empty
   })
 
-  it('should create and call method using proxy syntax', async function () {
+  it('should create and call method using proxy syntax', async () => {
     test.server.m.test.proxy = async num => num * 2
 
     const result = await test.client.m.test.proxy(4, {

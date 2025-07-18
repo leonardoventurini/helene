@@ -1,5 +1,5 @@
 import { Presentation } from '../../utils'
-import { expect } from 'chai'
+import { expect, describe, it } from 'vitest'
 import defer from 'lodash/defer'
 import { TestUtility } from '../test-utility'
 
@@ -66,7 +66,7 @@ describe('Channel', () => {
     expect(result2).to.have.property('test').that.is.true
 
     await otherClient.close()
-  }).timeout(10000)
+  }, 10000)
 
   it('should allow or disallow channel subscription', async () => {
     test.server.setAuth({

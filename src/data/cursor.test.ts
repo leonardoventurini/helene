@@ -1,8 +1,8 @@
-import { assert } from 'chai'
+import { expect, assert, describe, it, beforeEach } from 'vitest'
 import * as fs from 'fs'
 import * as path from 'path'
 import filter from 'lodash/filter'
-import mkdirp from 'mkdirp'
+import { mkdirp } from 'mkdirp'
 import { Collection } from './collection'
 import { NodeStorage } from './node'
 import { Cursor } from './cursor'
@@ -22,8 +22,8 @@ describe('Cursor', () => {
 
     await sleep(100)
 
-    collection.name.should.equal(testDb)
-    collection.inMemoryOnly.should.equal(false)
+    expect(collection.name).toEqual(testDb)
+    expect(collection.inMemoryOnly).toEqual(false)
 
     await mkdirp(path.dirname(testDb))
 
@@ -35,7 +35,7 @@ describe('Cursor', () => {
 
     await collection.loadDatabase()
 
-    collection.getAllData().length.should.equal(0)
+    expect(collection.getAllData().length).toEqual(0)
   })
 
   describe('Without sorting', () => {
@@ -53,7 +53,7 @@ describe('Cursor', () => {
         .sort({ age: 1 })
         .map(doc => doc.age * 2)
 
-      double.should.deep.equal([10, 46, 104, 114, 178])
+      expect(double).toEqual([10, 46, 104, 114, 178])
     })
 
     it('Without query, an empty query or a simple query and no skip or limit', async () => {
@@ -61,59 +61,59 @@ describe('Cursor', () => {
 
       let docs = await cursor
 
-      docs.length.should.equal(5)
+      expect(docs.length).toEqual(5)
 
-      filter(docs, doc => doc.age === 5)[0].age.should.equal(5)
+      expect(filter(docs, doc => doc.age === 5)[0].age).toEqual(5)
 
-      filter(docs, doc => doc.age === 57)[0].age.should.equal(57)
+      expect(filter(docs, doc => doc.age === 57)[0].age).toEqual(57)
 
-      filter(docs, doc => doc.age === 52)[0].age.should.equal(52)
+      expect(filter(docs, doc => doc.age === 52)[0].age).toEqual(52)
 
-      filter(docs, doc => doc.age === 23)[0].age.should.equal(23)
+      expect(filter(docs, doc => doc.age === 23)[0].age).toEqual(23)
 
-      filter(docs, doc => doc.age === 89)[0].age.should.equal(89)
+      expect(filter(docs, doc => doc.age === 89)[0].age).toEqual(89)
 
       cursor = new Cursor(collection, {})
 
       docs = await cursor
 
-      docs.length.should.equal(5)
+      expect(docs.length).toEqual(5)
 
-      filter(docs, doc => doc.age === 5)[0].age.should.equal(5)
-      filter(docs, doc => doc.age === 57)[0].age.should.equal(57)
-      filter(docs, doc => doc.age === 52)[0].age.should.equal(52)
-      filter(docs, doc => doc.age === 23)[0].age.should.equal(23)
-      filter(docs, doc => doc.age === 89)[0].age.should.equal(89)
+      expect(filter(docs, doc => doc.age === 5)[0].age).toEqual(5)
+      expect(filter(docs, doc => doc.age === 57)[0].age).toEqual(57)
+      expect(filter(docs, doc => doc.age === 52)[0].age).toEqual(52)
+      expect(filter(docs, doc => doc.age === 23)[0].age).toEqual(23)
+      expect(filter(docs, doc => doc.age === 89)[0].age).toEqual(89)
 
       cursor = new Cursor(collection, { age: { $gt: 23 } })
 
       docs = await cursor
 
-      docs.length.should.equal(3)
+      expect(docs.length).toEqual(3)
 
-      filter(docs, doc => doc.age === 57)[0].age.should.equal(57)
-      filter(docs, doc => doc.age === 52)[0].age.should.equal(52)
-      filter(docs, doc => doc.age === 89)[0].age.should.equal(89)
+      expect(filter(docs, doc => doc.age === 57)[0].age).toEqual(57)
+      expect(filter(docs, doc => doc.age === 52)[0].age).toEqual(52)
+      expect(filter(docs, doc => doc.age === 89)[0].age).toEqual(89)
     })
 
     it('With an empty collection', async () => {
       await collection.remove({}, { multi: true })
       const cursor = new Cursor(collection)
       const docs = await cursor
-      docs.length.should.equal(0)
+      expect(docs.length).toEqual(0)
     })
 
     it('With a limit', async () => {
       const cursor = new Cursor(collection)
       cursor.limit(3)
       const docs = await cursor
-      docs.length.should.equal(3)
+      expect(docs.length).toEqual(3)
     })
 
     it('With a skip', async () => {
       const cursor = new Cursor(collection)
       const docs = await cursor.skip(2)
-      docs.length.should.equal(3)
+      expect(docs.length).toEqual(3)
     })
 
     it('With a limit and a skip and method chaining', async () => {
@@ -121,7 +121,7 @@ describe('Cursor', () => {
       cursor.limit(4).skip(3) // Only way to know that the right number of results was skipped is if limit + skip > number of results
       const docs = await cursor
 
-      docs.length.should.equal(2)
+      expect(docs.length).toEqual(2)
     })
   })
 
@@ -170,17 +170,17 @@ describe('Cursor', () => {
 
       let docs = await db.find({}).sort({ name: 1 })
 
-      pluck(docs, 'name')[0].should.equal('zulu')
-      pluck(docs, 'name')[1].should.equal('alpha')
-      pluck(docs, 'name')[2].should.equal('charlie')
+      expect(pluck(docs, 'name')[0]).toEqual('zulu')
+      expect(pluck(docs, 'name')[1]).toEqual('alpha')
+      expect(pluck(docs, 'name')[2]).toEqual('charlie')
 
       delete db.compareStrings
 
       docs = await db.find({}).sort({ name: 1 })
 
-      pluck(docs, 'name')[0].should.equal('alpha')
-      pluck(docs, 'name')[1].should.equal('charlie')
-      pluck(docs, 'name')[2].should.equal('zulu')
+      expect(pluck(docs, 'name')[0]).toEqual('alpha')
+      expect(pluck(docs, 'name')[1]).toEqual('charlie')
+      expect(pluck(docs, 'name')[2]).toEqual('zulu')
     })
 
     it('With an empty collection', async () => {
@@ -191,7 +191,7 @@ describe('Cursor', () => {
 
       const docs = await cursor
 
-      docs.length.should.equal(0)
+      expect(docs.length).toEqual(0)
     })
 
     it('Ability to chain sorting and exec', async function () {
@@ -215,58 +215,58 @@ describe('Cursor', () => {
 
       const cursor1 = new Cursor(collection)
       const docs1 = await cursor1.sort({ age: 1 }).limit(3)
-      docs1.length.should.equal(3)
-      docs1[0].age.should.equal(5)
-      docs1[1].age.should.equal(23)
-      docs1[2].age.should.equal(52)
+      expect(docs1.length).toEqual(3)
+      expect(docs1[0].age).toEqual(5)
+      expect(docs1[1].age).toEqual(23)
+      expect(docs1[2].age).toEqual(52)
 
       const cursor2 = new Cursor(collection)
       const docs2 = await cursor2.sort({ age: -1 }).limit(2)
-      docs2.length.should.equal(2)
-      docs2[0].age.should.equal(89)
-      docs2[1].age.should.equal(57)
+      expect(docs2.length).toEqual(2)
+      expect(docs2[0].age).toEqual(89)
+      expect(docs2[1].age).toEqual(57)
     })
 
     it('Using a limit higher than total number of docs shouldnt cause an error', async () => {
       const cursor = new Cursor(collection)
       const docs = await cursor.sort({ age: 1 }).limit(7)
 
-      docs.length.should.equal(5)
-      docs[0].age.should.equal(5)
-      docs[1].age.should.equal(23)
-      docs[2].age.should.equal(52)
-      docs[3].age.should.equal(57)
-      docs[4].age.should.equal(89)
+      expect(docs.length).toEqual(5)
+      expect(docs[0].age).toEqual(5)
+      expect(docs[1].age).toEqual(23)
+      expect(docs[2].age).toEqual(52)
+      expect(docs[3].age).toEqual(57)
+      expect(docs[4].age).toEqual(89)
     })
 
     it('Using limit and skip with sort', async () => {
       const cursor1 = new Cursor(collection)
       const result1 = await cursor1.sort({ age: 1 }).limit(1).skip(2)
-      result1.length.should.equal(1)
-      result1[0].age.should.equal(52)
+      expect(result1.length).toEqual(1)
+      expect(result1[0].age).toEqual(52)
 
       const cursor2 = new Cursor(collection)
       const result2 = await cursor2.sort({ age: 1 }).limit(3).skip(1)
-      result2.length.should.equal(3)
-      result2[0].age.should.equal(23)
-      result2[1].age.should.equal(52)
-      result2[2].age.should.equal(57)
+      expect(result2.length).toEqual(3)
+      expect(result2[0].age).toEqual(23)
+      expect(result2[1].age).toEqual(52)
+      expect(result2[2].age).toEqual(57)
 
       const cursor3 = new Cursor(collection)
       const result3 = await cursor3.sort({ age: -1 }).limit(2).skip(2)
-      result3.length.should.equal(2)
-      result3[0].age.should.equal(52)
-      result3[1].age.should.equal(23)
+      expect(result3.length).toEqual(2)
+      expect(result3[0].age).toEqual(52)
+      expect(result3[1].age).toEqual(23)
     })
 
     it('Using too big a limit and a skip with sort', async () => {
       const cursor = new Cursor(collection)
       const docs = await cursor.sort({ age: 1 }).limit(8).skip(2)
 
-      docs.length.should.equal(3)
-      docs[0].age.should.equal(52)
-      docs[1].age.should.equal(57)
-      docs[2].age.should.equal(89)
+      expect(docs.length).toEqual(3)
+      expect(docs[0].age).toEqual(52)
+      expect(docs[1].age).toEqual(57)
+      expect(docs[2].age).toEqual(89)
     })
 
     it('Using too big a skip with sort should return no result', async function () {
@@ -276,16 +276,16 @@ describe('Cursor', () => {
       const cursor4 = new Cursor(collection)
 
       const docs1 = await cursor1.sort({ age: 1 }).skip(5)
-      docs1.length.should.equal(0)
+      expect(docs1.length).toEqual(0)
 
       const docs2 = await cursor2.sort({ age: 1 }).skip(7)
-      docs2.length.should.equal(0)
+      expect(docs2.length).toEqual(0)
 
       const docs3 = await cursor3.sort({ age: 1 }).limit(3).skip(7)
-      docs3.length.should.equal(0)
+      expect(docs3.length).toEqual(0)
 
       const docs4 = await cursor4.sort({ age: 1 }).limit(6).skip(7)
-      docs4.length.should.equal(0)
+      expect(docs4.length).toEqual(0)
     })
 
     it('Sorting strings', async function () {
@@ -296,17 +296,17 @@ describe('Cursor', () => {
 
       const cursor1 = new Cursor(collection, {})
       const docs1 = await cursor1.sort({ name: 1 })
-      docs1.length.should.equal(3)
-      docs1[0].name.should.equal('jakeb')
-      docs1[1].name.should.equal('jako')
-      docs1[2].name.should.equal('sue')
+      expect(docs1.length).toEqual(3)
+      expect(docs1[0].name).toEqual('jakeb')
+      expect(docs1[1].name).toEqual('jako')
+      expect(docs1[2].name).toEqual('sue')
 
       const cursor2 = new Cursor(collection, {})
       const docs2 = await cursor2.sort({ name: -1 })
-      docs2.length.should.equal(3)
-      docs2[0].name.should.equal('sue')
-      docs2[1].name.should.equal('jako')
-      docs2[2].name.should.equal('jakeb')
+      expect(docs2.length).toEqual(3)
+      expect(docs2[0].name).toEqual('sue')
+      expect(docs2[1].name).toEqual('jako')
+      expect(docs2[2].name).toEqual('jakeb')
     })
 
     it('Sorting nested fields with dates', async function () {
@@ -324,16 +324,16 @@ describe('Cursor', () => {
 
       const cursor = new Cursor(collection, {})
       let docs = await cursor.sort({ 'event.recorded': 1 })
-      docs.length.should.equal(3)
-      docs[0]._id.should.equal(doc3._id)
-      docs[1]._id.should.equal(doc1._id)
-      docs[2]._id.should.equal(doc2._id)
+      expect(docs.length).toEqual(3)
+      expect(docs[0]._id).toEqual(doc3._id)
+      expect(docs[1]._id).toEqual(doc1._id)
+      expect(docs[2]._id).toEqual(doc2._id)
 
       docs = await cursor.sort({ 'event.recorded': -1 })
-      docs.length.should.equal(3)
-      docs[0]._id.should.equal(doc2._id)
-      docs[1]._id.should.equal(doc1._id)
-      docs[2]._id.should.equal(doc3._id)
+      expect(docs.length).toEqual(3)
+      expect(docs[0]._id).toEqual(doc2._id)
+      expect(docs[1]._id).toEqual(doc1._id)
+      expect(docs[2]._id).toEqual(doc3._id)
     })
 
     it('Sorting when some fields are undefined', async function () {
@@ -345,25 +345,25 @@ describe('Cursor', () => {
 
       let cursor = new Cursor(collection, {})
       let docs = await cursor.sort({ other: 1 })
-      docs.length.should.equal(4)
-      docs[0].name.should.equal('sue')
+      expect(docs.length).toEqual(4)
+      expect(docs[0].name).toEqual('sue')
       assert.isUndefined(docs[0].other)
-      docs[1].name.should.equal('jako')
-      docs[1].other.should.equal(2)
-      docs[2].name.should.equal('jakeb')
-      docs[2].other.should.equal(3)
-      docs[3].name.should.equal('henry')
-      docs[3].other.should.equal(4)
+      expect(docs[1].name).toEqual('jako')
+      expect(docs[1].other).toEqual(2)
+      expect(docs[2].name).toEqual('jakeb')
+      expect(docs[2].other).toEqual(3)
+      expect(docs[3].name).toEqual('henry')
+      expect(docs[3].other).toEqual(4)
 
       cursor = new Cursor(collection, {
         name: { $in: ['suzy', 'jakeb', 'jako'] },
       })
       docs = await cursor.sort({ other: -1 })
-      docs.length.should.equal(2)
-      docs[0].name.should.equal('jakeb')
-      docs[0].other.should.equal(3)
-      docs[1].name.should.equal('jako')
-      docs[1].other.should.equal(2)
+      expect(docs.length).toEqual(2)
+      expect(docs[0].name).toEqual('jakeb')
+      expect(docs[0].other).toEqual(3)
+      expect(docs[1].name).toEqual('jako')
+      expect(docs[1].other).toEqual(2)
     })
 
     it('Sorting when all fields are undefined', async function () {
@@ -377,13 +377,13 @@ describe('Cursor', () => {
 
       let cursor = new Cursor(collection, {})
       let docs = await cursor.sort({ other: 1 })
-      docs.length.should.equal(3)
+      expect(docs.length).toEqual(3)
 
       cursor = new Cursor(collection, {
         name: { $in: ['sue', 'jakeb', 'jakob'] },
       })
       docs = await cursor.sort({ other: -1 })
-      docs.length.should.equal(2)
+      expect(docs.length).toEqual(2)
     })
 
     it('Multiple consecutive sorts', async function () {
@@ -396,36 +396,36 @@ describe('Cursor', () => {
 
       let docs = await new Cursor(collection, {}).sort({ name: 1, age: -1 })
 
-      docs.length.should.equal(5)
-      docs[0].nid.should.equal(2)
-      docs[1].nid.should.equal(1)
-      docs[2].nid.should.equal(5)
-      docs[3].nid.should.equal(3)
-      docs[4].nid.should.equal(4)
+      expect(docs.length).toEqual(5)
+      expect(docs[0].nid).toEqual(2)
+      expect(docs[1].nid).toEqual(1)
+      expect(docs[2].nid).toEqual(5)
+      expect(docs[3].nid).toEqual(3)
+      expect(docs[4].nid).toEqual(4)
 
       docs = await new Cursor(collection, {}).sort({ name: 1, age: 1 })
-      docs.length.should.equal(5)
-      docs[0].nid.should.equal(2)
-      docs[1].nid.should.equal(5)
-      docs[2].nid.should.equal(1)
-      docs[3].nid.should.equal(3)
-      docs[4].nid.should.equal(4)
+      expect(docs.length).toEqual(5)
+      expect(docs[0].nid).toEqual(2)
+      expect(docs[1].nid).toEqual(5)
+      expect(docs[2].nid).toEqual(1)
+      expect(docs[3].nid).toEqual(3)
+      expect(docs[4].nid).toEqual(4)
 
       docs = await new Cursor(collection, {}).sort({ age: 1, name: 1 })
-      docs.length.should.equal(5)
-      docs[0].nid.should.equal(3)
-      docs[1].nid.should.equal(4)
-      docs[2].nid.should.equal(5)
-      docs[3].nid.should.equal(2)
-      docs[4].nid.should.equal(1)
+      expect(docs.length).toEqual(5)
+      expect(docs[0].nid).toEqual(3)
+      expect(docs[1].nid).toEqual(4)
+      expect(docs[2].nid).toEqual(5)
+      expect(docs[3].nid).toEqual(2)
+      expect(docs[4].nid).toEqual(1)
 
       docs = await new Cursor(collection, {}).sort({ age: 1, name: -1 })
-      docs.length.should.equal(5)
-      docs[0].nid.should.equal(3)
-      docs[1].nid.should.equal(4)
-      docs[2].nid.should.equal(5)
-      docs[3].nid.should.equal(1)
-      docs[4].nid.should.equal(2)
+      expect(docs.length).toEqual(5)
+      expect(docs[0].nid).toEqual(3)
+      expect(docs[1].nid).toEqual(4)
+      expect(docs[2].nid).toEqual(5)
+      expect(docs[3].nid).toEqual(1)
+      expect(docs[4].nid).toEqual(2)
     })
 
     it('Similar data, multiple consecutive sorts', async function () {
@@ -453,10 +453,10 @@ describe('Cursor', () => {
 
       const cursor = new Cursor(collection, {})
       const docs = await cursor.sort({ company: 1, cost: 1 })
-      docs.length.should.equal(60)
+      expect(docs.length).toEqual(60)
 
       for (let i = 0; i < docs.length; i++) {
-        docs[i].nid.should.equal(i + 1)
+        expect(docs[i].nid).toEqual(i + 1)
       }
     })
   })
@@ -491,7 +491,7 @@ describe('Cursor', () => {
       const cursor = new Cursor(collection, {})
       cursor.sort({ age: 1 }) // For easier finding
       let docs = await cursor
-      docs.length.should.equal(5)
+      expect(docs.length).toEqual(5)
       assert.deepEqual(docs[0], doc0)
       assert.deepEqual(docs[1], doc3)
       assert.deepEqual(docs[2], doc2)
@@ -500,7 +500,7 @@ describe('Cursor', () => {
 
       cursor.projection({})
       docs = await cursor
-      docs.length.should.equal(5)
+      expect(docs.length).toEqual(5)
       assert.deepEqual(docs[0], doc0)
       assert.deepEqual(docs[1], doc3)
       assert.deepEqual(docs[2], doc2)
@@ -514,7 +514,7 @@ describe('Cursor', () => {
       cursor.projection({ age: 1, name: 1 })
       let docs = await cursor
 
-      docs.length.should.equal(5)
+      expect(docs.length).toEqual(5)
 
       // Takes the _id by default
       assert.deepEqual(docs[0], { age: 5, name: 'Jo', _id: doc0._id })
@@ -525,7 +525,7 @@ describe('Cursor', () => {
 
       cursor.projection({ age: 1, name: 1, _id: 0 })
       docs = await cursor
-      docs.length.should.equal(5)
+      expect(docs.length).toEqual(5)
       assert.deepEqual(docs[0], { age: 5, name: 'Jo' })
       assert.deepEqual(docs[1], { age: 23, name: 'LM' })
       assert.deepEqual(docs[2], { age: 52, name: 'Grafitti' })
@@ -540,7 +540,7 @@ describe('Cursor', () => {
 
       const docs = await cursor
 
-      docs.length.should.equal(5)
+      expect(docs.length).toEqual(5)
 
       assert.deepEqual(docs[0], { _id: doc0._id })
       assert.deepEqual(docs[1], { _id: doc3._id })
@@ -556,7 +556,7 @@ describe('Cursor', () => {
 
       let docs = await cursor
 
-      docs.length.should.equal(5)
+      expect(docs.length).toEqual(5)
 
       // Takes the _id by default
       assert.deepEqual(docs[0], {
@@ -580,7 +580,7 @@ describe('Cursor', () => {
       cursor.projection({ age: 0, name: 0, _id: 0 })
 
       docs = await cursor
-      docs.length.should.equal(5)
+      expect(docs.length).toEqual(5)
       assert.deepEqual(docs[0], {
         planet: 'B',
         toys: { bebe: true, ballon: 'much' },

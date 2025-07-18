@@ -1,9 +1,9 @@
-import { expect } from 'chai'
+import { expect, describe, it, afterEach } from 'vitest'
 import { RedisTestUtil } from '../redis-test-util'
 import { TestUtility } from '../test-utility'
 import { RedisTransport } from '../../server'
 
-describe('Redis Pub/Sub', function () {
+describe('Redis Pub/Sub', () => {
   const redis = new RedisTestUtil()
   const test1 = new TestUtility({ globalInstance: false, redis: true })
   const test2 = new TestUtility({ globalInstance: false, redis: true })

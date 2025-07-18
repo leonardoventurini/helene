@@ -1,17 +1,18 @@
+import { expect, describe, it } from 'vitest'
 import { uid } from './custom-utils'
 
-describe('customUtils', function () {
-  describe('uid', function () {
-    it('Generates a string of the expected length', function () {
-      uid(3).length.should.equal(3)
-      uid(16).length.should.equal(16)
-      uid(42).length.should.equal(42)
-      uid(1000).length.should.equal(1000)
+describe('customUtils', () => {
+  describe('uid', () => {
+    it('Generates a string of the expected length', () => {
+      expect(uid(3).length).toEqual(3)
+      expect(uid(16).length).toEqual(16)
+      expect(uid(42).length).toEqual(42)
+      expect(uid(1000).length).toEqual(1000)
     })
 
     // Very small probability of conflict
-    it('Generated uids should not be the same', function () {
-      uid(56).should.not.equal(uid(56))
+    it('Generated uids should not be the same', () => {
+      expect(uid(56)).not.toEqual(uid(56))
     })
   })
 })

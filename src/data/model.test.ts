@@ -1,4 +1,4 @@
-import { assert, expect } from 'chai'
+import { expect, describe, it, assert } from 'vitest'
 import { deserialize, serialize } from './serialization'
 import { Collection } from './collection'
 
@@ -18,7 +18,7 @@ import {
 } from './model'
 import { NodeStorage } from './node'
 
-describe('Model', function () {
+describe('Model', () => {
   describe('Serialization, deserialization', function () {
     it('Can serialize and deserialize strings', function () {
       let a, b, c
@@ -26,51 +26,51 @@ describe('Model', function () {
       a = { test: 'Some string' }
       b = serialize(a)
       c = deserialize(b)
-      b.indexOf('\n').should.equal(-1)
-      c.test.should.equal('Some string')
+      expect(b.indexOf('\n')).toEqual(-1)
+      expect(c.test).toEqual('Some string')
 
       // Even if a property is a string containing a new line, the serialized
       // version doesn't. The new line must still be there upon deserialization
       a = { test: 'With a new\nline' }
       b = serialize(a)
       c = deserialize(b)
-      c.test.should.equal('With a new\nline')
-      a.test.indexOf('\n').should.not.equal(-1)
-      b.indexOf('\n').should.equal(-1)
-      c.test.indexOf('\n').should.not.equal(-1)
+      expect(c.test).toEqual('With a new\nline')
+      expect(a.test.indexOf('\n')).not.toEqual(-1)
+      expect(b.indexOf('\n')).toEqual(-1)
+      expect(c.test.indexOf('\n')).not.toEqual(-1)
     })
 
     it('Can serialize and deserialize booleans', function () {
       const a = { test: true }
       const b = serialize(a)
       const c = deserialize(b)
-      b.indexOf('\n').should.equal(-1)
-      c.test.should.equal(true)
+      expect(b.indexOf('\n')).toEqual(-1)
+      expect(c.test).toEqual(true)
     })
 
     it('Can serialize and deserialize numbers', function () {
       const a = { test: 5 }
       const b = serialize(a)
       const c = deserialize(b)
-      b.indexOf('\n').should.equal(-1)
-      c.test.should.equal(5)
+      expect(b.indexOf('\n')).toEqual(-1)
+      expect(c.test).toEqual(5)
     })
 
     it('Can serialize and deserialize null', function () {
       const a = { test: null }
       const b = serialize(a)
       deserialize(b)
-      b.indexOf('\n').should.equal(-1)
-      assert.isNull(a.test)
+      expect(b.indexOf('\n')).toEqual(-1)
+      expect(a.test).toBeNull()
     })
 
     it('undefined fields are removed when serialized', function () {
       const a = { bloup: undefined, hello: 'world' },
         b = serialize(a),
         c = deserialize(b)
-      Object.keys(c).length.should.equal(1)
-      c.hello.should.equal('world')
-      assert.isUndefined(c.bloup)
+      expect(Object.keys(c).length).toEqual(1)
+      expect(c.hello).toEqual('world')
+      expect(c.bloup).toBeUndefined()
     })
 
     it('Can serialize and deserialize a date', function () {
@@ -79,10 +79,10 @@ describe('Model', function () {
       const a = { test: d }
       const b = serialize(a)
       const c = deserialize(b)
-      b.indexOf('\n').should.equal(-1)
-      b.should.equal('{"test":{"$$date":' + d.getTime() + '}}')
-      isDate(c.test).should.equal(true)
-      c.test.getTime().should.equal(d.getTime())
+      expect(b.indexOf('\n')).toEqual(-1)
+      expect(b).toEqual('{"test":{"$$date":' + d.getTime() + '}}')
+      expect(isDate(c.test)).toEqual(true)
+      expect(c.test.getTime()).toEqual(d.getTime())
     })
 
     it('Can serialize and deserialize sub objects', function () {
@@ -91,10 +91,10 @@ describe('Model', function () {
       const a = { test: { something: 39, also: d, yes: { again: 'yes' } } }
       const b = serialize(a)
       const c = deserialize(b)
-      b.indexOf('\n').should.equal(-1)
-      c.test.something.should.equal(39)
-      c.test.also.getTime().should.equal(d.getTime())
-      c.test.yes.again.should.equal('yes')
+      expect(b.indexOf('\n')).toEqual(-1)
+      expect(c.test.something).toEqual(39)
+      expect(c.test.also.getTime()).toEqual(d.getTime())
+      expect(c.test.yes.again).toEqual('yes')
     })
 
     it('Can serialize and deserialize sub arrays', function () {
@@ -103,10 +103,10 @@ describe('Model', function () {
       const a = { test: [39, d, { again: 'yes' }] }
       const b = serialize(a)
       const c = deserialize(b)
-      b.indexOf('\n').should.equal(-1)
-      c.test[0].should.equal(39)
-      c.test[1].getTime().should.equal(d.getTime())
-      c.test[2].again.should.equal('yes')
+      expect(b.indexOf('\n')).toEqual(-1)
+      expect(c.test[0]).toEqual(39)
+      expect(c.test[1].getTime()).toEqual(d.getTime())
+      expect(c.test[2].again).toEqual('yes')
     })
 
     it('Reject field names beginning with a $ sign or containing a dot, except the four edge cases', function () {
@@ -121,10 +121,10 @@ describe('Model', function () {
       // Normal cases
       expect(function () {
         b = serialize(a1)
-      }).to.throw()
+      }).toThrow()
       expect(function () {
         b = serialize(a2)
-      }).to.throw()
+      }).toThrow()
 
       // Edge cases
       b = serialize(e1)
@@ -140,14 +140,14 @@ describe('Model', function () {
         fs.unlinkSync('workspace/test1.db')
       }
 
-      assert.strictEqual(fs.existsSync('workspace/test1.db'), false)
+      expect(fs.existsSync('workspace/test1.db')).toEqual(false)
       const db1 = new Collection({
         name: 'workspace/test1.db',
         storage: new NodeStorage(),
       })
 
       await db1.loadDatabase()
-      await assert.isFulfilled(db1.insert({ hello: badString }))
+      await db1.insert({ hello: badString })
 
       const db2 = new Collection({
         name: 'workspace/test1.db',
@@ -170,29 +170,29 @@ describe('Model', function () {
 
   describe('Object checking', function () {
     it('Field names beginning with a $ sign are forbidden', function () {
-      assert.isDefined(checkObject)
-      ;(function () {
+      expect(checkObject).toBeDefined()
+      expect(function () {
         checkObject({ $bad: true })
-      }).should.throw()
-      ;(function () {
+      }).toThrow()
+      expect(function () {
         checkObject({ some: 42, nested: { again: 'no', $worse: true } })
-      }).should.throw()
+      }).toThrow()
 
       // This shouldn't throw since "$actuallyok" is not a field name
       checkObject({ some: 42, nested: [5, 'no', '$actuallyok', true] })
-      ;(function () {
+      expect(function () {
         checkObject({
           some: 42,
           nested: [5, 'no', '$actuallyok', true, { $hidden: 'useless' }],
         })
-      }).should.throw()
+      }).toThrow()
     })
 
     it('Field names cannot contain a .', function () {
-      assert.isDefined(checkObject)
-      ;(function () {
+      expect(checkObject).toBeDefined()
+      expect(function () {
         checkObject({ 'so.bad': true })
-      }).should.throw()
+      }).toThrow()
 
       // Recursive behaviour testing done in the above test on $ signs
     })
@@ -204,18 +204,18 @@ describe('Model', function () {
     })
 
     it('Can check if an object is a primitive or not', function () {
-      isPrimitiveType(5).should.equal(true)
-      isPrimitiveType('sdsfdfs').should.equal(true)
-      isPrimitiveType(0).should.equal(true)
-      isPrimitiveType(true).should.equal(true)
-      isPrimitiveType(false).should.equal(true)
-      isPrimitiveType(new Date()).should.equal(true)
-      isPrimitiveType([]).should.equal(true)
-      isPrimitiveType([3, 'try']).should.equal(true)
-      isPrimitiveType(null).should.equal(true)
+      expect(isPrimitiveType(5)).toEqual(true)
+      expect(isPrimitiveType('sdsfdfs')).toEqual(true)
+      expect(isPrimitiveType(0)).toEqual(true)
+      expect(isPrimitiveType(true)).toEqual(true)
+      expect(isPrimitiveType(false)).toEqual(true)
+      expect(isPrimitiveType(new Date())).toEqual(true)
+      expect(isPrimitiveType([])).toEqual(true)
+      expect(isPrimitiveType([3, 'try'])).toEqual(true)
+      expect(isPrimitiveType(null)).toEqual(true)
 
-      isPrimitiveType({}).should.equal(false)
-      isPrimitiveType({ a: 42 }).should.equal(false)
+      expect(isPrimitiveType({})).toEqual(false)
+      expect(isPrimitiveType({ a: 42 })).toEqual(false)
     })
   }) // ==== End of 'Object checking' ==== //
 
@@ -224,13 +224,13 @@ describe('Model', function () {
       const d = new Date(),
         obj = { a: ['ee', 'ff', 42], date: d, subobj: { a: 'b', b: 'c' } },
         res = deepCopy(obj)
-      res.a.length.should.equal(3)
-      res.a[0].should.equal('ee')
-      res.a[1].should.equal('ff')
-      res.a[2].should.equal(42)
-      res.date.getTime().should.equal(d.getTime())
-      res.subobj.a.should.equal('b')
-      res.subobj.b.should.equal('c')
+      expect(res.a.length).toEqual(3)
+      expect(res.a[0]).toEqual('ee')
+      expect(res.a[1]).toEqual('ff')
+      expect(res.a[2]).toEqual(42)
+      expect(res.date.getTime()).toEqual(d.getTime())
+      expect(res.subobj.a).toEqual('b')
+      expect(res.subobj.b).toEqual('c')
 
       obj.a.push('ggg')
       // @ts-ignore
@@ -239,22 +239,22 @@ describe('Model', function () {
       obj.subobj = []
 
       // Even if the original object is modified, the copied one isn't
-      res.a.length.should.equal(3)
-      res.a[0].should.equal('ee')
-      res.a[1].should.equal('ff')
-      res.a[2].should.equal(42)
-      res.date.getTime().should.equal(d.getTime())
-      res.subobj.a.should.equal('b')
-      res.subobj.b.should.equal('c')
+      expect(res.a.length).toEqual(3)
+      expect(res.a[0]).toEqual('ee')
+      expect(res.a[1]).toEqual('ff')
+      expect(res.a[2]).toEqual(42)
+      expect(res.date.getTime()).toEqual(d.getTime())
+      expect(res.subobj.a).toEqual('b')
+      expect(res.subobj.b).toEqual('c')
     })
 
     it('Should deep copy the contents of an array', function () {
       const a = [{ hello: 'world' }],
         b = deepCopy(a)
-      b[0].hello.should.equal('world')
+      expect(b[0].hello).toEqual('world')
       b[0].hello = 'another'
-      b[0].hello.should.equal('another')
-      a[0].hello.should.equal('world')
+      expect(b[0].hello).toEqual('another')
+      expect(a[0].hello).toEqual('world')
     })
 
     it('Without the strictKeys option, everything gets deep copied', function () {
@@ -292,13 +292,13 @@ describe('Model', function () {
         updateQuery = { replace: 'done', bloup: [1, 8] }
 
       const t = modify(obj, updateQuery)
-      t.replace.should.equal('done')
-      t.bloup.length.should.equal(2)
-      t.bloup[0].should.equal(1)
-      t.bloup[1].should.equal(8)
+      expect(t.replace).toEqual('done')
+      expect(t.bloup.length).toEqual(2)
+      expect(t.bloup[0]).toEqual(1)
+      expect(t.bloup[1]).toEqual(8)
 
-      assert.isUndefined(t.some)
-      t._id.should.equal('keepit')
+      expect(t.some).toBeUndefined()
+      expect(t._id).toEqual('keepit')
     })
 
     it('Throw an error if trying to change the _id field in a copy-type modification', function () {
@@ -306,7 +306,7 @@ describe('Model', function () {
         updateQuery = { replace: 'done', bloup: [1, 8], _id: 'donttryit' }
       expect(function () {
         modify(obj, updateQuery)
-      }).to.throw("You cannot change a document's _id")
+      }).toThrow("You cannot change a document's _id")
 
       updateQuery._id = 'keepit'
       modify(obj, updateQuery) // No error thrown
@@ -318,7 +318,7 @@ describe('Model', function () {
 
       expect(function () {
         modify(obj, updateQuery)
-      }).to.throw('You cannot mix modifiers and normal fields')
+      }).toThrow('You cannot mix modifiers and normal fields')
     })
 
     it('Throw an error if trying to use an inexistent modifier', function () {
@@ -327,7 +327,7 @@ describe('Model', function () {
 
       expect(function () {
         modify(obj, updateQuery)
-      }).to.throw(/^Unknown modifier .modify/)
+      }).toThrow(/^Unknown modifier .modify/)
     })
 
     it('Throw an error if a modifier is used with a non-object argument', function () {
@@ -336,7 +336,7 @@ describe('Model', function () {
 
       expect(function () {
         modify(obj, updateQuery)
-      }).to.throw(/Modifier .set's argument must be an object/)
+      }).toThrow(/Modifier .set's argument must be an object/)
     })
 
     describe('$set modifier', function () {
@@ -345,15 +345,15 @@ describe('Model', function () {
           updateQuery = { $set: { some: 'changed', nay: 'yes indeed' } },
           modified = modify(obj, updateQuery)
 
-        Object.keys(modified).length.should.equal(3)
-        modified.some.should.equal('changed')
-        modified.yup.should.equal('yes')
-        modified.nay.should.equal('yes indeed')
+        expect(Object.keys(modified).length).toEqual(3)
+        expect(modified.some).toEqual('changed')
+        expect(modified.yup).toEqual('yes')
+        expect(modified.nay).toEqual('yes indeed')
 
-        Object.keys(obj).length.should.equal(3)
-        obj.some.should.equal('thing')
-        obj.yup.should.equal('yes')
-        obj.nay.should.equal('noes')
+        expect(Object.keys(obj).length).toEqual(3)
+        expect(obj.some).toEqual('thing')
+        expect(obj.yup).toEqual('yes')
+        expect(obj.nay).toEqual('noes')
       })
 
       it('Creates fields to set if they dont exist yet', function () {
@@ -361,10 +361,10 @@ describe('Model', function () {
           updateQuery = { $set: { some: 'changed', nay: 'yes indeed' } },
           modified = modify(obj, updateQuery)
 
-        Object.keys(modified).length.should.equal(3)
-        modified.some.should.equal('changed')
-        modified.yup.should.equal('yes')
-        modified.nay.should.equal('yes indeed')
+        expect(Object.keys(modified).length).toEqual(3)
+        expect(modified.some).toEqual('changed')
+        expect(modified.yup).toEqual('yes')
+        expect(modified.nay).toEqual('yes indeed')
       })
 
       it('Can set sub-fields and create them if necessary', function () {
@@ -378,10 +378,12 @@ describe('Model', function () {
           },
           modified = modify(obj, updateQuery)
 
-        isEqual(modified, {
-          yup: { subfield: 'changed', yop: 'yes indeed' },
-          totally: { doesnt: { exist: 'now it does' } },
-        }).should.equal(true)
+        expect(
+          isEqual(modified, {
+            yup: { subfield: 'changed', yop: 'yes indeed' },
+            totally: { doesnt: { exist: 'now it does' } },
+          }),
+        ).toEqual(true)
       })
 
       it("Doesn't replace a falsy field by an object when recursively following dot notation", function () {
@@ -453,27 +455,29 @@ describe('Model', function () {
           const obj = { some: 'thing', yup: 'yes', nay: 2 },
             updateQuery = { $inc: { nay: 'notanumber' } }
           modify(obj, updateQuery)
-        }).to.throw()
+        }).toThrow()
         expect(function () {
           const obj = { some: 'thing', yup: 'yes', nay: 'nope' },
             updateQuery = { $inc: { nay: 1 } }
           modify(obj, updateQuery)
-        }).to.throw()
+        }).toThrow()
       })
 
       it('Can increment number fields or create and initialize them if needed', function () {
         const obj = { some: 'thing', nay: 40 }
 
         let modified = modify(obj, { $inc: { nay: 2 } })
-        isEqual(modified, { some: 'thing', nay: 42 }).should.equal(true)
+        expect(isEqual(modified, { some: 'thing', nay: 42 })).toEqual(true)
 
         // Incidentally, this tests that obj was not modified
         modified = modify(obj, { $inc: { inexistent: -6 } })
-        isEqual(modified, {
-          some: 'thing',
-          nay: 40,
-          inexistent: -6,
-        }).should.equal(true)
+        expect(
+          isEqual(modified, {
+            some: 'thing',
+            nay: 40,
+            inexistent: -6,
+          }),
+        ).toEqual(true)
       })
 
       it('Works recursively', function () {
@@ -482,11 +486,13 @@ describe('Model', function () {
         const modified = modify(obj, {
           $inc: { 'nay.nope': -2, 'blip.blop': 123 },
         })
-        isEqual(modified, {
-          some: 'thing',
-          nay: { nope: 38 },
-          blip: { blop: 123 },
-        }).should.equal(true)
+        expect(
+          isEqual(modified, {
+            some: 'thing',
+            nay: { nope: 38 },
+            blip: { blop: 123 },
+          }),
+        ).toEqual(true)
       })
     }) // End of '$inc modifier'
 
@@ -520,15 +526,15 @@ describe('Model', function () {
       it('Throw if we try to push to a non-array', function () {
         let obj = { arr: 'hello' },
           modified
-        ;(function () {
+        expect(function () {
           modified = modify(obj, { $push: { arr: 'world' } })
-        }).should.throw()
+        }).toThrow()
 
         // @ts-ignore
         obj = { arr: { nested: 45 } }
-        ;(function () {
+        expect(function () {
           modified = modify(obj, { $push: { 'arr.nested': 'world' } })
-        }).should.throw()
+        }).toThrow()
       })
 
       it('Can use the $each modifier to add multiple values to an array at once', function () {
@@ -541,12 +547,12 @@ describe('Model', function () {
         })
         expect(function () {
           modified = modify(obj, { $push: { arr: { $each: 45 } } })
-        }).to.throw()
+        }).toThrow()
         expect(function () {
           modified = modify(obj, {
             $push: { arr: { $each: ['world'], unauthorized: true } },
           })
-        }).to.throw()
+        }).toThrow()
       })
 
       it('Can use the $slice modifier to limit the number of array elements', function () {
@@ -615,16 +621,16 @@ describe('Model', function () {
         // $each not specified, but $slice is
         modified = modify(obj, { $push: { arr: { $slice: 1 } } })
         assert.deepEqual(modified, { arr: ['hello'] })
-        ;(function () {
+        expect(function () {
           modified = modify(obj, {
             $push: { arr: { $slice: 1, unauthorized: true } },
           })
-        }).should.throw()
-        ;(function () {
+        }).toThrow()
+        expect(function () {
           modified = modify(obj, {
             $push: { arr: { $each: [], unauthorized: true } },
           })
-        }).should.throw()
+        }).toThrow()
       })
     }) // End of '$push modifier'
 
@@ -652,7 +658,7 @@ describe('Model', function () {
         const obj = { arr: 'hello' }
         expect(function () {
           modify(obj, { $addToSet: { arr: 'world' } })
-        }).to.throw()
+        }).toThrow()
       })
 
       it('Use deep-equality to check whether we can add a value to a set', function () {
@@ -676,12 +682,12 @@ describe('Model', function () {
         assert.deepEqual(modified, { arr: ['hello', 'world', 'earth'] })
         expect(function () {
           modified = modify(obj, { $addToSet: { arr: { $each: 45 } } })
-        }).to.throw()
+        }).toThrow()
         expect(function () {
           modified = modify(obj, {
             $addToSet: { arr: { $each: ['world'], unauthorized: true } },
           })
-        }).to.throw()
+        }).toThrow()
       })
     }) // End of '$addToSet modifier'
 
@@ -689,21 +695,21 @@ describe('Model', function () {
       it('Throw if called on a non array, a non defined field or a non integer', function () {
         let obj = { arr: 'hello' },
           modified
-        ;(function () {
+        expect(function () {
           modified = modify(obj, { $pop: { arr: 1 } })
-        }).should.throw()
+        }).toThrow()
 
         // @ts-ignore
         obj = { bloup: 'nope' }
         expect(function () {
           modified = modify(obj, { $pop: { arr: 1 } })
-        }).to.throw()
+        }).toThrow()
 
         // @ts-ignore
         obj = { arr: [1, 4, 8] }
-        ;(function () {
+        expect(function () {
           modified = modify(obj, { $pop: { arr: true } })
-        }).should.throw()
+        }).toThrow()
       })
 
       it('Can remove the first and last element of an array', function () {
@@ -752,7 +758,7 @@ describe('Model', function () {
 
         expect(function () {
           modified = modify(obj, { $pull: { arr: 'world' } })
-        }).to.throw()
+        }).toThrow()
       })
 
       it('Use deep-equality to check whether we can remove a value from a set', function () {
@@ -787,8 +793,8 @@ describe('Model', function () {
           updateQuery = { $max: { number: 12 } },
           modified = modify(obj, updateQuery)
 
-        modified.should.deep.equal({ some: 'thing', number: 12 })
-        obj.should.deep.equal({ some: 'thing', number: 10 })
+        expect(modified).toEqual({ some: 'thing', number: 12 })
+        expect(obj).toEqual({ some: 'thing', number: 10 })
       })
 
       it('Will not update the field if new value is smaller than current one', function () {
@@ -796,7 +802,7 @@ describe('Model', function () {
           updateQuery = { $max: { number: 9 } },
           modified = modify(obj, updateQuery)
 
-        modified.should.deep.equal({ some: 'thing', number: 10 })
+        expect(modified).toEqual({ some: 'thing', number: 10 })
       })
 
       it('Will create the field if it does not exist', function () {
@@ -804,7 +810,7 @@ describe('Model', function () {
           updateQuery = { $max: { number: 10 } },
           modified = modify(obj, updateQuery)
 
-        modified.should.deep.equal({ some: 'thing', number: 10 })
+        expect(modified).toEqual({ some: 'thing', number: 10 })
       })
 
       it('Works on embedded documents', function () {
@@ -812,7 +818,7 @@ describe('Model', function () {
           updateQuery = { $max: { 'somethingElse.number': 12 } },
           modified = modify(obj, updateQuery)
 
-        modified.should.deep.equal({
+        expect(modified).toEqual({
           some: 'thing',
           somethingElse: { number: 12 },
         })
@@ -825,8 +831,8 @@ describe('Model', function () {
           updateQuery = { $min: { number: 8 } },
           modified = modify(obj, updateQuery)
 
-        modified.should.deep.equal({ some: 'thing', number: 8 })
-        obj.should.deep.equal({ some: 'thing', number: 10 })
+        expect(modified).toEqual({ some: 'thing', number: 8 })
+        expect(obj).toEqual({ some: 'thing', number: 10 })
       })
 
       it('Will not update the field if new value is greater than current one', function () {
@@ -834,7 +840,7 @@ describe('Model', function () {
           updateQuery = { $min: { number: 12 } },
           modified = modify(obj, updateQuery)
 
-        modified.should.deep.equal({ some: 'thing', number: 10 })
+        expect(modified).toEqual({ some: 'thing', number: 10 })
       })
 
       it('Will create the field if it does not exist', function () {
@@ -842,7 +848,7 @@ describe('Model', function () {
           updateQuery = { $min: { number: 10 } },
           modified = modify(obj, updateQuery)
 
-        modified.should.deep.equal({ some: 'thing', number: 10 })
+        expect(modified).toEqual({ some: 'thing', number: 10 })
       })
 
       it('Works on embedded documents', function () {
@@ -850,7 +856,7 @@ describe('Model', function () {
           updateQuery = { $min: { 'somethingElse.number': 8 } },
           modified = modify(obj, updateQuery)
 
-        modified.should.deep.equal({
+        expect(modified).toEqual({
           some: 'thing',
           somethingElse: { number: 8 },
         })
@@ -877,11 +883,11 @@ describe('Model', function () {
         ['quite', 5],
       ]
 
-      compareThings(undefined, undefined).should.equal(0)
+      expect(compareThings(undefined, undefined)).toEqual(0)
 
       otherStuff.forEach(function (stuff) {
-        compareThings(undefined, stuff).should.equal(-1)
-        compareThings(stuff, undefined).should.equal(1)
+        expect(compareThings(undefined, stuff)).toEqual(-1)
+        expect(compareThings(stuff, undefined)).toEqual(1)
       })
     })
 
@@ -902,11 +908,11 @@ describe('Model', function () {
         ['quite', 5],
       ]
 
-      compareThings(null, null).should.equal(0)
+      expect(compareThings(null, null)).toEqual(0)
 
       otherStuff.forEach(function (stuff) {
-        compareThings(null, stuff).should.equal(-1)
-        compareThings(stuff, null).should.equal(1)
+        expect(compareThings(null, stuff)).toEqual(-1)
+        expect(compareThings(stuff, null)).toEqual(1)
       })
     })
 
@@ -924,18 +930,18 @@ describe('Model', function () {
         ],
         numbers = [-12, 0, 12, 5.7]
 
-      compareThings(-12, 0).should.equal(-1)
-      compareThings(0, -3).should.equal(1)
-      compareThings(5.7, 2).should.equal(1)
-      compareThings(5.7, 12.3).should.equal(-1)
-      compareThings(0, 0).should.equal(0)
-      compareThings(-2.6, -2.6).should.equal(0)
-      compareThings(5, 5).should.equal(0)
+      expect(compareThings(-12, 0)).toEqual(-1)
+      expect(compareThings(0, -3)).toEqual(1)
+      expect(compareThings(5.7, 2)).toEqual(1)
+      expect(compareThings(5.7, 12.3)).toEqual(-1)
+      expect(compareThings(0, 0)).toEqual(0)
+      expect(compareThings(-2.6, -2.6)).toEqual(0)
+      expect(compareThings(5, 5)).toEqual(0)
 
       otherStuff.forEach(function (stuff) {
         numbers.forEach(function (number) {
-          compareThings(number, stuff).should.equal(-1)
-          compareThings(stuff, number).should.equal(1)
+          expect(compareThings(number, stuff)).toEqual(-1)
+          expect(compareThings(stuff, number)).toEqual(1)
         })
       })
     })
@@ -952,15 +958,15 @@ describe('Model', function () {
         ],
         strings = ['', 'string', 'hello world']
 
-      compareThings('', 'hey').should.equal(-1)
-      compareThings('hey', '').should.equal(1)
-      compareThings('hey', 'hew').should.equal(1)
-      compareThings('hey', 'hey').should.equal(0)
+      expect(compareThings('', 'hey')).toEqual(-1)
+      expect(compareThings('hey', '')).toEqual(1)
+      expect(compareThings('hey', 'hew')).toEqual(1)
+      expect(compareThings('hey', 'hey')).toEqual(0)
 
       otherStuff.forEach(function (stuff) {
         strings.forEach(function (string) {
-          compareThings(string, stuff).should.equal(-1)
-          compareThings(stuff, string).should.equal(1)
+          expect(compareThings(string, stuff)).toEqual(-1)
+          expect(compareThings(stuff, string)).toEqual(1)
         })
       })
     })
@@ -975,15 +981,15 @@ describe('Model', function () {
         ],
         bools = [true, false]
 
-      compareThings(true, true).should.equal(0)
-      compareThings(false, false).should.equal(0)
-      compareThings(true, false).should.equal(1)
-      compareThings(false, true).should.equal(-1)
+      expect(compareThings(true, true)).toEqual(0)
+      expect(compareThings(false, false)).toEqual(0)
+      expect(compareThings(true, false)).toEqual(1)
+      expect(compareThings(false, true)).toEqual(-1)
 
       otherStuff.forEach(function (stuff) {
         bools.forEach(function (bool) {
-          compareThings(bool, stuff).should.equal(-1)
-          compareThings(stuff, bool).should.equal(1)
+          expect(compareThings(bool, stuff)).toEqual(-1)
+          expect(compareThings(stuff, bool)).toEqual(1)
         })
       })
     })
@@ -993,16 +999,16 @@ describe('Model', function () {
         dates = [new Date(-123), new Date(), new Date(5555), new Date(0)],
         now = new Date()
 
-      compareThings(now, now).should.equal(0)
-      compareThings(new Date(54341), now).should.equal(-1)
-      compareThings(now, new Date(54341)).should.equal(1)
-      compareThings(new Date(0), new Date(-54341)).should.equal(1)
-      compareThings(new Date(123), new Date(4341)).should.equal(-1)
+      expect(compareThings(now, now)).toEqual(0)
+      expect(compareThings(new Date(54341), now)).toEqual(-1)
+      expect(compareThings(now, new Date(54341))).toEqual(1)
+      expect(compareThings(new Date(0), new Date(-54341))).toEqual(1)
+      expect(compareThings(new Date(123), new Date(4341))).toEqual(-1)
 
       otherStuff.forEach(function (stuff) {
         dates.forEach(function (date) {
-          compareThings(date, stuff).should.equal(-1)
-          compareThings(stuff, date).should.equal(1)
+          expect(compareThings(date, stuff)).toEqual(-1)
+          expect(compareThings(stuff, date)).toEqual(1)
         })
       })
     })
@@ -1010,39 +1016,43 @@ describe('Model', function () {
     it('Then arrays', function () {
       const otherStuff = [{}, { hello: 'world' }],
         arrays = [[], ['yes'], ['hello', 5]]
-      compareThings([], []).should.equal(0)
-      compareThings(['hello'], []).should.equal(1)
-      compareThings([], ['hello']).should.equal(-1)
-      compareThings(['hello'], ['hello', 'world']).should.equal(-1)
-      compareThings(['hello', 'earth'], ['hello', 'world']).should.equal(-1)
-      compareThings(['hello', 'zzz'], ['hello', 'world']).should.equal(1)
-      compareThings(['hello', 'world'], ['hello', 'world']).should.equal(0)
+      expect(compareThings([], [])).toEqual(0)
+      expect(compareThings(['hello'], [])).toEqual(1)
+      expect(compareThings([], ['hello'])).toEqual(-1)
+      expect(compareThings(['hello'], ['hello', 'world'])).toEqual(-1)
+      expect(compareThings(['hello', 'earth'], ['hello', 'world'])).toEqual(-1)
+      expect(compareThings(['hello', 'zzz'], ['hello', 'world'])).toEqual(1)
+      expect(compareThings(['hello', 'world'], ['hello', 'world'])).toEqual(0)
 
       otherStuff.forEach(function (stuff) {
         arrays.forEach(function (array) {
-          compareThings(array, stuff).should.equal(-1)
-          compareThings(stuff, array).should.equal(1)
+          expect(compareThings(array, stuff)).toEqual(-1)
+          expect(compareThings(stuff, array)).toEqual(1)
         })
       })
     })
 
     it('And finally objects', function () {
-      compareThings({}, {}).should.equal(0)
-      compareThings({ a: 42 }, { a: 312 }).should.equal(-1)
-      compareThings({ a: '42' }, { a: '312' }).should.equal(1)
-      compareThings({ a: 42, b: 312 }, { b: 312, a: 42 }).should.equal(0)
-      compareThings({ a: 42, b: 312, c: 54 }, { b: 313, a: 42 }).should.equal(
-        -1,
-      )
+      expect(compareThings({}, {})).toEqual(0)
+      expect(compareThings({ a: 42 }, { a: 312 })).toEqual(-1)
+      expect(compareThings({ a: '42' }, { a: '312' })).toEqual(1)
+      expect(compareThings({ a: 42, b: 312 }, { b: 312, a: 42 })).toEqual(0)
+      expect(
+        compareThings({ a: 42, b: 312, c: 54 }, { b: 313, a: 42 }),
+      ).toEqual(-1)
     })
 
     it('Can specify custom string comparison function', function () {
-      compareThings('hello', 'bloup', function (a, b) {
-        return a < b ? -1 : 1
-      }).should.equal(1)
-      compareThings('hello', 'bloup', function (a, b) {
-        return a > b ? -1 : 1
-      }).should.equal(-1)
+      expect(
+        compareThings('hello', 'bloup', function (a, b) {
+          return a < b ? -1 : 1
+        }),
+      ).toEqual(1)
+      expect(
+        compareThings('hello', 'bloup', function (a, b) {
+          return a > b ? -1 : 1
+        }),
+      ).toEqual(-1)
     })
   }) // ==== End of 'Comparing things' ==== //
 
@@ -1069,7 +1079,7 @@ describe('Model', function () {
 
         for (i = 0; i < toTest.length; i += 1) {
           for (j = 0; j < toTestAgainst.length; j += 1) {
-            areThingsEqual(toTest[i], toTestAgainst[j]).should.equal(i === j)
+            expect(areThingsEqual(toTest[i], toTestAgainst[j])).toEqual(i === j)
           }
         }
       })
@@ -1096,7 +1106,7 @@ describe('Model', function () {
         let i
 
         for (i = 0; i < toTest.length; i += 1) {
-          areThingsEqual(toTest[i], toTestAgainst[i]).should.equal(false)
+          expect(areThingsEqual(toTest[i], toTestAgainst[i])).toEqual(false)
         }
       })
 
@@ -1113,44 +1123,50 @@ describe('Model', function () {
         let i
 
         for (i = 0; i < toTestAgainst.length; i += 1) {
-          areThingsEqual([1, 2, 3], toTestAgainst[i]).should.equal(false)
-          areThingsEqual(toTestAgainst[i], []).should.equal(false)
+          expect(areThingsEqual([1, 2, 3], toTestAgainst[i])).toEqual(false)
+          expect(areThingsEqual(toTestAgainst[i], [])).toEqual(false)
 
-          areThingsEqual(undefined, toTestAgainst[i]).should.equal(false)
-          areThingsEqual(toTestAgainst[i], undefined).should.equal(false)
+          expect(areThingsEqual(undefined, toTestAgainst[i])).toEqual(false)
+          expect(areThingsEqual(toTestAgainst[i], undefined)).toEqual(false)
         }
       })
 
       it('Can test objects equality', function () {
-        areThingsEqual({ hello: 'world' }, {}).should.equal(false)
-        areThingsEqual({ hello: 'world' }, { hello: 'mars' }).should.equal(
+        expect(areThingsEqual({ hello: 'world' }, {})).toEqual(false)
+        expect(areThingsEqual({ hello: 'world' }, { hello: 'mars' })).toEqual(
           false,
         )
-        areThingsEqual(
-          { hello: 'world' },
-          { hello: 'world', temperature: 42 },
-        ).should.equal(false)
-        areThingsEqual(
-          { hello: 'world', other: { temperature: 42 } },
-          { hello: 'world', other: { temperature: 42 } },
-        ).should.equal(true)
+        expect(
+          areThingsEqual(
+            { hello: 'world' },
+            { hello: 'world', temperature: 42 },
+          ),
+        ).toEqual(false)
+        expect(
+          areThingsEqual(
+            { hello: 'world', other: { temperature: 42 } },
+            { hello: 'world', other: { temperature: 42 } },
+          ),
+        ).toEqual(true)
       })
     })
 
     describe('Getting a fields value in dot notation', function () {
       it('Return first-level and nested values', function () {
-        getDotValue({ hello: 'world' }, 'hello').should.equal('world')
-        getDotValue(
-          { hello: 'world', type: { planet: true, blue: true } },
-          'type.planet',
-        ).should.equal(true)
+        expect(getDotValue({ hello: 'world' }, 'hello')).toEqual('world')
+        expect(
+          getDotValue(
+            { hello: 'world', type: { planet: true, blue: true } },
+            'type.planet',
+          ),
+        ).toEqual(true)
       })
 
       it('Return undefined if the field cannot be found in the object', function () {
-        assert.isUndefined(getDotValue({ hello: 'world' }, 'helloo'))
-        assert.isUndefined(
+        expect(getDotValue({ hello: 'world' }, 'helloo')).toBeUndefined()
+        expect(
           getDotValue({ hello: 'world', type: { planet: true } }, 'type.plane'),
-        )
+        ).toBeUndefined()
       })
 
       it('Can navigate inside arrays with dot notation, and return the array of values in that case', function () {
@@ -1230,7 +1246,7 @@ describe('Model', function () {
           },
           'planets.3',
         )
-        assert.isUndefined(dv)
+        expect(dv).toBeUndefined()
 
         // Index in nested array
         dv = getDotValue(
@@ -1262,63 +1278,68 @@ describe('Model', function () {
           },
           'data.planets.0.name',
         )
-        dv.should.equal('Earth')
+        expect(dv).toEqual('Earth')
       })
     })
 
     describe('Field equality', function () {
       it('Can find documents with simple fields', function () {
-        match({ test: 'yeah' }, { test: 'yea' }).should.equal(false)
-        match({ test: 'yeah' }, { test: 'yeahh' }).should.equal(false)
-        match({ test: 'yeah' }, { test: 'yeah' }).should.equal(true)
+        expect(match({ test: 'yeah' }, { test: 'yea' })).toEqual(false)
+        expect(match({ test: 'yeah' }, { test: 'yeahh' })).toEqual(false)
+        expect(match({ test: 'yeah' }, { test: 'yeah' })).toEqual(true)
       })
 
       it('Can find documents with the dot-notation', function () {
-        match({ test: { ooo: 'yeah' } }, { 'test.ooo': 'yea' }).should.equal(
+        expect(match({ test: { ooo: 'yeah' } }, { 'test.ooo': 'yea' })).toEqual(
           false,
         )
-        match({ test: { ooo: 'yeah' } }, { 'test.oo': 'yeah' }).should.equal(
+        expect(match({ test: { ooo: 'yeah' } }, { 'test.oo': 'yeah' })).toEqual(
           false,
         )
-        match({ test: { ooo: 'yeah' } }, { 'tst.ooo': 'yeah' }).should.equal(
+        expect(match({ test: { ooo: 'yeah' } }, { 'tst.ooo': 'yeah' })).toEqual(
           false,
         )
-        match({ test: { ooo: 'yeah' } }, { 'test.ooo': 'yeah' }).should.equal(
-          true,
-        )
+        expect(
+          match({ test: { ooo: 'yeah' } }, { 'test.ooo': 'yeah' }),
+        ).toEqual(true)
       })
 
       it('Cannot find undefined', function () {
-        match({ test: undefined }, { test: undefined }).should.equal(false)
-        match(
-          { test: { pp: undefined } },
-          { 'test.pp': undefined },
-        ).should.equal(false)
+        expect(match({ test: undefined }, { test: undefined })).toEqual(false)
+        expect(
+          match({ test: { pp: undefined } }, { 'test.pp': undefined }),
+        ).toEqual(false)
       })
 
       it('Nested objects are deep-equality matched and not treated as sub-queries', function () {
-        match({ a: { b: 5 } }, { a: { b: 5 } }).should.equal(true)
-        match({ a: { b: 5, c: 3 } }, { a: { b: 5 } }).should.equal(false)
+        expect(match({ a: { b: 5 } }, { a: { b: 5 } })).toEqual(true)
+        expect(match({ a: { b: 5, c: 3 } }, { a: { b: 5 } })).toEqual(false)
 
-        match({ a: { b: 5 } }, { a: { b: { $lt: 10 } } }).should.equal(false)
-        ;(function () {
+        expect(match({ a: { b: 5 } }, { a: { b: { $lt: 10 } } })).toEqual(false)
+        expect(function () {
           match({ a: { b: 5 } }, { a: { $or: [{ b: 10 }, { b: 5 }] } })
-        }).should.throw()
+        }).toThrow()
       })
 
       it('Can match for field equality inside an array with the dot notation', function () {
-        match(
-          { a: true, b: ['node', 'embedded', 'database'] },
-          { 'b.1': 'node' },
-        ).should.equal(false)
-        match(
-          { a: true, b: ['node', 'embedded', 'database'] },
-          { 'b.1': 'embedded' },
-        ).should.equal(true)
-        match(
-          { a: true, b: ['node', 'embedded', 'database'] },
-          { 'b.1': 'database' },
-        ).should.equal(false)
+        expect(
+          match(
+            { a: true, b: ['node', 'embedded', 'database'] },
+            { 'b.1': 'node' },
+          ),
+        ).toEqual(false)
+        expect(
+          match(
+            { a: true, b: ['node', 'embedded', 'database'] },
+            { 'b.1': 'embedded' },
+          ),
+        ).toEqual(true)
+        expect(
+          match(
+            { a: true, b: ['node', 'embedded', 'database'] },
+            { 'b.1': 'database' },
+          ),
+        ).toEqual(false)
       })
     })
 
@@ -1327,29 +1348,30 @@ describe('Model', function () {
         const d = new Date(),
           r = new RegExp(String(d.getTime()))
 
-        match({ test: true }, { test: /true/ }).should.equal(false)
-        match({ test: null }, { test: /null/ }).should.equal(false)
-        match({ test: 42 }, { test: /42/ }).should.equal(false)
-        match({ test: d }, { test: r }).should.equal(false)
+        expect(match({ test: true }, { test: /true/ })).toEqual(false)
+        expect(match({ test: null }, { test: /null/ })).toEqual(false)
+        expect(match({ test: 42 }, { test: /42/ })).toEqual(false)
+        expect(match({ test: d }, { test: r })).toEqual(false)
       })
 
       it('Can match strings using basic querying', function () {
-        match({ test: 'true' }, { test: /true/ }).should.equal(true)
-        match({ test: 'babaaaar' }, { test: /aba+r/ }).should.equal(true)
-        match({ test: 'babaaaar' }, { test: /^aba+r/ }).should.equal(false)
-        match({ test: 'true' }, { test: /t[ru]e/ }).should.equal(false)
+        expect(match({ test: 'true' }, { test: /true/ })).toEqual(true)
+        expect(match({ test: 'babaaaar' }, { test: /aba+r/ })).toEqual(true)
+        expect(match({ test: 'babaaaar' }, { test: /^aba+r/ })).toEqual(false)
+        expect(match({ test: 'true' }, { test: /t[ru]e/ })).toEqual(false)
       })
 
       it('Can match strings using the $regex operator', function () {
-        match({ test: 'true' }, { test: { $regex: /true/ } }).should.equal(true)
-        match({ test: 'babaaaar' }, { test: { $regex: /aba+r/ } }).should.equal(
+        expect(match({ test: 'true' }, { test: { $regex: /true/ } })).toEqual(
           true,
         )
-        match(
-          { test: 'babaaaar' },
-          { test: { $regex: /^aba+r/ } },
-        ).should.equal(false)
-        match({ test: 'true' }, { test: { $regex: /t[ru]e/ } }).should.equal(
+        expect(
+          match({ test: 'babaaaar' }, { test: { $regex: /aba+r/ } }),
+        ).toEqual(true)
+        expect(
+          match({ test: 'babaaaar' }, { test: { $regex: /^aba+r/ } }),
+        ).toEqual(false)
+        expect(match({ test: 'true' }, { test: { $regex: /t[ru]e/ } })).toEqual(
           false,
         )
       })
@@ -1357,300 +1379,336 @@ describe('Model', function () {
       it('Will throw if $regex operator is used with a non regex value', function () {
         expect(function () {
           match({ test: 'true' }, { test: { $regex: 42 } })
-        }).to.throw()
+        }).toThrow()
         expect(function () {
           match({ test: 'true' }, { test: { $regex: 'true' } })
-        }).to.throw()
+        }).toThrow()
       })
 
       it('Can use the $regex operator in cunjunction with other operators', function () {
-        match(
-          { test: 'helLo' },
-          { test: { $regex: /ll/i, $nin: ['helL', 'helLop'] } },
-        ).should.equal(true)
-        match(
-          { test: 'helLo' },
-          { test: { $regex: /ll/i, $nin: ['helLo', 'helLop'] } },
-        ).should.equal(false)
+        expect(
+          match(
+            { test: 'helLo' },
+            { test: { $regex: /ll/i, $nin: ['helL', 'helLop'] } },
+          ),
+        ).toEqual(true)
+        expect(
+          match(
+            { test: 'helLo' },
+            { test: { $regex: /ll/i, $nin: ['helLo', 'helLop'] } },
+          ),
+        ).toEqual(false)
       })
 
       it('Can use dot-notation', function () {
-        match(
-          { test: { nested: 'true' } },
-          { 'test.nested': /true/ },
-        ).should.equal(true)
-        match(
-          { test: { nested: 'babaaaar' } },
-          { 'test.nested': /^aba+r/ },
-        ).should.equal(false)
+        expect(
+          match({ test: { nested: 'true' } }, { 'test.nested': /true/ }),
+        ).toEqual(true)
+        expect(
+          match({ test: { nested: 'babaaaar' } }, { 'test.nested': /^aba+r/ }),
+        ).toEqual(false)
 
-        match(
-          { test: { nested: 'true' } },
-          { 'test.nested': { $regex: /true/ } },
-        ).should.equal(true)
-        match(
-          { test: { nested: 'babaaaar' } },
-          { 'test.nested': { $regex: /^aba+r/ } },
-        ).should.equal(false)
+        expect(
+          match(
+            { test: { nested: 'true' } },
+            { 'test.nested': { $regex: /true/ } },
+          ),
+        ).toEqual(true)
+        expect(
+          match(
+            { test: { nested: 'babaaaar' } },
+            { 'test.nested': { $regex: /^aba+r/ } },
+          ),
+        ).toEqual(false)
       })
     })
 
     describe('$lt', function () {
       it('Cannot compare a field to an object, an array, null or a boolean, it will return false', function () {
-        match({ a: 5 }, { a: { $lt: { a: 6 } } }).should.equal(false)
-        match({ a: 5 }, { a: { $lt: [6, 7] } }).should.equal(false)
-        match({ a: 5 }, { a: { $lt: null } }).should.equal(false)
-        match({ a: 5 }, { a: { $lt: true } }).should.equal(false)
+        expect(match({ a: 5 }, { a: { $lt: { a: 6 } } })).toEqual(false)
+        expect(match({ a: 5 }, { a: { $lt: [6, 7] } })).toEqual(false)
+        expect(match({ a: 5 }, { a: { $lt: null } })).toEqual(false)
+        expect(match({ a: 5 }, { a: { $lt: true } })).toEqual(false)
       })
 
       it('Can compare numbers, with or without dot notation', function () {
-        match({ a: 5 }, { a: { $lt: 6 } }).should.equal(true)
-        match({ a: 5 }, { a: { $lt: 5 } }).should.equal(false)
-        match({ a: 5 }, { a: { $lt: 4 } }).should.equal(false)
+        expect(match({ a: 5 }, { a: { $lt: 6 } })).toEqual(true)
+        expect(match({ a: 5 }, { a: { $lt: 5 } })).toEqual(false)
+        expect(match({ a: 5 }, { a: { $lt: 4 } })).toEqual(false)
 
-        match({ a: { b: 5 } }, { 'a.b': { $lt: 6 } }).should.equal(true)
-        match({ a: { b: 5 } }, { 'a.b': { $lt: 3 } }).should.equal(false)
+        expect(match({ a: { b: 5 } }, { 'a.b': { $lt: 6 } })).toEqual(true)
+        expect(match({ a: { b: 5 } }, { 'a.b': { $lt: 3 } })).toEqual(false)
       })
 
       it('Can compare strings, with or without dot notation', function () {
-        match({ a: 'nedb' }, { a: { $lt: 'nedc' } }).should.equal(true)
-        match({ a: 'nedb' }, { a: { $lt: 'neda' } }).should.equal(false)
+        expect(match({ a: 'nedb' }, { a: { $lt: 'nedc' } })).toEqual(true)
+        expect(match({ a: 'nedb' }, { a: { $lt: 'neda' } })).toEqual(false)
 
-        match({ a: { b: 'nedb' } }, { 'a.b': { $lt: 'nedc' } }).should.equal(
+        expect(match({ a: { b: 'nedb' } }, { 'a.b': { $lt: 'nedc' } })).toEqual(
           true,
         )
-        match({ a: { b: 'nedb' } }, { 'a.b': { $lt: 'neda' } }).should.equal(
+        expect(match({ a: { b: 'nedb' } }, { 'a.b': { $lt: 'neda' } })).toEqual(
           false,
         )
       })
 
       it('If field is an array field, a match means a match on at least one element', function () {
-        match({ a: [5, 10] }, { a: { $lt: 4 } }).should.equal(false)
-        match({ a: [5, 10] }, { a: { $lt: 6 } }).should.equal(true)
-        match({ a: [5, 10] }, { a: { $lt: 11 } }).should.equal(true)
+        expect(match({ a: [5, 10] }, { a: { $lt: 4 } })).toEqual(false)
+        expect(match({ a: [5, 10] }, { a: { $lt: 6 } })).toEqual(true)
+        expect(match({ a: [5, 10] }, { a: { $lt: 11 } })).toEqual(true)
       })
 
       it('Works with dates too', function () {
-        match(
-          { a: new Date(1000) },
-          { a: { $gte: new Date(1001) } },
-        ).should.equal(false)
-        match(
-          { a: new Date(1000) },
-          { a: { $lt: new Date(1001) } },
-        ).should.equal(true)
+        expect(
+          match({ a: new Date(1000) }, { a: { $gte: new Date(1001) } }),
+        ).toEqual(false)
+        expect(
+          match({ a: new Date(1000) }, { a: { $lt: new Date(1001) } }),
+        ).toEqual(true)
       })
     })
 
     // General behaviour is tested in the block about $lt. Here we just test operators work
     describe('Other comparison operators: $lte, $gt, $gte, $ne, $in, $exists', function () {
       it('$lte', function () {
-        match({ a: 5 }, { a: { $lte: 6 } }).should.equal(true)
-        match({ a: 5 }, { a: { $lte: 5 } }).should.equal(true)
-        match({ a: 5 }, { a: { $lte: 4 } }).should.equal(false)
+        expect(match({ a: 5 }, { a: { $lte: 6 } })).toEqual(true)
+        expect(match({ a: 5 }, { a: { $lte: 5 } })).toEqual(true)
+        expect(match({ a: 5 }, { a: { $lte: 4 } })).toEqual(false)
       })
 
       it('$gt', function () {
-        match({ a: 5 }, { a: { $gt: 6 } }).should.equal(false)
-        match({ a: 5 }, { a: { $gt: 5 } }).should.equal(false)
-        match({ a: 5 }, { a: { $gt: 4 } }).should.equal(true)
+        expect(match({ a: 5 }, { a: { $gt: 6 } })).toEqual(false)
+        expect(match({ a: 5 }, { a: { $gt: 5 } })).toEqual(false)
+        expect(match({ a: 5 }, { a: { $gt: 4 } })).toEqual(true)
       })
 
       it('$gte', function () {
-        match({ a: 5 }, { a: { $gte: 6 } }).should.equal(false)
-        match({ a: 5 }, { a: { $gte: 5 } }).should.equal(true)
-        match({ a: 5 }, { a: { $gte: 4 } }).should.equal(true)
+        expect(match({ a: 5 }, { a: { $gte: 6 } })).toEqual(false)
+        expect(match({ a: 5 }, { a: { $gte: 5 } })).toEqual(true)
+        expect(match({ a: 5 }, { a: { $gte: 4 } })).toEqual(true)
       })
 
       it('$ne', function () {
-        match({ a: 5 }, { a: { $ne: 4 } }).should.equal(true)
-        match({ a: 5 }, { a: { $ne: 5 } }).should.equal(false)
-        match({ a: 5 }, { b: { $ne: 5 } }).should.equal(true)
-        match({ a: false }, { a: { $ne: false } }).should.equal(false)
+        expect(match({ a: 5 }, { a: { $ne: 4 } })).toEqual(true)
+        expect(match({ a: 5 }, { a: { $ne: 5 } })).toEqual(false)
+        expect(match({ a: 5 }, { b: { $ne: 5 } })).toEqual(true)
+        expect(match({ a: false }, { a: { $ne: false } })).toEqual(false)
       })
 
       it('$in', function () {
-        match({ a: 5 }, { a: { $in: [6, 8, 9] } }).should.equal(false)
-        match({ a: 6 }, { a: { $in: [6, 8, 9] } }).should.equal(true)
-        match({ a: 7 }, { a: { $in: [6, 8, 9] } }).should.equal(false)
-        match({ a: 8 }, { a: { $in: [6, 8, 9] } }).should.equal(true)
-        match({ a: 9 }, { a: { $in: [6, 8, 9] } }).should.equal(true)
-        ;(function () {
+        expect(match({ a: 5 }, { a: { $in: [6, 8, 9] } })).toEqual(false)
+        expect(match({ a: 6 }, { a: { $in: [6, 8, 9] } })).toEqual(true)
+        expect(match({ a: 7 }, { a: { $in: [6, 8, 9] } })).toEqual(false)
+        expect(match({ a: 8 }, { a: { $in: [6, 8, 9] } })).toEqual(true)
+        expect(match({ a: 9 }, { a: { $in: [6, 8, 9] } })).toEqual(true)
+        expect(function () {
           match({ a: 5 }, { a: { $in: 5 } })
-        }).should.throw()
+        }).toThrow()
       })
 
       it('$nin', function () {
-        match({ a: 5 }, { a: { $nin: [6, 8, 9] } }).should.equal(true)
-        match({ a: 6 }, { a: { $nin: [6, 8, 9] } }).should.equal(false)
-        match({ a: 7 }, { a: { $nin: [6, 8, 9] } }).should.equal(true)
-        match({ a: 8 }, { a: { $nin: [6, 8, 9] } }).should.equal(false)
-        match({ a: 9 }, { a: { $nin: [6, 8, 9] } }).should.equal(false)
+        expect(match({ a: 5 }, { a: { $nin: [6, 8, 9] } })).toEqual(true)
+        expect(match({ a: 6 }, { a: { $nin: [6, 8, 9] } })).toEqual(false)
+        expect(match({ a: 7 }, { a: { $nin: [6, 8, 9] } })).toEqual(true)
+        expect(match({ a: 8 }, { a: { $nin: [6, 8, 9] } })).toEqual(false)
+        expect(match({ a: 9 }, { a: { $nin: [6, 8, 9] } })).toEqual(false)
 
         // Matches if field doesn't exist
-        match({ a: 9 }, { b: { $nin: [6, 8, 9] } }).should.equal(true)
-        ;(function () {
+        expect(match({ a: 9 }, { b: { $nin: [6, 8, 9] } })).toEqual(true)
+        expect(function () {
           match({ a: 5 }, { a: { $in: 5 } })
-        }).should.throw()
+        }).toThrow()
       })
 
       it('$exists', function () {
-        match({ a: 5 }, { a: { $exists: 1 } }).should.equal(true)
-        match({ a: 5 }, { a: { $exists: true } }).should.equal(true)
-        match({ a: 5 }, { a: { $exists: new Date() } }).should.equal(true)
-        match({ a: 5 }, { a: { $exists: '' } }).should.equal(true)
-        match({ a: 5 }, { a: { $exists: [] } }).should.equal(true)
-        match({ a: 5 }, { a: { $exists: {} } }).should.equal(true)
+        expect(match({ a: 5 }, { a: { $exists: 1 } })).toEqual(true)
+        expect(match({ a: 5 }, { a: { $exists: true } })).toEqual(true)
+        expect(match({ a: 5 }, { a: { $exists: new Date() } })).toEqual(true)
+        expect(match({ a: 5 }, { a: { $exists: '' } })).toEqual(true)
+        expect(match({ a: 5 }, { a: { $exists: [] } })).toEqual(true)
+        expect(match({ a: 5 }, { a: { $exists: {} } })).toEqual(true)
 
-        match({ a: 5 }, { a: { $exists: 0 } }).should.equal(false)
-        match({ a: 5 }, { a: { $exists: false } }).should.equal(false)
-        match({ a: 5 }, { a: { $exists: null } }).should.equal(false)
-        match({ a: 5 }, { a: { $exists: undefined } }).should.equal(false)
+        expect(match({ a: 5 }, { a: { $exists: 0 } })).toEqual(false)
+        expect(match({ a: 5 }, { a: { $exists: false } })).toEqual(false)
+        expect(match({ a: 5 }, { a: { $exists: null } })).toEqual(false)
+        expect(match({ a: 5 }, { a: { $exists: undefined } })).toEqual(false)
 
-        match({ a: 5 }, { b: { $exists: true } }).should.equal(false)
+        expect(match({ a: 5 }, { b: { $exists: true } })).toEqual(false)
 
-        match({ a: 5 }, { b: { $exists: false } }).should.equal(true)
+        expect(match({ a: 5 }, { b: { $exists: false } })).toEqual(true)
       })
     })
 
     describe('Comparing on arrays', function () {
       it('Can perform a direct array match', function () {
-        match(
-          { planets: ['Earth', 'Mars', 'Pluto'], something: 'else' },
-          { planets: ['Earth', 'Mars'] },
-        ).should.equal(false)
-        match(
-          { planets: ['Earth', 'Mars', 'Pluto'], something: 'else' },
-          { planets: ['Earth', 'Mars', 'Pluto'] },
-        ).should.equal(true)
-        match(
-          { planets: ['Earth', 'Mars', 'Pluto'], something: 'else' },
-          { planets: ['Earth', 'Pluto', 'Mars'] },
-        ).should.equal(false)
+        expect(
+          match(
+            { planets: ['Earth', 'Mars', 'Pluto'], something: 'else' },
+            { planets: ['Earth', 'Mars'] },
+          ),
+        ).toEqual(false)
+        expect(
+          match(
+            { planets: ['Earth', 'Mars', 'Pluto'], something: 'else' },
+            { planets: ['Earth', 'Mars', 'Pluto'] },
+          ),
+        ).toEqual(true)
+        expect(
+          match(
+            { planets: ['Earth', 'Mars', 'Pluto'], something: 'else' },
+            { planets: ['Earth', 'Pluto', 'Mars'] },
+          ),
+        ).toEqual(false)
       })
 
       it('Can query on the size of an array field', function () {
         // Non nested documents
-        match(
-          {
-            childrens: [
-              { name: 'Huey', age: 3 },
-              { name: 'Dewey', age: 7 },
-              { name: 'Louie', age: 12 },
-            ],
-          },
-          { childrens: { $size: 0 } },
-        ).should.equal(false)
-        match(
-          {
-            childrens: [
-              { name: 'Huey', age: 3 },
-              { name: 'Dewey', age: 7 },
-              { name: 'Louie', age: 12 },
-            ],
-          },
-          { childrens: { $size: 1 } },
-        ).should.equal(false)
-        match(
-          {
-            childrens: [
-              { name: 'Huey', age: 3 },
-              { name: 'Dewey', age: 7 },
-              { name: 'Louie', age: 12 },
-            ],
-          },
-          { childrens: { $size: 2 } },
-        ).should.equal(false)
-        match(
-          {
-            childrens: [
-              { name: 'Huey', age: 3 },
-              { name: 'Dewey', age: 7 },
-              { name: 'Louie', age: 12 },
-            ],
-          },
-          { childrens: { $size: 3 } },
-        ).should.equal(true)
+        expect(
+          match(
+            {
+              childrens: [
+                { name: 'Huey', age: 3 },
+                { name: 'Dewey', age: 7 },
+                { name: 'Louie', age: 12 },
+              ],
+            },
+            { childrens: { $size: 0 } },
+          ),
+        ).toEqual(false)
+        expect(
+          match(
+            {
+              childrens: [
+                { name: 'Huey', age: 3 },
+                { name: 'Dewey', age: 7 },
+                { name: 'Louie', age: 12 },
+              ],
+            },
+            { childrens: { $size: 1 } },
+          ),
+        ).toEqual(false)
+        expect(
+          match(
+            {
+              childrens: [
+                { name: 'Huey', age: 3 },
+                { name: 'Dewey', age: 7 },
+                { name: 'Louie', age: 12 },
+              ],
+            },
+            { childrens: { $size: 2 } },
+          ),
+        ).toEqual(false)
+        expect(
+          match(
+            {
+              childrens: [
+                { name: 'Huey', age: 3 },
+                { name: 'Dewey', age: 7 },
+                { name: 'Louie', age: 12 },
+              ],
+            },
+            { childrens: { $size: 3 } },
+          ),
+        ).toEqual(true)
 
         // Nested documents
-        match(
-          {
-            hello: 'world',
-            description: { satellites: ['Moon', 'Hubble'], diameter: 6300 },
-          },
-          { 'description.satellites': { $size: 0 } },
-        ).should.equal(false)
-        match(
-          {
-            hello: 'world',
-            description: { satellites: ['Moon', 'Hubble'], diameter: 6300 },
-          },
-          { 'description.satellites': { $size: 1 } },
-        ).should.equal(false)
-        match(
-          {
-            hello: 'world',
-            description: { satellites: ['Moon', 'Hubble'], diameter: 6300 },
-          },
-          { 'description.satellites': { $size: 2 } },
-        ).should.equal(true)
-        match(
-          {
-            hello: 'world',
-            description: { satellites: ['Moon', 'Hubble'], diameter: 6300 },
-          },
-          { 'description.satellites': { $size: 3 } },
-        ).should.equal(false)
+        expect(
+          match(
+            {
+              hello: 'world',
+              description: { satellites: ['Moon', 'Hubble'], diameter: 6300 },
+            },
+            { 'description.satellites': { $size: 0 } },
+          ),
+        ).toEqual(false)
+        expect(
+          match(
+            {
+              hello: 'world',
+              description: { satellites: ['Moon', 'Hubble'], diameter: 6300 },
+            },
+            { 'description.satellites': { $size: 1 } },
+          ),
+        ).toEqual(false)
+        expect(
+          match(
+            {
+              hello: 'world',
+              description: { satellites: ['Moon', 'Hubble'], diameter: 6300 },
+            },
+            { 'description.satellites': { $size: 2 } },
+          ),
+        ).toEqual(true)
+        expect(
+          match(
+            {
+              hello: 'world',
+              description: { satellites: ['Moon', 'Hubble'], diameter: 6300 },
+            },
+            { 'description.satellites': { $size: 3 } },
+          ),
+        ).toEqual(false)
 
         // Using a projected array
-        match(
-          {
-            childrens: [
-              { name: 'Huey', age: 3 },
-              { name: 'Dewey', age: 7 },
-              { name: 'Louie', age: 12 },
-            ],
-          },
-          { 'childrens.names': { $size: 0 } },
-        ).should.equal(false)
-        match(
-          {
-            childrens: [
-              { name: 'Huey', age: 3 },
-              { name: 'Dewey', age: 7 },
-              { name: 'Louie', age: 12 },
-            ],
-          },
-          { 'childrens.names': { $size: 1 } },
-        ).should.equal(false)
-        match(
-          {
-            childrens: [
-              { name: 'Huey', age: 3 },
-              { name: 'Dewey', age: 7 },
-              { name: 'Louie', age: 12 },
-            ],
-          },
-          { 'childrens.names': { $size: 2 } },
-        ).should.equal(false)
-        match(
-          {
-            childrens: [
-              { name: 'Huey', age: 3 },
-              { name: 'Dewey', age: 7 },
-              { name: 'Louie', age: 12 },
-            ],
-          },
-          { 'childrens.names': { $size: 3 } },
-        ).should.equal(true)
+        expect(
+          match(
+            {
+              childrens: [
+                { name: 'Huey', age: 3 },
+                { name: 'Dewey', age: 7 },
+                { name: 'Louie', age: 12 },
+              ],
+            },
+            { 'childrens.names': { $size: 0 } },
+          ),
+        ).toEqual(false)
+        expect(
+          match(
+            {
+              childrens: [
+                { name: 'Huey', age: 3 },
+                { name: 'Dewey', age: 7 },
+                { name: 'Louie', age: 12 },
+              ],
+            },
+            { 'childrens.names': { $size: 1 } },
+          ),
+        ).toEqual(false)
+        expect(
+          match(
+            {
+              childrens: [
+                { name: 'Huey', age: 3 },
+                { name: 'Dewey', age: 7 },
+                { name: 'Louie', age: 12 },
+              ],
+            },
+            { 'childrens.names': { $size: 2 } },
+          ),
+        ).toEqual(false)
+        expect(
+          match(
+            {
+              childrens: [
+                { name: 'Huey', age: 3 },
+                { name: 'Dewey', age: 7 },
+                { name: 'Louie', age: 12 },
+              ],
+            },
+            { 'childrens.names': { $size: 3 } },
+          ),
+        ).toEqual(true)
       })
 
       it('$size operator works with empty arrays', function () {
-        match({ childrens: [] }, { childrens: { $size: 0 } }).should.equal(true)
-        match({ childrens: [] }, { childrens: { $size: 2 } }).should.equal(
+        expect(match({ childrens: [] }, { childrens: { $size: 0 } })).toEqual(
+          true,
+        )
+        expect(match({ childrens: [] }, { childrens: { $size: 2 } })).toEqual(
           false,
         )
-        match({ childrens: [] }, { childrens: { $size: 3 } }).should.equal(
+        expect(match({ childrens: [] }, { childrens: { $size: 3 } })).toEqual(
           false,
         )
       })
@@ -1658,293 +1716,343 @@ describe('Model', function () {
       it('Should throw an error if a query operator is used without comparing to an integer', function () {
         expect(function () {
           match({ a: [1, 5] }, { a: { $size: 1.4 } })
-        }).to.throw()
+        }).toThrow()
         expect(function () {
           match({ a: [1, 5] }, { a: { $size: 'fdf' } })
-        }).to.throw()
+        }).toThrow()
         expect(function () {
           match({ a: [1, 5] }, { a: { $size: { $lt: 5 } } })
-        }).to.throw()
+        }).toThrow()
       })
 
       it('Using $size operator on a non-array field should prevent match but not throw', function () {
-        match({ a: 5 }, { a: { $size: 1 } }).should.equal(false)
+        expect(match({ a: 5 }, { a: { $size: 1 } })).toEqual(false)
       })
 
       it('Can use $size several times in the same matcher', function () {
-        match(
-          { childrens: ['Riri', 'Fifi', 'Loulou'] },
-          // @ts-ignore
-          { childrens: { $size: 3, $size: 3 } },
-        ).should.equal(true)
-        match(
-          { childrens: ['Riri', 'Fifi', 'Loulou'] },
-          // @ts-ignore
-          { childrens: { $size: 3, $size: 4 } },
-        ).should.equal(false) // Of course this can never be true
+        expect(
+          match(
+            { childrens: ['Riri', 'Fifi', 'Loulou'] },
+            // @ts-ignore
+            { childrens: { $size: 3, $size: 3 } },
+          ),
+        ).toEqual(true)
+        expect(
+          match(
+            { childrens: ['Riri', 'Fifi', 'Loulou'] },
+            // @ts-ignore
+            { childrens: { $size: 3, $size: 4 } },
+          ),
+        ).toEqual(false) // Of course this can never be true
       })
 
       it('Can query array documents with multiple simultaneous conditions', function () {
         // Non nested documents
-        match(
-          {
-            childrens: [
-              { name: 'Huey', age: 3 },
-              { name: 'Dewey', age: 7 },
-              { name: 'Louie', age: 12 },
-            ],
-          },
-          { childrens: { $elemMatch: { name: 'Dewey', age: 7 } } },
-        ).should.equal(true)
-        match(
-          {
-            childrens: [
-              { name: 'Huey', age: 3 },
-              { name: 'Dewey', age: 7 },
-              { name: 'Louie', age: 12 },
-            ],
-          },
-          { childrens: { $elemMatch: { name: 'Dewey', age: 12 } } },
-        ).should.equal(false)
-        match(
-          {
-            childrens: [
-              { name: 'Huey', age: 3 },
-              { name: 'Dewey', age: 7 },
-              { name: 'Louie', age: 12 },
-            ],
-          },
-          { childrens: { $elemMatch: { name: 'Louie', age: 3 } } },
-        ).should.equal(false)
+        expect(
+          match(
+            {
+              childrens: [
+                { name: 'Huey', age: 3 },
+                { name: 'Dewey', age: 7 },
+                { name: 'Louie', age: 12 },
+              ],
+            },
+            { childrens: { $elemMatch: { name: 'Dewey', age: 7 } } },
+          ),
+        ).toEqual(true)
+        expect(
+          match(
+            {
+              childrens: [
+                { name: 'Huey', age: 3 },
+                { name: 'Dewey', age: 7 },
+                { name: 'Louie', age: 12 },
+              ],
+            },
+            { childrens: { $elemMatch: { name: 'Dewey', age: 12 } } },
+          ),
+        ).toEqual(false)
+        expect(
+          match(
+            {
+              childrens: [
+                { name: 'Huey', age: 3 },
+                { name: 'Dewey', age: 7 },
+                { name: 'Louie', age: 12 },
+              ],
+            },
+            { childrens: { $elemMatch: { name: 'Louie', age: 3 } } },
+          ),
+        ).toEqual(false)
 
         // Nested documents
-        match(
-          {
-            outer: {
-              childrens: [
-                { name: 'Huey', age: 3 },
-                { name: 'Dewey', age: 7 },
-                { name: 'Louie', age: 12 },
-              ],
+        expect(
+          match(
+            {
+              outer: {
+                childrens: [
+                  { name: 'Huey', age: 3 },
+                  { name: 'Dewey', age: 7 },
+                  { name: 'Louie', age: 12 },
+                ],
+              },
             },
-          },
-          { 'outer.childrens': { $elemMatch: { name: 'Dewey', age: 7 } } },
-        ).should.equal(true)
-        match(
-          {
-            outer: {
-              childrens: [
-                { name: 'Huey', age: 3 },
-                { name: 'Dewey', age: 7 },
-                { name: 'Louie', age: 12 },
-              ],
+            { 'outer.childrens': { $elemMatch: { name: 'Dewey', age: 7 } } },
+          ),
+        ).toEqual(true)
+        expect(
+          match(
+            {
+              outer: {
+                childrens: [
+                  { name: 'Huey', age: 3 },
+                  { name: 'Dewey', age: 7 },
+                  { name: 'Louie', age: 12 },
+                ],
+              },
             },
-          },
-          { 'outer.childrens': { $elemMatch: { name: 'Dewey', age: 12 } } },
-        ).should.equal(false)
-        match(
-          {
-            outer: {
-              childrens: [
-                { name: 'Huey', age: 3 },
-                { name: 'Dewey', age: 7 },
-                { name: 'Louie', age: 12 },
-              ],
+            { 'outer.childrens': { $elemMatch: { name: 'Dewey', age: 12 } } },
+          ),
+        ).toEqual(false)
+        expect(
+          match(
+            {
+              outer: {
+                childrens: [
+                  { name: 'Huey', age: 3 },
+                  { name: 'Dewey', age: 7 },
+                  { name: 'Louie', age: 12 },
+                ],
+              },
             },
-          },
-          { 'outer.childrens': { $elemMatch: { name: 'Louie', age: 3 } } },
-        ).should.equal(false)
+            { 'outer.childrens': { $elemMatch: { name: 'Louie', age: 3 } } },
+          ),
+        ).toEqual(false)
       })
 
       it('$elemMatch operator works with empty arrays', function () {
-        match(
-          { childrens: [] },
-          { childrens: { $elemMatch: { name: 'Mitsos' } } },
-        ).should.equal(false)
-        match(
-          { childrens: [] },
-          { childrens: { $elemMatch: {} } },
-        ).should.equal(false)
+        expect(
+          match(
+            { childrens: [] },
+            { childrens: { $elemMatch: { name: 'Mitsos' } } },
+          ),
+        ).toEqual(false)
+        expect(
+          match({ childrens: [] }, { childrens: { $elemMatch: {} } }),
+        ).toEqual(false)
       })
 
       it('Can use more complex comparisons inside nested query documents', function () {
-        match(
-          {
-            childrens: [
-              { name: 'Huey', age: 3 },
-              { name: 'Dewey', age: 7 },
-              { name: 'Louie', age: 12 },
-            ],
-          },
-          {
-            childrens: {
-              $elemMatch: { name: 'Dewey', age: { $gt: 6, $lt: 8 } },
+        expect(
+          match(
+            {
+              childrens: [
+                { name: 'Huey', age: 3 },
+                { name: 'Dewey', age: 7 },
+                { name: 'Louie', age: 12 },
+              ],
             },
-          },
-        ).should.equal(true)
-        match(
-          {
-            childrens: [
-              { name: 'Huey', age: 3 },
-              { name: 'Dewey', age: 7 },
-              { name: 'Louie', age: 12 },
-            ],
-          },
-          {
-            childrens: {
-              $elemMatch: { name: 'Dewey', age: { $in: [6, 7, 8] } },
+            {
+              childrens: {
+                $elemMatch: { name: 'Dewey', age: { $gt: 6, $lt: 8 } },
+              },
             },
-          },
-        ).should.equal(true)
-        match(
-          {
-            childrens: [
-              { name: 'Huey', age: 3 },
-              { name: 'Dewey', age: 7 },
-              { name: 'Louie', age: 12 },
-            ],
-          },
-          {
-            childrens: {
-              $elemMatch: { name: 'Dewey', age: { $gt: 6, $lt: 7 } },
+          ),
+        ).toEqual(true)
+        expect(
+          match(
+            {
+              childrens: [
+                { name: 'Huey', age: 3 },
+                { name: 'Dewey', age: 7 },
+                { name: 'Louie', age: 12 },
+              ],
             },
-          },
-        ).should.equal(false)
-        match(
-          {
-            childrens: [
-              { name: 'Huey', age: 3 },
-              { name: 'Dewey', age: 7 },
-              { name: 'Louie', age: 12 },
-            ],
-          },
-          {
-            childrens: {
-              $elemMatch: { name: 'Louie', age: { $gt: 6, $lte: 7 } },
+            {
+              childrens: {
+                $elemMatch: { name: 'Dewey', age: { $in: [6, 7, 8] } },
+              },
             },
-          },
-        ).should.equal(false)
+          ),
+        ).toEqual(true)
+        expect(
+          match(
+            {
+              childrens: [
+                { name: 'Huey', age: 3 },
+                { name: 'Dewey', age: 7 },
+                { name: 'Louie', age: 12 },
+              ],
+            },
+            {
+              childrens: {
+                $elemMatch: { name: 'Dewey', age: { $gt: 6, $lt: 7 } },
+              },
+            },
+          ),
+        ).toEqual(false)
+        expect(
+          match(
+            {
+              childrens: [
+                { name: 'Huey', age: 3 },
+                { name: 'Dewey', age: 7 },
+                { name: 'Louie', age: 12 },
+              ],
+            },
+            {
+              childrens: {
+                $elemMatch: { name: 'Louie', age: { $gt: 6, $lte: 7 } },
+              },
+            },
+          ),
+        ).toEqual(false)
       })
     })
 
     describe('Logical operators $or, $and, $not', function () {
       it('Any of the subqueries should match for an $or to match', function () {
-        match(
-          { hello: 'world' },
-          { $or: [{ hello: 'pluton' }, { hello: 'world' }] },
-        ).should.equal(true)
-        match(
-          { hello: 'pluton' },
-          { $or: [{ hello: 'pluton' }, { hello: 'world' }] },
-        ).should.equal(true)
-        match(
-          { hello: 'nope' },
-          { $or: [{ hello: 'pluton' }, { hello: 'world' }] },
-        ).should.equal(false)
-        match(
-          { hello: 'world', age: 15 },
-          { $or: [{ hello: 'pluton' }, { age: { $lt: 20 } }] },
-        ).should.equal(true)
-        match(
-          { hello: 'world', age: 15 },
-          { $or: [{ hello: 'pluton' }, { age: { $lt: 10 } }] },
-        ).should.equal(false)
+        expect(
+          match(
+            { hello: 'world' },
+            { $or: [{ hello: 'pluton' }, { hello: 'world' }] },
+          ),
+        ).toEqual(true)
+        expect(
+          match(
+            { hello: 'pluton' },
+            { $or: [{ hello: 'pluton' }, { hello: 'world' }] },
+          ),
+        ).toEqual(true)
+        expect(
+          match(
+            { hello: 'nope' },
+            { $or: [{ hello: 'pluton' }, { hello: 'world' }] },
+          ),
+        ).toEqual(false)
+        expect(
+          match(
+            { hello: 'world', age: 15 },
+            { $or: [{ hello: 'pluton' }, { age: { $lt: 20 } }] },
+          ),
+        ).toEqual(true)
+        expect(
+          match(
+            { hello: 'world', age: 15 },
+            { $or: [{ hello: 'pluton' }, { age: { $lt: 10 } }] },
+          ),
+        ).toEqual(false)
       })
 
       it('All of the subqueries should match for an $and to match', function () {
-        match(
-          { hello: 'world', age: 15 },
-          { $and: [{ age: 15 }, { hello: 'world' }] },
-        ).should.equal(true)
-        match(
-          { hello: 'world', age: 15 },
-          { $and: [{ age: 16 }, { hello: 'world' }] },
-        ).should.equal(false)
-        match(
-          { hello: 'world', age: 15 },
-          { $and: [{ hello: 'world' }, { age: { $lt: 20 } }] },
-        ).should.equal(true)
-        match(
-          { hello: 'world', age: 15 },
-          { $and: [{ hello: 'pluton' }, { age: { $lt: 20 } }] },
-        ).should.equal(false)
+        expect(
+          match(
+            { hello: 'world', age: 15 },
+            { $and: [{ age: 15 }, { hello: 'world' }] },
+          ),
+        ).toEqual(true)
+        expect(
+          match(
+            { hello: 'world', age: 15 },
+            { $and: [{ age: 16 }, { hello: 'world' }] },
+          ),
+        ).toEqual(false)
+        expect(
+          match(
+            { hello: 'world', age: 15 },
+            { $and: [{ hello: 'world' }, { age: { $lt: 20 } }] },
+          ),
+        ).toEqual(true)
+        expect(
+          match(
+            { hello: 'world', age: 15 },
+            { $and: [{ hello: 'pluton' }, { age: { $lt: 20 } }] },
+          ),
+        ).toEqual(false)
       })
 
       it('Subquery should not match for a $not to match', function () {
-        match({ a: 5, b: 10 }, { a: 5 }).should.equal(true)
-        match({ a: 5, b: 10 }, { $not: { a: 5 } }).should.equal(false)
+        expect(match({ a: 5, b: 10 }, { a: 5 })).toEqual(true)
+        expect(match({ a: 5, b: 10 }, { $not: { a: 5 } })).toEqual(false)
       })
 
       it('Logical operators are all top-level, only other logical operators can be above', function () {
         expect(function () {
           match({ a: { b: 7 } }, { a: { $or: [{ b: 5 }, { b: 7 }] } })
-        }).to.throw()
-        match(
-          { a: { b: 7 } },
-          { $or: [{ 'a.b': 5 }, { 'a.b': 7 }] },
-        ).should.equal(true)
+        }).toThrow()
+        expect(
+          match({ a: { b: 7 } }, { $or: [{ 'a.b': 5 }, { 'a.b': 7 }] }),
+        ).toEqual(true)
       })
 
       it('Logical operators can be combined as long as they are on top of the decision tree', function () {
-        match(
-          { a: 5, b: 7, c: 12 },
-          {
-            $or: [
-              { $and: [{ a: 5 }, { b: 8 }] },
-              { $and: [{ a: 5 }, { c: { $lt: 40 } }] },
-            ],
-          },
-        ).should.equal(true)
-        match(
-          { a: 5, b: 7, c: 12 },
-          {
-            $or: [
-              { $and: [{ a: 5 }, { b: 8 }] },
-              { $and: [{ a: 5 }, { c: { $lt: 10 } }] },
-            ],
-          },
-        ).should.equal(false)
+        expect(
+          match(
+            { a: 5, b: 7, c: 12 },
+            {
+              $or: [
+                { $and: [{ a: 5 }, { b: 8 }] },
+                { $and: [{ a: 5 }, { c: { $lt: 40 } }] },
+              ],
+            },
+          ),
+        ).toEqual(true)
+        expect(
+          match(
+            { a: 5, b: 7, c: 12 },
+            {
+              $or: [
+                { $and: [{ a: 5 }, { b: 8 }] },
+                { $and: [{ a: 5 }, { c: { $lt: 10 } }] },
+              ],
+            },
+          ),
+        ).toEqual(false)
       })
 
       it('Should throw an error if a logical operator is used without an array or if an unknown logical operator is used', function () {
         expect(function () {
           // @ts-ignore
           match({ a: 5 }, { $or: { a: 5, a: 6 } })
-        }).to.throw()
+        }).toThrow()
         expect(function () {
           // @ts-ignore
           match({ a: 5 }, { $and: { a: 5, a: 6 } })
-        }).to.throw()
+        }).toThrow()
         expect(function () {
           match({ a: 5 }, { $unknown: [{ a: 5 }] })
-        }).to.throw()
+        }).toThrow()
       })
     })
 
     describe('Comparison operator $where', function () {
       it('Function should match and not match correctly', function () {
-        match(
-          { a: 4 },
-          {
-            $where: function () {
-              return this.a === 4
+        expect(
+          match(
+            { a: 4 },
+            {
+              $where: function () {
+                return this.a === 4
+              },
             },
-          },
-        ).should.equal(true)
-        match(
-          { a: 4 },
-          {
-            $where: function () {
-              return this.a === 5
+          ),
+        ).toEqual(true)
+        expect(
+          match(
+            { a: 4 },
+            {
+              $where: function () {
+                return this.a === 5
+              },
             },
-          },
-        ).should.equal(false)
+          ),
+        ).toEqual(false)
       })
 
       it('Should throw an error if the $where function is not, in fact, a function', function () {
         expect(function () {
           match({ a: 4 }, { $where: 'not a function' })
-        }).to.throw()
+        }).toThrow()
       })
 
       it('Should throw an error if the $where function returns a non-boolean', function () {
@@ -1957,7 +2065,7 @@ describe('Model', function () {
               },
             },
           )
-        }).to.throw()
+        }).toThrow()
       })
 
       it('Should be able to do the complex matching it must be used for', function () {
@@ -1973,221 +2081,275 @@ describe('Model', function () {
             this.email
           )
         }
-        match(
-          { firstName: 'John', lastName: 'Doe', email: 'john.doe@gmail.com' },
-          { $where: checkEmail },
-        ).should.equal(true)
-        match(
-          { firstName: 'john', lastName: 'doe', email: 'john.doe@gmail.com' },
-          { $where: checkEmail },
-        ).should.equal(true)
-        match(
-          { firstName: 'Jane', lastName: 'Doe', email: 'john.doe@gmail.com' },
-          { $where: checkEmail },
-        ).should.equal(false)
-        match(
-          {
-            firstName: 'John',
-            lastName: 'Deere',
-            email: 'john.doe@gmail.com',
-          },
-          { $where: checkEmail },
-        ).should.equal(false)
-        match(
-          { lastName: 'Doe', email: 'john.doe@gmail.com' },
-          { $where: checkEmail },
-        ).should.equal(false)
+        expect(
+          match(
+            { firstName: 'John', lastName: 'Doe', email: 'john.doe@gmail.com' },
+            { $where: checkEmail },
+          ),
+        ).toEqual(true)
+        expect(
+          match(
+            { firstName: 'john', lastName: 'doe', email: 'john.doe@gmail.com' },
+            { $where: checkEmail },
+          ),
+        ).toEqual(true)
+        expect(
+          match(
+            { firstName: 'Jane', lastName: 'Doe', email: 'john.doe@gmail.com' },
+            { $where: checkEmail },
+          ),
+        ).toEqual(false)
+        expect(
+          match(
+            {
+              firstName: 'John',
+              lastName: 'Deere',
+              email: 'john.doe@gmail.com',
+            },
+            { $where: checkEmail },
+          ),
+        ).toEqual(false)
+        expect(
+          match(
+            { lastName: 'Doe', email: 'john.doe@gmail.com' },
+            { $where: checkEmail },
+          ),
+        ).toEqual(false)
       })
     })
 
     describe('Array fields', function () {
       it('Field equality', function () {
-        match({ tags: ['node', 'js', 'db'] }, { tags: 'python' }).should.equal(
+        expect(
+          match({ tags: ['node', 'js', 'db'] }, { tags: 'python' }),
+        ).toEqual(false)
+        expect(match({ tags: ['node', 'js', 'db'] }, { tagss: 'js' })).toEqual(
           false,
         )
-        match({ tags: ['node', 'js', 'db'] }, { tagss: 'js' }).should.equal(
-          false,
+        expect(match({ tags: ['node', 'js', 'db'] }, { tags: 'js' })).toEqual(
+          true,
         )
-        match({ tags: ['node', 'js', 'db'] }, { tags: 'js' }).should.equal(true)
-        match(
-          { tags: ['node', 'js', 'db'] },
-          // @ts-ignore
-          { tags: 'js', tags: 'node' },
-        ).should.equal(true)
+        expect(
+          match(
+            { tags: ['node', 'js', 'db'] },
+            // @ts-ignore
+            { tags: 'js', tags: 'node' },
+          ),
+        ).toEqual(true)
 
         // Mixed matching with array and non array
-        match(
-          { tags: ['node', 'js', 'db'], nedb: true },
-          { tags: 'js', nedb: true },
-        ).should.equal(true)
+        expect(
+          match(
+            { tags: ['node', 'js', 'db'], nedb: true },
+            { tags: 'js', nedb: true },
+          ),
+        ).toEqual(true)
 
         // Nested matching
-        match(
-          { number: 5, data: { tags: ['node', 'js', 'db'] } },
-          { 'data.tags': 'js' },
-        ).should.equal(true)
-        match(
-          { number: 5, data: { tags: ['node', 'js', 'db'] } },
-          { 'data.tags': 'j' },
-        ).should.equal(false)
+        expect(
+          match(
+            { number: 5, data: { tags: ['node', 'js', 'db'] } },
+            { 'data.tags': 'js' },
+          ),
+        ).toEqual(true)
+        expect(
+          match(
+            { number: 5, data: { tags: ['node', 'js', 'db'] } },
+            { 'data.tags': 'j' },
+          ),
+        ).toEqual(false)
       })
 
       it('With one comparison operator', function () {
-        match({ ages: [3, 7, 12] }, { ages: { $lt: 2 } }).should.equal(false)
-        match({ ages: [3, 7, 12] }, { ages: { $lt: 3 } }).should.equal(false)
-        match({ ages: [3, 7, 12] }, { ages: { $lt: 4 } }).should.equal(true)
-        match({ ages: [3, 7, 12] }, { ages: { $lt: 8 } }).should.equal(true)
-        match({ ages: [3, 7, 12] }, { ages: { $lt: 13 } }).should.equal(true)
+        expect(match({ ages: [3, 7, 12] }, { ages: { $lt: 2 } })).toEqual(false)
+        expect(match({ ages: [3, 7, 12] }, { ages: { $lt: 3 } })).toEqual(false)
+        expect(match({ ages: [3, 7, 12] }, { ages: { $lt: 4 } })).toEqual(true)
+        expect(match({ ages: [3, 7, 12] }, { ages: { $lt: 8 } })).toEqual(true)
+        expect(match({ ages: [3, 7, 12] }, { ages: { $lt: 13 } })).toEqual(true)
       })
 
       it('Works with arrays that are in subdocuments', function () {
-        match(
-          { children: { ages: [3, 7, 12] } },
-          { 'children.ages': { $lt: 2 } },
-        ).should.equal(false)
-        match(
-          { children: { ages: [3, 7, 12] } },
-          { 'children.ages': { $lt: 3 } },
-        ).should.equal(false)
-        match(
-          { children: { ages: [3, 7, 12] } },
-          { 'children.ages': { $lt: 4 } },
-        ).should.equal(true)
-        match(
-          { children: { ages: [3, 7, 12] } },
-          { 'children.ages': { $lt: 8 } },
-        ).should.equal(true)
-        match(
-          { children: { ages: [3, 7, 12] } },
-          { 'children.ages': { $lt: 13 } },
-        ).should.equal(true)
+        expect(
+          match(
+            { children: { ages: [3, 7, 12] } },
+            { 'children.ages': { $lt: 2 } },
+          ),
+        ).toEqual(false)
+        expect(
+          match(
+            { children: { ages: [3, 7, 12] } },
+            { 'children.ages': { $lt: 3 } },
+          ),
+        ).toEqual(false)
+        expect(
+          match(
+            { children: { ages: [3, 7, 12] } },
+            { 'children.ages': { $lt: 4 } },
+          ),
+        ).toEqual(true)
+        expect(
+          match(
+            { children: { ages: [3, 7, 12] } },
+            { 'children.ages': { $lt: 8 } },
+          ),
+        ).toEqual(true)
+        expect(
+          match(
+            { children: { ages: [3, 7, 12] } },
+            { 'children.ages': { $lt: 13 } },
+          ),
+        ).toEqual(true)
       })
 
       it('Can query inside arrays thanks to dot notation', function () {
-        match(
-          {
-            childrens: [
-              { name: 'Huey', age: 3 },
-              { name: 'Dewey', age: 7 },
-              { name: 'Louie', age: 12 },
-            ],
-          },
-          { 'childrens.age': { $lt: 2 } },
-        ).should.equal(false)
-        match(
-          {
-            childrens: [
-              { name: 'Huey', age: 3 },
-              { name: 'Dewey', age: 7 },
-              { name: 'Louie', age: 12 },
-            ],
-          },
-          { 'childrens.age': { $lt: 3 } },
-        ).should.equal(false)
-        match(
-          {
-            childrens: [
-              { name: 'Huey', age: 3 },
-              { name: 'Dewey', age: 7 },
-              { name: 'Louie', age: 12 },
-            ],
-          },
-          { 'childrens.age': { $lt: 4 } },
-        ).should.equal(true)
-        match(
-          {
-            childrens: [
-              { name: 'Huey', age: 3 },
-              { name: 'Dewey', age: 7 },
-              { name: 'Louie', age: 12 },
-            ],
-          },
-          { 'childrens.age': { $lt: 8 } },
-        ).should.equal(true)
-        match(
-          {
-            childrens: [
-              { name: 'Huey', age: 3 },
-              { name: 'Dewey', age: 7 },
-              { name: 'Louie', age: 12 },
-            ],
-          },
-          { 'childrens.age': { $lt: 13 } },
-        ).should.equal(true)
+        expect(
+          match(
+            {
+              childrens: [
+                { name: 'Huey', age: 3 },
+                { name: 'Dewey', age: 7 },
+                { name: 'Louie', age: 12 },
+              ],
+            },
+            { 'childrens.age': { $lt: 2 } },
+          ),
+        ).toEqual(false)
+        expect(
+          match(
+            {
+              childrens: [
+                { name: 'Huey', age: 3 },
+                { name: 'Dewey', age: 7 },
+                { name: 'Louie', age: 12 },
+              ],
+            },
+            { 'childrens.age': { $lt: 3 } },
+          ),
+        ).toEqual(false)
+        expect(
+          match(
+            {
+              childrens: [
+                { name: 'Huey', age: 3 },
+                { name: 'Dewey', age: 7 },
+                { name: 'Louie', age: 12 },
+              ],
+            },
+            { 'childrens.age': { $lt: 4 } },
+          ),
+        ).toEqual(true)
+        expect(
+          match(
+            {
+              childrens: [
+                { name: 'Huey', age: 3 },
+                { name: 'Dewey', age: 7 },
+                { name: 'Louie', age: 12 },
+              ],
+            },
+            { 'childrens.age': { $lt: 8 } },
+          ),
+        ).toEqual(true)
+        expect(
+          match(
+            {
+              childrens: [
+                { name: 'Huey', age: 3 },
+                { name: 'Dewey', age: 7 },
+                { name: 'Louie', age: 12 },
+              ],
+            },
+            { 'childrens.age': { $lt: 13 } },
+          ),
+        ).toEqual(true)
 
-        match(
-          {
-            childrens: [
-              { name: 'Huey', age: 3 },
-              { name: 'Dewey', age: 7 },
-              { name: 'Louie', age: 12 },
-            ],
-          },
-          { 'childrens.name': 'Louis' },
-        ).should.equal(false)
-        match(
-          {
-            childrens: [
-              { name: 'Huey', age: 3 },
-              { name: 'Dewey', age: 7 },
-              { name: 'Louie', age: 12 },
-            ],
-          },
-          { 'childrens.name': 'Louie' },
-        ).should.equal(true)
-        match(
-          {
-            childrens: [
-              { name: 'Huey', age: 3 },
-              { name: 'Dewey', age: 7 },
-              { name: 'Louie', age: 12 },
-            ],
-          },
-          { 'childrens.name': 'Lewi' },
-        ).should.equal(false)
+        expect(
+          match(
+            {
+              childrens: [
+                { name: 'Huey', age: 3 },
+                { name: 'Dewey', age: 7 },
+                { name: 'Louie', age: 12 },
+              ],
+            },
+            { 'childrens.name': 'Louis' },
+          ),
+        ).toEqual(false)
+        expect(
+          match(
+            {
+              childrens: [
+                { name: 'Huey', age: 3 },
+                { name: 'Dewey', age: 7 },
+                { name: 'Louie', age: 12 },
+              ],
+            },
+            { 'childrens.name': 'Louie' },
+          ),
+        ).toEqual(true)
+        expect(
+          match(
+            {
+              childrens: [
+                { name: 'Huey', age: 3 },
+                { name: 'Dewey', age: 7 },
+                { name: 'Louie', age: 12 },
+              ],
+            },
+            { 'childrens.name': 'Lewi' },
+          ),
+        ).toEqual(false)
       })
 
       it('Can query for a specific element inside arrays thanks to dot notation', function () {
-        match(
-          {
-            childrens: [
-              { name: 'Huey', age: 3 },
-              { name: 'Dewey', age: 7 },
-              { name: 'Louie', age: 12 },
-            ],
-          },
-          { 'childrens.0.name': 'Louie' },
-        ).should.equal(false)
-        match(
-          {
-            childrens: [
-              { name: 'Huey', age: 3 },
-              { name: 'Dewey', age: 7 },
-              { name: 'Louie', age: 12 },
-            ],
-          },
-          { 'childrens.1.name': 'Louie' },
-        ).should.equal(false)
-        match(
-          {
-            childrens: [
-              { name: 'Huey', age: 3 },
-              { name: 'Dewey', age: 7 },
-              { name: 'Louie', age: 12 },
-            ],
-          },
-          { 'childrens.2.name': 'Louie' },
-        ).should.equal(true)
-        match(
-          {
-            childrens: [
-              { name: 'Huey', age: 3 },
-              { name: 'Dewey', age: 7 },
-              { name: 'Louie', age: 12 },
-            ],
-          },
-          { 'childrens.3.name': 'Louie' },
-        ).should.equal(false)
+        expect(
+          match(
+            {
+              childrens: [
+                { name: 'Huey', age: 3 },
+                { name: 'Dewey', age: 7 },
+                { name: 'Louie', age: 12 },
+              ],
+            },
+            { 'childrens.0.name': 'Louie' },
+          ),
+        ).toEqual(false)
+        expect(
+          match(
+            {
+              childrens: [
+                { name: 'Huey', age: 3 },
+                { name: 'Dewey', age: 7 },
+                { name: 'Louie', age: 12 },
+              ],
+            },
+            { 'childrens.1.name': 'Louie' },
+          ),
+        ).toEqual(false)
+        expect(
+          match(
+            {
+              childrens: [
+                { name: 'Huey', age: 3 },
+                { name: 'Dewey', age: 7 },
+                { name: 'Louie', age: 12 },
+              ],
+            },
+            { 'childrens.2.name': 'Louie' },
+          ),
+        ).toEqual(true)
+        expect(
+          match(
+            {
+              childrens: [
+                { name: 'Huey', age: 3 },
+                { name: 'Dewey', age: 7 },
+                { name: 'Louie', age: 12 },
+              ],
+            },
+            { 'childrens.3.name': 'Louie' },
+          ),
+        ).toEqual(false)
       })
 
       it('A single array-specific operator and the query is treated as array specific', function () {
@@ -2196,35 +2358,47 @@ describe('Model', function () {
             { childrens: ['Riri', 'Fifi', 'Loulou'] },
             { childrens: { Fifi: true, $size: 3 } },
           )
-        }).to.throw()
+        }).toThrow()
       })
 
       it('Can mix queries on array fields and non array filds with array specific operators', function () {
-        match(
-          { uncle: 'Donald', nephews: ['Riri', 'Fifi', 'Loulou'] },
-          { nephews: { $size: 2 }, uncle: 'Donald' },
-        ).should.equal(false)
-        match(
-          { uncle: 'Donald', nephews: ['Riri', 'Fifi', 'Loulou'] },
-          { nephews: { $size: 3 }, uncle: 'Donald' },
-        ).should.equal(true)
-        match(
-          { uncle: 'Donald', nephews: ['Riri', 'Fifi', 'Loulou'] },
-          { nephews: { $size: 4 }, uncle: 'Donald' },
-        ).should.equal(false)
+        expect(
+          match(
+            { uncle: 'Donald', nephews: ['Riri', 'Fifi', 'Loulou'] },
+            { nephews: { $size: 2 }, uncle: 'Donald' },
+          ),
+        ).toEqual(false)
+        expect(
+          match(
+            { uncle: 'Donald', nephews: ['Riri', 'Fifi', 'Loulou'] },
+            { nephews: { $size: 3 }, uncle: 'Donald' },
+          ),
+        ).toEqual(true)
+        expect(
+          match(
+            { uncle: 'Donald', nephews: ['Riri', 'Fifi', 'Loulou'] },
+            { nephews: { $size: 4 }, uncle: 'Donald' },
+          ),
+        ).toEqual(false)
 
-        match(
-          { uncle: 'Donals', nephews: ['Riri', 'Fifi', 'Loulou'] },
-          { nephews: { $size: 3 }, uncle: 'Picsou' },
-        ).should.equal(false)
-        match(
-          { uncle: 'Donald', nephews: ['Riri', 'Fifi', 'Loulou'] },
-          { nephews: { $size: 3 }, uncle: 'Donald' },
-        ).should.equal(true)
-        match(
-          { uncle: 'Donald', nephews: ['Riri', 'Fifi', 'Loulou'] },
-          { nephews: { $size: 3 }, uncle: 'Daisy' },
-        ).should.equal(false)
+        expect(
+          match(
+            { uncle: 'Donals', nephews: ['Riri', 'Fifi', 'Loulou'] },
+            { nephews: { $size: 3 }, uncle: 'Picsou' },
+          ),
+        ).toEqual(false)
+        expect(
+          match(
+            { uncle: 'Donald', nephews: ['Riri', 'Fifi', 'Loulou'] },
+            { nephews: { $size: 3 }, uncle: 'Donald' },
+          ),
+        ).toEqual(true)
+        expect(
+          match(
+            { uncle: 'Donald', nephews: ['Riri', 'Fifi', 'Loulou'] },
+            { nephews: { $size: 3 }, uncle: 'Daisy' },
+          ),
+        ).toEqual(false)
       })
     })
   }) // ==== End of 'Querying' ==== //

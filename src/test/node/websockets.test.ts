@@ -1,12 +1,11 @@
 import { Client } from '../../client'
 import { Heartbeat } from '../../server/heartbeat'
 import { ClientEvents, HeleneEvents, sleep } from '../../utils'
-import { expect } from 'chai'
+import { expect, describe, it, afterEach } from 'vitest'
 import defer from 'lodash/defer'
-import { describe, it } from 'mocha'
 import { TestUtility } from '../test-utility'
 
-describe('WebSockets', function () {
+describe('WebSockets', () => {
   const test = new TestUtility()
 
   afterEach(() => {
@@ -72,7 +71,7 @@ describe('WebSockets', function () {
 
     // We disabled auto disconnection due to Safari iOS issues
     expect(client.connected).to.be.false
-  }).timeout(10000)
+  }, 10000)
 
   it('should call init even after it abnormally reconnects', async () => {
     defer(() => {
@@ -82,5 +81,5 @@ describe('WebSockets', function () {
     await test.client.waitFor(ClientEvents.WEBSOCKET_CLOSED)
 
     await test.client.waitFor(ClientEvents.INITIALIZED, 10000)
-  }).timeout(20000)
+  }, 20000)
 })

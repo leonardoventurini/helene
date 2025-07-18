@@ -1,4 +1,4 @@
-import { assert, expect } from 'chai'
+import { assert, expect, describe, it } from 'vitest'
 import { Index } from './indexes'
 
 describe('Indexes', function () {
@@ -13,25 +13,25 @@ describe('Indexes', function () {
       idx.insert(doc3)
 
       // The underlying BST now has 3 nodes which contain the docs where it's expected
-      idx.tree.getNumberOfKeys().should.equal(3)
+      expect(idx.tree.getNumberOfKeys()).toEqual(3)
       assert.deepEqual(idx.tree.search('hello'), [{ a: 5, tf: 'hello' }])
       assert.deepEqual(idx.tree.search('world'), [{ a: 8, tf: 'world' }])
       assert.deepEqual(idx.tree.search('bloup'), [{ a: 2, tf: 'bloup' }])
 
       // The nodes contain pointers to the actual documents
-      idx.tree.search('world')[0].should.equal(doc2)
+      expect(idx.tree.search('world')[0]).toEqual(doc2)
       idx.tree.search('bloup')[0].a = 42
-      doc3.a.should.equal(42)
+      expect(doc3.a).toEqual(42)
     })
 
     it('Inserting twice for the same fieldName in a unique index will result in an error thrown', function () {
       const idx = new Index({ fieldName: 'tf', unique: true }),
         doc1 = { a: 5, tf: 'hello' }
       idx.insert(doc1)
-      idx.tree.getNumberOfKeys().should.equal(1)
+      expect(idx.tree.getNumberOfKeys()).toEqual(1)
       expect(() => {
         idx.insert(doc1)
-      }).to.throw()
+      }).toThrow()
     })
 
     it('Inserting twice for a fieldName the docs dont have with a unique index results in an error thrown', function () {
@@ -39,10 +39,10 @@ describe('Indexes', function () {
         doc1 = { a: 5, tf: 'hello' },
         doc2 = { a: 5, tf: 'world' }
       idx.insert(doc1)
-      idx.tree.getNumberOfKeys().should.equal(1)
-      ;(function () {
+      expect(idx.tree.getNumberOfKeys()).toEqual(1)
+      expect(() => {
         idx.insert(doc2)
-      }).should.throw()
+      }).toThrow()
     })
 
     it('Inserting twice for a fieldName the docs dont have with a unique and sparse index will not throw, since the docs will be non indexed', function () {
@@ -51,7 +51,7 @@ describe('Indexes', function () {
         doc2 = { a: 5, tf: 'world' }
       idx.insert(doc1)
       idx.insert(doc2)
-      idx.tree.getNumberOfKeys().should.equal(0) // Docs are not indexed
+      expect(idx.tree.getNumberOfKeys()).toEqual(0) // Docs are not indexed
     })
 
     it('Works with dot notation', function () {
@@ -64,14 +64,14 @@ describe('Indexes', function () {
       idx.insert(doc3)
 
       // The underlying BST now has 3 nodes which contain the docs where it's expected
-      idx.tree.getNumberOfKeys().should.equal(3)
+      expect(idx.tree.getNumberOfKeys()).toEqual(3)
       assert.deepEqual(idx.tree.search('hello'), [doc1])
       assert.deepEqual(idx.tree.search('world'), [doc2])
       assert.deepEqual(idx.tree.search('bloup'), [doc3])
 
       // The nodes contain pointers to the actual documents
       idx.tree.search('bloup')[0].a = 42
-      doc3.a.should.equal(42)
+      expect(doc3.a).toEqual(42)
     })
 
     it('Can insert an array of documents', function () {
@@ -80,7 +80,7 @@ describe('Indexes', function () {
         doc2 = { a: 8, tf: 'world' },
         doc3 = { a: 2, tf: 'bloup' }
       idx.insert([doc1, doc2, doc3])
-      idx.tree.getNumberOfKeys().should.equal(3)
+      expect(idx.tree.getNumberOfKeys()).toEqual(3)
       assert.deepEqual(idx.tree.search('hello'), [doc1])
       assert.deepEqual(idx.tree.search('world'), [doc2])
       assert.deepEqual(idx.tree.search('bloup'), [doc3])
@@ -95,9 +95,9 @@ describe('Indexes', function () {
       try {
         idx.insert([doc1, doc2, doc2b, doc3])
       } catch (e) {
-        e.errorType.should.equal('uniqueViolated')
+        expect(e.errorType).toEqual('uniqueViolated')
       }
-      idx.tree.getNumberOfKeys().should.equal(0)
+      expect(idx.tree.getNumberOfKeys()).toEqual(0)
       assert.deepEqual(idx.tree.search('hello'), [])
       assert.deepEqual(idx.tree.search('world'), [])
       assert.deepEqual(idx.tree.search('bloup'), [])
@@ -109,22 +109,22 @@ describe('Indexes', function () {
           obj2 = { tf: 'normal', yes: 'indeed' },
           idx = new Index({ fieldName: 'tf' })
         idx.insert(obj)
-        idx.getAll().length.should.equal(2)
-        idx.getAll()[0].should.equal(obj)
-        idx.getAll()[1].should.equal(obj)
+        expect(idx.getAll().length).toEqual(2)
+        expect(idx.getAll()[0]).toEqual(obj)
+        expect(idx.getAll()[1]).toEqual(obj)
 
         idx.insert(obj2)
-        idx.getAll().length.should.equal(3)
+        expect(idx.getAll().length).toEqual(3)
       })
 
       it('Inserts one entry per array element in the index, type-checked', function () {
         const obj = { tf: ['42', 42, new Date(42), 42], really: 'yeah' },
           idx = new Index({ fieldName: 'tf' })
         idx.insert(obj)
-        idx.getAll().length.should.equal(3)
-        idx.getAll()[0].should.equal(obj)
-        idx.getAll()[1].should.equal(obj)
-        idx.getAll()[2].should.equal(obj)
+        expect(idx.getAll().length).toEqual(3)
+        expect(idx.getAll()[0]).toEqual(obj)
+        expect(idx.getAll()[1]).toEqual(obj)
+        expect(idx.getAll()[2]).toEqual(obj)
       })
 
       it('Inserts one entry per unique array element in the index, the unique constraint only holds across documents', function () {
@@ -132,11 +132,11 @@ describe('Indexes', function () {
           obj2 = { tf: ['cc', 'yy', 'cc'], yes: 'indeed' },
           idx = new Index({ fieldName: 'tf', unique: true })
         idx.insert(obj)
-        idx.getAll().length.should.equal(1)
-        idx.getAll()[0].should.equal(obj)
+        expect(idx.getAll().length).toEqual(1)
+        expect(idx.getAll()[0]).toEqual(obj)
 
         idx.insert(obj2)
-        idx.getAll().length.should.equal(3)
+        expect(idx.getAll().length).toEqual(3)
       })
 
       it('The unique constraint holds across documents', function () {
@@ -144,11 +144,11 @@ describe('Indexes', function () {
           obj2 = { tf: ['cc', 'aa', 'cc'], yes: 'indeed' },
           idx = new Index({ fieldName: 'tf', unique: true })
         idx.insert(obj)
-        idx.getAll().length.should.equal(1)
-        idx.getAll()[0].should.equal(obj)
-        ;(function () {
+        expect(idx.getAll().length).toEqual(1)
+        expect(idx.getAll()[0]).toEqual(obj)
+        expect(() => {
           idx.insert(obj2)
-        }).should.throw()
+        }).toThrow()
       })
 
       it('When removing a document, remove it from the index at all unique array elements', function () {
@@ -157,16 +157,16 @@ describe('Indexes', function () {
           idx = new Index({ fieldName: 'tf' })
         idx.insert(obj)
         idx.insert(obj2)
-        idx.getMatching('aa').length.should.equal(2)
-        idx.getMatching('aa').indexOf(obj).should.not.equal(-1)
-        idx.getMatching('aa').indexOf(obj2).should.not.equal(-1)
-        idx.getMatching('cc').length.should.equal(1)
+        expect(idx.getMatching('aa').length).toEqual(2)
+        expect(idx.getMatching('aa').indexOf(obj)).not.toEqual(-1)
+        expect(idx.getMatching('aa').indexOf(obj2)).not.toEqual(-1)
+        expect(idx.getMatching('cc').length).toEqual(1)
 
         idx.remove(obj2)
-        idx.getMatching('aa').length.should.equal(1)
-        idx.getMatching('aa').indexOf(obj).should.not.equal(-1)
-        idx.getMatching('aa').indexOf(obj2).should.equal(-1)
-        idx.getMatching('cc').length.should.equal(0)
+        expect(idx.getMatching('aa').length).toEqual(1)
+        expect(idx.getMatching('aa').indexOf(obj)).not.toEqual(-1)
+        expect(idx.getMatching('aa').indexOf(obj2)).toEqual(-1)
+        expect(idx.getMatching('cc').length).toEqual(0)
       })
 
       it('If a unique constraint is violated when inserting an array key, roll back all inserts before the key', function () {
@@ -174,21 +174,21 @@ describe('Indexes', function () {
           obj2 = { tf: ['cc', 'dd', 'aa', 'ee'], yes: 'indeed' },
           idx = new Index({ fieldName: 'tf', unique: true })
         idx.insert(obj)
-        idx.getAll().length.should.equal(2)
-        idx.getMatching('aa').length.should.equal(1)
-        idx.getMatching('bb').length.should.equal(1)
-        idx.getMatching('cc').length.should.equal(0)
-        idx.getMatching('dd').length.should.equal(0)
-        idx.getMatching('ee').length.should.equal(0)
-        ;(function () {
+        expect(idx.getAll().length).toEqual(2)
+        expect(idx.getMatching('aa').length).toEqual(1)
+        expect(idx.getMatching('bb').length).toEqual(1)
+        expect(idx.getMatching('cc').length).toEqual(0)
+        expect(idx.getMatching('dd').length).toEqual(0)
+        expect(idx.getMatching('ee').length).toEqual(0)
+        expect(() => {
           idx.insert(obj2)
-        }).should.throw()
-        idx.getAll().length.should.equal(2)
-        idx.getMatching('aa').length.should.equal(1)
-        idx.getMatching('bb').length.should.equal(1)
-        idx.getMatching('cc').length.should.equal(0)
-        idx.getMatching('dd').length.should.equal(0)
-        idx.getMatching('ee').length.should.equal(0)
+        }).toThrow()
+        expect(idx.getAll().length).toEqual(2)
+        expect(idx.getMatching('aa').length).toEqual(1)
+        expect(idx.getMatching('bb').length).toEqual(1)
+        expect(idx.getMatching('cc').length).toEqual(0)
+        expect(idx.getMatching('dd').length).toEqual(0)
+        expect(idx.getMatching('ee').length).toEqual(0)
       })
     }) // ==== End of 'Array fields' ==== //
   }) // ==== End of 'Insertion' ==== //
@@ -204,16 +204,16 @@ describe('Indexes', function () {
       idx.insert(doc2)
       idx.insert(doc3)
       idx.insert(doc4)
-      idx.tree.getNumberOfKeys().should.equal(3)
+      expect(idx.tree.getNumberOfKeys()).toEqual(3)
 
       idx.remove(doc1)
-      idx.tree.getNumberOfKeys().should.equal(2)
-      idx.tree.search('hello').length.should.equal(0)
+      expect(idx.tree.getNumberOfKeys()).toEqual(2)
+      expect(idx.tree.search('hello').length).toEqual(0)
 
       idx.remove(doc2)
-      idx.tree.getNumberOfKeys().should.equal(2)
-      idx.tree.search('world').length.should.equal(1)
-      idx.tree.search('world')[0].should.equal(doc4)
+      expect(idx.tree.getNumberOfKeys()).toEqual(2)
+      expect(idx.tree.search('world').length).toEqual(1)
+      expect(idx.tree.search('world')[0]).toEqual(doc4)
     })
 
     it('If we have a sparse index, removing a non indexed doc has no effect', function () {
@@ -222,10 +222,10 @@ describe('Indexes', function () {
         doc2 = { a: 5, tf: 'world' }
       idx.insert(doc1)
       idx.insert(doc2)
-      idx.tree.getNumberOfKeys().should.equal(0)
+      expect(idx.tree.getNumberOfKeys()).toEqual(0)
 
       idx.remove(doc1)
-      idx.tree.getNumberOfKeys().should.equal(0)
+      expect(idx.tree.getNumberOfKeys()).toEqual(0)
     })
 
     it('Works with dot notation', function () {
@@ -238,16 +238,16 @@ describe('Indexes', function () {
       idx.insert(doc2)
       idx.insert(doc3)
       idx.insert(doc4)
-      idx.tree.getNumberOfKeys().should.equal(3)
+      expect(idx.tree.getNumberOfKeys()).toEqual(3)
 
       idx.remove(doc1)
-      idx.tree.getNumberOfKeys().should.equal(2)
-      idx.tree.search('hello').length.should.equal(0)
+      expect(idx.tree.getNumberOfKeys()).toEqual(2)
+      expect(idx.tree.search('hello').length).toEqual(0)
 
       idx.remove(doc2)
-      idx.tree.getNumberOfKeys().should.equal(2)
-      idx.tree.search('world').length.should.equal(1)
-      idx.tree.search('world')[0].should.equal(doc4)
+      expect(idx.tree.getNumberOfKeys()).toEqual(2)
+      expect(idx.tree.search('world').length).toEqual(1)
+      expect(idx.tree.search('world')[0]).toEqual(doc4)
     })
 
     it('Can remove an array of documents', function () {
@@ -256,9 +256,9 @@ describe('Indexes', function () {
         doc2 = { a: 8, tf: 'world' },
         doc3 = { a: 2, tf: 'bloup' }
       idx.insert([doc1, doc2, doc3])
-      idx.tree.getNumberOfKeys().should.equal(3)
+      expect(idx.tree.getNumberOfKeys()).toEqual(3)
       idx.remove([doc1, doc3])
-      idx.tree.getNumberOfKeys().should.equal(1)
+      expect(idx.tree.getNumberOfKeys()).toEqual(1)
       assert.deepEqual(idx.tree.search('hello'), [])
       assert.deepEqual(idx.tree.search('world'), [doc2])
       assert.deepEqual(idx.tree.search('bloup'), [])
@@ -276,15 +276,15 @@ describe('Indexes', function () {
       idx.insert(doc1)
       idx.insert(doc2)
       idx.insert(doc3)
-      idx.tree.getNumberOfKeys().should.equal(3)
+      expect(idx.tree.getNumberOfKeys()).toEqual(3)
       assert.deepEqual(idx.tree.search('world'), [doc2])
 
       idx.update(doc2, doc4)
-      idx.tree.getNumberOfKeys().should.equal(3)
+      expect(idx.tree.getNumberOfKeys()).toEqual(3)
       assert.deepEqual(idx.tree.search('world'), [doc4])
 
       idx.update(doc1, doc5)
-      idx.tree.getNumberOfKeys().should.equal(3)
+      expect(idx.tree.getNumberOfKeys()).toEqual(3)
       assert.deepEqual(idx.tree.search('hello'), [])
       assert.deepEqual(idx.tree.search('changed'), [doc5])
     })
@@ -299,7 +299,7 @@ describe('Indexes', function () {
       idx.insert(doc2)
       idx.insert(doc3)
 
-      idx.tree.getNumberOfKeys().should.equal(3)
+      expect(idx.tree.getNumberOfKeys()).toEqual(3)
       assert.deepEqual(idx.tree.search('hello'), [doc1])
       assert.deepEqual(idx.tree.search('world'), [doc2])
       assert.deepEqual(idx.tree.search('bloup'), [doc3])
@@ -307,11 +307,11 @@ describe('Indexes', function () {
       try {
         idx.update(doc3, bad)
       } catch (e) {
-        e.errorType.should.equal('uniqueViolated')
+        expect(e.errorType).toEqual('uniqueViolated')
       }
 
       // No change
-      idx.tree.getNumberOfKeys().should.equal(3)
+      expect(idx.tree.getNumberOfKeys()).toEqual(3)
       assert.deepEqual(idx.tree.search('hello'), [doc1])
       assert.deepEqual(idx.tree.search('world'), [doc2])
       assert.deepEqual(idx.tree.search('bloup'), [doc3])
@@ -328,7 +328,7 @@ describe('Indexes', function () {
       idx.insert(doc1)
       idx.insert(doc2)
       idx.insert(doc3)
-      idx.tree.getNumberOfKeys().should.equal(3)
+      expect(idx.tree.getNumberOfKeys()).toEqual(3)
 
       idx.update([
         { oldDoc: doc1, newDoc: doc1b },
@@ -336,13 +336,13 @@ describe('Indexes', function () {
         { oldDoc: doc3, newDoc: doc3b },
       ])
 
-      idx.tree.getNumberOfKeys().should.equal(3)
-      idx.getMatching('world').length.should.equal(1)
-      idx.getMatching('world')[0].should.equal(doc1b)
-      idx.getMatching('changed').length.should.equal(1)
-      idx.getMatching('changed')[0].should.equal(doc2b)
-      idx.getMatching('bloup').length.should.equal(1)
-      idx.getMatching('bloup')[0].should.equal(doc3b)
+      expect(idx.tree.getNumberOfKeys()).toEqual(3)
+      expect(idx.getMatching('world').length).toEqual(1)
+      expect(idx.getMatching('world')[0]).toEqual(doc1b)
+      expect(idx.getMatching('changed').length).toEqual(1)
+      expect(idx.getMatching('changed')[0]).toEqual(doc2b)
+      expect(idx.getMatching('bloup').length).toEqual(1)
+      expect(idx.getMatching('bloup')[0]).toEqual(doc3b)
     })
 
     it('If a unique constraint is violated during an array-update, all changes are rolled back and an error thrown', function () {
@@ -356,7 +356,7 @@ describe('Indexes', function () {
       idx.insert(doc1)
       idx.insert(doc2)
       idx.insert(doc3)
-      idx.tree.getNumberOfKeys().should.equal(3)
+      expect(idx.tree.getNumberOfKeys()).toEqual(3)
 
       try {
         idx.update([
@@ -365,16 +365,16 @@ describe('Indexes', function () {
           { oldDoc: doc3, newDoc: doc3b },
         ])
       } catch (e) {
-        e.errorType.should.equal('uniqueViolated')
+        expect(e.errorType).toEqual('uniqueViolated')
       }
 
-      idx.tree.getNumberOfKeys().should.equal(3)
-      idx.getMatching('hello').length.should.equal(1)
-      idx.getMatching('hello')[0].should.equal(doc1)
-      idx.getMatching('world').length.should.equal(1)
-      idx.getMatching('world')[0].should.equal(doc2)
-      idx.getMatching('bloup').length.should.equal(1)
-      idx.getMatching('bloup')[0].should.equal(doc3)
+      expect(idx.tree.getNumberOfKeys()).toEqual(3)
+      expect(idx.getMatching('hello').length).toEqual(1)
+      expect(idx.getMatching('hello')[0]).toEqual(doc1)
+      expect(idx.getMatching('world').length).toEqual(1)
+      expect(idx.getMatching('world')[0]).toEqual(doc2)
+      expect(idx.getMatching('bloup').length).toEqual(1)
+      expect(idx.getMatching('bloup')[0]).toEqual(doc3)
 
       try {
         idx.update([
@@ -383,16 +383,16 @@ describe('Indexes', function () {
           { oldDoc: doc3, newDoc: doc3b },
         ])
       } catch (e) {
-        e.errorType.should.equal('uniqueViolated')
+        expect(e.errorType).toEqual('uniqueViolated')
       }
 
-      idx.tree.getNumberOfKeys().should.equal(3)
-      idx.getMatching('hello').length.should.equal(1)
-      idx.getMatching('hello')[0].should.equal(doc1)
-      idx.getMatching('world').length.should.equal(1)
-      idx.getMatching('world')[0].should.equal(doc2)
-      idx.getMatching('bloup').length.should.equal(1)
-      idx.getMatching('bloup')[0].should.equal(doc3)
+      expect(idx.tree.getNumberOfKeys()).toEqual(3)
+      expect(idx.getMatching('hello').length).toEqual(1)
+      expect(idx.getMatching('hello')[0]).toEqual(doc1)
+      expect(idx.getMatching('world').length).toEqual(1)
+      expect(idx.getMatching('world')[0]).toEqual(doc2)
+      expect(idx.getMatching('bloup').length).toEqual(1)
+      expect(idx.getMatching('bloup')[0]).toEqual(doc3)
     })
 
     it('If an update doesnt change a document, the unique constraint is not violated', function () {
@@ -404,11 +404,11 @@ describe('Indexes', function () {
       idx.insert(doc1)
       idx.insert(doc2)
       idx.insert(doc3)
-      idx.tree.getNumberOfKeys().should.equal(3)
+      expect(idx.tree.getNumberOfKeys()).toEqual(3)
       assert.deepEqual(idx.tree.search('world'), [doc2])
 
       idx.update(doc2, noChange) // No error thrown
-      idx.tree.getNumberOfKeys().should.equal(3)
+      expect(idx.tree.getNumberOfKeys()).toEqual(3)
       assert.deepEqual(idx.tree.search('world'), [noChange])
     })
 
@@ -428,48 +428,48 @@ describe('Indexes', function () {
       idx.insert(doc1)
       idx.insert(doc2)
       idx.insert(doc3)
-      idx.tree.getNumberOfKeys().should.equal(3)
+      expect(idx.tree.getNumberOfKeys()).toEqual(3)
 
       idx.update(batchUpdate)
 
-      idx.tree.getNumberOfKeys().should.equal(3)
-      idx.getMatching('world').length.should.equal(1)
-      idx.getMatching('world')[0].should.equal(doc1b)
-      idx.getMatching('changed').length.should.equal(1)
-      idx.getMatching('changed')[0].should.equal(doc2b)
-      idx.getMatching('bloup').length.should.equal(1)
-      idx.getMatching('bloup')[0].should.equal(doc3b)
+      expect(idx.tree.getNumberOfKeys()).toEqual(3)
+      expect(idx.getMatching('world').length).toEqual(1)
+      expect(idx.getMatching('world')[0]).toEqual(doc1b)
+      expect(idx.getMatching('changed').length).toEqual(1)
+      expect(idx.getMatching('changed')[0]).toEqual(doc2b)
+      expect(idx.getMatching('bloup').length).toEqual(1)
+      expect(idx.getMatching('bloup')[0]).toEqual(doc3b)
 
       idx.revertUpdate(batchUpdate)
 
-      idx.tree.getNumberOfKeys().should.equal(3)
-      idx.getMatching('hello').length.should.equal(1)
-      idx.getMatching('hello')[0].should.equal(doc1)
-      idx.getMatching('world').length.should.equal(1)
-      idx.getMatching('world')[0].should.equal(doc2)
-      idx.getMatching('bloup').length.should.equal(1)
-      idx.getMatching('bloup')[0].should.equal(doc3)
+      expect(idx.tree.getNumberOfKeys()).toEqual(3)
+      expect(idx.getMatching('hello').length).toEqual(1)
+      expect(idx.getMatching('hello')[0]).toEqual(doc1)
+      expect(idx.getMatching('world').length).toEqual(1)
+      expect(idx.getMatching('world')[0]).toEqual(doc2)
+      expect(idx.getMatching('bloup').length).toEqual(1)
+      expect(idx.getMatching('bloup')[0]).toEqual(doc3)
 
       // Now a simple update
       idx.update(doc2, doc2b)
 
-      idx.tree.getNumberOfKeys().should.equal(3)
-      idx.getMatching('hello').length.should.equal(1)
-      idx.getMatching('hello')[0].should.equal(doc1)
-      idx.getMatching('changed').length.should.equal(1)
-      idx.getMatching('changed')[0].should.equal(doc2b)
-      idx.getMatching('bloup').length.should.equal(1)
-      idx.getMatching('bloup')[0].should.equal(doc3)
+      expect(idx.tree.getNumberOfKeys()).toEqual(3)
+      expect(idx.getMatching('hello').length).toEqual(1)
+      expect(idx.getMatching('hello')[0]).toEqual(doc1)
+      expect(idx.getMatching('changed').length).toEqual(1)
+      expect(idx.getMatching('changed')[0]).toEqual(doc2b)
+      expect(idx.getMatching('bloup').length).toEqual(1)
+      expect(idx.getMatching('bloup')[0]).toEqual(doc3)
 
       idx.revertUpdate(doc2, doc2b)
 
-      idx.tree.getNumberOfKeys().should.equal(3)
-      idx.getMatching('hello').length.should.equal(1)
-      idx.getMatching('hello')[0].should.equal(doc1)
-      idx.getMatching('world').length.should.equal(1)
-      idx.getMatching('world')[0].should.equal(doc2)
-      idx.getMatching('bloup').length.should.equal(1)
-      idx.getMatching('bloup')[0].should.equal(doc3)
+      expect(idx.tree.getNumberOfKeys()).toEqual(3)
+      expect(idx.getMatching('hello').length).toEqual(1)
+      expect(idx.getMatching('hello')[0]).toEqual(doc1)
+      expect(idx.getMatching('world').length).toEqual(1)
+      expect(idx.getMatching('world')[0]).toEqual(doc2)
+      expect(idx.getMatching('bloup').length).toEqual(1)
+      expect(idx.getMatching('bloup')[0]).toEqual(doc3)
     })
   }) // ==== End of 'Update' ==== //
 
@@ -634,16 +634,16 @@ describe('Indexes', function () {
       idx.insert(doc2)
       idx.insert(doc3)
 
-      idx.tree.getNumberOfKeys().should.equal(3)
-      idx.getMatching('hello').length.should.equal(1)
-      idx.getMatching('world').length.should.equal(1)
-      idx.getMatching('bloup').length.should.equal(1)
+      expect(idx.tree.getNumberOfKeys()).toEqual(3)
+      expect(idx.getMatching('hello').length).toEqual(1)
+      expect(idx.getMatching('world').length).toEqual(1)
+      expect(idx.getMatching('bloup').length).toEqual(1)
 
       idx.reset()
-      idx.tree.getNumberOfKeys().should.equal(0)
-      idx.getMatching('hello').length.should.equal(0)
-      idx.getMatching('world').length.should.equal(0)
-      idx.getMatching('bloup').length.should.equal(0)
+      expect(idx.tree.getNumberOfKeys()).toEqual(0)
+      expect(idx.getMatching('hello').length).toEqual(0)
+      expect(idx.getMatching('world').length).toEqual(0)
+      expect(idx.getMatching('bloup').length).toEqual(0)
     })
 
     it('Can reset an index and initialize it with one document', function () {
@@ -656,17 +656,17 @@ describe('Indexes', function () {
       idx.insert(doc2)
       idx.insert(doc3)
 
-      idx.tree.getNumberOfKeys().should.equal(3)
-      idx.getMatching('hello').length.should.equal(1)
-      idx.getMatching('world').length.should.equal(1)
-      idx.getMatching('bloup').length.should.equal(1)
+      expect(idx.tree.getNumberOfKeys()).toEqual(3)
+      expect(idx.getMatching('hello').length).toEqual(1)
+      expect(idx.getMatching('world').length).toEqual(1)
+      expect(idx.getMatching('bloup').length).toEqual(1)
 
       idx.reset(newDoc)
-      idx.tree.getNumberOfKeys().should.equal(1)
-      idx.getMatching('hello').length.should.equal(0)
-      idx.getMatching('world').length.should.equal(0)
-      idx.getMatching('bloup').length.should.equal(0)
-      idx.getMatching('new')[0].a.should.equal(555)
+      expect(idx.tree.getNumberOfKeys()).toEqual(1)
+      expect(idx.getMatching('hello').length).toEqual(0)
+      expect(idx.getMatching('world').length).toEqual(0)
+      expect(idx.getMatching('bloup').length).toEqual(0)
+      expect(idx.getMatching('new')[0].a).toEqual(555)
     })
 
     it('Can reset an index and initialize it with an array of documents', function () {
@@ -682,18 +682,18 @@ describe('Indexes', function () {
       idx.insert(doc2)
       idx.insert(doc3)
 
-      idx.tree.getNumberOfKeys().should.equal(3)
-      idx.getMatching('hello').length.should.equal(1)
-      idx.getMatching('world').length.should.equal(1)
-      idx.getMatching('bloup').length.should.equal(1)
+      expect(idx.tree.getNumberOfKeys()).toEqual(3)
+      expect(idx.getMatching('hello').length).toEqual(1)
+      expect(idx.getMatching('world').length).toEqual(1)
+      expect(idx.getMatching('bloup').length).toEqual(1)
 
       idx.reset(newDocs)
-      idx.tree.getNumberOfKeys().should.equal(2)
-      idx.getMatching('hello').length.should.equal(0)
-      idx.getMatching('world').length.should.equal(0)
-      idx.getMatching('bloup').length.should.equal(0)
-      idx.getMatching('new')[0].a.should.equal(555)
-      idx.getMatching('again')[0].a.should.equal(666)
+      expect(idx.tree.getNumberOfKeys()).toEqual(2)
+      expect(idx.getMatching('hello').length).toEqual(0)
+      expect(idx.getMatching('world').length).toEqual(0)
+      expect(idx.getMatching('bloup').length).toEqual(0)
+      expect(idx.getMatching('new')[0].a).toEqual(555)
+      expect(idx.getMatching('again')[0].a).toEqual(666)
     })
   }) // ==== End of 'Resetting' ==== //
 

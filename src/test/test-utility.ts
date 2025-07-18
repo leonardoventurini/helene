@@ -1,6 +1,7 @@
 import { Client, ClientOptions, TransportMode } from '../client'
 import { EventOptions, Server, ServerOptions } from '../server'
 import { ClientEvents, NO_CHANNEL, ServerEvents, sleep } from '../utils'
+import { beforeEach, afterEach } from 'vitest'
 
 const PORTS = new Set()
 

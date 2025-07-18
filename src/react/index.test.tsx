@@ -1,7 +1,7 @@
 import { TestUtility } from '../test/test-utility'
 import { sleep } from '../utils'
 import { render, renderHook, screen, waitFor } from '@testing-library/react'
-import { expect } from 'chai'
+import { expect, describe, it, beforeEach, afterEach } from 'vitest'
 import { EventEmitter2 } from 'eventemitter2'
 import noop from 'lodash/noop'
 import omit from 'lodash/omit'
@@ -486,7 +486,7 @@ describe('React Hooks', () => {
     let localStorageMock: Storage
     let sandbox: sinon.SinonSandbox
 
-    beforeEach(function () {
+    beforeEach(() => {
       sandbox = sinon.createSandbox()
 
       localStorageMock = {
@@ -501,7 +501,7 @@ describe('React Hooks', () => {
       global.localStorage = localStorageMock
     })
 
-    afterEach(function () {
+    afterEach(() => {
       sandbox.restore()
     })
 
