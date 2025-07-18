@@ -13,7 +13,6 @@ module.exports = {
   env: {
     node: true,
     browser: true,
-    mocha: true,
   },
 
   extends: [

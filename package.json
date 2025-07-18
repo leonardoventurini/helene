@@ -5,7 +5,9 @@
   "scripts": {
     "lint": "eslint --ext .js,.jsx,.ts,.tsx 'src/**/*'",
     "browser:test": "vitest --config vitest.config.ts",
-    "test": "vitest --config vitest.config.node.ts"
+    "test": "vitest --config vitest.config.node.ts",
+    "build": "tsc",
+    "clean": "rm -rf client data react server utils"
   },
   "dependencies": {
     "@lukeed/uuid": "^2.0.1",
@@ -37,6 +39,7 @@
     "@testing-library/dom": "^9.3.1",
     "@testing-library/react": "^14.0.0",
     "@testing-library/user-event": "^14.4.3",
+    "@types/express": "^5.0.3",
     "@types/lodash": "^4.17.20",
     "@typescript-eslint/eslint-plugin": "^6.7.4",
     "@typescript-eslint/parser": "^6.7.4",

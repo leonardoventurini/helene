@@ -12,7 +12,7 @@ export default defineConfig({
       ],
       provider: 'playwright',
       headless: true,
-      screenshotOnFailure: false,
+      screenshotFailures: false,
     },
     include: ['src/test/browser/**/*.test.ts'],
     exclude: ['node_modules', 'dist'],

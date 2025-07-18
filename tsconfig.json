@@ -16,9 +16,11 @@
     "target": "ESNext"
   },
   "include": [
-    "./src/**/*",
+    "src",
   ],
   "exclude": [
-    "./src/tests/**/*"
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/test"
   ]
 }

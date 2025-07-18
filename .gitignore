@@ -11,3 +11,10 @@ yarn-error.log
 workspace
 
 lerna-debug.log
+
+
+client
+data
+react
+server
+utils
