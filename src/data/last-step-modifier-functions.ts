@@ -171,7 +171,7 @@ export const LastStepModifierFunctions = {
   /**
    * Increment a numeric field's value
    */
-  $inc: function (obj, field, value) {
+  $inc: function (obj: Record<string, any>, field: string, value: number) {
     if (typeof value !== 'number') {
       throw new Error(value + ' must be a number')
     }

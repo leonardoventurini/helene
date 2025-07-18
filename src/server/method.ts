@@ -70,7 +70,7 @@ export class Method<Schema extends z.ZodUndefined | z.ZodTypeAny, Result> {
   constructor(
     server: Server,
     name: string,
-    fn: MethodFunction<z.input<Schema>, Result>,
+    fn: MethodFunction<z.input<Schema> | any, Result>,
     opts: MethodOptions<Schema>,
   ) {
     const { cache, maxAge = 60000, schema } = opts ?? {}

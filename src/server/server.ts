@@ -208,7 +208,7 @@ export class Server<
     return this.httpTransport.static(path, catchAll)
   }
 
-  debugger(...args) {
+  debugger(...args: any[]) {
     if (this.debug) console.debug(...args)
   }
 

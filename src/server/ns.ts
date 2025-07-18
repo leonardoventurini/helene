@@ -55,8 +55,7 @@ export function ns<
       >(namespace, {
         ...submodules,
         [nameWithPrefix]: [fnOrSubmodule, options],
-      } as Methods &
-        Record<Name, ServerMethodDefinition<z.input<Schema>, ResultType>>)
+      } as Methods & Record<Name, ServerMethodDefinition<Schema, ResultType>>)
     }
 
     return ns<Namespace, Methods & { [K in typeof methodName]: ServerMethods }>(
