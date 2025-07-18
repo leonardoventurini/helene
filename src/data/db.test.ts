@@ -10,7 +10,7 @@ import { NodeStorage } from './node'
 import { serialize } from './serialization'
 import { pluck } from './utils'
 
-const testDb = path.join(process.cwd(), 'test-workspace', 'test.db'),
+const testDb = path.join('workspace', 'test.db'),
   reloadTimeUpperBound = 60 // In ms, an upper bound for the reload time used to check createdAt and updatedAt
 
 describe('Database', () => {
@@ -26,13 +26,7 @@ describe('Database', () => {
 
     await mkdirp(path.dirname(testDb))
 
-    try {
-      if (fs.existsSync(testDb)) {
-        fs.unlinkSync(testDb)
-      }
-    } catch (error) {
-      // Ignore file not found errors
-    }
+    fs.existsSync(testDb) && fs.unlinkSync(testDb)
 
     await collection.loadDatabase()
 
@@ -47,6 +41,7 @@ describe('Database', () => {
         serialize({ _id: '2', a: 5, planet: 'Mars' }) +
         '\n'
       const autoDb = 'workspace/auto.db'
+      await mkdirp(path.dirname(autoDb))
       fs.writeFileSync(autoDb, fileStr, 'utf8')
 
       const db = await createCollection({
@@ -69,20 +64,39 @@ describe('Database', () => {
           '{"$$indexCreated":{"fieldName":"a","unique":true}}',
         autoDb = 'workspace/auto.db'
 
+      await mkdirp(path.dirname(autoDb))
+
       fs.writeFileSync(autoDb, fileStr, 'utf8')
 
-      // Check the loadDatabase generated an error
-      function onload(err) {
-        expect(err?.errorType).toEqual('uniqueViolated')
-      }
+      let errorCaught = false
+      let errorEventCaught = false
 
-      const db = new Collection({
-        name: autoDb,
-        autoload: true,
-        onload: onload,
+      await new Promise<void>(resolve => {
+        const db = new Collection({
+          name: autoDb,
+          storage: new NodeStorage(),
+          autoload: true,
+          onload: err => {
+            expect(err).toBeInstanceOf(Error)
+            expect(err.message).toEqual('Unique Constraint Violation')
+            errorCaught = true
+
+            // needs to give time for the error event to be caught
+            setTimeout(() => {
+              resolve()
+            }, 100)
+          },
+        })
+
+        // also handle the error event to prevent unhandled rejection warning
+        db.on(CollectionEvent.ERROR, err => {
+          errorEventCaught = true
+          expect(err).toBeInstanceOf(Error)
+        })
       })
 
-      await db.find({})
+      expect(errorCaught).toBe(true)
+      expect(errorEventCaught).toBe(true)
     })
   })
 
@@ -169,7 +183,7 @@ describe('Database', () => {
       try {
         await collection.insert({ _id: 'test', otherstuff: 42 })
       } catch (err) {
-        expect(err.errorType).toEqual('uniqueViolated')
+        expect(err.message).toEqual('Unique Constraint Violation')
       }
     })
 
@@ -1838,7 +1852,7 @@ describe('Database', () => {
 
         await fs.promises.writeFile(testDb, rawData, 'utf8')
         await expect(collection.loadDatabase()).rejects.toThrow(
-          /Unique constraint violation/,
+          'Unique Constraint Violation',
         )
         expect(collection.getAllData()).toHaveLength(0)
         expect(collection.indexes.z.tree.getNumberOfKeys()).toEqual(0)
@@ -1853,7 +1867,7 @@ describe('Database', () => {
 
         await expect(
           collection.ensureIndex({ fieldName: 'a', unique: true }),
-        ).rejects.toThrow(/Unique constraint violation/)
+        ).rejects.toThrow('Unique Constraint Violation')
 
         assert.deepEqual(Object.keys(collection.indexes), ['_id', 'b'])
       })
@@ -2334,6 +2348,7 @@ describe('Database', () => {
       it('Indexes are persisted to a separate file and recreated upon reload', async function () {
         const persDb = 'workspace/persistIndexes.db'
 
+        await mkdirp(path.dirname(persDb))
         if (fs.existsSync(persDb)) {
           fs.writeFileSync(persDb, '', 'utf8')
         }
@@ -2387,6 +2402,7 @@ describe('Database', () => {
 
         let db
 
+        await mkdirp(path.dirname(persDb))
         if (fs.existsSync(persDb)) {
           fs.writeFileSync(persDb, '', 'utf8')
         }
@@ -2472,6 +2488,7 @@ describe('Database', () => {
 
         let db
 
+        await mkdirp(path.dirname(persDb))
         if (fs.existsSync(persDb)) {
           fs.writeFileSync(persDb, '', 'utf8')
         }

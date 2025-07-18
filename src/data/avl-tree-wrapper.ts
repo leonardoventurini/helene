@@ -25,9 +25,7 @@ export class AVLTreeWrapper {
       const existingValues = existingNode.data || []
 
       if (this.unique) {
-        const error = new Error('Unique constraint violation') as any
-        error.errorType = 'uniqueViolated'
-        throw error
+        throw new Error('Unique Constraint Violation')
       }
 
       for (const existingValue of existingValues) {

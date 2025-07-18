@@ -95,7 +95,7 @@ describe('Indexes', function () {
       try {
         idx.insert([doc1, doc2, doc2b, doc3])
       } catch (e) {
-        expect(e.errorType).toEqual('uniqueViolated')
+        expect(e.message).toEqual('Unique Constraint Violation')
       }
       expect(idx.tree.getNumberOfKeys()).toEqual(0)
       assert.deepEqual(idx.tree.search('hello'), [])
@@ -307,7 +307,7 @@ describe('Indexes', function () {
       try {
         idx.update(doc3, bad)
       } catch (e) {
-        expect(e.errorType).toEqual('uniqueViolated')
+        expect(e.message).toEqual('Unique Constraint Violation')
       }
 
       // No change
@@ -365,7 +365,7 @@ describe('Indexes', function () {
           { oldDoc: doc3, newDoc: doc3b },
         ])
       } catch (e) {
-        expect(e.errorType).toEqual('uniqueViolated')
+        expect(e.message).toEqual('Unique Constraint Violation')
       }
 
       expect(idx.tree.getNumberOfKeys()).toEqual(3)
@@ -383,7 +383,7 @@ describe('Indexes', function () {
           { oldDoc: doc3, newDoc: doc3b },
         ])
       } catch (e) {
-        expect(e.errorType).toEqual('uniqueViolated')
+        expect(e.message).toEqual('Unique Constraint Violation')
       }
 
       expect(idx.tree.getNumberOfKeys()).toEqual(3)
