@@ -5,10 +5,7 @@
   "scripts": {
     "lint": "eslint --ext .js,.jsx,.ts,.tsx 'src/**/*'",
     "browser:test": "vitest --config vitest.config.ts",
-    "browser:test:watch": "vitest --config vitest.config.ts --watch",
-    "test": "vitest --config vitest.config.node.ts",
-    "test:watch": "vitest --config vitest.config.node.ts --watch",
-    "test:all": "yarn browser:test && yarn test"
+    "test": "vitest --config vitest.config.node.ts"
   },
   "dependencies": {
     "@lukeed/uuid": "^2.0.1",
