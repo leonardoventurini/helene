@@ -15,7 +15,6 @@ export const ClientProvider = ({
   clientInstance?: Client
 }>) => {
   const client = useCreation(() => {
-    console.log('Helene: Creating client instance in provider')
     return clientInstance ?? new Client(clientOptions)
   }, [])
 

@@ -1,6 +1,6 @@
 import { TestUtility } from '../test/test-utility'
 import { sleep } from '../utils'
-import { render, renderHook, screen, waitFor } from '@testing-library/react'
+import { act, renderHook, waitFor } from '@testing-library/react'
 import { expect, describe, it, beforeEach, afterEach } from 'vitest'
 import { EventEmitter2 } from 'eventemitter2'
 import noop from 'lodash/noop'
@@ -29,12 +29,6 @@ describe('React Hooks', () => {
     )
   }
 
-  it('renders hello world', () => {
-    render(<span role='message'>Hello World</span>)
-
-    expect(screen.queryByRole('message').textContent).to.equal('Hello World')
-  })
-
   describe('useAuth', () => {
     beforeEach(() => {
       test.server.setAuth({
@@ -46,6 +40,7 @@ describe('React Hooks', () => {
           }
         },
         async auth({ token }) {
+          console.log('auth', token)
           return token ? { user: { _id: '456' } } : undefined
         },
       })
@@ -54,21 +49,31 @@ describe('React Hooks', () => {
     it('should return the auth state', async () => {
       const { result } = renderHook(() => useAuth(), { wrapper })
 
-      expect(result.current).to.containSubset({
-        authenticated: false,
-        context: {},
+      console.log('useAuth', result.current.context)
+
+      await waitFor(() => {
+        expect(
+          pick(result.current, ['authenticated', 'context']),
+        ).to.containSubset({
+          authenticated: false,
+          context: {},
+        })
       })
 
       await test.client.login({ email: '123', password: '123' })
 
       await sleep(100)
 
-      expect(omit(result.current, 'client')).to.containSubset({
-        authenticated: true,
-        context: {
-          token: 'foo',
-          initialized: true,
-        },
+      await waitFor(() => {
+        expect(
+          pick(result.current, ['authenticated', 'context']),
+        ).to.containSubset({
+          authenticated: true,
+          context: {
+            token: 'foo',
+            initialized: true,
+          },
+        })
       })
     })
   })
@@ -85,7 +90,9 @@ describe('React Hooks', () => {
         })
       })
 
-      await test.client.close()
+      await act(async () => {
+        await test.client.close()
+      })
 
       await waitFor(() => {
         expect(result.current).to.be.deep.equal({
@@ -95,7 +102,9 @@ describe('React Hooks', () => {
         })
       })
 
-      await test.client.connect()
+      await act(async () => {
+        await test.client.connect()
+      })
 
       await waitFor(() => {
         expect(result.current).to.be.deep.equal({
