@@ -68,7 +68,10 @@
   },
   "author": "Leonardo Venturini",
   "license": "MIT",
-  "repository": "https://github.com/leonardoventurini/helene",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leonardoventurini/helene.git"
+  },
   "keywords": [
     "websockets",
     "rpc",
