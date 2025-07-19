@@ -1,16 +1,26 @@
 {
-  "$schema": "https://json.schemastore.org/swcrc",
   "jsc": {
-    "target": "esnext",
     "parser": {
       "syntax": "typescript",
       "tsx": true,
-      "decorators": true,
-      "dynamicImport": true
+      "decorators": false,
+      "dynamicImport": false
     },
-    "baseUrl": "./"
+    "transform": null,
+    "target": "es2018",
+    "loose": false,
+    "externalHelpers": false,
+    "keepClassNames": false
   },
   "module": {
-    "type": "commonjs"
-  }
+    "type": "commonjs",
+    "strict": false,
+    "strictMode": true,
+    "lazy": false,
+    "noInterop": false
+  },
+  "minify": false,
+  "isModule": false,
+  "sourceMaps": false,
+  "inlineSourcesContent": false
 }

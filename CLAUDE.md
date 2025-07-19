@@ -1,0 +1,2 @@
+- This project uses yarn v1 to manage npm packages
+- You can use `yarn test <file>` to run tests for specific test files

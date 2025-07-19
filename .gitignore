@@ -1,13 +1,12 @@
-lib
-node_modules
-yarn-error.log
-
-/**/dist/
-/**/lib/
-
-/index.*
+/lib
+/node_modules
+/yarn-error.log
 
 /tsconfig.tsbuildinfo
-workspace
+/workspace
 
-lerna-debug.log
+/client
+/data
+/react
+/server
+/utils

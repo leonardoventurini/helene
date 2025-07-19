@@ -1,10 +1,11 @@
 {
   "compilerOptions": {
+    "rootDir": "src",
     "allowSyntheticDefaultImports": true,
     "allowUnreachableCode": true,
     "declaration": true,
     "esModuleInterop": true,
-    "incremental": true,
+    "incremental": false,
     "jsx": "react",
     "module": "commonjs",
     "moduleResolution": "node",
@@ -13,12 +14,14 @@
     "outDir": ".",
     "skipLibCheck": true,
     "sourceMap": true,
-    "target": "es2021"
+    "target": "ESNext"
   },
   "include": [
-    "**/*"
+    "src/**/*"
   ],
   "exclude": [
-    "./src/tests/**/*"
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "src/test/**/*",
   ]
 }
