@@ -1,10 +1,11 @@
 {
   "compilerOptions": {
+    "rootDir": "src",
     "allowSyntheticDefaultImports": true,
     "allowUnreachableCode": true,
     "declaration": true,
     "esModuleInterop": true,
-    "incremental": true,
+    "incremental": false,
     "jsx": "react",
     "module": "commonjs",
     "moduleResolution": "node",
@@ -16,11 +17,11 @@
     "target": "ESNext"
   },
   "include": [
-    "src",
+    "src/**/*"
   ],
   "exclude": [
-    "src/**/*.test.ts",
-    "src/**/*.test.tsx",
-    "src/test"
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "src/test/**/*",
   ]
 }

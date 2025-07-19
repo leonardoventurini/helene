@@ -6,7 +6,7 @@
     "lint": "eslint --ext .js,.jsx,.ts,.tsx 'src/**/*'",
     "browser:test": "vitest --config vitest.config.ts",
     "test": "vitest --config vitest.config.node.ts",
-    "build": "tsc",
+    "build": "yarn clean && tsc",
     "clean": "rm -rf client data react server utils"
   },
   "dependencies": {
