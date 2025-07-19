@@ -15,4 +15,10 @@ workspace
 assets
 demo
 bun.lockb
+vitest.config.ts
+vitest.config.node.ts
+.eslintignore
+.prettierignore
+.swcrc
 CLAUDE.md
+tsconfig.json
