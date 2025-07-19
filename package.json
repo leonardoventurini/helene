@@ -85,6 +85,5 @@
   "volta": {
     "node": "24.4.1",
     "yarn": "1.22.22"
-  },
-  "private": true
+  }
 }
