@@ -22,8 +22,19 @@ jobs:
           node-version: 24
           cache: yarn
       - run: yarn install --frozen-lockfile
-      - run: yarn playwright install
       - run: yarn test --run
+
+  browser-tests:
+    name: Browser Tests
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 24
+          cache: yarn
+      - run: yarn install --frozen-lockfile
+      - run: yarn playwright install
       - run: yarn run browser:test --run
         env:
           CI: true
