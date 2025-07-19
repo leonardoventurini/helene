@@ -32,7 +32,7 @@ export function useSubscribe(
     if (!callback) return
     if (!active) return
 
-    const events = _channel._events[event] as AnyFunction[] | AnyFunction
+    const events = _channel._events?.[event] as AnyFunction[] | AnyFunction
 
     const isAlreadyRegistered =
       events === callback ||

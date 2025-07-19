@@ -8,7 +8,8 @@
     "test": "vitest --config vitest.config.node.ts",
     "clean": "rm -rf client data react server utils",
     "build": "yarn clean && tsc",
-    "prepublishOnly": "yarn build"
+    "prepublishOnly": "yarn build",
+    "watch": "tsc --watch"
   },
   "dependencies": {
     "@lukeed/uuid": "^2.0.1",
