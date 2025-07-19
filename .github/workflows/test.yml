@@ -22,6 +22,7 @@ jobs:
           node-version: 24
           cache: yarn
       - run: yarn install --frozen-lockfile
+      - run: yarn playwright install
       - run: yarn test --run
       - run: yarn run browser:test --run
         env:
