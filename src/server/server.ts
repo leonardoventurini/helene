@@ -252,7 +252,7 @@ export class Server<
   addMethod<
     T = any,
     R = any,
-    Schema extends z.ZodTypeAny | z.ZodUndefined = z.ZodUndefined,
+    Schema extends z.ZodUndefined | z.ZodObject<any> = z.ZodUndefined,
   >(
     method: string,
     fn: MethodFunction<Schema extends z.ZodUndefined ? T : z.input<Schema>, R>,

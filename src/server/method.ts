@@ -24,7 +24,9 @@ export type MethodFunction<T = any, R = any> = (
 /**
  * @todo Add support for timeout monitoring.
  */
-export interface MethodOptions<Schema extends z.ZodUndefined | z.ZodTypeAny> {
+export interface MethodOptions<
+  Schema extends z.ZodUndefined | z.ZodObject<any>,
+> {
   cache?: boolean
   maxAge?: number
   protected?: boolean
@@ -58,7 +60,7 @@ function customMemoize<T extends (...args: any[]) => any>(
   } as T
 }
 
-export class Method<Schema extends z.ZodUndefined | z.ZodTypeAny, Result> {
+export class Method<Schema extends z.ZodUndefined | z.ZodObject<any>, Result> {
   uuid: string
   fn: MethodFunction
   isProtected: boolean

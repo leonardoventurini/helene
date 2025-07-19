@@ -8,7 +8,7 @@ export function ns<
 >(namespace?: Namespace, submodules?: Methods) {
   function add<
     Name extends string,
-    Schema extends z.ZodUndefined | z.ZodTypeAny,
+    Schema extends z.ZodUndefined | z.ZodObject<any>,
     ResultType,
   >(
     methodName: Name,
@@ -32,7 +32,7 @@ export function ns<
 
   function add<
     Name extends string,
-    Schema extends z.ZodUndefined | z.ZodTypeAny,
+    Schema extends z.ZodUndefined | z.ZodObject<any>,
     ResultType,
   >(
     methodName: Name,

@@ -5,7 +5,7 @@ import { rpcInit, rpcLogout, rpcOff, rpcOn } from './methods'
 import { Server } from './server'
 
 type MethodBuilder<
-  Schema extends z.ZodTypeAny | z.ZodUndefined = z.ZodUndefined,
+  Schema extends z.ZodUndefined | z.ZodObject<any> = z.ZodUndefined,
   Result = any,
 > = (server: Server, name: string) => Method<Schema, Result>
 
