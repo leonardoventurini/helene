@@ -6,7 +6,7 @@
     "lint": "eslint --ext .js,.jsx,.ts,.tsx 'src/**/*'",
     "browser:test": "vitest --config vitest.config.ts",
     "test": "vitest --config vitest.config.node.ts",
-    "clean": "rm -rf client data react server utils",
+    "clean": "rm -rf client data react server utils ejson",
     "build": "yarn clean && tsc",
     "prepublishOnly": "yarn build",
     "watch": "tsc --watch"
@@ -15,6 +15,7 @@
     "@lukeed/uuid": "^2.0.1",
     "ahooks": "^3.9.0",
     "avl": "^1.6.0",
+    "base64-js": "^1.5.1",
     "cors": "^2.8.5",
     "ejson2": "^1.1.0",
     "eventemitter2": "^6.4.9",
