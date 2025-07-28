@@ -2,12 +2,8 @@ import { expect, describe, it, beforeEach } from 'vitest'
 import { TestUtility } from '../test-utility'
 import path from 'path'
 import request from 'supertest'
-import defer from 'lodash/defer'
 import range from 'lodash/range'
-import sinon from 'sinon'
-import { ClientEvents, Errors, ServerEvents } from '../../utils'
-import { Client, ClientHttp } from '../../client'
-import { ClientNode } from '../../server'
+import { Errors } from '../../utils'
 
 describe('HTTP', async () => {
   const test = new TestUtility()
@@ -141,132 +137,6 @@ describe('HTTP', async () => {
       expect(response.header['content-type']).to.match(/html/)
       expect(response.status).to.equal(200)
       expect(response.text).to.match(/Foo Fighting/)
-    })
-  })
-
-  describe('server sent events', () => {
-    it('should send an event through the current client node', async () => {
-      const client = await test.createHttpClient()
-
-      test.server.addMethod('send:event', async function () {
-        this.sendEvent('event', { hello: 'world' })
-      })
-
-      client.call('send:event')
-
-      const [payload] = await client.waitFor('event', 200)
-
-      expect(payload).to.be.an('object')
-      expect(payload).to.have.property('hello').that.is.equal('world')
-    }, 20000)
-
-    it('should subscribe to an event', async () => {
-      test.server.addEvent('test:event')
-
-      const client = await test.createHttpClient()
-
-      const subscribeResponse = await client.subscribe('test:event')
-
-      expect(subscribeResponse).to.be.deep.equal({
-        'test:event': true,
-      })
-
-      test.server.addMethod('send:event', async function () {
-        this.server.emit('test:event', true)
-      })
-
-      client.call('send:event')
-
-      const [payload] = await client.waitFor('test:event', 200)
-
-      expect(payload).to.be.true
-    })
-
-    it('should send an event to a channel', async () => {
-      test.server.addEvent('test:event')
-
-      const client = await test.createHttpClient()
-
-      const channel = client.channel('test:channel')
-
-      const subscribeResponse = await channel.subscribe('test:event')
-
-      expect(subscribeResponse).to.be.deep.equal({
-        'test:event': true,
-      })
-
-      test.server.addMethod('send:event', async function () {
-        this.server.channel('test:channel').emit('test:event', true)
-      })
-
-      client.call('send:event')
-
-      const [payload] = await channel.waitFor('test:event', 200)
-
-      expect(payload).to.be.true
-    })
-
-    it('should try to subscribe to a protected event while unauthenticated and fail', async () => {
-      const client = await test.createHttpClient()
-
-      test.server.addEvent('protected:event', { protected: true })
-
-      const result = await client.subscribe('protected:event')
-
-      expect(result).to.have.property('protected:event').that.is.false
-
-      test.server.defer('protected:event')
-
-      const eventTimeout = await test.client.timeout('protected:event')
-
-      expect(eventTimeout).to.be.true
-    })
-
-    it('should call connection and disconnection events', async () => {
-      const clientPromise = test.createHttpClient()
-
-      const [node1] = await test.server.waitFor(ServerEvents.CONNECTION, 1000)
-      expect(node1).to.be.instanceof(ClientNode)
-
-      await clientPromise
-
-      defer(() => {
-        node1.req.destroy()
-      })
-
-      const [node2] = await test.server.waitFor(
-        ServerEvents.DISCONNECTION,
-        5000,
-      )
-
-      expect(node2).to.be.instanceof(ClientNode)
-    }, 20000)
-
-    it('should not call event source creation if auto connect is enabled (default)', async () => {
-      const stub = sinon.stub(ClientHttp.prototype, 'createEventSource')
-
-      const client = new Client({
-        host: test.host,
-        port: test.port,
-      })
-
-      await client.isConnected()
-
-      expect(stub.called).to.be.false
-
-      await client.close()
-
-      stub.restore()
-    })
-
-    it('should call init even after it abnormally reconnects', async () => {
-      const client = await test.createHttpClient()
-
-      test.server.httpTransport.eventSourceClients.get(client.uuid).res.end()
-
-      await client.waitFor(ClientEvents.EVENTSOURCE_ERROR)
-
-      await client.waitFor(ClientEvents.INITIALIZED)
     })
   })
 })

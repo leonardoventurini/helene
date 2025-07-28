@@ -1,7 +1,6 @@
 import {
   CLIENT_ID_HEADER_KEY,
   Errors,
-  HeleneEvents,
   PayloadType,
   Presentation,
   PublicError,
@@ -18,8 +17,6 @@ import { RateLimit, Server } from '../server'
 import { EJSON } from 'ejson2'
 import rateLimit from 'express-rate-limit'
 import isString from 'lodash/isString'
-
-import { Heartbeat } from '../heartbeat'
 
 declare module 'express' {
   interface Request {
@@ -42,8 +39,6 @@ export class HttpTransport {
   server: Server
   http: http.Server
   express: express.Express
-
-  eventSourceClients: Map<string, ClientNode> = new Map()
 
   constructor(server: Server, origins: string[], limit: RateLimit) {
     this.server = server
@@ -72,8 +67,6 @@ export class HttpTransport {
     }
 
     this.express.post('/__h', this.requestHandler)
-
-    this.express.get('/__h', this.eventSourceHandler)
 
     this.authMiddleware = this.authMiddleware.bind(this)
     this.contextMiddleware = this.contextMiddleware.bind(this)
@@ -113,61 +106,7 @@ export class HttpTransport {
     return false
   }
 
-  eventSourceHandler = async (req, res) => {
-    const clientId = req.headers[CLIENT_ID_HEADER_KEY] as string
-
-    if (!clientId) {
-      return res.status(400).send('400 Bad Request')
-    }
-
-    res.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      Connection: 'keep-alive',
-      'Cache-Control': 'no-cache',
-    })
-
-    const clientNode = new ClientNode(
-      this.server,
-      null,
-      req,
-      res,
-      this.server.rateLimit,
-    )
-    clientNode.uuid = clientId
-    clientNode.isEventSource = true
-
-    clientNode.setTrackingProperties(req)
-
-    const serverContext = await this.getServerContext(clientNode)
-
-    clientNode.authenticated = Boolean(serverContext)
-    clientNode.setContext(serverContext)
-
-    this.eventSourceClients.set(clientId, clientNode)
-
-    this.server.emit(ServerEvents.CONNECTION, clientNode)
-
-    // Needs to send an event to the client immediately to `onopen` is triggered
-    clientNode.sendEvent(HeleneEvents.SERVER_SENT_EVENTS_CONNECTED)
-
-    res.write('retry: 1000\n')
-    res.write('heartbeatTimeout: 600000\n')
-
-    const keepAliveInterval = setInterval(() => {
-      res.write(': keep-alive\n')
-    }, Heartbeat.HEARTBEAT_INTERVAL)
-
-    req.on('close', () => {
-      clientNode.close()
-
-      clearInterval(keepAliveInterval)
-
-      this.eventSourceClients.delete(clientId)
-      this.server.deleteClient(clientNode)
-    })
-  }
-
-  requestHandler = async (req, res) => {
+  requestHandler = async (req: express.Request, res: express.Response) => {
     let uuid
     let payload
 
@@ -306,11 +245,7 @@ export class HttpTransport {
    * Need to close WebSocket server first.
    */
   close() {
-    return new Promise<void>((resolve, reject) => {
-      for (const client of this.eventSourceClients.values()) {
-        client.close()
-      }
-
+    return new Promise<void>(resolve => {
       if (!this.http) {
         this.server.emit(HttpTransportEvents.HTTP_SERVER_CLOSED)
         return resolve()

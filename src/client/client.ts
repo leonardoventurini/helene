@@ -44,30 +44,9 @@ export type WebSocketRequestParams = {
   [x: number]: any
 }
 
-/**
- * Declarative way to define transport mode. Can be changed at runtime.
- */
-export enum TransportMode {
-  /**
-   * HTTP Only. No reactivity, no real-time, no nothing. Just plain old HTTP requests.
-   */
-  HttpOnly = 'HTTP_ONLY',
-
-  /**
-   * Server-Sent Events. It is a one-way communication channel from the server + HTTP calls.
-   */
-  HttpSSE = 'HTTP_SSE',
-
-  /**
-   * WebSocket. It is a two-way communication channel.
-   */
-  WebSocket = 'WEBSOCKET',
-}
-
 export type ClientOptions = {
   host?: string
   port?: number
-  mode?: TransportMode
   secure?: boolean
   ws?: WebSocketOptions
   errorHandler?: ErrorHandler
@@ -110,7 +89,6 @@ export class Client<
 
   options: ClientOptions = {
     host: 'localhost',
-    mode: TransportMode.WebSocket,
     secure: false,
     errorHandler: null,
     debug: false,
@@ -172,22 +150,6 @@ export class Client<
     this.idleTimeout = new IdleTimeout(this)
   }
 
-  mode = {
-    options: this.options,
-
-    get http() {
-      return this.options.mode === TransportMode.HttpOnly
-    },
-
-    get eventsource() {
-      return this.options.mode === TransportMode.HttpSSE
-    },
-
-    get websocket() {
-      return this.options.mode === TransportMode.WebSocket
-    },
-  }
-
   get isConnecting() {
     return !!this.clientSocket?.connecting
   }
@@ -201,25 +163,11 @@ export class Client<
   }
 
   get connected() {
-    return (
-      (this.mode.eventsource && this.clientHttp.ready) ||
-      (this.mode.websocket && this.clientSocket.ready) ||
-      this.mode.http
-    )
+    return this.clientSocket.ready
   }
 
   async connect() {
-    if (this.mode.eventsource) {
-      await this.clientHttp.createEventSource()
-    }
-
-    if (this.mode.websocket) {
-      this.clientSocket.connect()
-    }
-
-    if (this.mode.http) {
-      this.initialize().catch(console.error)
-    }
+    this.clientSocket.connect()
 
     try {
       await this.waitFor(ClientEvents.INITIALIZED, 10000)
@@ -275,8 +223,6 @@ export class Client<
   async close() {
     this.emit(ClientEvents.CLOSE)
 
-    this.clientHttp.close()
-
     this.timeouts.forEach(timeout => clearTimeout(timeout))
 
     // Clear event sub/unsub timeouts.
@@ -292,19 +238,11 @@ export class Client<
   }
 
   #callInit(token: string, context: Record<string, any> = {}) {
-    return this.call(
-      Methods.RPC_INIT,
-      {
-        token,
-        meta: this.options.meta,
-        ...context,
-      },
-      {
-        httpFallback: [TransportMode.HttpSSE, TransportMode.HttpOnly].includes(
-          this.options.mode,
-        ),
-      },
-    )
+    return this.call(Methods.RPC_INIT, {
+      token,
+      meta: this.options.meta,
+      ...context,
+    })
   }
 
   /**

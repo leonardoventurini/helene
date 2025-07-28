@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "@lukeed/uuid": "^2.0.1",
-    "@sanity/eventsource": "^5.0.2",
     "ahooks": "^3.9.0",
     "avl": "^1.6.0",
     "cors": "^2.8.5",

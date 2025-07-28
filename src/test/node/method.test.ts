@@ -1,6 +1,6 @@
 import { expect, describe, it } from 'vitest'
 
-import { Client, TransportMode } from '../../client'
+import { Client } from '../../client'
 import { ClientNode, HeleneAsyncLocalStorage, ns } from '../../server'
 import {
   Errors,
@@ -305,7 +305,6 @@ describe('Methods', () => {
   it('in case we return undefined in a method we should ', async () => {
     const client = await test.createClient({
       port: test.server.port,
-      mode: TransportMode.HttpOnly,
     })
 
     test.server.addMethod('test:method', async () => undefined)

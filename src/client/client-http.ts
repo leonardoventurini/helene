@@ -7,9 +7,7 @@ import {
   Resolve,
   TOKEN_HEADER_KEY,
 } from '../utils'
-import EventSource from '@sanity/eventsource'
 import { EJSON } from 'ejson2'
-import defer from 'lodash/defer'
 import { Client } from './client'
 
 export class ClientHttp {
@@ -17,7 +15,6 @@ export class ClientHttp {
   protocol: string
   host: string
   uri: string
-  clientEventSource: EventSource
 
   constructor(client: Client) {
     this.client = client
@@ -30,66 +27,6 @@ export class ClientHttp {
     }
 
     this.uri = `${this.host}/__h`
-  }
-
-  get ready() {
-    return Boolean(this.clientEventSource?.readyState === EventSource.OPEN)
-  }
-
-  // @todo Recreate event source on token change.
-  createEventSource() {
-    return new Promise(resolve => {
-      if (this.ready) {
-        return resolve(this.clientEventSource)
-      }
-
-      if (!this.client.mode.eventsource) {
-        return resolve(null)
-      }
-
-      this.clientEventSource = new EventSource(this.uri, {
-        headers: {
-          [CLIENT_ID_HEADER_KEY]: this.client.uuid,
-          ...(this.client.context.token
-            ? { [TOKEN_HEADER_KEY]: this.client.context.token }
-            : {}),
-        },
-        withCredentials: true,
-        // @ts-ignore
-        heartbeatTimeout: 600000,
-      }) as EventSource
-
-      this.client.emit(ClientEvents.EVENTSOURCE_CREATE)
-
-      this.clientEventSource.onmessage = (event: MessageEvent) => {
-        const payload = Presentation.decode(event.data)
-
-        this.client.payloadRouter(payload)
-      }
-
-      this.clientEventSource.onopen = () => {
-        defer(() => {
-          resolve(this.clientEventSource)
-          this.client.emit(ClientEvents.EVENTSOURCE_OPEN)
-          this.client.initialize().catch(console.error)
-        })
-      }
-
-      this.clientEventSource.onerror = (error: any) => {
-        this.client.emit(ClientEvents.EVENTSOURCE_ERROR)
-        if (error.message) {
-          console.error(error.message)
-        }
-      }
-    })
-  }
-
-  close() {
-    if (this.clientEventSource) {
-      this.clientEventSource.close()
-      this.clientEventSource = null
-      this.client.emit(ClientEvents.EVENTSOURCE_CLOSE)
-    }
   }
 
   async request(

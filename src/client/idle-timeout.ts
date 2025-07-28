@@ -1,4 +1,4 @@
-import { ClientEvents, Environment, WebSocketState } from '../utils'
+import { ClientEvents, Environment } from '../utils'
 import defer from 'lodash/defer'
 import isNumber from 'lodash/isNumber'
 import throttle from 'lodash/throttle'
@@ -77,21 +77,6 @@ export class IdleTimeout {
   async reset() {
     this.stop()
     this.start()
-
-    if (this.client.mode.eventsource) {
-      if (
-        this.client.clientHttp.clientEventSource &&
-        this.client.clientHttp.clientEventSource.readyState !==
-          WebSocketState.CLOSED
-      ) {
-        return
-      }
-
-      await this.client.clientHttp.createEventSource()
-
-      await this.client.waitFor(ClientEvents.EVENTSOURCE_OPEN, 10000)
-      return
-    }
 
     if (this.client.clientSocket.socket?.active) {
       return

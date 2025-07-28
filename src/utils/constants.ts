@@ -51,11 +51,6 @@ export enum ClientEvents {
   WEBSOCKET_CLOSED = 'websocket:closed',
   WEBSOCKET_RECONNECTING = 'websocket:reconnecting',
 
-  EVENTSOURCE_CREATE = 'eventsource:create',
-  EVENTSOURCE_OPEN = 'eventsource:open',
-  EVENTSOURCE_CLOSE = 'eventsource:close',
-  EVENTSOURCE_ERROR = 'eventsource:error',
-
   CLOSE = 'client:close',
 }
 

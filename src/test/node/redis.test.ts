@@ -46,36 +46,6 @@ describe('Redis Pub/Sub', () => {
     expect(data2).to.be.equal(11)
   })
 
-  it('should emit an event in one server and both clients should fire (server sent events)', async () => {
-    const client1 = await test1.createHttpClient()
-    const client2 = await test2.createHttpClient()
-
-    expect(client1.clientHttp.clientEventSource.readyState).to.be.equal(1)
-    expect(client2.clientHttp.clientEventSource.readyState).to.be.equal(1)
-
-    expect(client1.clientSocket.socket).to.be.undefined
-    expect(client2.clientSocket.socket).to.be.undefined
-
-    test1.server.addEvent('monkey:king', { cluster: true })
-    test2.server.addEvent('monkey:king', { cluster: true })
-
-    await client1.subscribe('monkey:king')
-    await client2.subscribe('monkey:king')
-
-    test1.server.defer('monkey:king', 11)
-
-    const [data1, data2] = await Promise.all([
-      client1.wait('monkey:king'),
-      client2.wait('monkey:king'),
-    ])
-
-    expect(data1).to.be.equal(11)
-    expect(data2).to.be.equal(11)
-
-    await client1.close()
-    await client2.close()
-  })
-
   it('should not propagate an event if it does not have the cluster flag', async () => {
     await test1.createEvent('monkey:king')
     await test2.createEvent('monkey:king')

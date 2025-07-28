@@ -1,39 +1,9 @@
 import { ClientEvents, sleep } from '../../utils'
 import { expect, describe, it } from 'vitest'
-import EventSource from 'eventsource'
-import defer from 'lodash/defer'
 import { TestUtility } from '../test-utility'
 
 describe('idleness', () => {
   const test = new TestUtility()
-
-  it('should disconnect on idleness and reconnect upon interaction (http sse)', async () => {
-    const client = await test.createHttpClient({
-      idlenessTimeout: 200,
-    })
-
-    await client.waitFor(ClientEvents.EVENTSOURCE_CLOSE)
-
-    expect(client.clientHttp.clientEventSource).to.be.null
-
-    defer(() => {
-      client.idleTimeout.reset()
-    })
-
-    await client.waitFor(ClientEvents.EVENTSOURCE_CREATE)
-
-    expect(client.clientHttp.clientEventSource.readyState).to.equal(
-      EventSource.CONNECTING,
-    )
-
-    await client.waitFor(ClientEvents.EVENTSOURCE_OPEN)
-
-    expect(client.clientHttp.clientEventSource.readyState).to.equal(
-      EventSource.OPEN,
-    )
-
-    await client.close()
-  }, 10000)
 
   it('should disconnect on idleness and reconnect upon interaction (websocket)', async () => {
     const client = await test.createClient({

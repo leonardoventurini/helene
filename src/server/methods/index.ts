@@ -37,9 +37,7 @@ export const rpcOff = (server, method) =>
     server,
     method,
     function ({ events, channel = NO_CHANNEL }) {
-      const node = this.socket
-        ? this
-        : server.httpTransport.eventSourceClients.get(this.uuid)
+      const node = this.socket ? this : null
 
       return events.reduce((acc, eventName) => {
         const ch = server.channel(channel)
@@ -117,9 +115,7 @@ export const rpcOn = (server, method) =>
           continue
         }
 
-        const node = this.socket
-          ? this
-          : server.httpTransport.eventSourceClients.get(this.uuid)
+        const node = this.socket ? this : null
 
         if (!node) {
           acc[eventName] = false

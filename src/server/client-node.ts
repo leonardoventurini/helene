@@ -3,7 +3,6 @@ import { EventEmitter2 } from 'eventemitter2'
 import { Request, Response } from 'express'
 import http from 'http'
 import { RateLimiter } from 'limiter'
-import defer from 'lodash/defer'
 import isString from 'lodash/isString'
 import { Socket } from 'socket.io'
 import { Heartbeat } from './heartbeat'
@@ -19,7 +18,6 @@ export class ClientNode extends EventEmitter2 {
   userId: any = null
   user: Record<string, any> = null
   socket?: Socket
-  isEventSource = false
   req?: Request = {} as Request
   res?: Response = {} as Response
   isServer = false
@@ -28,7 +26,6 @@ export class ClientNode extends EventEmitter2 {
   headers: Record<string, string> = {}
   remoteAddress: string | string[]
   userAgent: string
-  eventSourceDataId = 0
   heartbeat: Heartbeat
 
   constructor(
@@ -127,24 +124,9 @@ export class ClientNode extends EventEmitter2 {
     this.user = this.context.user
   }
 
-  writeEventSource(res: Response, payload: string | Record<string, any>) {
-    res?.write(
-      `id: ${++this.eventSourceDataId}\ndata: ${(isString(payload)
-        ? payload
-        : Presentation.encode(payload)
-      )
-        // eslint-disable-next-line no-control-regex
-        .replace(/[\r\n\x00]/g, '\ndata: ')}\n\n`,
-    )
-  }
-
   send(payload: Record<string, any> | string) {
     if (!this.socket) {
-      const clientNode = this.server.httpTransport.eventSourceClients.get(
-        this.uuid,
-      )
-      this.writeEventSource(clientNode?.res, payload)
-      return
+      throw new Error(':write_no_socket')
     }
 
     this.socket?.write(
@@ -183,18 +165,6 @@ export class ClientNode extends EventEmitter2 {
   }
 
   close() {
-    if (this.isEventSource) {
-      // If we don't destroy the request, we have to force to terminate the HTTP server,
-      // and it takes a ton of idle time to do so.
-      this.res.write('event: close\ndata: Server-side termination\n\n')
-
-      defer(() => {
-        this.res?.end()
-        this.req?.destroy()
-        this.server.httpTransport.eventSourceClients.delete(this.uuid)
-      })
-    }
-
     this.socket?.disconnect()
 
     this.emit(ServerEvents.DISCONNECT)

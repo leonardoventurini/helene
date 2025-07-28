@@ -1,4 +1,4 @@
-import { Client, ClientOptions, TransportMode } from '../client'
+import { Client, ClientOptions } from '../client'
 import { EventOptions, Server, ServerOptions } from '../server'
 import { ClientEvents, NO_CHANNEL, ServerEvents, sleep } from '../utils'
 import { beforeEach, afterEach } from 'vitest'
@@ -107,7 +107,6 @@ export class TestUtility {
       const client = new Client({
         host: opts?.host ?? this.host,
         port,
-        mode: TransportMode.WebSocket,
         ...opts,
       })
 
@@ -126,20 +125,13 @@ export class TestUtility {
     })
   }
 
-  async createHttpClient(opts?: ClientOptions) {
-    return this.createClient({
-      ...opts,
-      mode: TransportMode.HttpSSE,
-    })
-  }
-
   async createEvent(
     event: string,
     channel: string = NO_CHANNEL,
     opts?: EventOptions,
   ) {
     this.server.addEvent(event, opts)
-    await this.client.channel(channel).subscribe(event)
+    await this.client.channel(channel)?.subscribe(event)
   }
 
   async catchError(callback: Promise<any> | (() => Promise<any>)) {
