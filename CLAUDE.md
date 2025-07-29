@@ -1,2 +1,3 @@
-- This project uses yarn v1 to manage npm packages
-- You can use `yarn test <file>` to run tests for specific test files
+This is a yarn project.
+
+Do not edit files by using shell commands, only edit them manually.
