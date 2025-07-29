@@ -1,7 +1,7 @@
 import { HttpTransport, Server, WebSocketTransport } from '../../server'
 import { ServerEvents } from '../../utils'
 import { expect, describe, it } from 'vitest'
-import { EJSON } from 'ejson2'
+import { EJSON } from '../../ejson'
 import { TestUtility } from '../test-utility'
 
 describe('Server', () => {

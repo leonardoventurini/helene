@@ -1,5 +1,5 @@
-import { EJSON } from './ejson'
-import { expect, test, describe } from 'bun:test'
+import { EJSON } from './index'
+import { expect, test, describe } from 'vitest'
 
 test('should be able to parse a JSON string', () => {
   const json = { date: new Date() }

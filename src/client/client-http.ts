@@ -7,7 +7,7 @@ import {
   Resolve,
   TOKEN_HEADER_KEY,
 } from '../utils'
-import { EJSON } from 'ejson2'
+import { EJSON } from '../ejson'
 import { Client } from './client'
 
 export class ClientHttp {

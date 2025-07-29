@@ -1,4 +1,4 @@
-import { hasOwn, isFunction, isObject, keysOf } from '../utils'
+import { hasOwn, isFunction, isObject, keysOf } from './utils'
 import { EJSON } from './index'
 
 export const equals = (a, b, options?: any) => {

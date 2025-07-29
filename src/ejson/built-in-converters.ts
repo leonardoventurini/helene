@@ -1,4 +1,4 @@
-import { hasOwn, isInfOrNaN, keysOf, lengthOf } from '../utils'
+import { hasOwn, isInfOrNaN, keysOf, lengthOf } from './utils'
 import { EJSON } from './index'
 import { customTypes } from './custom-types'
 import { fromByteArray, toByteArray } from 'base64-js'

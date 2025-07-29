@@ -1,5 +1,5 @@
 import { EJSON } from './index'
-import { isObject } from '../utils'
+import { isObject } from './utils'
 import { adjustTypesToJSONValue } from './helpers/adjust-types-to-json-value'
 import { toJSONValueHelper } from './helpers/to-json-value-helper'
 

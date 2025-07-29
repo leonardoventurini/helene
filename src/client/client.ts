@@ -11,7 +11,7 @@ import {
   PromiseQueue,
   TOKEN_HEADER_KEY,
 } from '../utils'
-import { EJSON } from 'ejson2'
+import { EJSON } from '../ejson'
 import isEmpty from 'lodash/isEmpty'
 import isFunction from 'lodash/isFunction'
 import isObject from 'lodash/isObject'

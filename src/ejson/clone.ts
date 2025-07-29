@@ -4,7 +4,7 @@ import {
   isObject,
   isObjectAndNotNull,
   keysOf,
-} from '../utils'
+} from './utils'
 import { EJSON } from './index'
 
 export const clone = (rootVal: any) => {

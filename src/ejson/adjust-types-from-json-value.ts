@@ -3,7 +3,7 @@
  * use the object you hand it, but may return something
  * different if the object you hand it itself needs changing.
  */
-import { isObject, keysOf } from '../utils'
+import { isObject, keysOf } from './utils'
 import { fromJSONValueHelper } from './helpers/from-json-value-helper'
 
 export const adjustTypesFromJSONValue = obj => {

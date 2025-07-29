@@ -1,6 +1,6 @@
-import { EJSON } from './ejson'
-import { expect, test } from 'bun:test'
-import { CustomModels } from '../test/custom-models'
+import { EJSON } from './index'
+import { expect, test } from 'vitest'
+import { CustomModels } from './custom-models'
 
 const testSameConstructors = (someObj, compareWith) => {
   expect(someObj.constructor).toEqual(compareWith.constructor)

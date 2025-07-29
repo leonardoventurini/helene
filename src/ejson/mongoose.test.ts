@@ -1,5 +1,5 @@
-import { EJSON } from './ejson'
-import { describe, expect, test } from 'bun:test'
+import { EJSON } from './index'
+import { describe, expect, test } from 'vitest'
 
 /**
  * Mock ObjectId object.

@@ -1,4 +1,4 @@
-import { PolyfillableArray } from '../utils'
+import { PolyfillableArray } from './utils'
 
 export const isBinary = (obj: Uint8Array & PolyfillableArray) => {
   return !!(

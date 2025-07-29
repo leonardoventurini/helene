@@ -4,7 +4,7 @@
  * DOES NOT RECURSE. For actually getting the fully-changed value, use
  * EJSON.fromJSONValue
  */
-import { isObject, keysOf } from '../../utils'
+import { isObject, keysOf } from '../utils'
 import { builtinConverters } from '../built-in-converters'
 
 export const fromJSONValueHelper = value => {

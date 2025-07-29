@@ -14,7 +14,7 @@ import http from 'http'
 import { ClientNode } from '../client-node'
 import { RateLimit, Server } from '../server'
 
-import { EJSON } from 'ejson2'
+import { EJSON } from '../../ejson'
 import rateLimit from 'express-rate-limit'
 import isString from 'lodash/isString'
 

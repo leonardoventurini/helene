@@ -1,7 +1,7 @@
 /**
  * for both arrays and objects, in-place modification.
  */
-import { isInfOrNaN, isObject, keysOf } from '../../utils'
+import { isInfOrNaN, isObject, keysOf } from '../utils'
 import { toJSONValueHelper } from './to-json-value-helper'
 
 export const adjustTypesToJSONValue = obj => {
