@@ -1,16 +1,24 @@
-import { handleError } from './utils'
 import { EJSON } from './index'
-import { canonicalStringify } from './canonical-stringify'
+import stableStringify from 'json-stable-stringify'
 
-export const stringify = handleError((item, options) => {
-  let serialized
+export type StringifyOptions = {
+  indent?: boolean | number
+  canonical?: boolean
+}
+
+export const stringify = (item: any, options?: StringifyOptions) => {
   const json = EJSON.toJSONValue(item)
 
-  if (options && (options.canonical || options.indent)) {
-    serialized = canonicalStringify(json, options)
-  } else {
-    serialized = JSON.stringify(json)
+  const space =
+    options?.indent === true ? 2 : (options?.indent as number) ?? undefined
+
+  if (options?.canonical) {
+    return stableStringify(json, {
+      space,
+    })
   }
 
-  return serialized
-})
+  return options?.indent
+    ? JSON.stringify(json, null, space)
+    : JSON.stringify(json)
+}
