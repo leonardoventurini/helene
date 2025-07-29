@@ -1,8 +1,8 @@
-import { Method } from '../method'
+import { Method } from './method'
 import pick from 'lodash/pick'
 import isEmpty from 'lodash/isEmpty'
-import { ServerEvents, NO_CHANNEL } from '../../utils'
-import { Server } from '../server'
+import { ServerEvents, NO_CHANNEL } from '../utils'
+import { Server } from './server'
 
 export const rpcInit = (server: Server, method: string) =>
   new Method(
