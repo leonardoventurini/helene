@@ -36,8 +36,6 @@
     "zod": "^4.0.5"
   },
   "devDependencies": {
-    "@swc-node/register": "^1.10.10",
-    "@swc/core": "^1.12.14",
     "@testing-library/dom": "^9.3.1",
     "@testing-library/react": "^14.0.0",
     "@testing-library/user-event": "^14.4.3",
@@ -46,7 +44,6 @@
     "@typescript-eslint/eslint-plugin": "^6.7.4",
     "@typescript-eslint/parser": "^6.7.4",
     "@vitest/browser": "^3.2.4",
-    "esbuild": "^0.20.2",
     "eslint": "^8.49.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-import": "^2.28.1",
@@ -56,10 +53,8 @@
     "jsdom": "^26.1.0",
     "lodash": "^4.17.21",
     "mkdirp": "^3.0.1",
-    "nodemon": "^3.0.1",
     "playwright": "^1.54.1",
     "prettier": "^3.0.3",
-    "puppeteer": "22.6.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "sinon": "^21.0.0",
