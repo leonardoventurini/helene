@@ -1,5 +1,5 @@
 import { v4 } from '@lukeed/uuid'
-import { EJSON } from 'ejson2'
+import { EJSON } from '../ejson'
 import isString from 'lodash/isString'
 
 export enum PayloadType {

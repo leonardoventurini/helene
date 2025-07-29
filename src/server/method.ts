@@ -7,7 +7,7 @@ import {
   SchemaValidationError,
   ServerEvents,
 } from '../utils'
-import { EJSON } from 'ejson2'
+import { EJSON } from '../ejson'
 import isEmpty from 'lodash/isEmpty'
 import perf_hooks from 'perf_hooks'
 import { AnyObjectSchema, ObjectSchema } from 'yup'

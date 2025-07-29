@@ -7,6 +7,7 @@ export default defineConfig({
       'src/test/node/**/*.test.ts',
       'src/react/**/*.test.tsx',
       'src/data/**/*.test.ts',
+      'src/ejson/**/*.test.ts',
     ],
     exclude: ['node_modules', 'dist', 'src/test/browser/**/*'],
     globals: true,
