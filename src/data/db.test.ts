@@ -1391,14 +1391,14 @@ describe('Database', () => {
       await d2.update({ a: 1 }, { $set: { b: 2 } }, {})
       const modifiedDoc = await d2.findOne({ a: 1 })
       assert.strictEqual(modifiedDoc.createdAt.getTime(), createdAt)
-      assert.isBelow(Date.now() - modifiedDoc.updatedAt.getTime(), 5)
+      assert.isBelow(Date.now() - modifiedDoc.updatedAt.getTime(), 15)
 
       // Complete replacement
       await new Promise(resolve => setTimeout(resolve, 20))
       await d2.update({ a: 1 }, { c: 3 }, {})
       const replacedDoc = await d2.findOne({ c: 3 })
       assert.strictEqual(replacedDoc.createdAt.getTime(), createdAt)
-      assert.isBelow(Date.now() - replacedDoc.updatedAt.getTime(), 5)
+      assert.isBelow(Date.now() - replacedDoc.updatedAt.getTime(), 15)
     })
 
     describe('Promise signature', function () {

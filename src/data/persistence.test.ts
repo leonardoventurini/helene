@@ -496,6 +496,8 @@ describe('Persistence', function () {
       await d.update({ hello: 'world' }, { $set: { hello: 'earth' } }, {})
       await d.ensureIndex({ fieldName: 'idefix' })
 
+      await sleep(100)
+
       let _data = await fs.promises.readFile(hookTestFilename, 'utf8')
       let data = _data.split('\n')
       expect(data.length).toEqual(4)

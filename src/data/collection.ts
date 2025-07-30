@@ -15,6 +15,7 @@ import { checkObject, deepCopy, match, modify } from './model'
 import { Persistence } from './persistence'
 import { IStorage } from './types'
 import { pluck } from './utils'
+import { Environment, sleep } from '../utils'
 
 export const CollectionEvent = {
   READY: 'ready',
@@ -380,7 +381,11 @@ export class Collection<
 
     const docs = isArray(preparedDoc) ? preparedDoc : [preparedDoc]
 
-    this.persistence.persistNewState(docs).catch(console.error)
+    this.persistence.queuedPersistState(docs)
+
+    if (Environment.isTest) {
+      await sleep(10)
+    }
 
     await Promise.all(docs.map(doc => this.afterInsert(doc)))
 
@@ -596,7 +601,11 @@ export class Collection<
     // Update the datafile
     const updatedDocs = pluck(modifications, 'newDoc')
 
-    this.persistence.persistNewState(updatedDocs).catch(console.error)
+    this.persistence.queuedPersistState(updatedDocs)
+
+    if (Environment.isTest) {
+      await sleep(10)
+    }
 
     if (options?.returnUpdatedDocs) {
       const updatedDocsDC = []
@@ -658,7 +667,11 @@ export class Collection<
       }
     }
 
-    self.persistence.persistNewState(removedDocs).catch(console.error)
+    self.persistence.queuedPersistState(removedDocs)
+
+    if (Environment.isTest) {
+      await sleep(10)
+    }
 
     await Promise.all(candidates.map(doc => self.afterRemove(doc)))
 

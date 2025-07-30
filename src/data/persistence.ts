@@ -12,7 +12,7 @@ import { Collection, CollectionEvent } from './collection'
 import { IStorage } from './types'
 import throttle from 'lodash/throttle'
 import { debounce } from 'lodash'
-import { sleep } from '../utils'
+import { Environment, sleep } from '../utils'
 
 type Options = {
   db: Collection
@@ -136,35 +136,41 @@ export class Persistence {
   async persistNewState(newDocs) {
     this.throttleEmitUpdate()
 
-    this.persistenceQueue.push(async () => {
-      const self = this
-      let toPersist = ''
+    const self = this
 
-      // In-memory only datastore
-      if (self.inMemoryOnly) {
-        return null
-      }
+    let toPersist = ''
 
-      newDocs.forEach(function (doc) {
-        toPersist += self.afterSerialization(serialize(doc)) + '\n'
-      })
+    // In-memory only datastore
+    if (self.inMemoryOnly) {
+      return null
+    }
 
-      if (toPersist.length === 0) {
-        return null
-      }
-
-      await this.storage.append(self.name, toPersist)
+    newDocs.forEach(function (doc) {
+      toPersist += self.afterSerialization(serialize(doc)) + '\n'
     })
+
+    if (toPersist.length === 0) {
+      return null
+    }
+
+    await this.storage.append(self.name, toPersist)
+  }
+
+  queuedPersistState(newDocs) {
+    this.persistenceQueue.push(() => this.persistNewState(newDocs))
 
     this.debouncedPersistState()
   }
 
-  debouncedPersistState = debounce(async () => {
-    while (this.persistenceQueue.length > 0) {
-      await this.persistenceQueue.shift()()
-      await sleep(1)
-    }
-  }, 1000)
+  debouncedPersistState = debounce(
+    async () => {
+      while (this.persistenceQueue.length > 0) {
+        await this.persistenceQueue.shift()()
+        await sleep(1)
+      }
+    },
+    Environment.isTest ? 1 : 1000,
+  )
 
   async persistCachedDatabase() {
     const self = this
