@@ -75,7 +75,7 @@ export function checkObject(obj: Record<string, any>[] | Record<string, any>) {
  * The optional strictKeys flag (defaulting to false) indicates whether to copy everything or only fields
  * where the keys are valid, i.e. don't begin with $ and don't contain a .
  */
-export function deepCopy<T>(obj: T, strictKeys = false): T {
+export function deepCopy<T>(obj: T & { _id?: string }, strictKeys = false): T {
   if (
     typeof obj === 'boolean' ||
     typeof obj === 'number' ||
@@ -87,25 +87,28 @@ export function deepCopy<T>(obj: T, strictKeys = false): T {
   }
 
   if (isArray(obj)) {
-    const res = []
-    obj.forEach(function (o) {
+    const res: unknown[] = []
+
+    for (const o of obj) {
       res.push(deepCopy(o, strictKeys))
-    })
+    }
+
     return res as T
   }
 
   if (typeof obj === 'object') {
-    const res = {}
-    Object.keys(obj).forEach(function (k) {
+    const res: unknown = {}
+
+    for (const k in obj) {
       if (!strictKeys || (k[0] !== '$' && k.indexOf('.') === -1)) {
         res[k] = deepCopy(obj[k], strictKeys)
       }
-    })
+    }
 
     return res as T
   }
 
-  return undefined // For now everything else is undefined. We should probably throw an error instead
+  throw new Error(':invalid_object')
 }
 
 /**

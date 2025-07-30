@@ -10,8 +10,9 @@ import { deserialize, serialize } from './serialization'
 import { uid } from './custom-utils'
 import { Collection, CollectionEvent } from './collection'
 import { IStorage } from './types'
-import defer from 'lodash/defer'
 import throttle from 'lodash/throttle'
+import { debounce } from 'lodash'
+import { sleep } from '../utils'
 
 type Options = {
   db: Collection
@@ -120,39 +121,50 @@ export class Persistence {
   }
 
   throttleEmitUpdate = throttle(
-    docs => {
-      this.db.emit(CollectionEvent.UPDATED, docs)
+    () => {
+      this.db.emit(CollectionEvent.UPDATED)
     },
-    1000 / 30,
+    1000 / 20,
     { leading: true, trailing: true },
   )
+
+  persistenceQueue: (() => Promise<void>)[] = []
 
   /**
    * This is the entry-point.
    */
   async persistNewState(newDocs) {
-    const self = this
-    let toPersist = ''
+    this.throttleEmitUpdate()
 
-    defer(() => {
-      this.throttleEmitUpdate(newDocs)
+    this.persistenceQueue.push(async () => {
+      const self = this
+      let toPersist = ''
+
+      // In-memory only datastore
+      if (self.inMemoryOnly) {
+        return null
+      }
+
+      newDocs.forEach(function (doc) {
+        toPersist += self.afterSerialization(serialize(doc)) + '\n'
+      })
+
+      if (toPersist.length === 0) {
+        return null
+      }
+
+      await this.storage.append(self.name, toPersist)
     })
 
-    // In-memory only datastore
-    if (self.inMemoryOnly) {
-      return null
-    }
-
-    newDocs.forEach(function (doc) {
-      toPersist += self.afterSerialization(serialize(doc)) + '\n'
-    })
-
-    if (toPersist.length === 0) {
-      return null
-    }
-
-    await this.storage.append(self.name, toPersist)
+    this.debouncedPersistState()
   }
+
+  debouncedPersistState = debounce(async () => {
+    while (this.persistenceQueue.length > 0) {
+      await this.persistenceQueue.shift()()
+      await sleep(1)
+    }
+  }, 1000)
 
   async persistCachedDatabase() {
     const self = this
