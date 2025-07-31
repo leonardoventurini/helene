@@ -157,6 +157,8 @@ export class Persistence {
   }
 
   queuedPersistState(newDocs) {
+    this.throttleEmitUpdate()
+
     this.persistenceQueue.push(() => this.persistNewState(newDocs))
 
     this.debouncedPersistState()

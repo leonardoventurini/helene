@@ -25,7 +25,6 @@ export class ClientSocket extends EventEmitter2 {
   }
 
   baseAttemptDelay = 1000
-  attempts = 0
 
   get ready() {
     return this.socket?.connected ?? false
@@ -70,7 +69,10 @@ export class ClientSocket extends EventEmitter2 {
     })
 
     this.socket.on('connect', () => {
-      this.attempts = 0
+      this.handleOpen()
+    })
+
+    this.socket.on('reconnect', () => {
       this.handleOpen()
     })
 
