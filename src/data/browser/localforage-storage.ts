@@ -2,20 +2,21 @@ import { IStorage } from '../types'
 import localforage from 'localforage'
 import { v4 as uuidv4 } from '@lukeed/uuid'
 import debounce from 'lodash/debounce'
+import { z } from 'zod'
 
-type Chunk = {
-  id: string
-  content: string
-}
+const ChunkSchema = z.object({
+  id: z.string(),
+  content: z.string(),
+})
 
-type Metadata = {
-  chunkIds: string[]
-}
+const MetadataSchema = z.object({
+  chunkIds: z.array(z.string()),
+})
 
-type Cache = {
-  metadata: Metadata
-  content: string
-}
+const CacheSchema = z.object({
+  metadata: MetadataSchema,
+  content: z.string(),
+})
 
 const MetadataDB = localforage.createInstance({
   name: 'helene-metadata',
@@ -27,16 +28,33 @@ const ChunksDB = localforage.createInstance({
   driver: localforage.INDEXEDDB,
 })
 
-export class BrowserStorage implements IStorage {
-  cache = new Map<string, Cache>()
+export class LocalForageStorage implements IStorage {
+  cache = new Map<string, z.infer<typeof CacheSchema>>()
 
   async read(name: string) {
-    const metadata = await MetadataDB.getItem<Metadata>(name)
+    const metadata =
+      await MetadataDB.getItem<z.infer<typeof MetadataSchema>>(name)
+
+    if (!metadata) {
+      this.cache.set(name, {
+        metadata: { chunkIds: [] },
+        content: '',
+      })
+      return ''
+    }
+
+    const validatedMetadata = MetadataSchema.safeParse(metadata)
+
+    if (!validatedMetadata.success) {
+      console.error(':invalid_metadata', validatedMetadata.error)
+      return ''
+    }
 
     let data = ''
 
     for (const chunkId of metadata.chunkIds) {
-      const chunkData = await ChunksDB.getItem<Chunk>(chunkId)
+      const chunkData =
+        await ChunksDB.getItem<z.infer<typeof ChunkSchema>>(chunkId)
 
       if (chunkData) {
         data += chunkData.content
@@ -52,31 +70,51 @@ export class BrowserStorage implements IStorage {
   }
 
   async append(name: string, data: string) {
-    const cache = this.cache.get(name)
+    let cache = this.cache.get(name)
 
     if (!cache) {
       await this.read(name)
+      cache = this.cache.get(name)
     }
 
-    cache.content += data
+    if (!cache) {
+      this.cache.set(name, {
+        metadata: { chunkIds: [] },
+        content: data,
+      })
+    } else {
+      cache.content += data
+    }
 
     this.debouncedFlush(name)
   }
 
   async write(name: string, data: string) {
-    const cache = this.cache.get(name)
+    let cache = this.cache.get(name)
 
     if (!cache) {
       await this.read(name)
+      cache = this.cache.get(name)
     }
 
-    cache.content = data
+    if (!cache) {
+      this.cache.set(name, {
+        metadata: { chunkIds: [] },
+        content: data,
+      })
+    } else {
+      cache.content = data
+    }
 
     this.debouncedFlush(name)
   }
 
   async flush(name: string) {
     const cache = this.cache.get(name)
+
+    if (!cache) {
+      return
+    }
 
     const newChunks = this.chunkify(cache.content)
 
@@ -90,7 +128,7 @@ export class BrowserStorage implements IStorage {
 
     await MetadataDB.removeItem(name)
 
-    await MetadataDB.setItem<Metadata>(name, {
+    await MetadataDB.setItem<z.infer<typeof MetadataSchema>>(name, {
       chunkIds: newChunks.map(chunk => chunk.id),
     })
 

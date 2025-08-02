@@ -4,8 +4,8 @@
   "description": "Real-time Web Apps for Node.js",
   "scripts": {
     "lint": "eslint --ext .js,.jsx,.ts,.tsx 'src/**/*'",
-    "browser:test": "vitest --config vitest.config.ts",
-    "test": "vitest --config vitest.config.node.ts",
+    "browser:test": "vitest --config vitest.config.ts --watch=false",
+    "test": "vitest --config vitest.config.node.ts --watch=false",
     "clean": "rm -rf client data react server utils ejson",
     "build": "yarn clean && tsc",
     "prepublishOnly": "yarn build",
