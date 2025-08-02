@@ -3,6 +3,7 @@ import localforage from 'localforage'
 import { v4 as uuidv4 } from '@lukeed/uuid'
 import debounce from 'lodash/debounce'
 import { z } from 'zod'
+import LZString from 'lz-string'
 
 const ChunkSchema = z.object({
   id: z.string(),
@@ -29,6 +30,8 @@ const ChunksDB = localforage.createInstance({
 })
 
 export class LocalForageStorage implements IStorage {
+  chunkSize = 512 * 1024
+
   cache = new Map<string, z.infer<typeof CacheSchema>>()
 
   async read(name: string) {
@@ -57,7 +60,7 @@ export class LocalForageStorage implements IStorage {
         await ChunksDB.getItem<z.infer<typeof ChunkSchema>>(chunkId)
 
       if (chunkData) {
-        data += chunkData.content
+        data += LZString.decompress(chunkData.content)
       }
     }
 
@@ -135,13 +138,13 @@ export class LocalForageStorage implements IStorage {
     await this.read(name)
   }
 
-  private chunkify(str: string, chunkSize = 1024) {
+  private chunkify(str: string, chunkSize = this.chunkSize) {
     const chunks = []
 
     for (let i = 0; i < str.length; i += chunkSize) {
       chunks.push({
         id: uuidv4(),
-        content: str.slice(i, i + chunkSize),
+        content: LZString.compress(str.slice(i, i + chunkSize)),
       })
     }
 
