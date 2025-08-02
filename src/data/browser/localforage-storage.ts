@@ -1,9 +1,9 @@
 import { IStorage } from '../types'
 import localforage from 'localforage'
-import { v4 as uuidv4 } from '@lukeed/uuid'
 import debounce from 'lodash/debounce'
 import { z } from 'zod'
 import LZString from 'lz-string'
+import difference from 'lodash/difference'
 
 const ChunkSchema = z.object({
   id: z.string(),
@@ -119,13 +119,32 @@ export class LocalForageStorage implements IStorage {
       return
     }
 
-    const newChunks = this.chunkify(cache.content)
+    console.log('flushing', name)
+
+    const newChunks = await this.chunkify(
+      cache.content,
+      cache.metadata.chunkIds,
+    )
+
+    const existingChunkIds = cache.metadata.chunkIds
+    const newChunkIds = newChunks.map(chunk => chunk.id)
+
+    const chunkIdsToRemove = difference(existingChunkIds, newChunkIds)
 
     for (const chunk of newChunks) {
+      if (existingChunkIds.includes(chunk.id)) {
+        continue
+      }
+
+      // Might never happen, since we are checking for existing chunk ids already
+      if (chunk.content === undefined) {
+        continue
+      }
+
       await ChunksDB.setItem(chunk.id, chunk)
     }
 
-    for (const chunkId of cache.metadata.chunkIds) {
+    for (const chunkId of chunkIdsToRemove) {
       await ChunksDB.removeItem(chunkId)
     }
 
@@ -138,17 +157,46 @@ export class LocalForageStorage implements IStorage {
     await this.read(name)
   }
 
-  private chunkify(str: string, chunkSize = this.chunkSize) {
+  private async chunkify(
+    str: string,
+    existingChunkIds: string[],
+    chunkSize = this.chunkSize,
+  ) {
     const chunks = []
 
     for (let i = 0; i < str.length; i += chunkSize) {
+      const content = str.slice(i, i + chunkSize)
+      const id = await this.sha256(content)
+
+      if (existingChunkIds.includes(id)) {
+        chunks.push({
+          id,
+        })
+        continue
+      }
+
       chunks.push({
-        id: uuidv4(),
-        content: LZString.compress(str.slice(i, i + chunkSize)),
+        id,
+        content: LZString.compress(content),
       })
     }
 
+    console.log(
+      'chunks compressed',
+      chunks.filter(chunk => chunk.content !== undefined),
+    )
+
     return chunks
+  }
+
+  async sha256(str: string) {
+    const encoder = new TextEncoder()
+    const data = encoder.encode(str)
+    const hash = await crypto.subtle.digest('SHA-256', data)
+
+    return Array.from(new Uint8Array(hash))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('')
   }
 
   debouncedFlush = debounce(this.flush, 1000)
