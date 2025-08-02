@@ -24,6 +24,7 @@
     "idb": "^8.0.3",
     "json-stable-stringify": "^1.3.0",
     "limiter": "^2.1.0",
+    "localforage": "^1.10.0",
     "lodash": "^4.17.21",
     "memoizee": "^0.4.15",
     "query-string": "^7.1.3",
