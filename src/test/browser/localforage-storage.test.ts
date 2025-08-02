@@ -188,6 +188,19 @@ describe('LocalForage BrowserStorage', () => {
   })
 
   describe('Chunking Behavior', () => {
+    // Helper to access internal DBs for testing
+    const getMetadataDB = () =>
+      localforage.createInstance({
+        name: 'helene-metadata',
+        driver: localforage.INDEXEDDB,
+      })
+
+    const getChunksDB = () =>
+      localforage.createInstance({
+        name: 'helene-chunks',
+        driver: localforage.INDEXEDDB,
+      })
+
     it('should handle small data without chunking', async () => {
       const docName = getUniqueCollectionName('small')
       const smallData = 'small data'
@@ -213,14 +226,18 @@ describe('LocalForage BrowserStorage', () => {
 
     it('should handle very large data with multiple chunks', async () => {
       const docName = getUniqueCollectionName('verylarge')
-      const veryLargeData = 'abcdefghij'.repeat(1000) // 10KB data
+      const veryLargeData = 'abcdefghij'.repeat(100000) // 1MB data (larger than 512KB chunk size)
 
       await storage.write(docName, veryLargeData)
       await triggerFlush(docName)
 
       const result = await storage.read(docName)
       expect(result).to.equal(veryLargeData)
-      expect(result.length).to.equal(10000)
+      expect(result.length).to.equal(1000000)
+
+      // Verify chunks were actually created
+      const metadata = (await getMetadataDB().getItem(docName)) as any
+      expect(metadata.chunkIds).to.have.length(2) // Should have 2 chunks for 1MB data with 512KB chunk size
     })
 
     it('should maintain chunk order for reassembly', async () => {
@@ -238,6 +255,255 @@ describe('LocalForage BrowserStorage', () => {
       // Verify the data still contains ordered sequence
       expect(result).to.include('000001002')
       expect(result).to.include('097098099')
+    })
+
+    it('should store chunks with correct structure in ChunksDB', async () => {
+      const docName = getUniqueCollectionName('chunk_structure')
+      const testData = 'a'.repeat(600 * 1024) // 600KB to ensure we get 2 chunks
+
+      await storage.write(docName, testData)
+      await triggerFlush(docName)
+
+      const metadata = (await getMetadataDB().getItem(docName)) as any
+      expect(metadata).to.have.property('chunkIds')
+      expect(metadata.chunkIds).to.have.length(2)
+
+      // Verify each chunk is stored correctly
+      const chunksDB = getChunksDB()
+      for (const chunkId of metadata.chunkIds) {
+        const chunk = (await chunksDB.getItem(chunkId)) as any
+        expect(chunk).to.not.be.null
+        expect(chunk).to.have.property('id', chunkId)
+        expect(chunk).to.have.property('content')
+        expect(chunk.content).to.be.a('string') // Should be compressed string
+      }
+    })
+
+    it('should delete old chunks when data is replaced', async () => {
+      const docName = getUniqueCollectionName('chunk_deletion')
+      const chunksDB = getChunksDB()
+
+      // Write initial large data
+      const initialData = 'initial'.repeat(100000) // ~700KB
+      await storage.write(docName, initialData)
+      await triggerFlush(docName)
+
+      const initialMetadata = (await getMetadataDB().getItem(docName)) as any
+      const initialChunkIds = initialMetadata.chunkIds
+      expect(initialChunkIds).to.have.length(2)
+
+      // Verify initial chunks exist
+      for (const chunkId of initialChunkIds) {
+        const chunk = await chunksDB.getItem(chunkId)
+        expect(chunk).to.not.be.null
+      }
+
+      // Replace with different data
+      const newData = 'replacement'.repeat(50000) // ~550KB
+      await storage.write(docName, newData)
+      await triggerFlush(docName)
+
+      const newMetadata = (await getMetadataDB().getItem(docName)) as any
+      const newChunkIds = newMetadata.chunkIds
+      expect(newChunkIds).to.have.length(2)
+
+      // Verify old chunks were deleted
+      for (const oldChunkId of initialChunkIds) {
+        if (!newChunkIds.includes(oldChunkId)) {
+          const oldChunk = await chunksDB.getItem(oldChunkId)
+          expect(oldChunk).to.be.null
+        }
+      }
+
+      // Verify new chunks exist
+      for (const newChunkId of newChunkIds) {
+        const chunk = await chunksDB.getItem(newChunkId)
+        expect(chunk).to.not.be.null
+      }
+    })
+
+    it('should reuse identical chunks (deduplication)', async () => {
+      const docName1 = getUniqueCollectionName('dedup1')
+      const docName2 = getUniqueCollectionName('dedup2')
+      const chunksDB = getChunksDB()
+
+      // Create data that will produce identical chunks
+      const repeatedPattern = 'x'.repeat(512 * 1024) // Exactly one chunk size
+      const data1 = repeatedPattern + 'unique1'
+      const data2 = repeatedPattern + 'unique2'
+
+      // Write first document
+      await storage.write(docName1, data1)
+      await triggerFlush(docName1)
+
+      // Write second document
+      await storage.write(docName2, data2)
+      await triggerFlush(docName2)
+
+      // Get metadata for both
+      const metadata1 = (await getMetadataDB().getItem(docName1)) as any
+      const metadata2 = (await getMetadataDB().getItem(docName2)) as any
+
+      // First chunk should be identical (same SHA256 hash)
+      expect(metadata1.chunkIds[0]).to.equal(metadata2.chunkIds[0])
+
+      // Second chunks should be different
+      expect(metadata1.chunkIds[1]).to.not.equal(metadata2.chunkIds[1])
+
+      // Verify shared chunk exists
+      const sharedChunk = await chunksDB.getItem(metadata1.chunkIds[0])
+      expect(sharedChunk).to.not.be.null
+    })
+
+    it('should handle exact chunk size boundaries', async () => {
+      const docName = getUniqueCollectionName('exact_boundary')
+      const chunkSize = 512 * 1024
+
+      // Test exact chunk size
+      const exactSizeData = 'a'.repeat(chunkSize)
+      await storage.write(docName, exactSizeData)
+      await triggerFlush(docName)
+
+      const metadata1 = (await getMetadataDB().getItem(docName)) as any
+      expect(metadata1.chunkIds).to.have.length(1)
+
+      // Test one byte over chunk size
+      const overSizeData = 'a'.repeat(chunkSize + 1)
+      await storage.write(docName, overSizeData)
+      await triggerFlush(docName)
+
+      const metadata2 = (await getMetadataDB().getItem(docName)) as any
+      expect(metadata2.chunkIds).to.have.length(2)
+
+      // Verify data integrity
+      const result = await storage.read(docName)
+      expect(result).to.equal(overSizeData)
+    })
+
+    it('should handle empty data', async () => {
+      const docName = getUniqueCollectionName('empty')
+
+      await storage.write(docName, '')
+      await triggerFlush(docName)
+
+      const metadata = (await getMetadataDB().getItem(docName)) as any
+      expect(metadata.chunkIds).to.have.length(0)
+
+      const result = await storage.read(docName)
+      expect(result).to.equal('')
+    })
+
+    it('should properly compress and decompress chunks', async () => {
+      const docName = getUniqueCollectionName('compression')
+      const chunksDB = getChunksDB()
+
+      // Use highly compressible data
+      const compressibleData = 'aaaaaaaaaa'.repeat(60000) // 600KB of repeated 'a'
+
+      await storage.write(docName, compressibleData)
+      await triggerFlush(docName)
+
+      const metadata = (await getMetadataDB().getItem(docName)) as any
+
+      // Check that chunks are compressed
+      for (const chunkId of metadata.chunkIds) {
+        const chunk = (await chunksDB.getItem(chunkId)) as any
+        // Compressed content should be much smaller than original
+        expect(chunk.content.length).to.be.lessThan(100000) // Should compress well
+      }
+
+      // Verify decompression works correctly
+      const result = await storage.read(docName)
+      expect(result).to.equal(compressibleData)
+    })
+
+    it('should generate consistent SHA256 hashes for chunk IDs', async () => {
+      const docName1 = getUniqueCollectionName('sha1')
+      const docName2 = getUniqueCollectionName('sha2')
+
+      // Same content should produce same chunk IDs
+      const testData = 'consistent data for hashing'
+
+      await storage.write(docName1, testData)
+      await triggerFlush(docName1)
+
+      await storage.write(docName2, testData)
+      await triggerFlush(docName2)
+
+      const metadata1 = (await getMetadataDB().getItem(docName1)) as any
+      const metadata2 = (await getMetadataDB().getItem(docName2)) as any
+
+      // Same content should have same chunk IDs
+      expect(metadata1.chunkIds).to.deep.equal(metadata2.chunkIds)
+    })
+
+    it('should handle Unicode and special characters in chunks', async () => {
+      const docName = getUniqueCollectionName('unicode')
+
+      // Create data with various Unicode characters that spans multiple chunks
+      // Note: chunking is done by string length, not byte length
+      const unicodePattern = '🎉émøjī UTF-8 테스트 文字 §¶•'
+      const repeats = Math.ceil((512 * 1024 + 100) / unicodePattern.length) // Ensure we exceed chunk size
+      const unicodeData = unicodePattern.repeat(repeats)
+
+      await storage.write(docName, unicodeData)
+      await triggerFlush(docName)
+
+      const result = await storage.read(docName)
+      expect(result).to.equal(unicodeData)
+
+      // Verify chunks were created and Unicode data is preserved
+      const metadata = (await getMetadataDB().getItem(docName)) as any
+      expect(metadata.chunkIds.length).to.be.greaterThan(0)
+
+      // Verify the data contains Unicode characters
+      expect(result).to.include('🎉')
+      expect(result).to.include('émøjī')
+      expect(result).to.include('테스트')
+      expect(result).to.include('文字')
+    })
+
+    it('should handle concurrent writes to same document', async () => {
+      const docName = getUniqueCollectionName('concurrent')
+
+      // Simulate concurrent writes
+      const write1 = storage.write(docName, 'write1'.repeat(100000))
+      const write2 = storage.write(docName, 'write2'.repeat(100000))
+
+      await Promise.all([write1, write2])
+      await triggerFlush(docName)
+
+      const result = await storage.read(docName)
+      // Should have the last write
+      expect(result).to.equal('write2'.repeat(100000))
+    })
+
+    it('should clean up chunks when document is overwritten with empty string', async () => {
+      const docName = getUniqueCollectionName('cleanup')
+      const chunksDB = getChunksDB()
+
+      // Write initial data
+      const initialData = 'data'.repeat(200000) // ~800KB
+      await storage.write(docName, initialData)
+      await triggerFlush(docName)
+
+      const initialMetadata = (await getMetadataDB().getItem(docName)) as any
+      const initialChunkIds = initialMetadata.chunkIds
+      expect(initialChunkIds.length).to.be.greaterThan(0)
+
+      // Overwrite with empty string
+      await storage.write(docName, '')
+      await triggerFlush(docName)
+
+      // Verify all old chunks were deleted
+      for (const chunkId of initialChunkIds) {
+        const chunk = await chunksDB.getItem(chunkId)
+        expect(chunk).to.be.null
+      }
+
+      // Verify metadata has no chunks
+      const newMetadata = (await getMetadataDB().getItem(docName)) as any
+      expect(newMetadata.chunkIds).to.have.length(0)
     })
   })
 
