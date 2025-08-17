@@ -81,6 +81,7 @@ export function deepCopy<T>(obj: T & { _id?: string }, strictKeys = false): T {
     typeof obj === 'number' ||
     typeof obj === 'string' ||
     obj === null ||
+    obj === undefined ||
     isDate(obj)
   ) {
     return obj

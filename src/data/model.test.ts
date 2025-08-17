@@ -284,6 +284,24 @@ describe('Model', () => {
         array: [{}, { yes: true }, {}],
       } as any)
     })
+
+    it('should copy undefined values', function () {
+      const a = { a: undefined }
+      const b = deepCopy(a)
+      expect(b.a).toBeUndefined()
+    })
+
+    it('should copy null values', function () {
+      const a = { a: null }
+      const b = deepCopy(a)
+      expect(b.a).toBeNull()
+    })
+
+    it('should copy boolean values', function () {
+      const a = { a: true }
+      const b = deepCopy(a)
+      expect(b.a).toBe(true)
+    })
   }) // ==== End of 'Deep copying' ==== //
 
   describe('Modifying documents', function () {
