@@ -109,7 +109,7 @@ export function deepCopy<T>(obj: T & { _id?: string }, strictKeys = false): T {
     return res as T
   }
 
-  throw new Error(':invalid_object')
+  return undefined
 }
 
 /**
