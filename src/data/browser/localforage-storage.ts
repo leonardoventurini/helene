@@ -119,8 +119,6 @@ export class LocalForageStorage implements IStorage {
       return
     }
 
-    console.log('flushing', name)
-
     const newChunks = await this.chunkify(
       cache.content,
       cache.metadata.chunkIds,
@@ -180,11 +178,6 @@ export class LocalForageStorage implements IStorage {
         content: LZString.compress(content),
       })
     }
-
-    console.log(
-      'chunks compressed',
-      chunks.filter(chunk => chunk.content !== undefined),
-    )
 
     return chunks
   }

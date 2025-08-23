@@ -34,6 +34,7 @@ export function useLocalEvent(
     }
   }, [event, channel, _callback])
 }
+
 export function useRemoteEvent(
   { event, channel = NO_CHANNEL, active = true }: UseEventParams,
   fn: (...args: any[]) => void,
