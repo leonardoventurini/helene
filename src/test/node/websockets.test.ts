@@ -82,4 +82,46 @@ describe('WebSockets', () => {
 
     await test.client.waitFor(ClientEvents.INITIALIZED, 10000)
   }, 20000)
+
+  it('should not register message and error handlers more than once after reconnection', async () => {
+    // Check initial state - should have exactly one handler for each
+    const socket = test.client.clientSocket.socket as any
+    const initialMessageHandlers = socket._callbacks?.$message?.length || 0
+    const initialErrorHandlers = socket._callbacks?.$error?.length || 0
+
+    expect(initialMessageHandlers).toBe(1)
+    expect(initialErrorHandlers).toBe(1)
+
+    for (let i = 0; i < 10; i++) {
+      await test.client.clientSocket.socket.close()
+      await test.client.clientSocket.socket.connect()
+      await test.client.waitFor(ClientEvents.WEBSOCKET_CONNECTED)
+    }
+
+    // After reconnection, should still have only one handler for each
+    const socketAfterReconnect = test.client.clientSocket.socket as any
+    const afterReconnectMessageHandlers =
+      socketAfterReconnect._callbacks?.$message?.length || 0
+    const afterReconnectErrorHandlers =
+      socketAfterReconnect._callbacks?.$error?.length || 0
+
+    expect(afterReconnectMessageHandlers).toBe(1)
+    expect(afterReconnectErrorHandlers).toBe(1)
+
+    // Test multiple reconnections
+    for (let i = 0; i < 10; i++) {
+      await test.client.clientSocket.socket.close()
+      await test.client.clientSocket.socket.connect()
+      await test.client.waitFor(ClientEvents.WEBSOCKET_CONNECTED)
+    }
+
+    const socketAfterSecondReconnect = test.client.clientSocket.socket as any
+    const afterSecondReconnectMessageHandlers =
+      socketAfterSecondReconnect._callbacks?.$message?.length || 0
+    const afterSecondReconnectErrorHandlers =
+      socketAfterSecondReconnect._callbacks?.$error?.length || 0
+
+    expect(afterSecondReconnectMessageHandlers).toBe(1)
+    expect(afterSecondReconnectErrorHandlers).toBe(1)
+  })
 })
