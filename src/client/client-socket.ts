@@ -87,6 +87,9 @@ export class ClientSocket extends EventEmitter2 {
         return
       }
     })
+
+    this.socket.on('error', this.handleError.bind(this))
+    this.socket.on('message', this.handleMessage.bind(this))
   }
 
   async close() {
@@ -139,9 +142,6 @@ export class ClientSocket extends EventEmitter2 {
     this.sendSetup()
 
     this.client.emit(ClientEvents.WEBSOCKET_CONNECTED)
-
-    this.socket.on('error', this.handleError.bind(this))
-    this.socket.on('message', this.handleMessage.bind(this))
 
     this.connecting = false
 
